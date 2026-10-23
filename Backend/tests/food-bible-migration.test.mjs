@@ -1,0 +1,28 @@
+import {fixture} from './social-harness.mjs';
+import {randomUUID} from 'node:crypto';
+import {readFile,readdir} from 'node:fs/promises';
+const dir=new URL('../../supabase/migrations/',import.meta.url);
+const migration=(await readdir(dir)).find(x=>x.endsWith('_dish_linked_recipe_components.sql'));
+const {db,users,actor,rpc,cooking,check,rejects,finish}=await fixture({before:migration});
+const id=randomUUID(),orphan=randomUUID(),origin=randomUUID(),content={title:'Old recipe',ingredients:['one cup stock'],steps:['Simmer']};
+const graph=await cooking(0);await actor(0);
+await rpc('recipes','save',{recipeID:id,recipe:content,visibility:'private'});
+await rpc('recipes','save',{recipeID:orphan,recipe:{...content,title:'Private fixture soup'},visibility:'private'});
+await rpc('recipes','ticket',{recipeID:orphan});
+const claim=await rpc('recipes','begin',{recipeID:id,originID:origin});
+await db.exec('reset role');const cook=(await db.query('select * from staygrubby.cooking_attempts where account_id=$1',[users[0].id])).rows[0];
+await db.query('update staygrubby.recipe_cooks set item_id=$1 where id=$2',[cook.ranked_item_id,claim.id]);await actor(0);await rpc('recipes','complete',{originID:origin});
+await db.exec('reset role');
+const before=(await db.query("select (select jsonb_agg(to_jsonb(t) order by id) from staygrubby.recipes t) recipes,(select jsonb_agg(to_jsonb(t) order by id) from staygrubby.recipe_cooks t) cooks,(select jsonb_agg(to_jsonb(t)) from staygrubby.recipe_tickets t) tickets")).rows[0];
+await db.exec(await readFile(new URL(migration,dir),'utf8'));
+const after=(await db.query("select (select jsonb_agg(to_jsonb(t) order by id) from staygrubby.recipes t) recipes,(select jsonb_agg(to_jsonb(t) order by id) from staygrubby.recipe_cooks t) cooks,(select jsonb_agg(to_jsonb(t)) from staygrubby.recipe_tickets t) tickets")).rows[0];
+check(JSON.stringify(before)===JSON.stringify(after),'all legacy content, snapshots, tickets byte preserved');
+check((await db.query('select count(*) n from staygrubby.recipe_revisions')).rows[0].n===2,'current legacy revisions archived');
+await actor(0);const bible=(await rpc('recipes','cookbook')).entries;
+check(bible.length===1&&bible[0].dishID===cook.dish_id&&bible[0].recipeID===id,'only deterministic completed identity backfilled');
+check((await rpc('recipes','list')).recipes.length===2,'ambiguous standalone recipe retained');
+check((await rpc('recipes','get',{recipeID:id})).linkedDishID===cook.dish_id,'owner-safe existing Dish identity');
+for(const helper of ["staygrubby.recipe_card(null,null)","staygrubby.recipe_content('{}')","staygrubby.recipe_api_before_food_bible('list','{}')","staygrubby.recipe_content_before_components('{}')"]){await rejects(()=>db.query('select '+helper));}
+await db.exec('reset role');const security=(await db.query("select count(*) n,count(*) filter(where rowsecurity) rls from pg_tables where schemaname='staygrubby'")).rows[0];check(security.n===34&&security.rls===34,'all 34 application tables RLS');
+await db.exec('set role anon');await rejects(()=>rpc('recipes','cookbook'));
+await finish();

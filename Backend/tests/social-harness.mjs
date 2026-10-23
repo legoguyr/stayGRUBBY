@@ -3,7 +3,7 @@ import { storageStubSQL } from './storage-stub.mjs';
 import { readFile,readdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
-export async function fixture() {
+export async function fixture({before} = {}) {
  const db=new PGlite();let checks=0;
  await db.exec(`create role authenticated;create role anon;create role service_role;create schema auth;
  create table auth.users(id uuid primary key,is_anonymous boolean default false,deleted_at timestamptz);
@@ -12,7 +12,7 @@ export async function fixture() {
  create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;`);
  await db.exec(storageStubSQL);
  const dir=new URL('../../supabase/migrations/',import.meta.url);
- for(const f of (await readdir(dir)).filter(f=>f.endsWith('.sql')).sort())await db.exec(await readFile(new URL(f,dir),'utf8'));
+ for(const f of (await readdir(dir)).filter(f=>f.endsWith('.sql') && (!before || f < before)).sort())await db.exec(await readFile(new URL(f,dir),'utf8'));
  const users=[];
  for(let n=0;n<4;n++){
   const user=randomUUID(),session=randomUUID();

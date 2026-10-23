@@ -20,7 +20,7 @@ await db.exec(`create role authenticated; create role anon; create role service_
 await db.exec(storageStubSQL);
 const migrationDirectory = new URL('../../supabase/migrations/', import.meta.url);
 const migrations = (await readdir(migrationDirectory)).filter(name => name.endsWith('.sql')).sort();
-check(migrations.length === 21 && migrations.some(name => name.endsWith('_shared_cooking_notifications.sql')), 'Approved migration chain includes recipes, tickets and profile links');
+check(migrations.length === 24 && migrations.some(name => name.endsWith('_dish_linked_recipe_components.sql')), 'Approved migration chain includes recipes, tickets and profile links');
 const initial = (await Promise.all(migrations.map(name => readFile(new URL(name, migrationDirectory), 'utf8')))).join('');
 check(initial === await readFile(new URL('../schema.sql', import.meta.url), 'utf8'), 'Reference and complete migration chain agree');
 for (const name of migrations) await db.exec(await readFile(new URL(name, migrationDirectory), 'utf8'));
@@ -86,7 +86,7 @@ check((await db.query('select * from staygrubby.rankings')).rows.length===0,'Del
 await db.exec('reset role');
 const exposed=(await db.query(`select count(*)::int n from pg_tables where schemaname='staygrubby' and not rowsecurity`)).rows[0].n;
 check(exposed===0,'Every application table has RLS');
-check((await db.query(`select count(*)::int n from pg_tables where schemaname='staygrubby'`)).rows[0].n===32,'Private cooking, social and closed recipe/ticket/routing tables exist');
+check((await db.query(`select count(*)::int n from pg_tables where schemaname='staygrubby'`)).rows[0].n===34,'Private cooking, social and closed recipe/ticket/routing tables exist');
 const permissions = (await db.query(`select c.relname,
  has_table_privilege('anon',c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as anon_access,
  has_table_privilege('authenticated',c.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') as client_write,
@@ -94,7 +94,7 @@ const permissions = (await db.query(`select c.relname,
  from pg_class c join pg_namespace n on n.oid=c.relnamespace
  where n.nspname='staygrubby' and c.relkind='r'`)).rows;
 check(permissions.every(p => !p.anon_access && !p.client_write), 'No client write/bypass privileges on any table');
-check(permissions.every(p => p.client_read === !['auth_account_links','account_deletion_jobs','username_reservations','friendships','social_blocks','social_posts','social_comments','social_likes','social_reports','shared_cooks','shared_participants','cooking_origins','social_notifications','recipes','recipe_tickets','recipe_cooks','profile_routes'].includes(p.relname)), 'Only intended owner-readable tables have SELECT grants');
+check(permissions.every(p => p.client_read === !['auth_account_links','account_deletion_jobs','username_reservations','friendships','social_blocks','social_posts','social_comments','social_likes','social_reports','shared_cooks','shared_participants','cooking_origins','social_notifications','recipes','recipe_tickets','recipe_cooks','profile_routes','dish_recipes','recipe_revisions'].includes(p.relname)), 'Only intended owner-readable tables have SELECT grants');
 check(!(await db.query(`select has_function_privilege('anon','staygrubby.current_account_id()','EXECUTE') as access`)).rows[0].access, 'No anonymous helper execution');
 check(!(await db.query(`select has_function_privilege('authenticated','staygrubby.stamp_record()','EXECUTE') as access`)).rows[0].access, 'Trigger helper is not a client RPC');
 await db.exec(`delete from auth.users where id='${ua}'`);
