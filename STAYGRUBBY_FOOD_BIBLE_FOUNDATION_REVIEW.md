@@ -133,3 +133,9 @@ Documentation checkpoint:
 - `UI_ARCHITECTURE.md`
 
 22 intended files total. No project settings, official assets, ranking math/calibration, persistence schema, private sync, sharing renderer, backend credentials, generated products, local backups or fixture media included. Push outcome and final commit SHA are reported after checkpoint creation; no credential/configuration workaround is authorized.
+
+## Hosted deployment closeout — release-readiness cycle
+
+Owner explicitly authorized this deployment in the follow-up release-readiness prompt. Two initial connector errors (expired requestState, then Transport closed) did not apply the migration. After the owner refreshed the existing connection, `apply_migration` succeeded. Hosted assigned version **20261023135617**; the local filename was aligned without changing SQL bytes, MD5 **3634b481189b1f5915f530067d474999**. Earlier pending-state sections above are historical evidence, superseded by this closeout.
+
+Post-deployment: **24 hosted migrations**, original 33 application/Storage fingerprint groups unchanged, three buckets remain private, new expected revision/link schema deployed. Hosted verification confirms **34/34** tables protected, **0** anonymous API execution grants, both new tables closed to direct client CRUD, enabled archive trigger, **1** exact archived legacy revision and **0** links. All **24/24** local/hosted hashes match. Focused post-deployment local migration/lifecycle checks passed **45 assertions** against the exact SQL. Detailed release checks follow in STAYGRUBBY_V1_RELEASE_READINESS_REVIEW.md. No guessed associations or new cooking/ranking/Storage records. Hosted security advisor now reports 19 intentional closed/RPC-only no-policy INFO entries and the same pre-existing unused password-protection WARN; no new ERROR.
