@@ -88,7 +88,7 @@ struct RecipeDetailView: View {
     @State private var recipe: Recipe?
     @State private var claim: SocialCookingClaim?
     @State private var list: RankingList?
-    @State private var editing = false
+    @State private var editingRecipe: Recipe? = nil
     @State private var deleting = false
     @State private var detaching = false
     @State private var failed = false
@@ -128,7 +128,7 @@ struct RecipeDetailView: View {
                 if recipe.isOwner {
                     Section {
                         Text(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private recipe")
-                        Button("Edit Recipe") { editing = true }.buttonStyle(RecipeTextActionStyle()).accessibilityIdentifier("recipe-edit")
+                        Button("Edit Recipe") { editingRecipe = recipe }.buttonStyle(RecipeTextActionStyle()).accessibilityIdentifier("recipe-edit")
                         Button("Delete Recipe", role: .destructive) { deleting = true }.buttonStyle(RecipeTextActionStyle())
                     }.disabled(busy)
                 }
@@ -142,7 +142,7 @@ struct RecipeDetailView: View {
             }
             .onChange(of: phase) { _, next in generation = UUID(); recipe = nil; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
-            .sheet(isPresented: $editing, onDismiss: { Task { await load() } }) { if let recipe { RecipeEditor(recipe: recipe, dishID: dishID) { self.recipe = $0 } } }
+            .sheet(item: $editingRecipe, onDismiss: { Task { await load() } }) { snapshot in RecipeEditor(recipe: snapshot, dishID: dishID) { self.recipe = $0 } }
             .sheet(item: $claim, onDismiss: { reservation = UUID() }) { claim in if let list { AddCookingView(list: list, dish: linkedDish, origin: claim) } }
             .confirmationDialog("Remove Recipe from this Dish?", isPresented: $detaching, titleVisibility: .visible) {
                 Button("Remove Recipe from Dish", role: .destructive) { Task { await detach() } }

@@ -6,7 +6,11 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review"] + extra
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        app.tabBars.buttons["Food Bible"].tap(); XCTAssertTrue(app.buttons["bible-tickets"].waitForExistence(timeout: 8)); return app
+        for _ in 0..<3 {
+            app.tabBars.buttons["Food Bible"].tap()
+            if app.buttons["bible-tickets"].waitForExistence(timeout: 3) { break }
+        }
+        XCTAssertTrue(app.buttons["bible-tickets"].waitForExistence(timeout: 8)); return app
     }
     @MainActor private func reach(_ element: XCUIElement, app: XCUIApplication) {
         for _ in 0..<14 {
@@ -87,4 +91,19 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         app.buttons["Cancel"].tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.staticTexts["Garnish"].exists)
     }
+    @MainActor func testRecipeEditorDraftSurvivesBackgroundBeforeSaving() {
+        let app = launch(["--test-light"])
+        let library = app.buttons["bible-saved-recipes"]; reach(library, app: app); library.tap()
+        XCTAssertTrue(app.navigationBars["Saved Recipes"].waitForExistence(timeout: 8))
+        let saved = app.buttons["Lemon Soup Recipe"]; XCTAssertTrue(saved.waitForExistence(timeout: 8)); saved.tap()
+        let edit = app.buttons["recipe-edit"]; reach(edit, app: app); edit.tap()
+        let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout: 8)); title.tap(); title.typeText(" unsaved draft")
+        XCUIDevice.shared.press(.home); app.activate()
+        XCTAssertTrue(title.waitForExistence(timeout: 10)); XCTAssertEqual(title.value as? String, "Lemon Soup Recipe unsaved draft")
+        capture(app, "Recipe draft preserved after background")
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertEqual(app.staticTexts["recipe-title"].label, "Lemon Soup Recipe")
+    }
+
 }

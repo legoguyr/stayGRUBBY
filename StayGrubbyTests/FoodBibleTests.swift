@@ -40,6 +40,7 @@ import Testing
         #expect(!draft.isValidDraft)
         #expect(original.components == nil && original.ingredients == ["Stock"])
     }
+    #if DEBUG
     @Test func recipeOperationsLeaveTheEntireCookingGraphUnchanged() async throws {
         let container = try ModelContainer(for: AppPersistence.schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
         let context = container.mainContext
@@ -57,4 +58,5 @@ import Testing
         let encoded = String(decoding: try JSONEncoder().encode(payload), as: UTF8.self)
         #expect(!encoded.contains("PRIVATE COOKING NOTES"))
     }
+    #endif
 }

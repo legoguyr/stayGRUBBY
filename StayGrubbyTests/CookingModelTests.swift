@@ -134,6 +134,7 @@ struct CookingModelTests {
         let first = try create(context, draft())
         let second = try create(context, draft(), dish: first.dish)
         let third = try create(context, draft("Lamb"))
+        let thirdDiagnostics = third.rankedItem?.sessionDiagnosticsData
         try CookingStore.rerank(second, evidence: [PreferenceEvidence(first: second.rankedItemID, second: first.rankedItemID, outcome: 0.5),
                                                   PreferenceEvidence(first: second.rankedItemID, second: third.rankedItemID, outcome: 0)], context: context)
         let removedID = second.rankedItemID
@@ -147,7 +148,11 @@ struct CookingModelTests {
         try CookingStore.delete(first, context: context)
         #expect(try context.fetchCount(FetchDescriptor<Dish>()) == 1)
         #expect(try context.fetchCount(FetchDescriptor<CookingAttempt>()) == 1)
-        #expect(list.items.count == 1 && third.rankedItem?.score == 5.5 && list.comparisons.isEmpty)
+        let survivor = try #require(third.rankedItem)
+        #expect(list.items.count == 1 && list.comparisons.isEmpty)
+        #expect(survivor.strength == 0 && survivor.sessionDiagnosticsData == thirdDiagnostics)
+        // The fit is neutral; the persisted Liked reaction still calibrates its display score.
+        #expect(abs(survivor.score - (7 + 3 / (1 + exp(0.4)))) < 1e-10)
         try CookingStore.delete(third, context: context)
         #expect(try context.fetchCount(FetchDescriptor<Dish>()) == 0)
         #expect(try context.fetchCount(FetchDescriptor<RankedItem>()) == 0)

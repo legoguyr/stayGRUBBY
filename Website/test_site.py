@@ -38,6 +38,16 @@ class SiteTests(unittest.TestCase):
         self.output = Path(self.temp.name)
         build(self.output)
 
+    def test_worker_deployment_remains_static_without_backend_or_dns_bindings(self):
+        import json
+        config = json.loads((Path(__file__).parent / 'wrangler.jsonc').read_text())
+        self.assertEqual(config['name'], 'staygrubby')
+        self.assertEqual(config['assets']['directory'], './public')
+        self.assertFalse(config['assets']['run_worker_first'])
+        self.assertFalse(config['workers_dev'])
+        self.assertFalse(config['preview_urls'])
+        self.assertTrue(set(config).isdisjoint({'main', 'routes', 'route', 'vars', 'kv_namespaces', 'r2_buckets', 'd1_databases', 'services', 'analytics_engine_datasets'}))
+
     def test_publish_directory_is_an_exact_public_allowlist(self):
         self.assertEqual({str(p.relative_to(self.output)) for p in self.output.rglob("*") if p.is_file()},
             {"index.html", "privacy.html", "support.html", "404.html", "assets/site.css", "assets/wordmark.png", "_headers", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"})
@@ -50,7 +60,7 @@ class SiteTests(unittest.TestCase):
         expected = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", canonical)
         expected = expected.replace("**", "").replace("#", "")
         self.assertEqual(" ".join("".join(doc.article_text).split()), " ".join(expected.split()))
-        self.assertIn("October 21, 2026", " ".join(doc.article_text))
+        self.assertIn("October 22, 2026", " ".join(doc.article_text))
 
     def test_build_refuses_unexpected_files_in_publish_directory(self):
         (self.output / "internal-notes.md").write_text("Synthetic internal fixture")

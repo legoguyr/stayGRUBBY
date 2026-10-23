@@ -13,3 +13,6 @@ supabase/signing_keys*.json
 
 # Manual Simulator transfer test bytecode.
 DevelopmentTools/__pycache__/
+
+# Cloudflare CLI local build state (never credentials or release source).
+Website/.wrangler/

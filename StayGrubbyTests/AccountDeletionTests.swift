@@ -119,7 +119,7 @@ import Testing
         let text = try #require(PrivacyPolicyDocument.text())
         #expect(text.contains("private cooking journal"))
         #expect(text.contains("does not currently include a conventional analytics SDK or advertising SDK"))
-        #expect(text.contains("Effective date: October 20, 2026"))
+        #expect(text.contains("Effective date: October 22, 2026"))
         #expect(text.contains("privacy@staygrubby.com"))
         #expect(text.contains("support@staygrubby.com"))
         #expect(text.contains(PrivacyPolicyDocument.publicURL.absoluteString))

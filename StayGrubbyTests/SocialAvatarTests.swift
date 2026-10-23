@@ -19,6 +19,7 @@ import UIKit
         #expect(SocialMediaAction.avatarDownload(path: "test").bucket == "profile-photos")
         #expect(SocialMediaAction.download(path: "test").bucket == "social-photos")
     }
+    #if DEBUG
     @Test func failedUploadRetainsPreviousAvatarAndRetryUsesSameAsset() async throws {
         let review = SocialReview(); review.identity = .init(displayName: "Cook", username: "cook", discoverable: false, avatarPath: "previous")
         let asset = UUID(), bytes = SocialReview.avatarFixture
@@ -35,4 +36,5 @@ import UIKit
         try await SocialAvatarService.save(photo: nil, remove: true, currentPath: review.identity.avatarPath, assetID: asset, request: request, media: media)
         #expect(review.identity.avatarPath == nil)
     }
+    #endif
 }

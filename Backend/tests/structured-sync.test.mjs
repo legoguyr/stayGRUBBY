@@ -48,7 +48,11 @@ try {
  create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;`);
  await db.exec(storageStubSQL);
  const directory=new URL('../../supabase/migrations/',import.meta.url);
- for(const file of (await readdir(directory)).filter(f=>f.endsWith('.sql')&&!f.endsWith('_dish_primary_cuisine.sql')).sort())await db.exec(await readFile(new URL(file,directory),'utf8'));
+ const migrations=(await readdir(directory)).filter(f=>f.endsWith('.sql')).sort();
+ const cuisineIndex=migrations.findIndex(f=>f.endsWith('_dish_primary_cuisine.sql'));
+ assert(cuisineIndex>=0,'Cuisine migration must exist in the tracked history');
+ // Populate the actual pre-Cuisine schema; later migrations depend on Cuisine.
+ for(const file of migrations.slice(0,cuisineIndex))await db.exec(await readFile(new URL(file,directory),'utf8'));
  await db.query('insert into auth.users(id) values($1),($2)',[user,otherUser]);
  await db.query('insert into auth.sessions(id,user_id) values($1,$2),($3,$4)',[session,user,otherSession,otherUser]);
  await db.query('insert into staygrubby.accounts(id,sync_revision) values($1,1)',[owner]);
@@ -91,8 +95,7 @@ try {
  // Exercise the additive migration on an already populated legacy graph.
  const legacyGraph=canonical((await snapshot()).graph);
  await db.exec('reset role');
- const cuisineMigration=(await readdir(directory)).find(f=>f.endsWith('_dish_primary_cuisine.sql'));
- await db.exec(await readFile(new URL(cuisineMigration,directory),'utf8'));
+ for(const file of migrations.slice(cuisineIndex))await db.exec(await readFile(new URL(file,directory),'utf8'));
  await actor(user,session);
  assert.deepEqual(canonical((await snapshot()).graph),legacyGraph);checks++;
  // Cuisine is optional Dish metadata; old clients preserve it, explicit null removes it.
