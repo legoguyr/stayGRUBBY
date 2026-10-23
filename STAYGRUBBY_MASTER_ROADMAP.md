@@ -1,6 +1,6 @@
 # StayGrubby Master Roadmap
 
-Canonical product roadmap, reconciled October 21, 2026. Future sections are **planning only**, not implemented features or authorization to build them.
+Canonical product roadmap, reconciled October 22, 2026. Future sections are **planning only**, not implemented features or authorization to build them.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE**
 
@@ -139,6 +139,12 @@ AI-assisted recipe/photo analysis may suggest characteristics; images alone neve
 
 Keep future planning canonical here. Specialized documents explain implementation and dated verification rather than duplicating roadmap entries.
 
-## Current authorized next cycle
+## Current launch sequence
 
-The owner moved the focused manual Recipe/Tickets and profile-sharing foundation ahead of the larger later Recipe Engine/Discovery program. This does not mark that future program complete or change ranking behavior. The next separately authorized major cycle is **STAYGRUBBY DESIGN SYSTEM + FULL UI/UX + MOTION REFINEMENT**, preserving these domain/services/routes while refining the complete native experience. Do not start it implicitly. Personal History/Stats, later discovery/Send to Friend/push/challenges/commerce and final Personalized Taste Intelligence remain planned; no AI infrastructure is required.
+The Product Structure + Score Calibration cycle is owner accepted at `2770700`. **Food Bible Foundation** is the current authorized phase: Dish-linked derived cookbook, structured multi-component recipes, manual editor/reader and clearly separate Tickets lifecycle. This preserves ranking and reaction calibration. It does not implement the Intelligent Recipe Engine.
+
+After this foundation and owner physical review: **External TestFlight preparation + controlled beta**, then beta fixes / Release Candidate, then App Store 1.0. Intelligent Recipe Engine V1 is targeted during/after beta for 1.0 but is **not an App Store launch blocker**.
+
+Future RecipeParser providers return the same editable RecipeDraft: Apple Intelligence / Foundation Models on supported devices first, Google Gemini through a protected Supabase Edge Function as free-tier-only fallback, then manual entry. Providers remain invisible to users. No paid billing/API cost without explicit owner approval. Native deterministic Swift performs future quantities/scaling/unit math, never AI. No AI SDK, keys, model, function or conversion engine is implemented here.
+
+Later roadmap sequencing, including final Personalized Taste Intelligence & Discovery, remains unchanged. See STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md for implementation and release gates.
