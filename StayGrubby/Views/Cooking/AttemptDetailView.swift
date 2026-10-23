@@ -23,6 +23,7 @@ struct AttemptDetailView: View {
                 header
                 actionButtons
                 metadata
+                if let dish = attempt.dish { DishRecipeSection(dish: dish) }
                 CookingProvenanceView(itemID: attempt.rankedItemID)
                 SocialShareAction(attempt: attempt)
                 if let source = attempt.dish?.source {

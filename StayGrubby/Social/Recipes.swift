@@ -1,6 +1,6 @@
 import Foundation
 
-/// A makeable recipe, never a Dish, ranked item, or private cooking graph.
+/// Structured recipe content enriching a Dish; never a second cooking or ranking identity.
 nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     var title = ""
     var description: String? = nil
@@ -10,6 +10,12 @@ nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     var cuisine: String? = nil
     var source: String? = nil
     var externalURL: String? = nil
+    var components: [RecipeComponent]? = nil
+    var yield: String? = nil
+    var prepMinutes: Int? = nil
+    var cookMinutes: Int? = nil
+    var tips: String? = nil
+    var originalCreator: String? = nil
 }
 nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var id: UUID
@@ -21,6 +27,7 @@ nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var createdAt: Double
     var updatedAt: Double
     var saved: Bool
+    var linkedDishID: UUID? = nil
 }
 nonisolated struct RecipesPage: Codable { var recipes: [Recipe] }
 nonisolated struct RecipeTicket: Codable, Identifiable { var id: UUID; var createdAt: Double; var recipe: Recipe? }

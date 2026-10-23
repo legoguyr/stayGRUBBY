@@ -16,20 +16,21 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
     }
     @MainActor private func openRecipes(_ app: XCUIApplication) {
         app.tabBars.buttons["Food Bible"].tap()
+        XCTAssertTrue(app.buttons["bible-saved-recipes"].waitForExistence(timeout: 8)); app.buttons["bible-saved-recipes"].tap()
         XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8))
     }
     @MainActor private func recipe(_ app: XCUIApplication) {
         profile(app); openRecipes(app)
         XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8))
-        app.segmentedControls.buttons["Recipes"].tap()
         let row = app.buttons["Lemon Soup Recipe"]; XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
         XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
+        for _ in 0..<5 { if app.buttons["recipe-make"].isHittable { break }; app.swipeUp() }
     }
     @MainActor func testCreateEditRecipeAndTicketRemoval() {
         let app = launch(["--test-light"]); profile(app); openRecipes(app); app.buttons["recipe-create"].tap()
         let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("My Lemon Tart")
         app.buttons["recipe-save"].tap()
-        XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8)); app.segmentedControls.buttons["Recipes"].tap()
+        XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8));
         let row = app.buttons["My Lemon Tart"]; XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
         app.buttons["recipe-edit"].tap(); XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText(" Sunday")
         app.buttons["recipe-save"].tap(); XCTAssertTrue(app.staticTexts["My Lemon Tart Sunday"].waitForExistence(timeout: 8))
@@ -53,11 +54,14 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
     @MainActor func testTicketAppearsOnceAndRemovalLeavesRecipe() {
         let app = launch(["--test-light"]); recipe(app); app.buttons["recipe-ticket"].tap()
         XCTAssertTrue(app.buttons["Remove Ticket"].waitForExistence(timeout: 8))
-        app.navigationBars.buttons.element(boundBy: 0).tap(); app.segmentedControls.buttons["Tickets"].tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["bible-tickets"].tap()
         XCTAssertTrue(app.buttons["Lemon Soup Recipe"].waitForExistence(timeout: 8)); XCTAssertEqual(app.buttons.matching(identifier: "Lemon Soup Recipe").count, 1)
         app.buttons["Remove Ticket"].tap()
         XCTAssertTrue(app.staticTexts["No Tickets yet. Save a recipe you want to cook."].waitForExistence(timeout: 8))
-        app.segmentedControls.buttons["Recipes"].tap(); XCTAssertTrue(app.buttons["Lemon Soup Recipe"].waitForExistence(timeout: 8))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons["bible-saved-recipes"].tap(); XCTAssertTrue(app.buttons["Lemon Soup Recipe"].waitForExistence(timeout: 8))
     }
     @MainActor func testProfileLinkResolvesAndExistingFriendActionWorks() {
         let app = XCUIApplication(); continueAfterFailure = false

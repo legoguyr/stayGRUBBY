@@ -1,5 +1,6 @@
 #if DEBUG
 import SwiftUI
+import SwiftData
 
 /// Explicit isolated UI review only. No Auth, Supabase client or normal-store writes.
 @MainActor @Observable final class SocialReview {
@@ -12,6 +13,8 @@ import SwiftUI
     var posts: [SocialPost] = []
     var comments: [UUID: [SocialComment]] = [:]
     var recipes: [UUID: Recipe] = [:]
+    var reviewContext: ModelContext?
+    var dishRecipes: [UUID: UUID] = [:]
     var ticketDates: [UUID: Double] = [:]
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
     var sharedEvents: [UUID: SharedCookingEvent] = [:]
@@ -51,6 +54,24 @@ import SwiftUI
             }
         }
     }
+    func seedCookbook(context: ModelContext) throws {
+        guard DebugReviewConfiguration.current.storeID != nil, ProcessInfo.processInfo.arguments.contains("--bible-review"), dishRecipes.isEmpty else { return }
+        let dishes = try context.fetch(FetchDescriptor<Dish>()).sorted { $0.createdAt < $1.createdAt }
+        guard dishes.count >= 2 else { return }
+        let photoDish = dishes.first { $0.attempts.contains { $0.primaryImage != nil } } ?? dishes[0]
+        let plainDish = dishes.first { $0.id != photoDish.id }!
+        for (index, dish) in [photoDish, plainDish].enumerated() {
+            let id = UUID(); var content = RecipeContent(title: index == 0 ? "Braised Short Ribs with Polenta" : "Lemon Soup", course: index == 0 ? "main" : "soup", cuisine: "Italian")
+            if index == 0 {
+                content.components = [.init(title: "Short rib", ingredients: [.init(quantity: "1 1/2", unit: "lb", name: "short ribs", preparation: "trimmed")], steps: [.init(instruction: "Braise at 300°F until tender.")]), .init(title: "Polenta", order: 1, ingredients: [.init(quantity: "1", unit: "cup", name: "cornmeal")], steps: [.init(instruction: "Whisk into simmering water.")])]
+                content.yield = "4 servings"; content.prepMinutes = 20; content.cookMinutes = 180
+            } else { content.ingredients = ["1 lemon", "2 cups stock"]; content.steps = ["Simmer gently"] }
+            content = content.preparedForSave()
+            dish.name = content.title; dishRecipes[dish.id] = id
+            recipes[id] = Recipe(id: id, isOwner: true, content: content, visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false, linkedDishID: dish.id)
+        }
+        try context.save()
+    }
     private var feedFailures = ProcessInfo.processInfo.arguments.contains("--social-review-feed-error") ? 1 : 0
     private var feedSeeded = false
     func request(_ endpoint: String, _ action: String, _ payload: SocialPayload) async throws -> Data {
@@ -66,6 +87,19 @@ import SwiftUI
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
         if endpoint == "recipes" {
+            if action == "cookbook" {
+                let entries = dishRecipes.compactMap { dish, recipeID -> CookbookEntry? in
+                    guard let recipe = recipes[recipeID] else { return nil }
+                    if let query = payload.query, !query.isEmpty, !recipe.content.title.localizedCaseInsensitiveContains(query) { return nil }
+                    if let course = payload.course, !course.isEmpty, recipe.content.course != course { return nil }
+                    if let cuisine = payload.cuisine, !cuisine.isEmpty, recipe.content.cuisine?.lowercased() != cuisine.lowercased() { return nil }
+                    return .init(dishID: dish, recipeID: recipeID, dishTitle: recipe.content.title, recipeTitle: recipe.content.title, course: recipe.content.course, cuisine: recipe.content.cuisine, revision: recipe.revision)
+                }.sorted { $0.id.uuidString < $1.id.uuidString }
+                return try JSONEncoder().encode(CookbookPage(entries: entries))
+            }
+            if action == "dish", let dish = payload.dishID { return try JSONEncoder().encode(DishRecipeResponse(recipe: dishRecipes[dish].flatMap { recipes[$0] })) }
+            if action == "attach", let dish = payload.dishID, let id = payload.recipeID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish; return try JSONEncoder().encode(recipes[id]) }
+            if action == "detach", let dish = payload.dishID { dishRecipes[dish] = nil; return Data("{}".utf8) }
             if action == "list" { return try JSONEncoder().encode(RecipesPage(recipes: Array(recipes.values))) }
             if action == "tickets" { return try JSONEncoder().encode(TicketsPage(tickets: ticketDates.map { RecipeTicket(id: $0.key, createdAt: $0.value, recipe: recipes[$0.key]) })) }
             if action == "provenance" {
@@ -77,14 +111,21 @@ import SwiftUI
             }
             if action == "complete", let id = payload.originID, let previous = recipeClaims[id] {
                 recipeClaims[id] = .init(id: id, itemID: previous.itemID, kind: previous.kind, completed: true, metadata: previous.metadata, recipeOriginID: id, recipeSnapshot: previous.recipeSnapshot)
+                if let attempts = try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()),
+                   let dish = attempts.first(where: { $0.rankedItemID == previous.itemID })?.dish,
+                   let recipeID = recipes.values.first(where: { $0.content == previous.recipeSnapshot })?.id {
+                    dishRecipes[dish.id] = dishRecipes[dish.id] ?? recipeID; recipes[recipeID]?.linkedDishID = dish.id
+                }
                 return Data("{}".utf8)
             }
             guard let id = payload.recipeID else { throw URLError(.badURL) }
             if action == "save", let content = payload.recipe {
                 let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? "private", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
-                recipes[id] = value; return try JSONEncoder().encode(value)
+                recipes[id] = value
+                if let dish = payload.dishID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish }
+                return try JSONEncoder().encode(recipes[id])
             }
-            if action == "delete" { recipes[id] = nil; ticketDates[id] = nil; return Data("{}".utf8) }
+            if action == "delete" { recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }
             if action == "unticket" { ticketDates[id] = nil; recipes[id]?.saved = false; return Data("{}".utf8) }
             guard var recipe = recipes[id] else { throw URLError(.resourceUnavailable) }
             if action == "ticket" { ticketDates[id] = ticketDates[id] ?? 100; recipe.saved = true; recipes[id] = recipe }
@@ -235,6 +276,7 @@ import SwiftUI
 struct SocialReviewModifier: ViewModifier {
     @State private var review = SocialReview()
     @Environment(AppLinkRouter.self) private var links
+    @Environment(\.modelContext) private var context
     func body(content: Content) -> some View {
         if DebugReviewConfiguration.current.storeID != nil && ProcessInfo.processInfo.arguments.contains("--social-review") {
             content.environment(\.socialMedia, { action in
@@ -244,6 +286,8 @@ struct SocialReviewModifier: ViewModifier {
                 return Data()
             }).environment(\.socialRequest, { endpoint, action, payload in try await review.request(endpoint, action, payload) })
                 .task {
+                    review.reviewContext = context
+                    try? review.seedCookbook(context: context)
                     let arguments = ProcessInfo.processInfo.arguments
                     if let index = arguments.firstIndex(of: "--review-profile-url"), arguments.indices.contains(index + 1), let url = URL(string: arguments[index + 1]) { links.receive(url) }
                 }
