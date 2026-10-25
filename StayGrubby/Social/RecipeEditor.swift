@@ -19,6 +19,9 @@ struct RecipeEditor: View {
     @State private var failed = false
     @State private var discard = false
     @State private var deleteSection: UUID?
+    @State private var ingredientEntry = IngredientEntryDraft()
+    @State private var ingredientDetails: RecipeIngredient?
+    @State private var ingredientFocusedSection: UUID?
     @FocusState private var focus: RecipeField?
     init(recipe: Recipe? = nil, dishID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, onSave: @escaping (Recipe) -> Void) {
         self.recipe = recipe; self.dishID = dishID; self.onSave = onSave
@@ -28,11 +31,12 @@ struct RecipeEditor: View {
         _content = State(initialValue: value); _shared = State(initialValue: recipe?.visibility == "friends")
         _recipeID = State(initialValue: recipe?.id ?? UUID())
     }
-    private var dirty: Bool { content != original || shared != originallyShared }
+    private var dirty: Bool { content != original || shared != originallyShared || ingredientEntry.hasChanges }
     private var parts: [RecipeComponent] { content.components ?? [] }
     private var dish: Dish? { dishes.first { $0.id == dishID } }
     var body: some View {
         NavigationStack {
+            ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     identity
@@ -57,9 +61,29 @@ struct RecipeEditor: View {
                 .navigationTitle(recipe == nil ? "Add Recipe" : "Edit Recipe").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if dirty { discard = true } else { dismiss() } }.disabled(saving) }
-                    ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { focus = nil; Task { await save() } }.disabled(saving || !content.isValidDraft).accessibilityIdentifier("recipe-save") }
-                    ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Done") { focus = nil }.accessibilityIdentifier("recipe-keyboard-done") }
+                    ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { finishIngredient(); focus = nil; Task { await save() } }.disabled(saving || !ingredientEntry.isValid(content)).accessibilityIdentifier("recipe-save") }
+                    ToolbarItemGroup(placement: .keyboard) {
+                        if ingredientFocusedSection == nil { Spacer(); Button("Done") { focus = nil }.accessibilityIdentifier("recipe-keyboard-done") }
+                    }
                 }
+                .onChange(of: ingredientEntry.editingID) { _, next in
+                    guard let next, let section = parts.first(where: { $0.ingredients.contains { $0.id == next } })?.id else { return }
+                    Task { @MainActor in
+                        await Task.yield()
+                        guard ingredientEntry.editingID == next else { return }
+                        proxy.scrollTo("ingredient-input-\(section)", anchor: .bottom)
+                    }
+                }
+            }
+        }.onChange(of: focus) { previous, next in
+            if next != nil { finishIngredient() }
+        }.sheet(item: $ingredientDetails) { row in
+            IngredientDetailsEditor(ingredient: row) { corrected in
+                for part in parts where part.ingredients.contains(where: { $0.id == corrected.id }) {
+                    update(part.id) { section in if let i = section.ingredients.firstIndex(where: { $0.id == corrected.id }) { section.ingredients[i] = corrected } }
+                }
+                ingredientEntry.forget(corrected.id)
+            }
         }.interactiveDismissDisabled(dirty || saving)
             .alert("Discard your recipe changes?", isPresented: $discard) {
                 Button("Discard Changes", role: .destructive) { dismiss() }
@@ -103,14 +127,51 @@ struct RecipeEditor: View {
         }
     }
     private func ingredientSection(_ part: RecipeComponent) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        let activeIndex = part.ingredients.firstIndex { $0.id == ingredientEntry.editingID }
+        let before = activeIndex.map { Array(part.ingredients.prefix($0)) } ?? part.ingredients
+        let after = activeIndex.map { Array(part.ingredients.dropFirst($0+1)) } ?? []
+        return VStack(alignment: .leading, spacing: 4) {
             sectionHeading(part)
-            ForEach(part.ingredients) { row in
-                RecipeIngredientEditor(row: ingredient(part.id, row.id), focus: $focus, next: { addIngredient(part.id) }, actions: { rowActions(part, rowID: row.id, ingredient: true) })
+            ForEach(before) { row in ingredientDisplay(row, in: part); Divider() }
+            if let row = activeIngredient(in: part.id) {
+                // This field has SECTION identity, never the changing next-row identity.
+                // Return clears it in place, preserving the native first responder.
+                HStack(alignment: .top, spacing: 8) {
+                    IngredientLineField(text: Binding(get: {
+                        activeIngredient(in: part.id).map { ingredientEntry.text(for: $0) } ?? ""
+                    }, set: { value in
+                        guard let current = activeIngredient(in: part.id) else { return }
+                        ingredientEntry.set(value, for: current)
+                        if value.contains(where: { $0.isNewline }) { submitIngredient(current.id, advance: true) }
+                    }), ingredientID: row.id, focused: ingredientFocusedSection == part.id, focusChanged: { active in
+                        if active { focus = nil; ingredientFocusedSection = part.id }
+                        else if ingredientFocusedSection == part.id { finishIngredient() }
+                    }, submit: {
+                        if let current = activeIngredient(in: part.id) { submitIngredient(current.id, advance: true) }
+                    }, paste: { values in
+                        guard let current = activeIngredient(in: part.id), current.id == row.id else { return }
+                        ingredientEntry.set(values.joined(separator: "\n"), for: current)
+                        submitIngredient(current.id, advance: true)
+                    }, done: { finishIngredient() }).frame(maxWidth: .infinity, minHeight: 44)
+                    rowActions(part, rowID: row.id, ingredient: true)
+                }.id("ingredient-input-\(part.id)")
                 Divider()
             }
+            ForEach(after) { row in ingredientDisplay(row, in: part); Divider() }
             Button("Ingredient", systemImage: "plus") { addIngredient(part.id) }.buttonStyle(RecipeInlineAction()).accessibilityIdentifier("recipe-add-ingredient")
         }
+    }
+    private func ingredientDisplay(_ row: RecipeIngredient, in part: RecipeComponent) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Button { finishIngredient(); ingredientEntry.begin(row); focus = nil; ingredientFocusedSection = part.id } label: {
+                RecipeIngredientLabel(row: row).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 12).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityLabel(IngredientLineFormatter.accessibilityLine(row) + ". Ingredient.")
+                .accessibilityHint("Edits the ingredient as one line").accessibilityIdentifier("recipe-ingredient-row-\(row.id)")
+            rowActions(part, rowID: row.id, ingredient: true)
+        }
+    }
+    private func activeIngredient(in section: UUID) -> RecipeIngredient? {
+        parts.first { $0.id == section }?.ingredients.first { $0.id == ingredientEntry.editingID }
     }
     private func methodSection(_ part: RecipeComponent) -> some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -154,54 +215,45 @@ struct RecipeEditor: View {
             down: { update(part.id) { if ingredient { $0.ingredients.swapAt(i,i+1) } else { $0.steps.swapAt(i,i+1) } } },
             destinations: parts.filter { $0.id != part.id }.map { ($0.id,$0.title ?? "Untitled section") },
             move: { destination in content.moveRecipeRow(rowID, from: part.id, to: destination, ingredient: ingredient) },
-            remove: { update(part.id) { if ingredient { $0.ingredients.removeAll { $0.id == rowID } } else { $0.steps.removeAll { $0.id == rowID } } } })
+            remove: { ingredientEntry.forget(rowID); update(part.id) { if ingredient { $0.ingredients.removeAll { $0.id == rowID } } else { $0.steps.removeAll { $0.id == rowID } } } },
+            editDetails: ingredient ? { openIngredientDetails(part.id,rowID) } : nil)
     }
     private func stepOffset(_ id: UUID) -> Int { parts.prefix { $0.id != id }.reduce(0) { $0 + $1.steps.count } }
     private func update(_ id: UUID, _ change: (inout RecipeComponent) -> Void) { if let i = content.components?.firstIndex(where: { $0.id == id }) { change(&content.components![i]) } }
-    private func addIngredient(_ id: UUID) { let row = RecipeIngredient(); update(id) { $0.ingredients.append(row) }; focus = .quantity(row.id) }
-    private func ingredient(_ part: UUID, _ id: UUID) -> Binding<RecipeIngredient> { Binding(get: { parts.first { $0.id == part }?.ingredients.first { $0.id == id } ?? .init(id:id) }, set: { value in update(part) { if let i = $0.ingredients.firstIndex(where: { $0.id == id }) { $0.ingredients[i] = value } } }) }
+    private func addIngredient(_ id: UUID) {
+        finishIngredient()
+        if let existing = parts.first(where: { $0.id == id })?.ingredients.last, existing.isBlank {
+            ingredientEntry.begin(existing); focus = nil; ingredientFocusedSection = id; return
+        }
+        let row = RecipeIngredient(); update(id) { $0.ingredients.append(row) }
+        ingredientEntry.begin(row); focus = nil; ingredientFocusedSection = id
+    }
+    private func openIngredientDetails(_ partID: UUID, _ rowID: UUID) {
+        if ingredientEntry.editingID != rowID { finishIngredient() }
+        guard let row = parts.first(where: { $0.id == partID })?.ingredients.first(where: { $0.id == rowID }) else { return }
+        let resolved = ingredientEntry.resolved(row)
+        update(partID) { section in if let i = section.ingredients.firstIndex(where: { $0.id == rowID }) { section.ingredients[i] = resolved } }
+        ingredientEntry.editingID = nil; ingredientFocusedSection = nil; focus = nil; ingredientDetails = resolved
+    }
+    private func finishIngredient() { if let id = ingredientEntry.editingID { submitIngredient(id, advance: false) }; ingredientFocusedSection = nil }
+    private func submitIngredient(_ id: UUID, advance: Bool) {
+        let section = parts.first { $0.ingredients.contains { $0.id == id } }?.id
+        let next = ingredientEntry.submit(id, in: &content, advance: advance)
+        if advance, next != nil, let section { ingredientFocusedSection = section }
+    }
     private func step(_ part: UUID, _ id: UUID) -> Binding<String> { Binding(get: { parts.first { $0.id == part }?.steps.first { $0.id == id }?.instruction ?? "" }, set: { value in update(part) { if let i = $0.steps.firstIndex(where: { $0.id == id }) { $0.steps[i].instruction = value } } }) }
     private func optional(_ path: WritableKeyPath<RecipeContent,String?>) -> Binding<String> { Binding(get: { content[keyPath:path] ?? "" }, set: { content[keyPath:path] = $0.isEmpty ? nil : $0 }) }
     private func save() async {
         guard let request else { failed = true; return }; saving = true; failed = false; defer { saving = false }
         do {
             var payload = SocialPayload(); payload.recipeID = recipeID; payload.dishID = dishID; payload.expectedRevision = recipe?.revision
-            payload.recipe = content.preparedForSave(); payload.visibility = shared ? "friends" : "private"
+            payload.recipe = ingredientEntry.prepared(content); payload.visibility = shared ? "friends" : "private"
             let next = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "save", payload))
             try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); onSave(next); dismiss()
         } catch is CancellationError {} catch { failed = true }
     }
 }
-private enum RecipeField: Hashable { case title, section(UUID), quantity(UUID), unit(UUID), ingredient(UUID), step(UUID) }
-private struct RecipeIngredientEditor<Actions: View>: View {
-    @Binding var row: RecipeIngredient
-    var focus: FocusState<RecipeField?>.Binding
-    var next: () -> Void
-    @ViewBuilder var actions: () -> Actions
-    @Environment(\.dynamicTypeSize) private var size
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                if size.isAccessibilitySize { VStack(alignment: .leading, spacing: 12) { measures; name } }
-                else { HStack(alignment: .top, spacing: 8) { measures; name } }
-                actions()
-            }
-            DisclosureGroup(row.preparation.isEmpty && row.note.isEmpty ? "Preparation & note" : [row.preparation,row.note].filter { !$0.isEmpty }.joined(separator: ", ")) {
-                TextField("e.g. finely chopped", text: $row.preparation, axis: .vertical).accessibilityLabel("Ingredient preparation")
-                TextField("Optional ingredient note", text: $row.note, axis: .vertical)
-            }.font(.subheadline).foregroundStyle(.secondary)
-        }.padding(.vertical, 10)
-    }
-    private var measures: some View {
-        HStack(spacing: 4) {
-            TextField("Qty", text: $row.quantity).frame(minWidth: 40, idealWidth: 45, maxWidth: size.isAccessibilitySize ? .infinity : 65).focused(focus, equals: .quantity(row.id)).submitLabel(.next).onSubmit { focus.wrappedValue = .unit(row.id) }.accessibilityLabel("Ingredient quantity")
-            TextField("Unit", text: $row.unit).frame(minWidth: 42, idealWidth: 48, maxWidth: size.isAccessibilitySize ? .infinity : 65).focused(focus, equals: .unit(row.id)).submitLabel(.next).onSubmit { focus.wrappedValue = .ingredient(row.id) }.accessibilityLabel("Ingredient unit, for example cup or g")
-        }.font(.body.weight(.semibold)).padding(.vertical, 10)
-    }
-    private var name: some View {
-        TextField("Ingredient", text: $row.name).focused(focus, equals: .ingredient(row.id)).submitLabel(.next).onSubmit(next).padding(.vertical, 10).accessibilityIdentifier("recipe-ingredient-name")
-    }
-}
+private enum RecipeField: Hashable { case title, section(UUID), step(UUID) }
 private struct RecipeRowActions: View {
     let label: String
     let canUp: Bool
@@ -211,9 +263,11 @@ private struct RecipeRowActions: View {
     let destinations: [(UUID,String)]
     let move: (UUID) -> Void
     let remove: () -> Void
+    var editDetails: (() -> Void)? = nil
     @State private var deleting = false
     var body: some View {
         Menu {
+            if let editDetails { Button("Edit Details", systemImage: "slider.horizontal.3", action: editDetails) }
             Button("Move Up", systemImage: "arrow.up", action: up).disabled(!canUp)
             Button("Move Down", systemImage: "arrow.down", action: down).disabled(!canDown)
             if !destinations.isEmpty { Menu("Move to…") { ForEach(destinations, id: \.0) { id,name in Button(name) { move(id) } } } }

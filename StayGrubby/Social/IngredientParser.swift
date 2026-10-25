@@ -72,7 +72,7 @@ nonisolated enum IngredientUnit {
     static func display(_ input: String, quantity: String) -> String {
         guard let unit = canonical(input) else { return input }
         let plurals = ["clove":"cloves","bunch":"bunches","can":"cans","package":"packages","stick":"sticks","slice":"slices","piece":"pieces","head":"heads","sprig":"sprigs","pinch":"pinches","dash":"dashes"]
-        if let q = IngredientQuantity.parse(quantity), q.upper != nil || q.lower != IngredientNumber(1) { return plurals[unit] ?? unit }
+        if let q = IngredientQuantity.parse(quantity), q.upper != nil || q.lower.numerator == 0 || q.lower.numerator > q.lower.denominator { return plurals[unit] ?? unit }
         return unit
     }
 }

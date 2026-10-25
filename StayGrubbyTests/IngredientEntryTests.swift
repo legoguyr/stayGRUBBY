@@ -69,6 +69,7 @@ import Testing
     @Test func voiceOverUsesCookingUnitsAndMeaningfulIngredientText() {
         let row=IngredientParser.parse("2 tbsp olive oil").ingredient()
         #expect(IngredientLineFormatter.accessibilityLine(row)=="2 tablespoons olive oil")
+        #expect(IngredientLineFormatter.amount(IngredientParser.parse("½ bunch parsley").ingredient())=="½ bunch")
         #expect(IngredientLineFormatter.accessibilityLine(IngredientParser.parse("¼ cup parsley finely chopped").ingredient())=="¼ cup parsley, finely chopped")
     }
 

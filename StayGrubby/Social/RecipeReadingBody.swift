@@ -45,21 +45,7 @@ struct RecipeReadingBody: View {
         if content.orderedComponents.count > 1 { Text(part.title?.isEmpty == false ? part.title! : "Untitled section").font(.title3.bold()).accessibilityAddTraits(.isHeader).padding(.top, 4) }
     }
     private func ingredientRow(_ row: RecipeIngredient) -> some View {
-        let amount = [row.quantity,row.unit].filter { !$0.isEmpty }.joined(separator: " ")
-        return Group {
-            if size.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 4) { if !amount.isEmpty { Text(amount).font(.body.bold()) }; ingredientName(row) }
-            } else {
-                HStack(alignment: .firstTextBaseline, spacing: 16) { if !amount.isEmpty { Text(amount).font(.body.bold()).frame(width: 88, alignment: .leading).fixedSize(horizontal: false, vertical: true) }; ingredientName(row).frame(maxWidth: .infinity, alignment: .leading) }
-            }
-        }.accessibilityElement(children: .ignore).accessibilityLabel(row.displayText)
-    }
-    private func ingredientName(_ row: RecipeIngredient) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(row.name).font(.body).fixedSize(horizontal: false, vertical: true)
-            if !row.preparation.isEmpty { Text(row.preparation).font(.subheadline).foregroundStyle(.secondary) }
-            if !row.note.isEmpty { Text(row.note).font(.subheadline).foregroundStyle(.secondary) }
-        }
+        RecipeIngredientLabel(row: row).accessibilityElement(children: .ignore).accessibilityLabel(IngredientLineFormatter.accessibilityLine(row))
     }
     private func offset(_ id: UUID) -> Int { content.orderedComponents.prefix { $0.id != id }.reduce(0) { $0+$1.steps.count } }
 }
