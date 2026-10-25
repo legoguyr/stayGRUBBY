@@ -30,7 +30,7 @@ wrangler deploy --config Website/wrangler.jsonc
 
 Do not paste tokens into Codex or place credentials in configuration. If the existing authenticated connector supports the documented direct static-assets API, it can publish the same tested allowlist without changing credentials. The release review records whether publication actually succeeded; local output and dry run alone are not deployment evidence.
 
-Verify `/`, `/privacy`, `/support`, an unknown path returning 404, and a sample `/@username` reaching the generic `/kitchen` fallback. Profile HTML may canonicalize via a redirect; **AASA must return 200 JSON directly without redirect/authentication** at `/.well-known/apple-app-site-association`. Check CSP, nosniff, referrer/permissions headers, no cookies/scripts and the complete current policy. Keep the existing custom domain and email records unchanged.
+Verify `/`, `/privacy`, `/support`, an unknown path returning 404, and a sample `/@username` reaching the generic `/kitchen` fallback. Profile URLs must retain the original `/@username` path with a direct 200 internal rewrite; HTML canonicalization is deliberately disabled so it cannot redirect away the destination. Explicit extensionless privacy/support/kitchen rewrites remain; **AASA must return 200 JSON directly without redirect/authentication** at `/.well-known/apple-app-site-association`. Check CSP, nosniff, referrer/permissions headers, no cookies/scripts and the complete current policy. Keep the existing custom domain and email records unchanged.
 
 ## Universal Links and distribution
 

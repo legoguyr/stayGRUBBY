@@ -16,3 +16,6 @@ DevelopmentTools/__pycache__/
 
 # Cloudflare CLI local build state (never credentials or release source).
 Website/.wrangler/
+
+# Wrangler local runtime state when launched from the repository root.
+.wrangler/

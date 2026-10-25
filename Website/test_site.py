@@ -44,6 +44,7 @@ class SiteTests(unittest.TestCase):
         self.assertEqual(config['name'], 'staygrubby')
         self.assertEqual(config['assets']['directory'], './public')
         self.assertFalse(config['assets']['run_worker_first'])
+        self.assertEqual(config['assets']['html_handling'], 'none')
         self.assertFalse(config['workers_dev'])
         self.assertFalse(config['preview_urls'])
         self.assertTrue(set(config).isdisjoint({'main', 'routes', 'route', 'vars', 'kv_namespaces', 'r2_buckets', 'd1_databases', 'services', 'analytics_engine_datasets'}))
@@ -97,7 +98,7 @@ class SiteTests(unittest.TestCase):
         import json
         association = json.loads((self.output / '.well-known/apple-app-site-association').read_text())
         self.assertEqual(association['applinks']['details'][0]['appIDs'], ['5DSB36G7LZ.com.guyrettig.StayGrubby'])
-        self.assertEqual((self.output / '_redirects').read_text(), '/@* /kitchen.html 200\n')
+        self.assertEqual((self.output / '_redirects').read_text(), '/privacy /privacy.html 200\n/support /support.html 200\n/kitchen /kitchen.html 200\n/@* /kitchen.html 200\n')
         landing = (self.output / 'kitchen.html').read_text()
         for forbidden in ['supabase', '<script', '<form', 'testflight.apple.com/join/', 'apps.apple.com']:
             self.assertNotIn(forbidden, landing)

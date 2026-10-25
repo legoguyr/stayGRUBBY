@@ -82,7 +82,7 @@ def build(output, distribution=None):
     cta = ('<a class="button" href="' + html.escape(destination, quote=True) + '">Get StayGrubby</a>') if destination else '<p>External beta access is not open yet. Ask the person who shared this link for access.</p>'
     kitchen = '<article class="policy"><p class="eyebrow">#stayGRUBBY</p><h1>A Kitchen is waiting in StayGrubby.</h1><p>Open this link on your iPhone with StayGrubby installed. Profiles are viewed only inside the app, after sign-in and privacy checks.</p>' + cta + '<p>If the app is already installed, open the original shared link from Messages or Mail. You can also press and hold it and choose Open in StayGrubby when iOS offers that action.</p></article>'
     (output / "kitchen.html").write_text(page("Open a Kitchen — StayGrubby", "/kitchen", kitchen, "reading").replace("<title>", '<meta name="robots" content="noindex,nofollow"><title>', 1), encoding="utf-8")
-    (output / "_redirects").write_text('/@* /kitchen.html 200\n', encoding="utf-8")
+    (output / "_redirects").write_text('/privacy /privacy.html 200\n/support /support.html 200\n/kitchen /kitchen.html 200\n/@* /kitchen.html 200\n', encoding="utf-8")
     (output / ".well-known").mkdir(exist_ok=True)
     association = {"applinks": {"details": [{"appIDs": ["5DSB36G7LZ.com.guyrettig.StayGrubby"], "components": [{"/": "/@*", "comment": "Profile share links; app validates exact usernames and authorizes before display"}]}]}}
     (output / ".well-known/apple-app-site-association").write_text(json.dumps(association, separators=(',', ':')), encoding="utf-8")
