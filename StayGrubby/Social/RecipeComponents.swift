@@ -78,7 +78,15 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var course: String?
     var cuisine: String?
     var revision: Int
+    var searchText: String? = nil
+    var updatedAt: Double? = nil
+    var yield: String? = nil
+    var prepMinutes: Int? = nil
+    var cookMinutes: Int? = nil
+    var source: String? = nil
     var id: UUID { dishID }
+    var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
+    var duration: Int? { prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
 }
 nonisolated struct CookbookPage: Codable { var entries: [CookbookEntry] }
 nonisolated struct DishRecipeResponse: Codable { var recipe: Recipe? }
@@ -93,5 +101,50 @@ extension RecipeIngredient {
         name = try c.decode(String.self, forKey: .name)
         preparation = try c.decodeIfPresent(String.self, forKey: .preparation) ?? ""
         note = try c.decodeIfPresent(String.self, forKey: .note) ?? ""
+    }
+}
+
+/// Local, literal partial search. No keystroke requests, private notes, tags or AI inference.
+nonisolated enum CookbookSearch {
+    static func normalized(_ text: String) -> String { text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX")) }
+    static func matches(_ text: String, query: String) -> Bool {
+        normalized(query).split(whereSeparator: { $0.isWhitespace }).allSatisfy { normalized(text).contains($0) }
+    }
+    static func entries(_ values: [CookbookEntry], query: String, course: String, cuisine: String, alphabetical: Bool) -> [CookbookEntry] {
+        values.filter { matches($0.searchableText, query: query) && (course.isEmpty || $0.course == course) && (cuisine.isEmpty || $0.cuisine == cuisine) }
+            .sorted { a,b in
+                if !alphabetical, a.updatedAt != b.updatedAt { return (a.updatedAt ?? 0) > (b.updatedAt ?? 0) }
+                let result = a.dishTitle.localizedStandardCompare(b.dishTitle)
+                return result == .orderedSame ? a.id.uuidString < b.id.uuidString : result == .orderedAscending
+            }
+    }
+}
+@MainActor enum CookbookIndex {
+    static func load(request: SocialRequest) async throws -> [CookbookEntry] {
+        var entries: [CookbookEntry] = [], seen = Set<UUID>(), cursor: UUID?
+        repeat {
+            try Task.checkCancellation()
+            var payload = SocialPayload(); payload.beforeID = cursor
+            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", "cookbook_index", payload))
+            let fresh = page.entries.filter { seen.insert($0.id).inserted }
+            entries += fresh
+            if page.entries.count < 50 || fresh.isEmpty { break }
+            cursor = page.entries.last?.id
+        } while cursor != nil
+        return entries
+    }
+}
+
+extension RecipeContent {
+    /// Stable IDs survive section corrections; no string parsing or cooking mutations.
+    nonisolated mutating func moveRecipeRow(_ id: UUID, from source: UUID, to destination: UUID, ingredient: Bool) {
+        guard source != destination, let s = components?.firstIndex(where: { $0.id == source }), let d = components?.firstIndex(where: { $0.id == destination }) else { return }
+        if ingredient {
+            guard let i = components?[s].ingredients.firstIndex(where: { $0.id == id }), let row = components?[s].ingredients.remove(at: i) else { return }
+            components?[d].ingredients.append(row)
+        } else {
+            guard let i = components?[s].steps.firstIndex(where: { $0.id == id }), let row = components?[s].steps.remove(at: i) else { return }
+            components?[d].steps.append(row)
+        }
     }
 }
