@@ -6,7 +6,7 @@ Date: October 25, 2026. This is an owner-acceptance correction before External T
 
 Starting checkout: clean `main`, `0a7f7a3c5e93cb87000b2bfe7e8efb1eacd4a404`, matching the existing `origin/main` tracking ref. No owner changes were discarded. Single-agent development, one Simulator lane.
 
-- `ddaaa0c`: Add authorized local cookbook search index (read-only API, value helpers and focused tests; deployment pending).
+- `ddaaa0c`: Add authorized local cookbook search index (read-only API, value helpers and focused tests; subsequently deployed with explicit owner approval).
 - `45f3a69`: Preserve profile URLs through Universal Link fallback (website routing/configuration/tests and ignored local runtime state).
 - `1920a9a`: Redesign Food Bible recipe browsing and editing (reader/editor/chooser, Ticket hiding, isolated fixtures and affected UI tests).
 - Final verification checkpoint: recorded in the final Git report. The final documentation commit is identified by `git log -1 --format=%H -- STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md`; embedding that commit's own SHA in its content would be self-referential.
@@ -15,7 +15,7 @@ Starting checkout: clean `main`, `0a7f7a3c5e93cb87000b2bfe7e8efb1eacd4a404`, mat
 Exact changed-file inventory (22 files):
 
 - Website: `.gitignore`, `Website/README.md`, `Website/build.py`, `Website/test_site.py`, `Website/wrangler.jsonc`.
-- Backend: `Backend/schema.sql`, `Backend/tests/schema.test.mjs`, `Backend/tests/cookbook-search.test.mjs`, `supabase/migrations/20261025210000_cookbook_search_index.sql`.
+- Backend: `Backend/schema.sql`, `Backend/tests/schema.test.mjs`, `Backend/tests/cookbook-search.test.mjs`, `supabase/migrations/20261025222821_cookbook_search_index.sql`.
 - Values/native tests: `StayGrubby/Social/RecipeComponents.swift`, `StayGrubbyTests/CookbookUXTests.swift`.
 - App UI/isolated fixture: `StayGrubby/Views/Cooking/FoodBibleView.swift`, `StayGrubby/Social/RecipeEditor.swift`, `StayGrubby/Social/RecipeReadingBody.swift`, `StayGrubby/Social/RecipeViews.swift`, `StayGrubby/Social/SocialReview.swift`.
 - UI tests: `StayGrubbyUITests/FoodBibleUITests.swift`, `StayGrubbyUITests/ProductStructureUITests.swift`, `StayGrubbyUITests/RecipesLinksUITests.swift`.
@@ -63,11 +63,13 @@ The initializer accepts `RecipeDraft`, preserving the future parser → draft �
 
 ## Search backend and privacy
 
-`20261025210000_cookbook_search_index.sql` adds only a compact read-only action to the existing authorized Recipes RPC. It is necessary to search ingredients/source locally without an N+1 fetch of full bodies/revision histories. Pages contain at most 50 eligible Dish summaries and are keyed by Dish UUID. The client loads the index once on refresh/content change, deduplicates IDs, and filters locally.
+`20261025222821_cookbook_search_index.sql` adds only a compact read-only action to the existing authorized Recipes RPC. It is necessary to search ingredients/source locally without an N+1 fetch of full bodies/revision histories. Pages contain at most 50 eligible Dish summaries and are keyed by Dish UUID. The client loads the index once on refresh/content change, deduplicates IDs, and filters locally.
 
 The existing Recipe API is retained behind a private forwarding helper. The new function has an empty search path, authenticated-only execution, verified actor/active-account checks and existing Recipe visibility rules. No tables, records, grants to anon, Ticket behavior or private cooking payloads change. Existing actions, including null/invalid action handling, forward to the existing implementation.
 
-Deployment status: **local and tested; hosted deployment approval remains pending**. Existing hosted 24 migration hashes match local SQL exactly. This new client must not be treated as hosted-ready until the search migration is deployed and post-deploy checks pass. No hosted Edge Function deployment is required for this action.
+Deployment status: **deployed with explicit owner approval on October 25, 2026**, hosted version `20261025222821`. The original local migration filename was aligned to Supabase’s assigned timestamp without changing SQL bytes (MD5 `8cbf1a316b67003d1fa5aed0ee4f76de`). All **25 hosted/local migration hashes match**. No hosted Edge Function deployment was needed.
+
+Post-deployment verification: all 36 checked application/Storage tables retain RLS, and table grants/policy fingerprints are identical. The public API remains authenticated-only; the forwarding helper remains inaccessible to anon/authenticated roles, with empty search paths retained. A rolled-back SQL smoke check through the actual `api.recipes` entry point passed **16 assertions across 3 existing valid account/session mappings**, including the existing cookbook entry, Recipe reader, Dish association, pagination, oversize rejection, missing-session denial, anonymous denial and helper isolation. It did not create users/sessions, obtain tokens, write records or simulate physical sign-in. All 35 table/Storage data fingerprints remain unchanged. Security advisors show only the same pre-existing RPC-only-table INFO and unused password-protection warning. **The real-account Food Bible is ready for owner physical testing**; that is distinct from a physical acceptance pass.
 
 A 520-entry test verifies 11 bounded index requests and no extra request while search changes. The chooser filters local Dishes and uses thumbnails. This is functional responsiveness evidence, not a measured physical-device performance benchmark. No full-resolution grid loading or revision decoding per card.
 
@@ -137,6 +139,6 @@ VoiceOver: decorative photos hidden inside labeled card buttons; contextual acti
 7. Confirm Recipe detach/cook-again paths preserve cooking/ranking/provenance; Tickets remain absent. Do not perform account deletion/reset.
 8. Perform the separate exact Universal Link test above and record warm/cold/auth-resume results.
 
-**NOT YET for External TestFlight.** Local UI can proceed to owner acceptance only with the hosted search action available; its deployment is pending approval. Owner acceptance of the redesigned flow and physical Universal Link success are release gates. Existing operational moderation/release requirements remain separate; the intentionally deferred real Apple deletion test is not invented as a new blocker here. No need for another unrelated giant audit. Minimum follow-up verification is the deployed action's authorization/index/data-fingerprint check and affected owner flows.
+**NOT YET for External TestFlight.** The hosted search action is now deployed and verified, so the real-account UI is ready for owner physical acceptance. Owner acceptance of the redesigned flow and physical Universal Link success remain release gates. Existing operational moderation/release requirements remain separate; the intentionally deferred real Apple deletion test is not invented as a new blocker here. No need for another unrelated giant audit. The deployed action’s authorization/index/data-fingerprint checks passed. Remaining follow-up is the affected owner physical flows.
 
 No Intelligent Recipe Engine, AI provider, timer, scaling, hands-free or full Start Cooking system was started. No TestFlight upload occurred.
