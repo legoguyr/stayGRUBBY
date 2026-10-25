@@ -14,54 +14,17 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
         }
         XCTAssertTrue(app.buttons["settings-open"].waitForExistence(timeout: 8), app.debugDescription)
     }
-    @MainActor private func openRecipes(_ app: XCUIApplication) {
+    @MainActor func testRecipeActionsDoNotExposeTickets() {
+        let app = launch(["--test-light", "--bible-review", "--score-unlock-fixture", "10"])
         app.tabBars.buttons["Food Bible"].tap()
-        XCTAssertTrue(app.buttons["bible-saved-recipes"].waitForExistence(timeout: 8)); app.buttons["bible-saved-recipes"].tap()
-        XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8))
-    }
-    @MainActor private func recipe(_ app: XCUIApplication) {
-        profile(app); openRecipes(app)
-        XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8))
-        let row = app.buttons["Lemon Soup Recipe"]; XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
-        XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
-        for _ in 0..<5 { if app.buttons["recipe-make"].isHittable { break }; app.swipeUp() }
-    }
-    @MainActor func testCreateEditRecipeAndTicketRemoval() {
-        let app = launch(["--test-light"]); profile(app); openRecipes(app); app.buttons["recipe-create"].tap()
-        let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText("My Lemon Tart")
-        app.buttons["recipe-save"].tap()
-        XCTAssertTrue(app.buttons["recipe-create"].waitForExistence(timeout: 8));
-        let row = app.buttons["My Lemon Tart"]; XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
-        app.buttons["recipe-edit"].tap(); XCTAssertTrue(title.waitForExistence(timeout: 5)); title.tap(); title.typeText(" Sunday")
-        app.buttons["recipe-save"].tap(); XCTAssertTrue(app.staticTexts["My Lemon Tart Sunday"].waitForExistence(timeout: 8))
-        app.buttons["recipe-ticket"].tap()
-        XCTAssertTrue(app.buttons["Remove Ticket"].waitForExistence(timeout: 8)); app.buttons["recipe-ticket"].tap()
-        XCTAssertTrue(app.buttons["Save Ticket 🎟️"].waitForExistence(timeout: 8))
-    }
-    @MainActor func testRecipeAbandonThenIndependentCook() {
-        let app = launch(["--test-dark"]); recipe(app)
-        app.buttons["recipe-ticket"].tap(); app.buttons["recipe-make"].tap()
-        let name = app.textFields["dish-name"]; XCTAssertTrue(name.waitForExistence(timeout: 8)); XCTAssertEqual(name.value as? String, "Lemon Soup Recipe")
-        app.buttons["Cancel"].tap(); XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
-        app.tabBars.buttons["Grub Rank"].tap(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 8)); XCTAssertFalse(app.staticTexts["Lemon Soup Recipe"].exists)
-        app.tabBars.buttons["Food Bible"].tap(); XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
-        app.buttons["recipe-make"].tap(); XCTAssertTrue(name.waitForExistence(timeout: 8))
-        app.buttons["Continue"].tap(); XCTAssertTrue(app.buttons["Liked it"].waitForExistence(timeout: 5)); app.buttons["Liked it"].tap()
-        XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 12))
-        XCTAssertEqual(app.staticTexts["result-dish-title"].label, "Lemon Soup Recipe"); XCTAssertFalse(app.staticTexts["result-score"].exists)
-        let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "Recipe cook independently ranked, score protected"; shot.lifetime = .keepAlways; add(shot)
-    }
-    @MainActor func testTicketAppearsOnceAndRemovalLeavesRecipe() {
-        let app = launch(["--test-light"]); recipe(app); app.buttons["recipe-ticket"].tap()
-        XCTAssertTrue(app.buttons["Remove Ticket"].waitForExistence(timeout: 8))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        app.buttons["bible-tickets"].tap()
-        XCTAssertTrue(app.buttons["Lemon Soup Recipe"].waitForExistence(timeout: 8)); XCTAssertEqual(app.buttons.matching(identifier: "Lemon Soup Recipe").count, 1)
-        app.buttons["Remove Ticket"].tap()
-        XCTAssertTrue(app.staticTexts["No Tickets yet. Save a recipe you want to cook."].waitForExistence(timeout: 8))
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        app.buttons["bible-saved-recipes"].tap(); XCTAssertTrue(app.buttons["Lemon Soup Recipe"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["bible-tickets"].exists)
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'"))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 8)); rows.firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["recipe-ticket"].exists)
+        XCTAssertFalse(app.buttons["Save Ticket 🎟️"].exists)
+        XCTAssertFalse(app.buttons["Remove Ticket"].exists)
     }
     @MainActor func testProfileLinkResolvesAndExistingFriendActionWorks() {
         let app = XCUIApplication(); continueAfterFailure = false

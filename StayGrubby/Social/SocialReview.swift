@@ -66,6 +66,10 @@ import SwiftData
                 content.components = [.init(title: "Short rib", ingredients: [.init(quantity: "1 1/2", unit: "lb", name: "short ribs", preparation: "trimmed")], steps: [.init(instruction: "Braise at 300°F until tender.")]), .init(title: "Polenta", order: 1, ingredients: [.init(quantity: "1", unit: "cup", name: "cornmeal")], steps: [.init(instruction: "Whisk into simmering water.")])]
                 content.yield = "4 servings"; content.prepMinutes = 20; content.cookMinutes = 180
             } else { content.ingredients = ["1 lemon", "2 cups stock"]; content.steps = ["Simmer gently"] }
+            content.source = "The Home Cookbook"
+            if ProcessInfo.processInfo.arguments.contains("--bible-long-review"), index == 0 {
+                content.components?[0].steps += (2...25).map { RecipeStep(instruction: "Step \($0): simmer gently, checking the texture and adding a little stock when needed. Keep the sauce moving and taste before serving.") }
+            }
             content = content.preparedForSave()
             dish.name = content.title; dishRecipes[dish.id] = id
             recipes[id] = Recipe(id: id, isOwner: true, content: content, visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false, linkedDishID: dish.id)
@@ -74,6 +78,8 @@ import SwiftData
     }
     private var feedFailures = ProcessInfo.processInfo.arguments.contains("--social-review-feed-error") ? 1 : 0
     private var feedSeeded = false
+    private var recipeSaveFailures = ProcessInfo.processInfo.arguments.contains("--recipe-save-failure") ? 1 : 0
+    private var recipeReads = 0
     func request(_ endpoint: String, _ action: String, _ payload: SocialPayload) async throws -> Data {
         // Opt-in diagnostics for isolated fixtures only; never log payloads/identities.
         if ProcessInfo.processInfo.arguments.contains("--social-review-trace") { NSLog("SOCIAL_REVIEW %@ %@", endpoint, action) }
@@ -87,13 +93,15 @@ import SwiftData
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
         if endpoint == "recipes" {
-            if action == "cookbook" {
+            if action == "save", recipeSaveFailures > 0 { recipeSaveFailures -= 1; throw URLError(.notConnectedToInternet) }
+            if action == "get" { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
+            if action == "cookbook" || action == "cookbook_index" {
                 let entries = dishRecipes.compactMap { dish, recipeID -> CookbookEntry? in
                     guard let recipe = recipes[recipeID] else { return nil }
                     if let query = payload.query, !query.isEmpty, !recipe.content.title.localizedCaseInsensitiveContains(query) { return nil }
                     if let course = payload.course, !course.isEmpty, recipe.content.course != course { return nil }
                     if let cuisine = payload.cuisine, !cuisine.isEmpty, recipe.content.cuisine?.lowercased() != cuisine.lowercased() { return nil }
-                    return .init(dishID: dish, recipeID: recipeID, dishTitle: recipe.content.title, recipeTitle: recipe.content.title, course: recipe.content.course, cuisine: recipe.content.cuisine, revision: recipe.revision)
+                    return .init(dishID: dish, recipeID: recipeID, dishTitle: recipe.content.title, recipeTitle: recipe.content.title, course: recipe.content.course, cuisine: recipe.content.cuisine, revision: recipe.revision, searchText: ([recipe.content.title, recipe.content.cuisine ?? "", recipe.content.source ?? ""] + recipe.content.ingredients).joined(separator: " "), updatedAt: recipe.updatedAt, yield: recipe.content.yield, prepMinutes: recipe.content.prepMinutes, cookMinutes: recipe.content.cookMinutes, source: recipe.content.source)
                 }.sorted { $0.id.uuidString < $1.id.uuidString }
                 return try JSONEncoder().encode(CookbookPage(entries: entries))
             }
