@@ -148,3 +148,7 @@ After this foundation and owner physical review: **External TestFlight preparati
 Future RecipeParser providers return the same editable RecipeDraft: Apple Intelligence / Foundation Models on supported devices first, Google Gemini through a protected Supabase Edge Function as free-tier-only fallback, then manual entry. Providers remain invisible to users. No paid billing/API cost without explicit owner approval. Native deterministic Swift performs future quantities/scaling/unit math, never AI. No AI SDK, keys, model, function or conversion engine is implemented here.
 
 Later roadmap sequencing, including final Personalized Taste Intelligence & Discovery, remains unchanged. See STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md for implementation and release gates.
+
+### V1 owner-acceptance correction: Food Bible UX 2.0
+
+The current correction cycle redesigns cookbook browsing, Choose Dish search/photography and the single RecipeDraft editor/reader. **Tickets / Want to Cook is deferred from V1 user-facing navigation and actions**, while its implemented backend/domain/data remain preserved for the later Recipe/Food Library phase above. The accepted reaction-informed score calibration stays frozen. Universal Links require an owner physical retest after the verified profile-fallback routing correction. This is not authorization to begin the Intelligent Recipe Engine; no provider, scaling, timers or full cooking mode is introduced. See STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md for current evidence.

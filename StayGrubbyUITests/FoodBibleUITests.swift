@@ -23,6 +23,8 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         let app=launch(["--test-light","--score-unlock-fixture","10"])
         XCTAssertTrue(app.buttons["bible-empty-add"].waitForExistence(timeout:8));XCTAssertFalse(app.buttons["bible-tickets"].exists);shot(app,"Cookbook empty light")
         app.buttons["bible-add"].tap();let search=app.textFields["choose-dish-search"];XCTAssertTrue(search.waitForExistence(timeout:8));shot(app,"Choose Dish photos and fallback")
+        search.tap();search.typeText("Sea Bass");XCTAssertTrue(app.buttons["Sea Bass with Corn Velouté"].waitForExistence(timeout:5));shot(app,"Choose Dish representative thumbnail");app.buttons["Clear search"].tap()
+        search.tap();search.typeText("main");XCTAssertGreaterThan(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-dish-'")).count,1);app.buttons["Clear search"].tap()
         search.tap();search.typeText("Matzo");XCTAssertTrue(app.buttons["Matzo Ball Soup"].waitForExistence(timeout:5));XCTAssertEqual(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-dish-'")).count,1)
         shot(app,"Choose Dish local search");app.buttons["Clear search"].tap();XCTAssertGreaterThan(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-dish-'")).count,1)
         search.tap();search.typeText("Matzo");app.buttons["Matzo Ball Soup"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8));XCTAssertEqual(app.textFields["recipe-edit-title"].value as? String,"Matzo Ball Soup");shot(app,"New recipe identity and quiet editor")
