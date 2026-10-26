@@ -141,6 +141,12 @@ Keep future planning canonical here. Specialized documents explain implementatio
 
 ## Current launch sequence
 
+**October 26, 2026:** The owner physically accepted Food Bible UX 2.0 and natural ingredient entry. The authorized Bulk Ingredients / Intelligent Recipe Engine V1 cycle now implements a local Paste Ingredients sheet and whole-text import into the same reviewed RecipeDraft/editor, with available Apple Foundation Models preferred and a protected, explicitly consented Gemini free-tier fallback. The quota migration/function are deployed; Gemini remains disabled pending secure owner-only key/unbilled-project confirmation, policy publication and physical iPhone 15 acceptance. This is not serving scaling, cooking mode or Personalized Taste Intelligence. See [current implementation and gates](STAYGRUBBY_INTELLIGENT_RECIPE_ENGINE_V1_REVIEW.md).
+
+Tickets remain dormant. Ranking/score calibration remains frozen. Physical Universal Links are owner-confirmed broken and intentionally deferred; remaining UGC moderation hardening remains a later external-beta/release gate. No distribution was authorized/performed in this cycle. The later phase ordering and final long-term Taste Intelligence phase remain unchanged.
+
+### Foundation chronology (historical)
+
 The Product Structure + Score Calibration cycle is owner accepted at `2770700`. **Food Bible Foundation** is the current authorized phase: Dish-linked derived cookbook, structured multi-component recipes, manual editor/reader and clearly separate Tickets lifecycle. This preserves ranking and reaction calibration. It does not implement the Intelligent Recipe Engine.
 
 After this foundation and owner physical review: **External TestFlight preparation + controlled beta**, then beta fixes / Release Candidate, then App Store 1.0. Intelligent Recipe Engine V1 is targeted during/after beta for 1.0 but is **not an App Store launch blocker**.

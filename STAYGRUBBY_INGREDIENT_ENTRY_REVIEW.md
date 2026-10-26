@@ -1,5 +1,7 @@
 # Natural ingredient entry — review
 
+Historical accepted checkpoint. The subsequent [Recipe Intelligence V1 review](STAYGRUBBY_INTELLIGENT_RECIPE_ENGINE_V1_REVIEW.md) supersedes only the dedicated keyboard Paste UX with the first-class Paste Ingredients sheet; this report records the original accepted implementation and evidence.
+
 Starting checkpoint: `0770688b97d49775d1fef41015da654a3b78b5e4`, clean `main` matching the existing origin tracking ref. Owner changes were preserved. This cycle follows physical acceptance of Food Bible UX 2.0 and changes ingredient entry only. Final checkpoint IDs and push outcome are reported at completion; the review's own final commit is available with `git log -1 --format=%H -- STAYGRUBBY_INGREDIENT_ENTRY_REVIEW.md`.
 
 ## Architecture and compatibility
