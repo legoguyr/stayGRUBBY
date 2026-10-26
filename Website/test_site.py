@@ -61,7 +61,7 @@ class SiteTests(unittest.TestCase):
         expected = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", canonical)
         expected = expected.replace("**", "").replace("#", "")
         self.assertEqual(" ".join("".join(doc.article_text).split()), " ".join(expected.split()))
-        self.assertIn("October 22, 2026", " ".join(doc.article_text))
+        self.assertIn("October 26, 2026", " ".join(doc.article_text))
 
     def test_build_refuses_unexpected_files_in_publish_directory(self):
         (self.output / "internal-notes.md").write_text("Synthetic internal fixture")
@@ -87,7 +87,12 @@ class SiteTests(unittest.TestCase):
                         self.assertIn(url.path, ["privacy@staygrubby.com", "support@staygrubby.com"])
                     elif url.scheme:
                         self.assertEqual(url.scheme, "https")
-                        self.assertEqual(url.netloc, "staygrubby.com")
+                        if url.netloc != "staygrubby.com":
+                            self.assertEqual(name, "privacy.html")
+                            self.assertEqual(key, "href")
+                            self.assertIn(value, ["https://ai.google.dev/gemini-api/terms", "https://policies.google.com/privacy"])
+                        else:
+                            self.assertEqual(url.netloc, "staygrubby.com")
                     else:
                         path = "index.html" if value == "/" else value.lstrip("/")
                         if "." not in Path(path).name:

@@ -131,8 +131,6 @@ private struct IngredientKeyboardAccessory: View {
     let done: () -> Void
     var body: some View {
         HStack {
-            PasteButton(payloadType:String.self,onPaste:paste).id(targetID).accessibilityLabel("Paste ingredient lines")
-                .accessibilityHint("Each pasted line becomes an ingredient in this section")
             Spacer()
             Button("Done",action:done).frame(minWidth:44,minHeight:44).accessibilityIdentifier("recipe-keyboard-done")
         }.padding(.horizontal,16).frame(maxWidth:.infinity,maxHeight:.infinity)

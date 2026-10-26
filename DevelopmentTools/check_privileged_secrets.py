@@ -7,6 +7,7 @@ patterns={
  'private_key':r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----',
  'supabase_secret':r'sb_secret_[A-Za-z0-9_-]{10,}',
  'github_token':r'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,})',
+ 'google_api_key':r'AIza[A-Za-z0-9_-]{35}',
  'aws_key':r'AKIA[A-Z0-9]{16}',
  'bearer':r'Bearer\s+eyJ[A-Za-z0-9._-]{40,}',
  'jwt':r'eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}',

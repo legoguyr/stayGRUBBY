@@ -8,6 +8,7 @@ nonisolated struct IngredientEntryDraft: Equatable {
         var baseline: RecipeIngredient
     }
     private(set) var lines: [UUID:Line] = [:]
+    private(set) var bulkOriginals: [UUID:String] = [:]
     var editingID: UUID?
     var hasChanges: Bool { lines.values.contains { $0.raw != $0.baselineText } }
     mutating func begin(_ row: RecipeIngredient) {
@@ -60,6 +61,15 @@ nonisolated struct IngredientEntryDraft: Equatable {
         }
         let blank = RecipeIngredient()
         content.components?[section].ingredients.insert(blank,at:nextIndex); begin(blank); return blank.id
+    }
+    mutating func appendBulk(_ raw: String, to sectionID: UUID, in content: inout RecipeContent) {
+        guard let section = content.components?.firstIndex(where: { $0.id == sectionID }) else { return }
+        for line in BulkIngredients.lines(raw) {
+            let row = IngredientParser.parse(line.text).ingredient(id: UUID(), order: content.components![section].ingredients.count)
+            content.components![section].ingredients.append(row)
+            lines[row.id] = Line(raw: line.text, baselineText: line.text, baseline: row)
+            bulkOriginals[row.id] = line.original
+        }
     }
     func prepared(_ content: RecipeContent) -> RecipeContent {
         var copy = content

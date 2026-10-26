@@ -9,6 +9,7 @@ struct RecipeEditor: View {
     @Query private var dishes: [Dish]
     let recipe: Recipe?
     var dishID: UUID?
+    let importReview: RecipeImportReview?
     let onSave: (Recipe) -> Void
     @State private var content: RecipeDraft
     private let original: RecipeDraft
@@ -20,11 +21,12 @@ struct RecipeEditor: View {
     @State private var discard = false
     @State private var deleteSection: UUID?
     @State private var ingredientEntry = IngredientEntryDraft()
+    @State private var bulkSection: RecipeBulkSection?
     @State private var ingredientDetails: RecipeIngredient?
     @State private var ingredientFocusedSection: UUID?
     @FocusState private var focus: RecipeField?
-    init(recipe: Recipe? = nil, dishID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, onSave: @escaping (Recipe) -> Void) {
-        self.recipe = recipe; self.dishID = dishID; self.onSave = onSave
+    init(recipe: Recipe? = nil, dishID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, onSave: @escaping (Recipe) -> Void) {
+        self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.onSave = onSave
         var value = draft ?? recipe?.content ?? RecipeContent(title: title, course: course, cuisine: cuisine)
         value.components = value.orderedComponents
         original = value; originallyShared = recipe?.visibility == "friends"
@@ -39,6 +41,12 @@ struct RecipeEditor: View {
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
+                    if let importReview {
+                        VStack(alignment: .leading, spacing: 12) {
+                            ForEach(importReview.warnings, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
+                            DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
+                        }.accessibilityIdentifier("recipe-import-review")
+                    }
                     identity
                     details
                     VStack(alignment: .leading, spacing: 16) {
@@ -60,7 +68,11 @@ struct RecipeEditor: View {
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
                 .navigationTitle(recipe == nil ? "Add Recipe" : "Edit Recipe").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if dirty { discard = true } else { dismiss() } }.disabled(saving) }
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") {
+                        let changed = dirty
+                        finishIngredient(); focus = nil
+                        if changed || dirty { discard = true } else { dismiss() }
+                    }.disabled(saving).accessibilityIdentifier("recipe-editor-cancel") }
                     ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { finishIngredient(); focus = nil; Task { await save() } }.disabled(saving || !ingredientEntry.isValid(content)).accessibilityIdentifier("recipe-save") }
                     ToolbarItemGroup(placement: .keyboard) {
                         if ingredientFocusedSection == nil { Spacer(); Button("Done") { focus = nil }.accessibilityIdentifier("recipe-keyboard-done") }
@@ -84,6 +96,8 @@ struct RecipeEditor: View {
                 }
                 ingredientEntry.forget(corrected.id)
             }
+        }.sheet(item: $bulkSection) { target in
+            PasteIngredientsView(capacity: max(0, 100 - parts.reduce(0) { $0 + $1.ingredients.count })) { raw in ingredientEntry.appendBulk(raw, to: target.id, in: &content) }
         }.interactiveDismissDisabled(dirty || saving)
             .alert("Discard your recipe changes?", isPresented: $discard) {
                 Button("Discard Changes", role: .destructive) { dismiss() }
@@ -158,6 +172,8 @@ struct RecipeEditor: View {
                 Divider()
             }
             ForEach(after) { row in ingredientDisplay(row, in: part); Divider() }
+            Button("Paste Ingredients", systemImage: "doc.on.clipboard") { finishIngredient(); focus = nil; bulkSection = RecipeBulkSection(id: part.id) }
+                .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("recipe-paste-ingredients")
             Button("Ingredient", systemImage: "plus") { addIngredient(part.id) }.buttonStyle(RecipeInlineAction()).accessibilityIdentifier("recipe-add-ingredient")
         }
     }
@@ -279,3 +295,5 @@ private struct RecipeRowActions: View {
 private struct RecipeInlineAction: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View { configuration.label.font(.body.weight(.medium)).frame(minHeight: 44).foregroundStyle(SGTheme.ColorToken.accent).opacity(configuration.isPressed ? 0.6 : 1) }
 }
+
+private struct RecipeBulkSection: Identifiable { let id: UUID }

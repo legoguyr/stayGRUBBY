@@ -207,6 +207,16 @@ nonisolated enum AccountDeletionProgress: Equatable {
         return data
     }
 
+    func performRecipeImport(_ raw: String) async throws -> Data {
+        try Task.checkCancellation()
+        guard case .resolved(let account) = state, let service = backend as? any RecipeImportBackend else { throw RecipeImportFailure.unavailable }
+        let current = generation
+        let data = try await service.importRecipeText(raw)
+        try Task.checkCancellation()
+        guard generation == current, case .resolved(let latest) = state, latest.accountID == account.accountID, latest.authUserID == account.authUserID else { throw AccountFoundationError.identityChanged }
+        return data
+    }
+
     func openResolvedLibrary() async throws -> AccountLibrarySnapshot {
         guard case .resolved(let account) = state, let service = backend as? any AccountLibraryBackend else { throw AccountFoundationError.accountNotResolved }
         let current = generation

@@ -1,6 +1,6 @@
 # StayGrubby Privacy Policy
 
-**Effective date: October 22, 2026**
+**Effective date: October 26, 2026**
 
 StayGrubby is a private cooking journal and personal ranking app with optional friends-only social sharing. This policy describes the implemented app, including social identity, friendships, explicit cooking posts, likes, comments, blocking and reporting. It also covers manually created Recipes, private Tickets (Want to Cook), recipe-to-cook provenance and app-first profile links. It does not describe planned community recipe-discovery, advertising or public-web cooking profiles.
 
@@ -45,6 +45,14 @@ Recipes enrich your existing cooked Dishes without creating another cooking or r
 Tickets are private account-owned saves of accessible Recipes, stored in Supabase so they are available again after sign-in or restore. Saving or removing a Ticket does not cook, rank or delete a Recipe. Starting Make This only reserves provenance; the existing cooking/ranking flow creates your actual private cook. A historical recipe snapshot and revision are retained with your completed cook so later recipe edits do not rewrite its source. When an accessible social cook has an accessible Recipe, Run It Back can retain that Recipe snapshot separately from the person whose cooking inspired you. No other person's scores, comparisons, notes or private cooking photos are copied.
 
 Removing a Recipe link removes that Dish from Food Bible without removing the saved Recipe or any Dish, cook, ranking, comparisons or photos. Deleting a Recipe removes its owned revision history and Tickets and nullifies the live Recipe reference in other people's recipe-cooking provenance. Their intentionally retained recipe snapshot and independently completed private cooking/ranking remain theirs. Turning sharing off or blocking a person prevents further normal recipe access; an already saved historical snapshot cannot be recalled from someone else's completed private history. Previously received copies and native exports cannot be remotely recalled.
+
+## Optional automatic Recipe formatting
+
+Paste Ingredients uses deterministic parsing on your device and does not send that ingredient list to an AI provider. Import Recipe can use Apple's on-device Foundation Models when the device and system model are available. If you allow cloud formatting and the on-device path is unavailable or fails, your pasted recipe text is sent through an authenticated Supabase Edge Function to Google Gemini for structured extraction. An ordinary iPhone 15 uses this cloud fallback when permission is enabled. You can leave cloud formatting off and continue in the manual editor.
+
+The configured Gemini service is restricted to an unbilled free-tier project. Under Google's unpaid-service terms, submitted content and responses may be used to improve Google's products and may be reviewed by humans. Do not submit confidential or personal information. See [Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms) and [Google's Privacy Policy](https://policies.google.com/privacy). StayGrubby does not claim cloud processing remains on device or that Google provides zero retention. Google processes network request information as part of providing this service.
+
+Automatic formatting can omit or misassign information. Results always open as an editable draft for your review; formatting itself never saves a Recipe, renames a Dish, changes ranking data or publishes content. StayGrubby does not intentionally log recipe prompts or responses in this function. The server retains only bounded usage counters for abuse prevention and free-tier limits; account-specific counters are removed on account deletion. The original pasted text stays in the current editing session for correction/fallback and is not separately stored by the import endpoint. Normal Recipe storage and sharing rules apply only after you tap Save. Infrastructure and AI providers may retain operational data under their own terms.
 
 ## Retention and deletion
 

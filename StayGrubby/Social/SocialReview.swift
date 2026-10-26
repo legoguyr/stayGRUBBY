@@ -292,6 +292,12 @@ struct SocialReviewModifier: ViewModifier {
                 if case .avatarUpload(let path, let bytes) = action { review.avatars[path] = bytes }
                 if case .avatarRemove(let paths) = action { for path in paths { review.avatars[path] = nil } }
                 return Data()
+            }).environment(\.recipeImportRequest, { raw in
+                guard ProcessInfo.processInfo.arguments.contains("--recipe-import-review") else { throw RecipeImportFailure.unavailable }
+                if ProcessInfo.processInfo.arguments.contains("--recipe-import-failure") { throw RecipeImportFailure.quota }
+                try await Task.sleep(for: .milliseconds(200))
+                try Task.checkCancellation()
+                return try JSONEncoder().encode(RecipeExtraction(title: "Soup", components: [.init(title: nil, ingredients: ["2 carrots", "stock"], steps: ["cook chicken until done"])]))
             }).environment(\.socialRequest, { endpoint, action, payload in try await review.request(endpoint, action, payload) })
                 .task {
                     review.reviewContext = context

@@ -55,7 +55,7 @@ struct FoodBibleView: View {
             .task { await load() }.refreshable { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
-            .sheet(isPresented: $choosing) { NavigationStack { CookedDishPicker(entries: entries) } }
+            .sheet(isPresented: $choosing) { RecipeCreationChoice(entries: entries) }
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
     private var searchHeader: some View {
@@ -116,6 +116,8 @@ private struct CookbookCard: View {
 }
 struct CookedDishPicker: View {
     var entries: [CookbookEntry] = []
+    var mode: RecipeCreationMode = .manual
+    var onComplete: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Dish.name) private var dishes: [Dish]
     @State private var query = ""
@@ -146,12 +148,13 @@ struct CookedDishPicker: View {
                 HStack { Image(systemName: "magnifyingglass"); TextField("Search dishes, cuisine, course", text: $query).accessibilityIdentifier("choose-dish-search"); if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44) } }.padding(14).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12)).padding(16).background(SGTheme.ColorToken.background)
             }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
-            .sheet(item: $selected) { dish in DishRecipeComposer(dish: dish) { dismiss() } }
+            .sheet(item: $selected) { dish in DishRecipeComposer(dish: dish, mode: mode) { if let onComplete { onComplete() } else { dismiss() } } }
     }
 }
 /// Resolve the authoritative current link once before creating; an existing Recipe opens directly.
 private struct DishRecipeComposer: View {
     let dish: Dish
+    var mode: RecipeCreationMode = .manual
     var done: () -> Void
     @Environment(\.socialRequest) private var request
     @State private var loaded = false
@@ -161,6 +164,7 @@ private struct DishRecipeComposer: View {
         Group {
             if loaded {
                 if let recipe { NavigationStack { RecipeDetailView(id: recipe.id, dishID: dish.id) } }
+                else if mode == .imported { RecipeImportView(dish: dish, done: done) }
                 else { RecipeEditor(dishID: dish.id, title: dish.name, course: dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { _ in done() } }
             } else { VStack(spacing: 20) { if failed { Text("Couldn’t check this dish’s recipe."); Button("Retry") { Task { await load() } } } else { ProgressView("Opening recipe") } }.padding() }
         }.task { await load() }
