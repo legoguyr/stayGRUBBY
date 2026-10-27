@@ -47,3 +47,14 @@ Deno.test("upstream diagnostic reasons are safe enums",async()=>{
   const events:Record<string,unknown>[]=[];const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{message}},{status})});const r=await f.run(request());const body=await r.json();assert(body.stage==="provider"&&body.providerStatus===status&&body.reason===reason);assert(!JSON.stringify(body).includes("synthetic-test-only")&&!JSON.stringify(events).includes("synthetic-test-only"));
  }
 });
+Deno.test("400 diagnostics identify only allowlisted status and request field",async()=>{
+ const events:Record<string,unknown>[]=[];
+ const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{status:"INVALID_ARGUMENT",message:'Invalid JSON payload. Unknown name "responseFormat" at generation_config. synthetic-test-only',details:[{fieldViolations:[{field:'generation_config.response_format'}],metadata:{key:'synthetic-test-only'}}]}},{status:400})});
+ const r=await f.run(request());assert(r.status===503);const event=events[0];
+ assert(event.googleStatus==="INVALID_ARGUMENT" && event.requestField==="response_format" && !JSON.stringify(events).includes("synthetic-test-only") && !JSON.stringify(await r.json()).includes("synthetic-test-only"));
+});
+Deno.test("structured key error is classified without returning details or unknown values",async()=>{
+ const events:Record<string,unknown>[]=[];
+ const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{status:"INVALID_ARGUMENT",message:"synthetic-test-only",details:[{reason:"API_KEY_INVALID",metadata:{key:"synthetic-test-only"}},{reason:"synthetic-test-only"}]}},{status:400})});
+ const r=await f.run(request());assert((await r.json()).reason==="invalid_key" && events[0].googleReason==="API_KEY_INVALID" && !JSON.stringify(events).includes("synthetic-test-only"));
+});
