@@ -1,0 +1,1346 @@
+{
+  "cases": [
+    {
+      "id": "creator-provided-simple",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Garlic Eggs. Makes 2 servings. Prep time 5 minutes. Cook time 3 minutes. Melt 1 tablespoon butter, add 2 cloves garlic and scramble 2 eggs.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "1 tbsp butter",
+              "2 cloves garlic",
+              "2 eggs"
+            ],
+            "steps": [
+              "Melt butter. Add garlic. Scramble eggs."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "provided",
+            "evidence": "Makes 2 servings"
+          },
+          "prepMinutes": {
+            "value": 5,
+            "origin": "provided",
+            "evidence": "Prep time 5 minutes"
+          },
+          "cookMinutes": {
+            "value": 3,
+            "origin": "provided",
+            "evidence": "Cook time 3 minutes"
+          },
+          "totalMinutes": {
+            "value": 8,
+            "origin": "derived",
+            "evidence": "Prep time 5 minutes. Cook time 3 minutes."
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "maximumComponents": 1,
+        "expectedYield": "2",
+        "expectedPrep": 5,
+        "expectedCook": 3,
+        "expectedTotal": 8,
+        "allergenKnown": [
+          "egg",
+          "milk"
+        ]
+      }
+    },
+    {
+      "id": "creator-out-of-order",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Top rice with Parmesan crisp. Boil rice. Parmesan crisp: bake Parmesan until crispy.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Rice",
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Top rice with Parmesan crisp."
+            ],
+            "after": [
+              1,
+              2
+            ]
+          },
+          {
+            "title": "Rice",
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Boil rice."
+            ],
+            "after": []
+          },
+          {
+            "title": "Parmesan crisp",
+            "ingredients": [
+              "Parmesan"
+            ],
+            "steps": [
+              "Bake Parmesan until crispy."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": "Top rice with Parmesan crisp. Boil rice. Parmesan crisp: bake Parmesan until crispy."
+          },
+          "prepMinutes": {
+            "value": 5,
+            "origin": "estimated",
+            "evidence": "Top rice with Parmesan crisp. Boil rice. Parmesan crisp: bake Parmesan until crispy."
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Top rice with Parmesan crisp. Boil rice. Parmesan crisp: bake Parmesan until crispy."
+          },
+          "totalMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "Top rice with Parmesan crisp. Boil rice. Parmesan crisp: bake Parmesan until crispy."
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedFirstStep": "Boil rice.",
+        "expectedLastStep": "Top rice with Parmesan crisp.",
+        "expectedTotal": 20
+      }
+    },
+    {
+      "id": "creator-duplicate-mentions",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Cook rice. Add salt. Add salt again.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice",
+              "salt",
+              "salt"
+            ],
+            "steps": [
+              "Cook rice. Add salt."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "ingredientCount": 2
+      }
+    },
+    {
+      "id": "creator-component-allocations",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Make dressing with 2 tbsp olive oil. Mix salad with 1 tbsp olive oil.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Dressing",
+            "ingredients": [
+              "2 tbsp olive oil"
+            ],
+            "steps": [
+              "Make dressing with olive oil."
+            ],
+            "after": []
+          },
+          {
+            "title": "Salad",
+            "ingredients": [
+              "1 tbsp olive oil"
+            ],
+            "steps": [
+              "Mix salad with olive oil."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "ingredientCount": 2,
+        "quantities": [
+          "2",
+          "1"
+        ]
+      }
+    },
+    {
+      "id": "creator-self-correction",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Scramble 3 eggs, no, 2 eggs.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 eggs"
+            ],
+            "steps": [
+              "Scramble 2 eggs."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "quantities": [
+          "2"
+        ]
+      }
+    },
+    {
+      "id": "creator-derived-serving",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Cookies. Makes 6 cookies, 2 per serving. Bake until crisp.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Bake until crisp."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "3 servings",
+            "origin": "derived",
+            "evidence": "6 cookies, 2 per serving"
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedYield": "3 servings"
+      }
+    },
+    {
+      "id": "creator-estimated-metadata",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Italian Pasta. Boil 200 g pasta. Blend tomatoes with 2 cloves garlic. Mix pasta with tomatoes.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "200 g pasta",
+              "tomatoes",
+              "2 cloves garlic"
+            ],
+            "steps": [
+              "Boil pasta. Blend tomatoes with garlic. Mix pasta with tomatoes."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": "Italian Pasta. Boil 200 g pasta. Blend tomatoes with 2 cloves garlic. Mix pasta with tomatoes."
+          },
+          "prepMinutes": {
+            "value": 10,
+            "origin": "estimated",
+            "evidence": "Italian Pasta. Boil 200 g pasta. Blend tomatoes with 2 cloves garlic. Mix pasta with tomatoes."
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Italian Pasta. Boil 200 g pasta. Blend tomatoes with 2 cloves garlic. Mix pasta with tomatoes."
+          },
+          "totalMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "Italian Pasta. Boil 200 g pasta. Blend tomatoes with 2 cloves garlic. Mix pasta with tomatoes."
+          },
+          "cuisine": {
+            "value": "Italian",
+            "origin": "provided",
+            "evidence": "Italian Pasta"
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedYield": "2",
+        "expectedTotal": 20,
+        "expectedCuisine": "Italian",
+        "unknownQuantity": true
+      }
+    },
+    {
+      "id": "creator-insufficient",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Seasoning.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "seasoning"
+            ],
+            "steps": [],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "unknownMetadata": true
+      }
+    },
+    {
+      "id": "creator-per-person",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Blanch 2 cups kale per person with olive oil.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 cups kale per person",
+              "olive oil"
+            ],
+            "steps": [
+              "Blanch kale with olive oil."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "unknownYield": true
+      }
+    },
+    {
+      "id": "creator-sauce-yield",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Blend quarter cup olive oil with 2 cloves garlic.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "¼ cup olive oil",
+              "2 cloves garlic"
+            ],
+            "steps": [
+              "Blend olive oil with garlic."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "About 1/3 cup",
+            "origin": "estimated",
+            "evidence": "Blend quarter cup olive oil with 2 cloves garlic."
+          },
+          "prepMinutes": {
+            "value": 5,
+            "origin": "estimated",
+            "evidence": "Blend quarter cup olive oil with 2 cloves garlic."
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": 5,
+            "origin": "derived",
+            "evidence": "Blend quarter cup olive oil with 2 cloves garlic."
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedYield": "About 1/3 cup",
+        "expectedPrep": 5
+      }
+    },
+    {
+      "id": "creator-explicit-timing-wins",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Cook time 2 minutes. Cook rice for 2 minutes.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Cook rice for 2 minutes."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "Cook time 2 minutes. Cook rice for 2 minutes."
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedCook": 2
+      }
+    },
+    {
+      "id": "creator-parallel-time",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Cook rice for 10 minutes. Meanwhile bake Parmesan for 5 minutes.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Rice",
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Cook rice for 10 minutes."
+            ],
+            "after": []
+          },
+          {
+            "title": "Parmesan",
+            "ingredients": [
+              "Parmesan"
+            ],
+            "steps": [
+              "Bake Parmesan for 5 minutes."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 10,
+            "origin": "derived",
+            "evidence": "Cook rice for 10 minutes. Meanwhile bake Parmesan for 5 minutes."
+          },
+          "totalMinutes": {
+            "value": 10,
+            "origin": "derived",
+            "evidence": "Cook rice for 10 minutes. Meanwhile bake Parmesan for 5 minutes."
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedCook": 10,
+        "expectedTotal": 10
+      }
+    },
+    {
+      "id": "creator-sequential-time",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Boil rice for 5 minutes then cook rice for 10 minutes.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Boil rice for 5 minutes, then cook rice for 10 minutes."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "derived",
+            "evidence": "Boil rice for 5 minutes then cook rice for 10 minutes."
+          },
+          "totalMinutes": {
+            "value": 15,
+            "origin": "derived",
+            "evidence": "Boil rice for 5 minutes then cook rice for 10 minutes."
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedCook": 15,
+        "expectedTotal": 15
+      }
+    },
+    {
+      "id": "creator-cuisine-obvious",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Italian pasta. Boil pasta.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "pasta"
+            ],
+            "steps": [
+              "Boil pasta."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": "Italian",
+            "origin": "provided",
+            "evidence": "Italian pasta"
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "expectedCuisine": "Italian"
+      }
+    },
+    {
+      "id": "creator-cuisine-ambiguous",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Rice bowl. Cook rice.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Cook rice."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "unknownCuisine": true
+      }
+    },
+    {
+      "id": "creator-cuisine-fusion",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Japanese Mexican rice bowl. Cook rice.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice"
+            ],
+            "steps": [
+              "Cook rice."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "unknownCuisine": true
+      }
+    },
+    {
+      "id": "creator-reject-hyper-specific",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Pasta. Boil pasta.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "pasta"
+            ],
+            "steps": [
+              "Boil pasta."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": "Neapolitan",
+            "origin": "estimated",
+            "evidence": "Pasta. Boil pasta."
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "unknownCuisine": true
+      }
+    },
+    {
+      "id": "creator-optional-alternative-allergens",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Add milk or soy milk if desired to pasta.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "milk or soy milk (optional)",
+              "pasta"
+            ],
+            "steps": [
+              "Add milk or soy milk to pasta, if desired."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": [
+            "milk",
+            "soy",
+            "peanuts"
+          ]
+        },
+        "yield": null
+      },
+      "checks": {
+        "allergenPossible": [
+          "milk",
+          "soy",
+          "wheat"
+        ],
+        "allergenNot": [
+          "peanuts"
+        ]
+      }
+    },
+    {
+      "id": "creator-component-allergens",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": "Blend tahini with yogurt. Boil pasta. Add sesame sauce.",
+      "contractVersion": 2,
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Sauce",
+            "ingredients": [
+              "tahini",
+              "yogurt"
+            ],
+            "steps": [
+              "Blend tahini with yogurt."
+            ],
+            "after": []
+          },
+          {
+            "title": "Pasta",
+            "ingredients": [
+              "pasta",
+              "sesame sauce"
+            ],
+            "steps": [
+              "Boil pasta. Add sesame sauce."
+            ],
+            "after": [
+              0
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "allergenKnown": [
+          "milk",
+          "sesame"
+        ],
+        "allergenPossible": [
+          "wheat"
+        ]
+      }
+    },
+    {
+      "id": "canonical-creator",
+      "phase": 9,
+      "origin": "synthetic-recipe-creator-contract-not-live-model-output",
+      "raw": null,
+      "contractVersion": 2,
+      "provider": {
+        "title": "Kale Pasta",
+        "source": null,
+        "components": [
+          {
+            "title": "Pasta",
+            "ingredients": [
+              "pasta",
+              "1 tbsp cold, cubed butter"
+            ],
+            "steps": [
+              "Boil pasta and add to the sauce.",
+              "Add 1 tablespoon cold, cubed butter and toss until glossy.",
+              "Top with kale chips and Parmesan crisp."
+            ],
+            "after": [
+              1,
+              2,
+              3
+            ]
+          },
+          {
+            "title": "Kale sauce",
+            "ingredients": [
+              "2 cups kale per person",
+              "¼ cup olive oil",
+              "¼ cup Parmesan cheese",
+              "2 cloves garlic",
+              "pinch salt",
+              "a little chili oil or clabbering chilies or red pepper flakes (optional)"
+            ],
+            "steps": [
+              "Boil water and season with salt. Add kale and cook until it starts to wet.",
+              "Transfer to ice water. Stir until cooled, then drain and squeeze out as much water as possible.",
+              "Add kale to a blender with olive oil, Parmesan cheese, garlic, salt, and a little chili oil or clabbering chilies or red pepper flakes, if desired. Blend until smooth.",
+              "Heat the sauce in a pan."
+            ],
+            "after": []
+          },
+          {
+            "title": "Parmesan crisp",
+            "ingredients": [
+              "fresh Parmesan"
+            ],
+            "steps": [
+              "Put parchment paper on a baking sheet and shave fresh Parmesan on it.",
+              "Bake for about 5 minutes until crispy."
+            ],
+            "after": []
+          },
+          {
+            "title": "Kale chips",
+            "ingredients": [
+              "some kale",
+              "some olive oil",
+              "salt",
+              "pepper"
+            ],
+            "steps": [
+              "Top kale with some olive oil, salt, and pepper. Bake until crispy."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": "quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic"
+          },
+          "prepMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Add to ice water. Move it around cool it down squeeze out all the water."
+          },
+          "cookMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "boil pasta"
+          },
+          "totalMinutes": {
+            "value": 30,
+            "origin": "estimated",
+            "evidence": "Parmesan crisp is done by taking a baking sheet"
+          },
+          "cuisine": {
+            "value": "Italian",
+            "origin": "estimated",
+            "evidence": "pasta add pasta to the sauce"
+          },
+          "allergenHints": []
+        },
+        "yield": null
+      },
+      "checks": {
+        "canonical": "RecipeImportFailure.json",
+        "minimumComponents": 4,
+        "expectedLastStep": "Top with kale chips and Parmesan crisp.",
+        "expectedYield": "2",
+        "expectedPrep": 15,
+        "expectedCook": 20,
+        "expectedTotal": 30,
+        "expectedCuisine": "Italian",
+        "preserve": "clabbering chilies",
+        "forbid": "Calabrian",
+        "unknownQuantity": true,
+        "allergenKnown": [
+          "milk"
+        ],
+        "allergenPossible": [
+          "wheat"
+        ]
+      }
+    },
+    {
+      "id": "creator-live-apple-basic",
+      "phase": 9,
+      "origin": "captured-local-Apple-Foundation-Models-final-flat-prompt-2026-10-27",
+      "raw": "Garlic Eggs. Makes 2 servings. Prep time 5 minutes. Cook time 3 minutes. Melt 1 tablespoon butter, add 2 cloves garlic and scramble 2 eggs.",
+      "provider": {
+        "components": [
+          {
+            "after": [],
+            "ingredients": [
+              "1 tablespoon butter",
+              "2 cloves garlic",
+              "2 eggs"
+            ],
+            "steps": [
+              "Melt 1 tablespoon butter.",
+              "Add 2 cloves garlic and scramble 2 eggs."
+            ],
+            "title": "Garlic Eggs"
+          }
+        ],
+        "metadata": {
+          "allergenHints": [],
+          "cookMinutes": {
+            "evidence": null,
+            "origin": "provided",
+            "value": null
+          },
+          "cuisine": {
+            "evidence": null,
+            "origin": "unknown",
+            "value": null
+          },
+          "prepMinutes": {
+            "evidence": null,
+            "origin": "provided",
+            "value": null
+          },
+          "totalMinutes": {
+            "evidence": null,
+            "origin": "provided",
+            "value": null
+          },
+          "yield": {
+            "evidence": null,
+            "origin": "provided",
+            "value": null
+          }
+        },
+        "source": null,
+        "title": "Garlic Eggs",
+        "yield": null
+      },
+      "contractVersion": 2,
+      "checks": {
+        "maximumComponents": 1,
+        "expectedYield": "2",
+        "expectedPrep": 5,
+        "expectedCook": 3,
+        "expectedTotal": 8,
+        "ingredientCount": 3,
+        "allergenKnown": [
+          "egg",
+          "milk"
+        ],
+        "allergenNot": [
+          "peanuts",
+          "treeNuts",
+          "sesame",
+          "wheat",
+          "soy",
+          "fish",
+          "shellfish"
+        ]
+      }
+    }
+  ]
+}

@@ -13,19 +13,19 @@ struct RecipeImportView: View {
     @State private var operation: Task<Void,Never>?
     @State private var generation = UUID()
     @State private var discard = false
-    private var appleAvailable: Bool { AppleRecipeIntelligenceProvider().isAvailable }
+    private var appleAvailable: Bool { AppleRecipeIntelligenceProvider().isAvailable && (raw.isEmpty || RecipeCreatorContract.onDeviceSuitable(raw)) }
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Paste a recipe. StayGrubby will organize it into ingredients, sections and instructions for you to review.").foregroundStyle(.secondary)
+                    Text("Describe how you make it. StayGrubby will create a recipe with organized ingredients, a cooking plan and suggested details for you to review.").foregroundStyle(.secondary)
                     TextEditor(text: $raw).font(.body).frame(minHeight: 260).padding(8)
                         .scrollContentBackground(.hidden).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12))
                         .accessibilityLabel("Recipe text").accessibilityIdentifier("recipe-import-text").disabled(formatting)
                     Toggle("Allow cloud formatting if needed", isOn: $cloudConsent).accessibilityIdentifier("recipe-import-consent").disabled(formatting)
                     Text("We try on-device formatting first when available. With your permission, your recipe text may be sent through Supabase to Google Gemini. Google’s free service may use it to improve its products and may have human reviewers. Avoid confidential or personal information. Nothing is saved until you review and tap Save.")
                         .font(.footnote).foregroundStyle(.secondary)
-                    if !appleAvailable && !cloudConsent { Text("This device needs cloud permission for automatic formatting. You can always continue manually.").font(.footnote) }
+                    if !appleAvailable && !cloudConsent { Text("Cloud permission is needed to create this recipe automatically. You can always continue manually.").font(.footnote) }
                     if formatting {
                         ProgressView("Formatting Recipe…").accessibilityIdentifier("recipe-import-progress")
                         Button("Stop Formatting") { cancel() }.frame(minHeight: 44)

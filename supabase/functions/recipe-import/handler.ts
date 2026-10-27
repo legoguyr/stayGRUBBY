@@ -1,4 +1,5 @@
-import { MODEL, INSTRUCTIONS, schema, validationReport } from "./contract.ts";
+import { construct, effectiveSource, cuisines, allergens } from "./creator.ts";
+import { MODEL, INSTRUCTIONS, LEGACY_INSTRUCTIONS, schema, creatorSchema, validationReport } from "./contract.ts";
 import { preserveEditorialFacts } from "./editorial.ts";
 import { reconcile } from "./reconcile.ts";
 export type Dependencies = {
@@ -66,8 +67,10 @@ export function handler(d:Dependencies) {
    if(!req.headers.get("content-type")?.startsWith("application/json"))return fail(400,"invalid_request");
    let body;
    try {body=JSON.parse(await boundedText(req,40_000));}catch{return fail(413,"invalid_or_oversized_input");}
-   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || !body.text.trim())return fail(400,"invalid_request");
+   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&body.contractVersion!==2) || !body.text.trim())return fail(400,"invalid_request");
    if([...body.text].length>12_000 || new TextEncoder().encode(body.text).length>32_000)return fail(413,"input_too_long");
+   const creator=body.contractVersion===2;
+   const source=creator?effectiveSource(body.text):body.text;
    // Owner confirmed the dedicated project has no billing. No recurring timestamp gate.
    stage="configuration";
    if(!d.key)return fail(503,"not_configured");
@@ -78,7 +81,7 @@ export function handler(d:Dependencies) {
    try {
     stage="provider";const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
      method:"POST",signal:controller.signal,headers:{"content-type":"application/json","x-goog-api-key":d.key},
-     body:JSON.stringify({systemInstruction:{parts:[{text:INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema}}}}),
+     body:JSON.stringify({systemInstruction:{parts:[{text:creator?INSTRUCTIONS+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?creatorSchema:schema}}}}),
     });
     if(!upstream.ok){
      let error:unknown;try{error=JSON.parse(await boundedText(upstream,16_000));}catch{/* Never return/log raw upstream bytes. */}
@@ -93,15 +96,20 @@ export function handler(d:Dependencies) {
     if(new TextEncoder().encode(json).length>96_000)return fail(422,"invalid_recipe");
     stage="validation";let extraction;
     try{extraction=JSON.parse(json);}catch{return fail(422,"invalid_recipe",200,"structured_json");}
-    const validation=validationReport(extraction,body.text);
+    const validation=validationReport(extraction,source);
     let recoveredFields:string[]=[],recoveredCount=0;
     if(!validation.valid){
-     const restored=reconcile(extraction,body.text);
+     const restored=reconcile(extraction,source);
      if(!restored)return fail(422,"invalid_recipe",200,validation.issues[0]?.rule,{validationIssues:validation.issues,structure:validation.structure});
      extraction=restored.extraction;recoveredFields=restored.fields;recoveredCount=restored.count;
     }
-    const locked=preserveEditorialFacts(extraction,body.text);
-    if(!locked||!validationReport(locked,body.text).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
+    if(creator){
+     if(!extraction.metadata)return fail(422,"invalid_recipe",200,"creator_metadata");
+     const built=construct(extraction,source);if(!built)return fail(422,"invalid_recipe",200,"recipe_construction");
+     extraction=built;
+    }
+    const locked=preserveEditorialFacts(extraction,source);
+    if(!locked||!validationReport(locked,source).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
     extraction=locked;
     stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
     return Response.json(extraction,{headers:headers()});

@@ -20,6 +20,16 @@ nonisolated enum RecipeEditorialEvidence {
     struct Field { var part: Int; var index: Int; var method: Bool }
     static func preserve(_ value: RecipeExtraction, raw: String) -> RecipeExtraction? {
         var copy = value
+        var metadataTokens: [String] = []
+        var metadataEvidence: [String] = []
+        if let m = copy.metadata {
+            if m.yield.origin == .provided { metadataTokens += RecipeSourceEvidence.tokens(m.yield.value ?? "") }
+            if m.yield.origin == .derived { metadataTokens += RecipeSourceEvidence.tokens(m.yield.evidence ?? "") }
+            for p in [m.prepMinutes,m.cookMinutes,m.totalMinutes] where p.origin == .provided || p.origin == .derived {
+                metadataTokens += RecipeSourceEvidence.tokens(p.origin == .derived ? p.evidence ?? "" : String(p.value ?? 0))
+                if let evidence = p.evidence { metadataEvidence.append(evidence) }
+            }
+        }
         let fields = copy.components.enumerated().flatMap { p, c in
             c.ingredients.indices.map { Field(part: p, index: $0, method: false) } + c.steps.indices.map { Field(part: p, index: $0, method: true) }
         }
@@ -38,7 +48,10 @@ nonisolated enum RecipeEditorialEvidence {
                 markerTokens.allSatisfy { RecipeSourceEvidence.editorialTokens(get(f), raw: raw, kind: .step).contains($0) } &&
                 (marker.range(of: "some|about|approximately", options: [.regularExpression,.caseInsensitive]) == nil || get(f).range(of: "\\b" + (marker.lowercased() == "about" || marker.lowercased() == "approximately" ? "(?:about|approximately)" : NSRegularExpression.escapedPattern(for: marker)) + "\\b", options: [.regularExpression,.caseInsensitive]) != nil)
             }) { continue }
-            guard let f = candidates.first else { return nil }
+            guard let f = candidates.first else {
+                if lock.method && metadataEvidence.contains(where: { RecipeSourceEvidence.tokens($0).contains(identity[0]) && $0.lowercased().contains(marker.lowercased()) }) { continue }
+                return nil
+            }
             if let prefix = lock.prefix {
                 let pattern = "\\b" + lock.identity.split(separator: " ").map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: "\\s+") + "\\b"
                 if get(f).range(of: pattern, options: [.regularExpression,.caseInsensitive]) != nil {
@@ -56,7 +69,7 @@ nonisolated enum RecipeEditorialEvidence {
         let output = RecipeSourceEvidence.editorialTokens(fields.map(get).joined(separator: "\n"), raw: raw, kind: .step)
         for word in RecipeSourceEvidence.tokens(raw) {
             let numeric = word.hasPrefix("n") && word.dropFirst().first?.isNumber == true
-            if (numeric || ["cold","cubed","fresh","minced","chopped","grated","peeled","trimmed","softened"].contains(word)) && !output.contains(word) { return nil }
+            if (numeric || ["cold","cubed","fresh","minced","chopped","grated","peeled","trimmed","softened"].contains(word)) && !output.contains(word) && !(numeric && metadataTokens.contains(word)) { return nil }
         }
         let separator = #"[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b"#
         let clauses = raw.replacingOccurrences(of: separator, with: "\n", options: [.regularExpression,.caseInsensitive]).components(separatedBy: "\n")

@@ -1,6 +1,6 @@
 {
-  "id": "canonical-editorial",
-  "phase": 8,
+  "id": "canonical-creator",
+  "phase": 9,
   "raw": "Blanche 2 cups of kale per person going to need ice water boil water season with salt add kale cook until it starts to wet. Add to ice water. Move it around cool it down squeeze out all the water. Add it to a blender with a quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic, pinch of salt and a little chili oil or clabbering chilies or red pepper flakes if you want spice blend till smooth add to a pan heat up boil pasta add pasta to the sauce mix with 1 tablespoon of cubed butter cold butter until glossy add to a pan and top with kale chips and Parmesan crisp Parmesan crisp is done by taking a baking sheet, put in a piece of parchment paper on it and shaving fresh Parmesan on it cooking the oven for about five minutes until it’s crispy. Kale chips are going to be take some kale top with some olive oil, salt and pepper put in the oven till crispy.",
   "extraction": {
     "title": "Kale Pasta",
@@ -14,18 +14,15 @@
           "¼ cup Parmesan cheese",
           "2 cloves garlic",
           "pinch salt",
-          "a little chili oil or clabbering chilies or red pepper flakes (optional)",
-          "pasta",
-          "1 tbsp cold, cubed butter"
+          "a little chili oil or clabbering chilies or red pepper flakes (optional)"
         ],
         "steps": [
           "Boil water and season with salt. Add kale and cook until it starts to wet.",
           "Transfer to ice water. Stir until cooled, then drain and squeeze out as much water as possible.",
           "Add kale to a blender with olive oil, Parmesan cheese, garlic, salt, and a little chili oil or clabbering chilies or red pepper flakes, if desired. Blend until smooth.",
-          "Heat the sauce in a pan. Boil pasta and add to the sauce.",
-          "Add 1 tablespoon cold, cubed butter and toss until glossy.",
-          "Top with kale chips and Parmesan crisp."
-        ]
+          "Heat the sauce in a pan."
+        ],
+        "after": []
       },
       {
         "title": "Parmesan crisp",
@@ -35,7 +32,8 @@
         "steps": [
           "Put parchment paper on a baking sheet and shave fresh Parmesan on it.",
           "Bake for about 5 minutes until crispy."
-        ]
+        ],
+        "after": []
       },
       {
         "title": "Kale chips",
@@ -47,23 +45,70 @@
         ],
         "steps": [
           "Top kale with some olive oil, salt, and pepper. Bake until crispy."
-        ]
+        ],
+        "after": []
+      },
+      {
+        "title": "Pasta",
+        "ingredients": [
+          "pasta",
+          "1 tbsp cold, cubed butter"
+        ],
+        "steps": [
+          "Boil pasta and add to the sauce.",
+          "Add 1 tablespoon cold, cubed butter and toss until glossy.",
+          "Top with kale chips and Parmesan crisp."
+        ],
+        "after": []
       }
     ],
+    "metadata": {
+      "yield": {
+        "value": "2",
+        "origin": "estimated",
+        "evidence": "quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic"
+      },
+      "prepMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Add to ice water. Move it around cool it down squeeze out all the water."
+      },
+      "cookMinutes": {
+        "value": 20,
+        "origin": "estimated",
+        "evidence": "boil pasta"
+      },
+      "totalMinutes": {
+        "value": 30,
+        "origin": "estimated",
+        "evidence": "Parmesan crisp is done by taking a baking sheet"
+      },
+      "cuisine": {
+        "value": "Italian",
+        "origin": "estimated",
+        "evidence": "pasta add pasta to the sauce"
+      },
+      "allergenHints": []
+    },
     "yield": null
   },
   "checks": {
     "canonical": "RecipeImportFailure.json",
-    "editorial": true,
-    "minimumComponents": 3,
+    "minimumComponents": 4,
+    "expectedLastStep": "Top with kale chips and Parmesan crisp.",
+    "expectedYield": "2",
+    "expectedPrep": 15,
+    "expectedCook": 20,
+    "expectedTotal": 30,
+    "expectedCuisine": "Italian",
     "preserve": "clabbering chilies",
     "forbid": "Calabrian",
     "unknownQuantity": true,
-    "maximumStepWords": 35,
-    "absent": [
-      "going to",
-      "done by taking",
-      "cold butter cold butter"
+    "allergenKnown": [
+      "milk"
+    ],
+    "allergenPossible": [
+      "wheat"
     ]
   }
 }

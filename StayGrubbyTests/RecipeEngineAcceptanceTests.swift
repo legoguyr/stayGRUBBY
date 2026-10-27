@@ -17,6 +17,19 @@ import Testing
         var quantities: [String]?
         var minimumComponents: Int?
         var preserve: String?
+        var expectedYield: String?
+        var expectedPrep: Int?
+        var expectedCook: Int?
+        var expectedTotal: Int?
+        var expectedCuisine: String?
+        var allergenKnown: [String]?
+        var allergenPossible: [String]?
+        var allergenNot: [String]?
+        var unknownMetadata: Bool?
+        var ingredientCount: Int?
+        var maximumComponents: Int?
+        var expectedFirstStep: String?
+        var expectedLastStep: String?
         var forbid: String?
     }
     private func data(_ name: String) throws -> Data {
@@ -27,7 +40,7 @@ import Testing
     private func cases() throws -> [Case] { try JSONDecoder().decode(Suite.self, from: data("RecipeEngineServerOutputs")).cases }
     @Test func allServerPhasesDecodeNormalizeAndRemainEditorCompatible() throws {
         let cases = try cases()
-        #expect(Set(cases.map(\.phase)) == Set(0...8))
+        #expect(Set(cases.map(\.phase)) == Set(0...9))
         for c in cases {
             let wire = try JSONEncoder().encode(c.extraction)
             let decoded = try RecipeImportValidation.decode(wire)
@@ -36,7 +49,7 @@ import Testing
             let saved = try JSONEncoder().encode(result.draft)
             #expect(saved.count <= 40_000)
             #expect(try JSONDecoder().decode(RecipeContent.self, from: saved) == result.draft)
-            #expect(result.draft.prepMinutes == nil && result.draft.cookMinutes == nil)
+            if c.phase < 9 { #expect(result.draft.prepMinutes == nil && result.draft.cookMinutes == nil) }
             if let minimum = c.checks.minimumComponents { #expect(result.draft.components!.count >= minimum) }
             if c.checks.unknownQuantity == true { #expect(result.draft.components!.flatMap(\.ingredients).contains { $0.quantity.isEmpty }) }
             if let amounts = c.checks.quantities {
@@ -100,6 +113,53 @@ import Testing
             ("Add cold cubed butter.", RecipeExtraction(components: [.init(ingredients: ["butter"], steps: ["Add butter."])])),
             ("Add oil or uncertain chilies or pepper.", RecipeExtraction(components: [.init(ingredients: ["oil", "pepper"], steps: ["Add oil and pepper."])]))
         ] { #expect(RecipeEditorialEvidence.preserve(value, raw: raw) == nil) }
+    }
+    @Test func creatorConstructionMetadataAndAllergensSurviveEditorAndSave() throws {
+        for c in try cases().filter({ $0.phase == 9 }) {
+            let result = try RecipeImportValidation.review(c.extraction, raw: c.raw, dishTitle: "Existing Dish", provider: "Shared Creator")
+            let d = result.draft
+            if let v = c.checks.expectedYield { #expect(d.yield == v, "\(c.id): yield") }
+            if let v = c.checks.expectedPrep { #expect(d.prepMinutes == v, "\(c.id): prep") }
+            if let v = c.checks.expectedCook { #expect(d.cookMinutes == v, "\(c.id): cook") }
+            if let v = c.checks.expectedTotal { #expect(d.totalMinutes == v, "\(c.id): total") }
+            if let v = c.checks.expectedCuisine { #expect(d.cuisine == v, "\(c.id): cuisine") }
+            if let n = c.checks.ingredientCount { #expect(d.components!.flatMap(\.ingredients).count == n) }
+            if let n = c.checks.maximumComponents { #expect(d.components!.count <= n) }
+            if let first = c.checks.expectedFirstStep { #expect(d.steps.first == first) }
+            if let last = c.checks.expectedLastStep { #expect(d.steps.last == last) }
+            for code in c.checks.allergenKnown ?? [] { #expect(d.allergens!.contains.contains(code), "\(c.id): missing known \(code)") }
+            for code in c.checks.allergenPossible ?? [] { #expect(d.allergens!.possible.contains(code), "\(c.id): missing possible \(code)") }
+            for code in c.checks.allergenNot ?? [] { #expect(!d.allergens!.contains.contains(code) && !d.allergens!.possible.contains(code), "\(c.id): unsupported \(code)") }
+            #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(d)) == d)
+            #expect(d.metadataOrigins?["yield"] == c.extraction.metadata!.yield.origin.rawValue)
+        }
+    }
+    @Test func creatorProvenanceDistinguishesExplicitAndEstimatedAndHonorsHours() {
+        let raw = "Serves 4. Prep time 10 minutes. Cook time 1 hour. Boil rice."
+        let m = RecipeCreatorValidation.normalize(.init(yield: .init(value: "8", origin: .estimated, evidence: raw), prepMinutes: .init(), cookMinutes: .init(value: 20, origin: .estimated, evidence: raw)), raw: raw)
+        #expect(m.yield.value == "4" && m.yield.origin == .provided)
+        #expect(m.prepMinutes.value == 10 && m.cookMinutes.value == 60)
+        let loaf = RecipeCreatorValidation.normalize(.init(), raw: "Makes 1 loaf.")
+        #expect(loaf.yield.value == "1 loaf" && loaf.yield.origin == .provided)
+        let fractional = RecipeCreatorValidation.normalize(.init(), raw: "Prep time 1.5 minutes.")
+        #expect(fractional.prepMinutes.value == 2 && fractional.prepMinutes.origin == .derived)
+        let estimate = RecipeCreatorValidation.normalize(.init(yield: .init(value: "2", origin: .estimated, evidence: "Boil pasta")), raw: "Boil pasta")
+        #expect(estimate.yield.origin == .estimated && estimate.yield.value == "2")
+    }
+    @Test func deterministicAllergensNeverMakeReligiousOrFreeOfClaims() {
+        let a = RecipeAllergenAssessment.derive(["Parmesan", "tahini", "mayonnaise", "pasta", "peanuts or cashews (optional)", "stock"], hints: ["fish", "kosher"])
+        #expect(Set(a.contains) == Set(["milk","sesame","egg"]))
+        #expect(Set(a.possible) == Set(["wheat","peanuts","treeNuts"]))
+        #expect(a.reviewIngredients.contains("stock"))
+        #expect(!RecipeAllergenAssessment.safetyText.contains("safe for"))
+    }
+    @Test func onDeviceSuitabilityUsesObservedCapabilityAndCloudCooldownIsFriendly() {
+        #expect(RecipeCreatorContract.onDeviceSuitable("Scramble 2 eggs in butter."))
+        #expect(!RecipeCreatorContract.onDeviceSuitable(String(repeating: "Cook rice. ", count: 50)))
+        #expect(!RecipeCreatorContract.onDeviceSuitable("Prepare a crisp separately, then top rice with the crisp."))
+        #expect(RecipeImportFailure.quota.message.contains("cooldown"))
+        for word in ["Gemini","Google","API","quota"] { #expect(!RecipeImportFailure.quota.message.contains(word)) }
+        #expect(RecipeImportFailure.server(status: 429, data: Data(#"{"code":"provider_quota"}"#.utf8)) == .quota)
     }
     @Test func quantityUnitAliasesAreEquivalentWithoutMathOrInference() {
         for (a,b) in [("quarter cup olive oil","0.25 cup olive oil"),("half cup stock","1/2 cup stock"),("two cloves garlic","2 cloves garlic"),("one tablespoon butter","1 tbsp butter"),("180 degrees Fahrenheit","180 °F"),("180 degrees Celsius","180 °C"),("2 ounces flour","2 oz flour"),("1 pound rice","1 lb rice")] {

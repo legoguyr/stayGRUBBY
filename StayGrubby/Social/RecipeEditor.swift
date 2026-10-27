@@ -63,6 +63,7 @@ struct RecipeEditor: View {
                     }
                     Divider()
                     attribution
+                    allergenDetails
                     if failed { Label("Couldn’t save. Your draft is safe here. Check your connection and cooking sync, then try Save again. If it changed elsewhere, keep your draft while you review that change.", systemImage: "wifi.exclamationmark").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
                 }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
@@ -87,6 +88,14 @@ struct RecipeEditor: View {
                     }
                 }
             }
+        }.onChange(of: content.yield) { _, _ in content.metadataOrigins?.removeValue(forKey: "yield") }
+        .onChange(of: content.prepMinutes) { _, _ in content.metadataOrigins?.removeValue(forKey: "prepMinutes") }
+        .onChange(of: content.cookMinutes) { _, _ in content.metadataOrigins?.removeValue(forKey: "cookMinutes") }
+        .onChange(of: content.elapsedMinutes) { _, _ in content.metadataOrigins?.removeValue(forKey: "totalMinutes") }
+        .onChange(of: content.cuisine) { _, _ in content.metadataOrigins?.removeValue(forKey: "cuisine") }
+        .onChange(of: content.components) { before, after in
+            let old = before?.flatMap(\.ingredients).map(\.displayText), next = after?.flatMap(\.ingredients).map(\.displayText)
+            if old != next { content.allergens = RecipeAllergenAssessment.derive(next ?? []) }
         }.onChange(of: focus) { previous, next in
             if next != nil { finishIngredient() }
         }.sheet(item: $ingredientDetails) { row in
@@ -114,15 +123,42 @@ struct RecipeEditor: View {
             TextField("A little about this recipe…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
         }
     }
-    private var details: some View {
+    @ViewBuilder private var details: some View {
         Group {
             if textSize.isAccessibilitySize { VStack(alignment: .leading, spacing: 16) { yieldField; prepField; cookField } }
             else { HStack(alignment: .top, spacing: 20) { yieldField; prepField; cookField } }
         }.padding(.vertical, 8)
+        totalField
     }
-    private var yieldField: some View { VStack(alignment: .leading, spacing: 6) { Text("SERVES").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
+    private var yieldField: some View { VStack(alignment: .leading, spacing: 6) { Text("YIELD").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
     private var prepField: some View { VStack(alignment: .leading, spacing: 6) { Text("PREP · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.prepMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Preparation time in minutes") }.frame(minWidth: 75) }
     private var cookField: some View { VStack(alignment: .leading, spacing: 6) { Text("COOK · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.cookMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Cooking time in minutes") }.frame(minWidth: 75) }
+    private var totalField: some View { VStack(alignment: .leading, spacing: 6) {
+        Text("TOTAL · MIN").font(.caption.bold()).foregroundStyle(.secondary)
+        TextField("—", value: $content.elapsedMinutes, format: .number).keyboardType(.numberPad).accessibilityIdentifier("recipe-total-minutes").accessibilityLabel("Total elapsed time in minutes")
+        if content.metadataOrigins?.values.contains("estimated") == true { Text("Suggested servings and times may be estimates. Adjust them for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
+    } }
+    private var allergenDetails: some View {
+        DisclosureGroup("Allergens · review ingredients") {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
+                ForEach(Allergen.allCases) { allergen in
+                    Picker(allergen.label, selection: Binding(get: {
+                        if content.allergens?.contains.contains(allergen.rawValue) == true { return "contains" }
+                        if content.allergens?.possible.contains(allergen.rawValue) == true { return "possible" }
+                        return "unmarked"
+                    }, set: { state in
+                        var value = content.allergens ?? .init()
+                        value.contains.removeAll { $0 == allergen.rawValue }; value.possible.removeAll { $0 == allergen.rawValue }
+                        if state == "contains" { value.contains.append(allergen.rawValue) }
+                        if state == "possible" { value.possible.append(allergen.rawValue) }
+                        content.allergens = value
+                    })) { Text("Not marked").tag("unmarked"); Text("Contains").tag("contains"); Text("Possible").tag("possible") }
+                }
+                if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(.footnote).foregroundStyle(.secondary) }
+            }.padding(.top, 12)
+        }.accessibilityIdentifier("recipe-allergen-review")
+    }
     private func sectionHeading(_ part: RecipeComponent) -> some View {
         HStack(alignment: .top) {
             if parts.count > 1 {

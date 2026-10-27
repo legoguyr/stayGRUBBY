@@ -15,6 +15,9 @@ export function sourceLocks(raw:string):Lock[] {
 }
 export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|null {
  const copy=structuredClone(value);
+ const proposals=copy.metadata?Object.values(copy.metadata).filter((p:any)=>p&&typeof p==='object'&&!Array.isArray(p)&&['provided','derived'].includes(p.origin)):[];
+ const metadataTokens=proposals.flatMap((p:any)=>tokens(p.origin==='derived'?p.evidence??'':String(p.value??'')));
+
  const fields=copy.components.flatMap(p=>[...p.ingredients.map((_,i)=>({get:()=>p.ingredients[i],set:(s:string)=>p.ingredients[i]=s,method:false})),...p.steps.map((_,i)=>({get:()=>p.steps[i],set:(s:string)=>p.steps[i]=s,method:true}))]);
  const locks=sourceLocks(raw);if(locks.length>200)return null; // Fail closed; never silently truncate source obligations.
  for(const lock of locks){
@@ -27,7 +30,9 @@ export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|n
   const marker=lock.prefix??lock.suffix!;
   const markerTokens=editorialTokens(marker,raw,'step');
   if(candidates.some(f=>markerTokens.every(w=>editorialTokens(f.get(),raw,'step').includes(w))&&(!/some|about|approximately/i.test(marker)||new RegExp(`\\b${/about|approximately/i.test(marker)?'(?:about|approximately)':marker}\\b`,'i').test(f.get()))))continue;
-  const target=candidates[0];if(!target)return null;
+  const target=candidates[0];
+  if(!target&&lock.method&&proposals.some((p:any)=>tokens(p.evidence??'').includes(identity[0])&&(p.evidence??'').toLowerCase().includes(marker.toLowerCase())))continue;
+  if(!target)return null;
   // Restore ONLY a supplied qualifier; keep the provider's edited sentence.
   if(lock.prefix) {
    const words=lock.identity.trim().split(/\s+/).map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'));
@@ -45,7 +50,7 @@ export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|n
  const text=fields.map(f=>f.get()).join('\n'),output=editorialTokens(text,raw,'step');
  // Amount/time/temperature evidence and preparation words may not disappear
  // merely to improve prose. Existing field guards still check their bindings.
- for(const word of tokens(raw))if((/^n\d/.test(word)||['cold','cubed','fresh','minced','chopped','grated','peeled','trimmed','softened'].includes(word))&&!output.includes(word))return null;
+ for(const word of tokens(raw))if((/^n\d/.test(word)||['cold','cubed','fresh','minced','chopped','grated','peeled','trimmed','softened'].includes(word))&&!output.includes(word)&&!(/^n\d/.test(word)&&metadataTokens.includes(word)))return null;
  // Keep each supplied alternative group together, including uncertain words.
  for(const clause of raw.split(/[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b/i)){
   if(!/\bor\b/i.test(clause))continue;

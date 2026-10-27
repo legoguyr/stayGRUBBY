@@ -1,0 +1,2 @@
+export const cuisines=["American", "Italian", "French", "Spanish", "Greek", "Mediterranean", "Israeli", "Middle Eastern", "Lebanese", "Turkish", "Moroccan", "Mexican", "Caribbean", "Indian", "Chinese", "Japanese", "Korean", "Thai", "Vietnamese", "Filipino", "Indonesian", "Malaysian", "Ethiopian", "West African", "Southern / Soul Food", "Cajun / Creole"];
+export const allergens=["peanuts", "treeNuts", "sesame", "milk", "egg", "wheat", "soy", "fish", "shellfish"];

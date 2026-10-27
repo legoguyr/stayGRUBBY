@@ -9,7 +9,7 @@ extension SupabaseAccountBackend: RecipeImportBackend {
         RecipeIntelligenceDiagnostics.shared.stage = "edge_function"
         #endif
         guard let user = client.auth.currentSession?.user.id else { throw RecipeImportFailure.session }
-        struct Input: Encodable { let text: String; let cloudConsent: Bool }
+        struct Input: Encodable { let text: String; let cloudConsent: Bool; let contractVersion = 2 }
         let result: Data
         do {
             result = try await client.functions.invoke("recipe-import", options: FunctionInvokeOptions(body: Input(text: raw, cloudConsent: true)), decode: { data, response in

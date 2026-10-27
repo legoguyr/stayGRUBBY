@@ -7,6 +7,14 @@ struct RecipeReadingBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
             RecipeSummaryMetrics(content: content)
+            if content.metadataOrigins?.values.contains("estimated") == true { Text("Servings and times may include estimates. Adjust for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
+            if let allergens = content.allergens {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !allergens.contains.isEmpty { Text("Contains: " + allergens.contains.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")).font(.subheadline) }
+                    if !allergens.possible.isEmpty { Text("Possible: " + allergens.possible.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")).font(.subheadline) }
+                    Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
+                }.accessibilityIdentifier("recipe-allergen-information")
+            }
             VStack(alignment: .leading, spacing: 20) {
                 SGEyebrow(text: "Ingredients")
                 ForEach(content.orderedComponents) { part in
@@ -54,7 +62,7 @@ struct RecipeSummaryMetrics: View {
     @Environment(\.dynamicTypeSize) private var size
     var body: some View {
         LazyVGrid(columns: size.isAccessibilitySize ? [GridItem(.flexible(), alignment: .leading)] : [GridItem(.adaptive(minimum: 100), alignment: .leading)], alignment: .leading, spacing: 18) {
-            if let yield = content.yield, !yield.isEmpty { metric("Serves", yield) }
+            if let yield = content.yield, !yield.isEmpty { metric("Yield", yield) }
             if let prep = content.prepMinutes { metric("Prep", "\(prep) min") }
             if let cook = content.cookMinutes { metric("Cook", "\(cook) min") }
             if let total = content.totalMinutes { metric("Total", "\(total) min") }

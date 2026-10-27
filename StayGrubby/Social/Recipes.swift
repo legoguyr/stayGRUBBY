@@ -14,6 +14,9 @@ nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     var yield: String? = nil
     var prepMinutes: Int? = nil
     var cookMinutes: Int? = nil
+    var elapsedMinutes: Int? = nil
+    var metadataOrigins: [String:String]? = nil
+    var allergens: RecipeAllergenAssessment? = nil
     var tips: String? = nil
     var originalCreator: String? = nil
 }

@@ -44,6 +44,8 @@ extension RecipeContent {
         })]
     }
     nonisolated var totalMinutes: Int? {
+        if let elapsedMinutes { return elapsedMinutes }
+        if metadataOrigins != nil { return nil }
         guard prepMinutes != nil || cookMinutes != nil else { return nil }
         return (prepMinutes ?? 0) + (cookMinutes ?? 0)
     }
@@ -62,6 +64,8 @@ extension RecipeContent {
         return copy
     }
     nonisolated var isValidDraft: Bool {
+        [prepMinutes,cookMinutes,elapsedMinutes].compactMap { $0 }.allSatisfy { (0...10080).contains($0) } &&
+        (elapsedMinutes == nil || elapsedMinutes! >= max(prepMinutes ?? 0,cookMinutes ?? 0)) &&
         !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && title.count <= 120 &&
         (1...20).contains(orderedComponents.count) && orderedComponents.allSatisfy { part in
             part.ingredients.allSatisfy { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } &&
@@ -84,9 +88,11 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var prepMinutes: Int? = nil
     var cookMinutes: Int? = nil
     var source: String? = nil
+    var elapsedMinutes: Int? = nil
+    var creatorMetadata: Bool? = nil
     var id: UUID { dishID }
     var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
-    var duration: Int? { prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
+    var duration: Int? { if let elapsedMinutes { return elapsedMinutes }; if creatorMetadata == true { return nil }; return prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
 }
 nonisolated struct CookbookPage: Codable { var entries: [CookbookEntry] }
 nonisolated struct DishRecipeResponse: Codable { var recipe: Recipe? }
