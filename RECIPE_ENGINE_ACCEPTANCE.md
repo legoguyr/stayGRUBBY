@@ -1,6 +1,56 @@
 # Recipe Engine reliability and acceptance
 
-Status: **AUTOMATED ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**.
+Status: **AUTOMATED EDITORIAL ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**.
+
+## October 27 editorialization cycle
+
+The owner **physically accepted v11** with the unchanged canonical kale text on a real iPhone. That safe baseline is preserved in implementation `9794b926a2206509c247c4c42b2e83742ceea5f5` and starting HEAD `a804628e224730947443f8e74bb1c030427baad8`. This cycle began on clean `main`, aligned with `origin/main`. The sections below headed “v11 historical acceptance” retain the earlier investigation/results, not a pending v11 gate.
+
+### Editing architecture and factual boundaries
+
+**Rewrite the words; never rewrite the cooking.** One provider response still returns the same transient Extraction envelope and existing RecipeDraft/editor. No second polish call, permanent Recipe fields, migration, billing change or credential access. Apple and Gemini use identical instructions (asserted by a contract test): edit the user's recipe rather than develop a recipe; improve imperative prose, grammar, punctuation, repetition, supported sections and equivalent quantities; never complete missing cooking information. Unknown/vague/optional/uncertain information stays so. No outside culinary knowledge.
+
+Existing source grounding remains the field-level guard, extended with a closed, context-dependent editorial vocabulary. “Put in oven till crispy” can become “Bake until crispy”; “mix ... until glossy” can become “toss ... until glossy”; cooling/stirring/squeezing can use the tested editorial equivalents. Ingredient identities, varieties, numbers, units, preparation and doneness words remain evidence. A preparation descriptor cannot simply be borrowed from another ingredient. Exact rational quantity/unit equivalences and degree aliases remain; no conversions or scaling.
+
+`RecipeEditorialEvidence` / `editorial.ts` add **transient source obligations**, not a second AI extraction pipeline or provider-authored fact claims. They retain source qualifiers (a little/some/optional/maybe/to taste/per person/about), numerical facts, preparation words and complete alternative groups. Safely recoverable missing qualifiers are restored locally into the edited ingredient/step; the same source/schema guard runs afterward. This does not discard a polished step merely because it says “5 minutes” instead of “five minutes.” Reapplication is idempotent and does not mutate provider input. A lost obligation without a safe target fails with fixed safe reason `fact_lock`.
+
+Recovery first tries removing only a closed set of unsupported modifiers (extra-virgin/freshly/finely/roughly) **if the remaining edited field independently passes every source guard**. It never deletes numbers, negation, technique words or uncertain chile varieties this way. Otherwise v11's bounded literal-source recovery remains the conservative fallback. Hard quantity, binding, schema, count and length failures remain failures. Safe polished prose survives unchanged in editorial fixtures; scoped repair does not replace the rest of a method.
+
+This is bounded deterministic evidence checking, **not a formal proof of arbitrary natural-language meaning, completeness, action order or section assignment**. Source text, mandatory review/manual correction and explicit Save remain essential. No model output is silently saved. An unrecognized paraphrase can still conservatively recover source wording or require manual continuation.
+
+### Independent acceptance dimensions
+
+- **Factual fidelity:** 18 safe/unsafe rewrite pairs cover fractions, word quantities, missing amounts/temperature, approximate duration, vague/optional ingredients, cheese identity, cold/cubed butter, cooling/draining, equipment, technique, garnishes/storage, preparation/doneness, salt type and descriptor binding. Invented extra-virgin, 3 vs 2 cloves, 400°F, 5–7 vs about 5 minutes, 12 oz pasta, 1 tsp chili oil, Parmigiano-Reggiano and kosher salt remain rejected or source-only recovered; unsupported additions do not survive.
+- **Editorial quality:** nine synthetic provider examples cover run-ons, filler, repetition, fragments, capitalization, written quantities, multiple actions, vague alternatives, scoped modifier repair and local qualifier restoration. Assertions check capitalization/punctuation, bounded readable steps, removal of specified dictation artifacts and preservation of polished provider methods. Most tests do not require one exact rewrite.
+- **Canonical kale:** byte-identical 882-character source, original JSON and copyable TXT unchanged; SHA-256 `774a33291a4e216bb55ce4b1d476d0b9c12a4b8aeb3faa2163f3be51da933915`. The editorial contract produces three supported sections, 13 ingredient rows and 9 method steps. Quarter cups, two cloves, tablespoon of cold/cubed butter, per-person quantity, approximate five-minute crisp instruction and original “clabbering chilies”/alternatives survive. Pasta/garnish amounts, oven temperature, total servings/prep/cook times remain unknown. This is a **synthetic contract result, not captured live Gemini output**; no kale-specific runtime branch or hardcoded rewrite exists.
+- **Prior baseline:** all nine Phase 0–7 cases and twelve original adversarial cases remain. The canonical-faithful golden response now includes restored “a little” and optionality; its raw source/provider fixture was not changed. New editorial fixtures are additive. The UI contract now uses the polished canonical response, retaining exact source bytes.
+
+### Verification and deployment
+
+Final results: **87/87 Edge tests**, **45/45 native tests across seven suites**, and **4/4 UI tests**, **136 distinct tests total, zero failures/unexpected failures/skips**. Edge includes nine old Phase 0–7 cases, nine new editorial cases, eighteen paired tests and the original twelve adversarial cases. Native checks cover both shared server contracts and both provider semantics, parser/entry/Food Bible/cookbook behavior, editor compatibility and Codable persistence. UI covers exact canonical input/editor/Cancel, explicit synthetic Save/reopen, quota/manual/original preservation and large-type/background retention. The captured canonical editor screenshot was reviewed. Debug and generic Simulator Release builds pass. Deno typecheck, privileged-secret/local-artifact scan (**370 text files, zero findings**), Release test-resource/provider-injection isolation and whitespace checks pass.
+
+One focused development run failed an assertion that expected “to taste” in the ingredient name; the established parser correctly keeps it in the note. The assertion now checks the correct existing field and passes; no parser behavior/test protection was weakened. Two qualifier-target/equivalent-number bugs were caught by the new tests and corrected. Counts above exclude repeated development executions. Final review also changed the 200-source-obligation bound to fail closed rather than silently truncate; all 87 Edge tests and the 8 affected native tests passed again, followed by a final Release build. v12 was the first editorial deployment; v13 includes this bounded-work correction. No intermediate owner retry was requested.
+
+Hosted **recipe-import v13 ACTIVE**, `verify_jwt=true`, all seven runtime files byte-identical to local; bundle SHA-256 `1229a9395fa98d8ccae12a1c79e198d68675e2891b6a320b75d2744d7e1ddc1d`. Unauthenticated POST returns **401** before the provider. `index.ts`, model/endpoint/schema grammar, auth/session verification, quota reservation, timeout/size caps, logging redaction and free/unbilled policy remain. No secrets or billing settings were accessed/changed. No new migration; all 26 SQL files/schema are untouched.
+
+**35/35 hosted data/Storage fingerprints unchanged** from this cycle’s fresh baseline (including 3 Recipes and 69 Storage objects). The development manifest is unchanged: `bedd790ea8487f3b1baad442acd9092a6890b0a38cede4951aef0018469b9a51`, 1 ranking / 12 Dishes / 15 attempts/items / 356 comparisons / 10 Sources / 21 tags / 48 memberships / 190 media files. No real user data was modified by this task. Security advisors retain the existing RPC-only RLS/no-policy informational notices and password-protection warning for unused password auth; no auth/RLS configuration changed. See the [Supabase advisor guidance](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy) and [password advisory](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection). No new security issue was introduced.
+
+The physically accepted v11 history remains an ancestor. Implementation checkpoint: `3f4e02d39445914d6bfe524db2f844b984d5b981` (16 files). Deployment/documentation is a separate logical checkpoint. See the owner report for final SHA/normal-push outcome. Evidence remains machine-local under `/private/tmp/recipe-editorial-*`, never in Git. Automated provider responses are synthetic, Auth/budget are mocked, and UI tests use isolated UUID stores/media; no owner credentials are extracted and no real Recipe or provider quota is consumed by tests. Apple real-model inference and new live Gemini editorial quality require the single physical gate below.
+
+### One final physical editorial acceptance
+
+1. Build/install the **new Xcode Debug build** (native prompt/source/qualifier checks changed). Use the existing real account; do not reset its data.
+2. Food Bible → Add Recipe → Import Recipe, selecting an existing cooked Dish without a Recipe. Enable **Cloud Formatting**. Paste all of `StayGrubbyTests/Fixtures/RecipeEngineCanonicalKale.txt` unchanged, and Format once.
+3. Look for clean imperative sentences, sensible punctuation, less repetition/run-on speech, readable ingredient quantities, and supported sauce/pasta, chips and crisp organization. Exact title, section names and step count are not prescribed.
+4. Verify 2 cups kale per person, ¼ cup olive oil, ¼ cup Parmesan, 2 cloves garlic, pinch salt, 1 tbsp cold/cubed butter, and about 5 minutes for the crisp. No new pasta/garnish amount, oven temperature, duration/range, servings or total prep/cook time. “A little,” optional alternatives and the original uncertain “clabbering chilies” must survive; no confident Calabrian substitution. Check original text and section assignment before Save.
+5. **Save only after your review**. Close/reopen, then terminate/relaunch and reopen the Recipe to check the reviewed wording, quantities and sections persist under the same Dish. Automated tests Save only synthetic recipes into isolated stores.
+
+**Does this now read like a real recipe while still being the exact recipe you dictated?**
+
+No intermediate physical retry was requested. No TestFlight/App Store, independent Recipe/Dish, ranking, social, auth, photo-sync or Universal Links work was performed.
+
+## v11 historical acceptance
+
 
 Scope: the October 26 overnight reliability cycle, starting at `98c771d3be480f6761a4cd06994c4649300d9ecd` on clean `main`/`origin/main`, preserving the subsequently uncommitted v10 diagnostics. No independent Recipe/Dish work, ranking, social, photo sync, Universal Links, account deletion or distribution work.
 
@@ -45,6 +95,7 @@ The test loop caught additional bugs before deployment: recovery initially copie
 | Approved phased sources and representative provider responses | StayGrubbyTests/Fixtures/RecipeEngineAcceptance.json |
 | Original canonical source | RecipeImportFailure.json `raw`; copyable RecipeEngineCanonicalKale.txt |
 | Hallucination/invalid-fact cases | RecipeEngineNegative.json |
+| Editorial quality / paired factual contrasts | RecipeEditorialAcceptance.json / RecipeEditorialPairs.json |
 | Deterministic full production handler, mocked Auth/budget/provider only | DevelopmentTools/recipe_engine_acceptance.ts |
 | Edge integration, phased/negative/source safety and contract drift | supabase/functions/recipe-import/acceptance.test.ts + handler.test.ts |
 | Actual server outputs consumed by Swift | RecipeEngineServerOutputs.json |
@@ -94,20 +145,13 @@ Machine-local evidence, intentionally excluded from Git: `/private/tmp/recipe-ov
 
 ## Live-provider and data boundary
 
-No new live Gemini calls were made in the overnight harness. Apple routing/availability and the shared contract are tested with mocks; real Apple model inference was not performed. Existing tooling cannot invoke as the owner without extracting a session credential or adding an authentication bypass. Neither was done. Do not confuse deterministic provider-quality examples with a live Gemini quality test. Historical v9/v10 prove actual schema/provider access; the newly corrected prompt/reconciliation and exact kale model output still need **one final physical acceptance**, not another diagnostic retry chain.
+No new live Gemini calls were made in the overnight harness. Apple routing/availability and the shared contract are tested with mocks; real Apple model inference was not performed. Existing tooling cannot invoke as the owner without extracting a session credential or adding an authentication bypass. Neither was done. Do not confuse deterministic provider-quality examples with a live Gemini quality test. Historical v9/v10 prove actual schema/provider access; the v11 prompt/reconciliation subsequently passed the owner’s real-iPhone canonical-kale acceptance. The new editorial cycle has its own single physical gate above.
 
 All automated tests use synthetic responses/isolated UUID stores. No real Recipe, Dish, attempt, ranking, evidence, social record or Storage object was created/edited/deleted. The deployed endpoint can reserve its existing bounded usage counter on an owner request; tests use a mock reservation and consume no provider quota. No secrets, billing, account/session architecture or migrations changed. Final verification: all **35/35 hosted data/Storage fingerprints** match the overnight baseline. The demo manifest remains `bedd790ea8487f3b1baad442acd9092a6890b0a38cede4951aef0018469b9a51`: 1 ranking, 12 Dishes, 15 attempts/items, 356 comparisons, 10 Sources, 21 tags, 48 memberships and 190 unchanged media files. Hosted `recipe-import` **v11 ACTIVE**, JWT verification enabled, six runtime files byte-identical to local; bundle SHA-256 `862bc336f2fd05c522bf6c2d107bbfafe3ff392771d9cc26ec3d583f55e21d0e`. Unauthenticated endpoint check returns **401** without a provider call. No schema migration was needed; existing 26 SQL migrations/schema reference are unchanged. Release has only the standard no-AppIntents metadata warning.
 
-## One final owner acceptance
+## v11 physical acceptance completed
 
-1. Install a **new Xcode build** for the native alias/diagnostic/prompt changes.
-2. Sign into the existing account. Food Bible → Add Recipe → Import Recipe; choose an existing cooked Dish without a Recipe. Use **Cloud Formatting**.
-3. Paste **all of RecipeEngineCanonicalKale.txt**, unchanged. Format once.
-4. Expect the existing Recipe Editor with source-supported preparations/ingredients/method. Exact section names are not prescribed; the new prompt allows separate sauce/pasta, chips and crisp preparations. Original wording may remain where cleanup is uncertain.
-5. Check known quarter-cup amounts, two cloves, tablespoon of cold butter and the per-person qualifier. Pasta/garnish amounts and missing oven temperature must remain unknown; the supplied approximate five-minute crisp instruction may remain in the method. Verify the uncertain dictated chile phrase is preserved, and alternatives are not made separate mandatory ingredients. Review section assignment, original text and any corrections before proceeding.
-6. **Only after review, Save explicitly**, close/reopen the Recipe and verify corrected fields/sections persist under the same Dish. This is normal owner acceptance; the automated run did not Save the kale into the real Food Bible.
-
-Do not mark physically accepted until the owner completes that test. No TestFlight/App Store work is part of this cycle.
+The owner confirmed the exact canonical kale fixture reached the editor through Cloud Formatting on a real iPhone before this editorialization cycle. Do not repeat the old v11 diagnostic gate. The new editorial acceptance above remains pending.
 
 ## Checkpoints
 

@@ -1,6 +1,6 @@
 # Recipe import failure investigation — October 26, 2026
 
-> Current: **AUTOMATED ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**. The overnight continuation deployed v11 after phased/negative/server-to-Swift/UI verification. [RECIPE_ENGINE_ACCEPTANCE.md](RECIPE_ENGINE_ACCEPTANCE.md) is the current acceptance/harness report; the chronological v3–v10 investigation below remains historical evidence.
+> Current: v11 has **passed owner physical acceptance** with the exact canonical kale input. The next editorialization cycle is **AUTOMATED EDITORIAL ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**. [RECIPE_ENGINE_ACCEPTANCE.md](RECIPE_ENGINE_ACCEPTANCE.md) records the current contract, evidence and one final physical test; the v3–v10 investigation below remains historical evidence.
 
 Starting state: clean `main`, HEAD and `origin/main` both `fc93143fdc63b9e662441e0eddf83ed0b356f6b2`. Single agent, existing checkout and Simulator lane. This follow-up supersedes the original Engine V1 review's timestamp gate, strict verbatim-only validation, pending-secret claim and unpublished-policy status.
 
