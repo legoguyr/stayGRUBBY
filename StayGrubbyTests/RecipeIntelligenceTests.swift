@@ -94,3 +94,44 @@ import Testing
         func extract(_ raw:String) async throws -> RecipeExtraction {calls+=1;if cancel{throw CancellationError()};if let error{throw error};return value}
     }
 }
+
+@MainActor struct RecipeImportFailureTests {
+    private final class ResourceAnchor: NSObject {}
+    private struct Fixture: Decodable {
+        var raw: String
+        var expected: RecipeExtraction
+        var cases: [Case]
+        struct Case: Decodable { var text: String; var raw: String; var kind: String; var valid: Bool }
+    }
+    private func fixture() throws -> Fixture {
+        let bundle = Bundle(for: ResourceAnchor.self)
+        let url = bundle.url(forResource: "RecipeImportFailure", withExtension: "json", subdirectory: "Fixtures") ?? bundle.url(forResource: "RecipeImportFailure", withExtension: "json")
+        return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: #require(url)))
+    }
+    @Test func exactOwnerVoiceTextFormatsWithoutInventingUnknowns() throws {
+        let f = try fixture()
+        let result = try RecipeImportValidation.review(f.expected, raw: f.raw, dishTitle: "Existing Kale Dish", provider: "Mock")
+        let parts = result.draft.components!
+        #expect(parts.count == 3 && result.draft.title == "Kale Pasta")
+        #expect(parts[0].ingredients[0].quantity == "2" && parts[0].ingredients[0].name.contains("per person"))
+        #expect(parts[0].ingredients[1].quantity == "1/4" && parts[0].ingredients[3].quantity == "2")
+        #expect(parts[0].ingredients.first { $0.name == "pasta" }?.quantity == "")
+        #expect(parts[0].ingredients.contains { $0.name.contains("clabbering") })
+        #expect(result.draft.yield == nil && result.draft.cookMinutes == nil && result.draft.prepMinutes == nil)
+        #expect(result.draft.steps.contains { $0.contains("five minutes") })
+        #expect(RecipeSourceEvidence.ingredientLine("a quarter cup olive oil") == "1/4 cup olive oil")
+    }
+    @Test func normalizationMatchesServerContractAndRejectsNewCulinaryFacts() throws {
+        let f = try fixture()
+        for c in f.cases {
+            let kind: RecipeSourceEvidence.Kind
+            switch c.kind { case "ingredient": kind = .ingredient; case "step": kind = .step; case "title": kind = .title; default: kind = .metadata }
+            #expect(RecipeSourceEvidence.grounded(c.text, raw: c.raw, kind: kind) == c.valid)
+        }
+    }
+    @Test func safeServerErrorMappingHasDistinctUserMessages() {
+        let pairs: [(Int,String,RecipeImportFailure)] = [(503,"not_configured",.configuration),(401,"authentication_required",.session),(429,"provider_quota",.quota),(429,"formatting_limit",.rateLimited),(422,"invalid_recipe",.invalid),(504,"formatting_timeout",.timeout),(503,"provider_unavailable",.unavailable)]
+        for (status, code, expected) in pairs { #expect(RecipeImportFailure.server(status: status, data: Data("{\"code\":\"\(code)\"}".utf8)) == expected) }
+        #expect(Set([RecipeImportFailure.configuration,.session,.network,.invalid,.unavailable].map(\.message)).count == 5)
+    }
+}

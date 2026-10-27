@@ -4,11 +4,19 @@ export type Dependencies = {
   reserve: (user:string,session:string)=>Promise<boolean>;
   fetch: typeof fetch;
   key?: string;
-  freeTierUntil?: string;
-  now?: ()=>number;
+  log?: (event: Record<string,unknown>)=>void;
   timeoutMilliseconds?: number;
 };
-const fail = (status:number,code:string)=>Response.json({code},{status,headers:{"Cache-Control":"no-store"}});
+// Only enumerated categories/statuses; never provider message, text, token or key.
+function providerReason(status: number, error: unknown): string {
+ const message=typeof (error as any)?.error?.message==="string" ? (error as any).error.message : "";
+ if (/API key not valid|API_KEY_INVALID/i.test(message)) return "invalid_key";
+ if (/has not been used|is disabled|SERVICE_DISABLED/i.test(message)) return "api_disabled";
+ if (/not found|not supported for|not available.*model/i.test(message)) return "model_unavailable";
+ if (/location.*not supported|region.*not supported/i.test(message)) return "region_unavailable";
+ if (/billing|paid tier/i.test(message)) return "billing_required";
+ return status===404 ? "model_unavailable" : status===429 ? "quota" : status===401 || status===403 ? "provider_access" : status===400 ? "request_format" : "provider_unavailable";
+}
 /// Cap streaming bodies even when content-length is absent or dishonest.
 export async function boundedText(response: Request|Response, maximum:number): Promise<string> {
   const reader=response.body?.getReader();if(!reader)return "";
@@ -20,41 +28,56 @@ export async function boundedText(response: Request|Response, maximum:number): P
 }
 export function handler(d:Dependencies) {
  return async (req:Request):Promise<Response>=>{
+  const requestID=crypto.randomUUID(), start=Date.now();let stage="request";
+  const report=(event:Record<string,unknown>)=>d.log?.({requestID,stage,durationMS:Date.now()-start,...event});
+  const headers=()=>({"Cache-Control":"no-store","x-recipe-request-id":requestID,"x-recipe-stage":stage,"x-recipe-configured":d.key?"true":"false"});
+  const fail=(status:number,code:string,providerStatus?:number,reason?:string)=>{
+   report({result:code,httpStatus:status,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{})});
+   return Response.json({code,stage,requestID,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{})},{status,headers:headers()});
+  };
   if(req.method!=="POST")return fail(405,"method_not_allowed");
   const token=req.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
   if(!token)return fail(401,"authentication_required");
   try {
-   const actor=await d.authenticate(token);if(!actor)return fail(401,"authentication_required");
+   stage="authentication";const actor=await d.authenticate(token);if(!actor)return fail(401,"authentication_required");
    if(!req.headers.get("content-type")?.startsWith("application/json"))return fail(400,"invalid_request");
    let body;
    try {body=JSON.parse(await boundedText(req,40_000));}catch{return fail(413,"invalid_or_oversized_input");}
    if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || !body.text.trim())return fail(400,"invalid_request");
    if([...body.text].length>12_000 || new TextEncoder().encode(body.text).length>32_000)return fail(413,"input_too_long");
-   // Fail CLOSED. There is no paid mode and the client cannot choose key/model/budget.
-   // Owner must confirm a dedicated UNBILLED project; confirmation expires within 30 days.
-   const now=d.now?.()??Date.now(), until=Date.parse(d.freeTierUntil??"");
-   if(!d.key || !Number.isFinite(until) || until<=now || until>now+30*86400_000)return fail(503,"formatting_unavailable");
-   if(!await d.reserve(actor.user,actor.session))return fail(429,"formatting_limit");
+   // Owner confirmed the dedicated project has no billing. No recurring timestamp gate.
+   // The old FREE_TIER_UNTIL secret may remain, but is never read or required.
+   stage="configuration";
+   if(!d.key)return fail(503,"not_configured");
+   stage="account_budget";if(!await d.reserve(actor.user,actor.session))return fail(429,"formatting_limit");
    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),d.timeoutMilliseconds??25_000);
    const abort=()=>controller.abort();req.signal.addEventListener("abort",abort,{once:true});
    if(req.signal.aborted)controller.abort();
    try {
-    const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
+    stage="provider";const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
      method:"POST",signal:controller.signal,headers:{"content-type":"application/json","x-goog-api-key":d.key},
      body:JSON.stringify({systemInstruction:{parts:[{text:INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema}}}}),
     });
-    if(upstream.status===429){await upstream.body?.cancel();return fail(429,"formatting_limit");}
-    if(!upstream.ok){await upstream.body?.cancel();return fail(503,"formatting_unavailable");}
+    if(!upstream.ok){
+     let error:unknown;try{error=JSON.parse(await boundedText(upstream,16_000));}catch{/* Never return/log raw upstream bytes. */}
+     const reason=providerReason(upstream.status,error);
+     return fail(upstream.status===429?429:503,upstream.status===429?"provider_quota":"provider_unavailable",upstream.status,reason);
+    }
+    stage="provider_response";
     const envelope=JSON.parse(await boundedText(upstream,128_000));
     const candidate=envelope.candidates?.[0];
     if(candidate?.finishReason!=="STOP" || !Array.isArray(candidate.content?.parts))return fail(422,"invalid_recipe");
     const json=candidate.content.parts.filter((p:Record<string,unknown>)=>!p.thought && typeof p.text==="string").map((p:Record<string,unknown>)=>p.text).join("");
     if(new TextEncoder().encode(json).length>96_000)return fail(422,"invalid_recipe");
-    const extraction=JSON.parse(json);
+    stage="validation";const extraction=JSON.parse(json);
     if(!validate(extraction,body.text))return fail(422,"invalid_recipe");
-    return Response.json(extraction,{headers:{"Cache-Control":"no-store"}});
-   } catch {return fail(controller.signal.aborted?504:422,controller.signal.aborted?"formatting_timeout":"invalid_recipe");}
+    stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status});
+    return Response.json(extraction,{headers:headers()});
+   } catch {
+    if(controller.signal.aborted)return fail(504,"formatting_timeout");
+    return stage==="provider" ? fail(503,"provider_connection") : fail(422,"invalid_recipe");
+   }
    finally {clearTimeout(timer);req.signal.removeEventListener("abort",abort);}
-  } catch {return fail(503,"formatting_unavailable");}
+  } catch {return fail(503,"service_unavailable");}
  };
 }

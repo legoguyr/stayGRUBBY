@@ -1,11 +1,12 @@
 import { handler, boundedText } from "./handler.ts";
-// Native-app endpoint: no browser CORS allowance, external SDK, logging or Recipe persistence.
+// Native-app endpoint: no browser CORS allowance, external SDK or Recipe persistence.
+// Logging is limited to enumerated stages/statuses; never text or credentials.
 const url=Deno.env.get("SUPABASE_URL")??"";
 const anon=Deno.env.get("SUPABASE_ANON_KEY")??"";
 const admin=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 Deno.serve(handler({
  key:Deno.env.get("STAYGRUBBY_GEMINI_API_KEY"),
- freeTierUntil:Deno.env.get("STAYGRUBBY_GEMINI_FREE_TIER_UNTIL"),
+ log:event=>console.info(JSON.stringify(event)),
  fetch,
  authenticate:async token=>{
   const response=await fetch(`${url}/auth/v1/user`,{headers:{apikey:anon,Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(8000)});

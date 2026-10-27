@@ -25,6 +25,9 @@ struct KitchenSettings<AccountUtilities: View>: View {
                     Text("Sharing is for mutual Sous Chefs. Discovery is optional and can be changed in Profile; it does not make your cooking library public.")
                 }
             }
+            #if DEBUG
+            Section("Developer") { NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() } }
+            #endif
             Section("Support & About") {
                 Link("Privacy Policy", destination: URL(string: "https://staygrubby.com/privacy")!)
                 Link("Support", destination: URL(string: "mailto:support@staygrubby.com")!)

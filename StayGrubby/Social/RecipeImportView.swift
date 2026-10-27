@@ -48,6 +48,16 @@ struct RecipeImportView: View {
                 .sheet(item: $result) { item in
                     RecipeEditor(dishID: dish.id, draft: item.value.draft, importReview: .init(raw: raw, warnings: item.value.warnings)) { _ in done() }
                 }
+                .onAppear {
+                    #if DEBUG
+                    RecipeIntelligenceDiagnostics.shared.cloudAllowed = cloudConsent
+                    #endif
+                }
+                .onChange(of: cloudConsent) { _, allowed in
+                    #if DEBUG
+                    RecipeIntelligenceDiagnostics.shared.cloudAllowed = allowed
+                    #endif
+                }
                 .onDisappear { cancel() }
         }
     }
