@@ -1,4 +1,5 @@
-import { MODEL, INSTRUCTIONS, schema, validate } from "./contract.ts";
+import { MODEL, INSTRUCTIONS, schema, validationReport } from "./contract.ts";
+import { reconcile } from "./reconcile.ts";
 export type Dependencies = {
   authenticate: (token:string)=>Promise<{user:string;session:string}|null>;
   reserve: (user:string,session:string)=>Promise<boolean>;
@@ -52,7 +53,7 @@ export function handler(d:Dependencies) {
   const requestID=crypto.randomUUID(), start=Date.now();let stage="request";
   const report=(event:Record<string,unknown>)=>d.log?.({requestID,stage,durationMS:Date.now()-start,...event});
   const headers=()=>({"Cache-Control":"no-store","x-recipe-request-id":requestID,"x-recipe-stage":stage,"x-recipe-configured":d.key?"true":"false"});
-  const fail=(status:number,code:string,providerStatus?:number,reason?:string,diagnostic:Record<string,string>={})=>{
+  const fail=(status:number,code:string,providerStatus?:number,reason?:string,diagnostic:Record<string,unknown>={})=>{
    report({result:code,httpStatus:status,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{}),...diagnostic});
    return Response.json({code,stage,requestID,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{})},{status,headers:headers()});
   };
@@ -87,12 +88,19 @@ export function handler(d:Dependencies) {
     stage="provider_response";
     const envelope=JSON.parse(await boundedText(upstream,128_000));
     const candidate=envelope.candidates?.[0];
-    if(candidate?.finishReason!=="STOP" || !Array.isArray(candidate.content?.parts))return fail(422,"invalid_recipe");
+    if(candidate?.finishReason!=="STOP" || !Array.isArray(candidate.content?.parts))return fail(422,"invalid_recipe",200,"incomplete_output",{finishReason:["MAX_TOKENS","SAFETY","RECITATION","BLOCKLIST","PROHIBITED_CONTENT","SPII","OTHER"].includes(candidate?.finishReason)?candidate.finishReason:"OTHER"});
     const json=candidate.content.parts.filter((p:Record<string,unknown>)=>!p.thought && typeof p.text==="string").map((p:Record<string,unknown>)=>p.text).join("");
     if(new TextEncoder().encode(json).length>96_000)return fail(422,"invalid_recipe");
-    stage="validation";const extraction=JSON.parse(json);
-    if(!validate(extraction,body.text))return fail(422,"invalid_recipe");
-    stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status});
+    stage="validation";let extraction;
+    try{extraction=JSON.parse(json);}catch{return fail(422,"invalid_recipe",200,"structured_json");}
+    const validation=validationReport(extraction,body.text);
+    let recoveredFields:string[]=[],recoveredCount=0;
+    if(!validation.valid){
+     const restored=reconcile(extraction,body.text);
+     if(!restored)return fail(422,"invalid_recipe",200,validation.issues[0]?.rule,{validationIssues:validation.issues,structure:validation.structure});
+     extraction=restored.extraction;recoveredFields=restored.fields;recoveredCount=restored.count;
+    }
+    stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
     return Response.json(extraction,{headers:headers()});
    } catch {
     if(controller.signal.aborted)return fail(504,"formatting_timeout");

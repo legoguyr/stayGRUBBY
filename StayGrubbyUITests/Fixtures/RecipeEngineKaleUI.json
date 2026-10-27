@@ -1,0 +1,69 @@
+{
+  "id": "canonical-v10-rule-shape",
+  "phase": 7,
+  "raw": "Blanche 2 cups of kale per person going to need ice water boil water season with salt add kale cook until it starts to wet. Add to ice water. Move it around cool it down squeeze out all the water. Add it to a blender with a quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic, pinch of salt and a little chili oil or clabbering chilies or red pepper flakes if you want spice blend till smooth add to a pan heat up boil pasta add pasta to the sauce mix with 1 tablespoon of cubed butter cold butter until glossy add to a pan and top with kale chips and Parmesan crisp Parmesan crisp is done by taking a baking sheet, put in a piece of parchment paper on it and shaving fresh Parmesan on it cooking the oven for about five minutes until it’s crispy. Kale chips are going to be take some kale top with some olive oil, salt and pepper put in the oven till crispy.",
+  "extraction": {
+    "title": "Kale Pasta",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": null,
+        "ingredients": [
+          "2 cups kale per person",
+          "ice water",
+          "salt",
+          "0.25 cup olive oil",
+          "0.25 cup Parmesan cheese",
+          "2 cloves garlic",
+          "pasta",
+          "a little chili oil or clabbering chilies or red pepper flakes if you want spice",
+          "1 tbsp cold cubed butter",
+          "pepper",
+          "Parmesan cheese",
+          "kale"
+        ],
+        "steps": [
+          "Boil water and season with salt. Add kale and cook until it starts to wet.",
+          "Add to ice water. Move it around cool it down squeeze out all the water.",
+          "Add kale to a blender with olive oil Parmesan cheese garlic salt.",
+          "Blend till smooth add to a pan heat up.",
+          "Boil pasta add pasta to the sauce.",
+          "Mix with 1 tablespoon of cubed butter cold butter until glossy.",
+          "Top with kale chips and Parmesan crisp.",
+          "Parmesan crisp is done by taking a baking sheet, put in a piece of parchment paper on it and shaving fresh Parmesan on it cooking the oven for about five minutes until it’s crispy.",
+          "Kale chips are going to be take some kale top with some olive oil, salt and pepper put in the oven till crispy."
+        ]
+      }
+    ]
+  },
+  "checks": {
+    "canonical": "RecipeImportFailure.json",
+    "recovery": true,
+    "preserve": "clabbering chilies",
+    "forbid": "Calabrian",
+    "unknownQuantity": true,
+    "ingredientForbidden": [
+      "baking sheet",
+      "taking",
+      "done by"
+    ],
+    "lastStepRequired": [
+      "kale",
+      "olive oil",
+      "salt",
+      "pepper"
+    ],
+    "methodRequired": [
+      {
+        "component": 0,
+        "step": 7,
+        "words": [
+          "five minutes",
+          "crispy",
+          "parchment paper"
+        ]
+      }
+    ]
+  }
+}

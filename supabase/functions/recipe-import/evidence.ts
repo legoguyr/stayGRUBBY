@@ -1,6 +1,6 @@
 // Bounded lexical normalization, not culinary inference or AI recipe math.
 // Keep Swift RecipeSourceEvidence behavior aligned with these focused contract fixtures.
-const aliases:Record<string,string>={"tablespoon": "tbsp", "tablespoons": "tbsp", "tbsp": "tbsp", "tbs": "tbsp", "teaspoon": "tsp", "teaspoons": "tsp", "tsp": "tsp", "cup": "cup", "cups": "cup", "oz": "oz", "ounce": "oz", "ounces": "oz", "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb", "g": "g", "gram": "g", "grams": "g", "kg": "kg", "kilogram": "kg", "kilograms": "kg", "ml": "ml", "milliliter": "ml", "milliliters": "ml", "millilitre": "ml", "millilitres": "ml", "l": "l", "liter": "l", "liters": "l", "litre": "l", "litres": "l", "clove": "clove", "cloves": "clove", "minute": "min", "minutes": "min", "min": "min", "mins": "min", "hour": "hour", "hours": "hour", "hr": "hour", "hrs": "hour", "pinch": "pinch", "pinches": "pinch", "salted": "salt", "blanche": "blanch", "blanched": "blanch", "blanching": "blanch", "boiling": "boil", "boiled": "boil", "cooking": "cook", "cooked": "cook", "baking": "bake", "baked": "bake", "blending": "blend", "blended": "blend", "mixing": "mix", "mixed": "mix", "crispy": "crisp", "till": "until"};
+const aliases:Record<string,string>={"tablespoon": "tbsp", "tablespoons": "tbsp", "tbsp": "tbsp", "tbs": "tbsp", "teaspoon": "tsp", "teaspoons": "tsp", "tsp": "tsp", "cup": "cup", "cups": "cup", "oz": "oz", "ounce": "oz", "ounces": "oz", "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb", "g": "g", "gram": "g", "grams": "g", "kg": "kg", "kilogram": "kg", "kilograms": "kg", "ml": "ml", "milliliter": "ml", "milliliters": "ml", "millilitre": "ml", "millilitres": "ml", "l": "l", "liter": "l", "liters": "l", "litre": "l", "litres": "l", "clove": "clove", "cloves": "clove", "minute": "min", "minutes": "min", "min": "min", "mins": "min", "hour": "hour", "hours": "hour", "hr": "hour", "hrs": "hour", "pinch": "pinch", "pinches": "pinch", "fahrenheit": "f", "celsius": "c", "salted": "salt", "blanche": "blanch", "blanched": "blanch", "blanching": "blanch", "boiling": "boil", "boiled": "boil", "cooking": "cook", "cooked": "cook", "baking": "bake", "baked": "bake", "blending": "blend", "blended": "blend", "mixing": "mix", "mixed": "mix", "crispy": "crisp", "till": "until"};
 const numbers:Record<string,string>={"one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10", "eleven": "11", "twelve": "12"};
 const stops=new Set(["a", "an", "the", "of", "to", "with", "in", "into", "on", "it", "its", "is", "are", "be", "by", "for", "then", "and", "some", "about", "this", "that", "your", "as"]);
 const preparation=new Set(["cubed", "cold", "fresh", "minced", "chopped", "grated", "peeled", "trimmed", "softened", "finely", "roughly", "small", "large"]);
@@ -15,7 +15,7 @@ function rational(text:string):string {
  let a=n,b=d;while(b){[a,b]=[b,a%b];}return `n${n/(a||1)}/${d/(a||1)}`;
 }
 export function tokens(input:string):string[] {
- let text=input.toLowerCase().replace(/¼/g,' 1/4 ').replace(/½/g,' 1/2 ').replace(/¾/g,' 3/4 ')
+ let text=input.toLowerCase().replace(/\bdegrees?\s+(?:fahrenheit|f)\b/g,'f').replace(/\bdegrees?\s+(?:celsius|c)\b/g,'c').replace(/¼/g,' 1/4 ').replace(/½/g,' 1/2 ').replace(/¾/g,' 3/4 ')
  .replace(/\b(?:a |one )?quarter\b/g,'1/4').replace(/\b(?:a |one )?half\b/g,'1/2');
  text=text.replace(/\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/g,v=>numbers[v]);
  text=text.replace(/\b(\d+) and (?:a )?(1\/2|1\/4)\b/g,'$1 $2');
@@ -23,16 +23,26 @@ export function tokens(input:string):string[] {
  .map(v=>/^\d/.test(v)?rational(v):aliases[v]??v).filter(v=>!stops.has(v));
 }
 function contains(source:string[],value:string[]):boolean {return value.length>0 && (` ${source.join(' ')} `).includes(` ${value.join(' ')} `);}
-export function grounded(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):boolean {
- const source=tokens(raw),output=tokens(value);if(!output.length)return false;
- if(contains(source,output))return true;
- if(!output.every(v=>source.includes(v)))return false; // Never guess a named ingredient or new fact.
- for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return false;
- if(kind==='metadata')return false;
- if(kind==='title'||kind==='step')return true;
+export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'metadata_phrase'|'ingredient_phrase';
+export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):GroundingIssue|null {
+ if(kind==='ingredient'&&(/^\s*-\s*\d/.test(value)||/\b\d+\s*\/\s*0\b/.test(value)))return 'invalid_quantity';
+ const source=tokens(raw),output=tokens(value);if(!output.length)return 'source_empty';
+ if(contains(source,output))return null;
+ const absent=output.filter(v=>!source.includes(v));
+ if(absent.length)return absent.some(v=>/^n\d/.test(v))?'source_number':'source_word';
+ for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return 'quantity_unit_pair';
+ if(kind==='metadata')return 'metadata_phrase';
+ if(kind==='title'||kind==='step')return null;
  const core=output.filter(v=>!preparation.has(v));const origin=source.filter(v=>!preparation.has(v));
- if(contains(origin,core))return true;
+ if(contains(origin,core))return null;
  // Natural quantity-at-end notation may be normalized to quantity first.
- if(/^n\d/.test(core[0])&&units.has(core[1]))return contains(origin,[...core.slice(2),...core.slice(0,2)]);
- return false;
+ if(/^n\d/.test(core[0])&&units.has(core[1])&&contains(origin,[...core.slice(2),...core.slice(0,2)]))return null;
+ return 'ingredient_phrase';
 }
+export function grounded(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):boolean {return groundingIssue(value,raw,kind)===null;}
+// Reconciliation may restore original wording, never invent or move a numeric fact.
+export function numericEvidence(value:string,raw:string):boolean {
+ const source=tokens(raw),output=tokens(value);
+ return output.every((v,i)=>!/^n\d/.test(v)||(source.includes(v)&&(!units.has(output[i+1])||contains(source,output.slice(i,i+2)))));
+}
+export function factualWords(value:string):string[] {return tokens(value).filter(v=>!/^n\d/.test(v)&&!units.has(v));}

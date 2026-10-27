@@ -1,5 +1,5 @@
 import { handler, type Dependencies } from "./handler.ts";
-import { validate, MODEL } from "./contract.ts";
+import { validate, validationReport, MODEL } from "./contract.ts";
 const raw="Soup\n2 carrots\nstock\ncook chicken until done";
 const value={title:"Soup",yield:null,source:null,components:[{title:null,ingredients:["2 carrots","stock"],steps:["cook chicken until done"]}]};
 function assert(ok:unknown,message="Assertion failed"):asserts ok {if(!ok)throw new Error(message);}
@@ -74,4 +74,29 @@ Deno.test("schema compiler rejection logs a safe category without copying provid
  const events:Record<string,unknown>[]=[];
  const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{status:"INVALID_ARGUMENT",message:"The input schema has too many states for serving. synthetic-test-only"}},{status:400})});
  assert((await f.run(request())).status===503 && events[0].requestIssue==="schema_complexity" && !JSON.stringify(events).includes("synthetic-test-only"));
+});
+Deno.test("validation diagnostics locate source rule and structure without content",async()=>{
+ const source="Dinner 2 cups kale and stock. Blend until smooth.";
+ const extraction={title:"Dinner",yield:null,source:null,components:[{title:null,ingredients:["2 cups stock","3 cups kale"],steps:["Roast until smooth."]}]};
+ const report=validationReport(extraction,source);
+ assert(!report.valid && JSON.stringify(report.issues)===JSON.stringify([
+  {field:"components[0].ingredients[0]",rule:"ingredient_phrase"},
+  {field:"components[0].ingredients[1]",rule:"source_number"},
+  {field:"components[0].steps[0]",rule:"source_word"},
+ ]));
+ assert(JSON.stringify(report.structure)===JSON.stringify({componentCount:1,ingredientCounts:[2],stepCounts:[1]}));
+ const events:Record<string,unknown>[]=[];const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({candidates:[{finishReason:"STOP",content:{parts:[{text:JSON.stringify(extraction)}]}}]})});
+ const response=await f.run(request({text:source,cloudConsent:true}));const body=await response.json();
+ assert(response.status===422 && body.stage==="validation" && body.providerStatus===200 && body.reason==="ingredient_phrase");
+ assert(!JSON.stringify(events).includes("kale") && !JSON.stringify(events).includes("Roast") && !JSON.stringify(events).includes(source));
+});
+Deno.test("validation diagnostics bound issues and never echo unknown property names",()=>{
+ const e={...value,components:Array.from({length:20},()=>({...value.components[0],ingredients:Array(100).fill("private-test-marker")}))};
+ const report=validationReport(e,raw);assert(!report.valid && report.issues.length===20 && !JSON.stringify(report).includes("private-test-marker"));
+ const extra=validationReport({...value,"private-property-marker":true},raw);assert(extra.issues[0].rule==="object_fields" && !JSON.stringify(extra).includes("private-property-marker"));
+});
+Deno.test("invalid structured JSON is distinct from source validation",async()=>{
+ const events:Record<string,unknown>[]=[];
+ const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({candidates:[{finishReason:"STOP",content:{parts:[{text:"private-invalid-json"}]}}]})});
+ const body=await (await f.run(request())).json();assert(body.reason==="structured_json" && events[0].stage==="validation" && !JSON.stringify(events).includes("private-invalid-json"));
 });

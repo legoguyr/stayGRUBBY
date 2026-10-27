@@ -297,6 +297,11 @@ struct SocialReviewModifier: ViewModifier {
                 if ProcessInfo.processInfo.arguments.contains("--recipe-import-failure") { throw RecipeImportFailure.quota }
                 try await Task.sleep(for: .milliseconds(200))
                 try Task.checkCancellation()
+                if let encoded = ProcessInfo.processInfo.environment["STAYGRUBBY_RECIPE_TEST_RESPONSE"] {
+                    guard let data = Data(base64Encoded: encoded), data.count <= 96_000 else { throw RecipeImportFailure.invalid }
+                    _ = try RecipeImportValidation.decode(data)
+                    return data
+                }
                 return try JSONEncoder().encode(RecipeExtraction(title: "Soup", components: [.init(title: nil, ingredients: ["2 carrots", "stock"], steps: ["cook chicken until done"])]))
             }).environment(\.socialRequest, { endpoint, action, payload in try await review.request(endpoint, action, payload) })
                 .task {

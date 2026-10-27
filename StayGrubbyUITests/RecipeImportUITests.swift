@@ -1,9 +1,10 @@
 import XCTest
 
 final class RecipeImportUITests: StayGrubbyUITestCase {
-    @MainActor private func launch(_ extra: [String] = [], dish: String = "Matzo Ball Soup", expectImport: Bool = true) -> XCUIApplication {
+    @MainActor private func launch(_ extra: [String] = [], dish: String = "Matzo Ball Soup", expectImport: Bool = true, fixture: Data? = nil) -> XCUIApplication {
         continueAfterFailure=false
         let app=XCUIApplication();app.launchArguments=["--ui-test-store",UUID().uuidString,"--social-review","--social-review-ready","--recipes-review","--recipe-import-review","--score-unlock-fixture",extra.contains("--bible-review") ? "10" : "1"]+extra
+        if let fixture { app.launchEnvironment["STAYGRUBBY_RECIPE_TEST_RESPONSE"] = fixture.base64EncodedString() }
         app.launchWithReviewOptions();XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20))
         app.tabBars.buttons["Food Bible"].tap();XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout:8))
         app.buttons["bible-add"].tap();XCTAssertTrue(app.buttons["bible-import"].waitForExistence(timeout:8));app.buttons["bible-import"].tap()
@@ -48,6 +49,28 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["recipe-title"].label.contains("Braised"))
         XCTAssertTrue(app.buttons["recipe-edit"].exists)
         shot(app,"Existing recipe protected from import replacement")
+    }
+
+    @MainActor func testCanonicalKaleServerContractOpensEditorWithoutSaving() throws {
+        struct Fixture: Decodable { var raw: String }
+        let bundle = Bundle(for: RecipeImportUITests.self)
+        let url = try XCTUnwrap(bundle.url(forResource: "RecipeEngineKaleUI", withExtension: "json", subdirectory: "Fixtures") ?? bundle.url(forResource: "RecipeEngineKaleUI", withExtension: "json"))
+        let data = try Data(contentsOf: url), object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String:Any])
+        let source = try JSONDecoder().decode(Fixture.self, from: data).raw
+        let response = try JSONSerialization.data(withJSONObject: XCTUnwrap(object["extraction"]))
+        let app = launch(["--test-light"], fixture: response)
+        let input = app.textViews["recipe-import-text"]
+        input.tap(); input.typeText(source)
+        XCTAssertEqual(input.value as? String, source)
+        app.swipeUp(); app.switches["recipe-import-consent"].tap()
+        app.buttons["recipe-import-format"].tap()
+        XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:15))
+        XCTAssertEqual(app.textFields["recipe-edit-title"].value as? String, "Kale Pasta")
+        XCTAssertFalse(app.staticTexts["recipe-import-error"].exists)
+        shot(app,"Canonical unchanged kale draft — not saved")
+        app.buttons["recipe-editor-cancel"].tap()
+        XCTAssertTrue(input.waitForExistence(timeout:8))
+        XCTAssertEqual(input.value as? String, source)
     }
 
 }

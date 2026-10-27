@@ -1,0 +1,232 @@
+{
+  "cases": [
+    {
+      "id": "unsupported-temperature",
+      "raw": "Bake until crispy.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Bake at 400 °F until crispy."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-duration",
+      "raw": "Cook until done.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Cook for 12 minutes until done."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-pasta-quantity",
+      "raw": "Boil pasta.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "12 oz pasta"
+            ],
+            "steps": [
+              "Boil pasta."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-ingredient",
+      "raw": "Heat olive oil.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "butter"
+            ],
+            "steps": [
+              "Heat olive oil."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-variety",
+      "raw": "Add red pepper flakes.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "Calabrian chiles"
+            ],
+            "steps": [
+              "Add red pepper flakes."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "quantity-unit-rebinding",
+      "raw": "2 cups kale cook 5 minutes.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Cook kale for 2 minutes."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ingredient-quantity-rebinding",
+      "raw": "2 cups kale and add stock.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 cups stock"
+            ],
+            "steps": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-negative-quantity",
+      "raw": "1 cup stock. Cook stock.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "-1 cup stock"
+            ],
+            "steps": [
+              "Cook stock."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-zero-denominator",
+      "raw": "stock. Cook stock.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "1/0 cup stock"
+            ],
+            "steps": [
+              "Cook stock."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid-unit",
+      "raw": "1 tbsp olive oil. Heat olive oil.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "1 parsec olive oil"
+            ],
+            "steps": [
+              "Heat olive oil."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unsupported-servings",
+      "raw": "Cook rice.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Cook rice for 4 servings."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "temperature-unit-rebinding",
+      "raw": "Heat at 180 degrees Celsius.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [],
+            "steps": [
+              "Heat at 180 °F."
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

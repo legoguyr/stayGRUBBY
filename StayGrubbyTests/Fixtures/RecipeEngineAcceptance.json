@@ -1,0 +1,350 @@
+{
+  "cases": [
+    {
+      "phase": 0,
+      "id": "tiny",
+      "origin": "synthetic_contract_fixture",
+      "raw": "2 eggs\n1 tbsp butter\nScramble eggs in butter.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 eggs",
+              "1 tbsp butter"
+            ],
+            "steps": [
+              "Scramble eggs in butter."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "minimumComponents": 1
+      }
+    },
+    {
+      "phase": 1,
+      "id": "clean",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Garlic Eggs\n2 eggs\n1 tbsp butter\n2 cloves garlic\nMelt butter. Add garlic. Scramble eggs in butter.",
+      "provider": {
+        "title": "Garlic Eggs",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 eggs",
+              "1 tbsp butter",
+              "2 cloves garlic"
+            ],
+            "steps": [
+              "Melt butter. Add garlic. Scramble eggs in butter."
+            ]
+          }
+        ]
+      },
+      "checks": {}
+    },
+    {
+      "phase": 2,
+      "id": "prose",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Garlic Eggs. Melt one tablespoon of butter, add two cloves of garlic and scramble two eggs in butter.",
+      "provider": {
+        "title": "Garlic Eggs",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 eggs",
+              "1 tbsp butter",
+              "2 cloves garlic"
+            ],
+            "steps": [
+              "Melt butter. Add garlic and scramble eggs in butter."
+            ]
+          }
+        ]
+      },
+      "checks": {}
+    },
+    {
+      "phase": 3,
+      "id": "vague",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Soup. Cook carrots in stock until soft. Add a little olive oil. Finish with salt to taste and optional parsley garnish.",
+      "provider": {
+        "title": "Soup",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "carrots",
+              "stock",
+              "a little olive oil",
+              "salt for serving",
+              "parsley for soup"
+            ],
+            "steps": [
+              "Cook carrots in stock until soft. Add a little olive oil. Finish with salt to taste and optional parsley garnish."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "recovery": true,
+        "unknownQuantity": true
+      }
+    },
+    {
+      "phase": 4,
+      "id": "spoken",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Garlic sauce. Blend a quarter cup olive oil, half cup stock, two cloves garlic and one tablespoon butter. Heat at 180 degrees Fahrenheit for five minutes.",
+      "provider": {
+        "title": "Garlic sauce",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "0.25 cup olive oil",
+              "0.5 cup stock",
+              "2 cloves garlic",
+              "1 tbsp butter"
+            ],
+            "steps": [
+              "Blend olive oil stock garlic butter. Heat at 180 °F for 5 min."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "quantities": [
+          "1/4",
+          "1/2",
+          "2",
+          "1"
+        ]
+      }
+    },
+    {
+      "phase": 5,
+      "id": "voice",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Blanche kale add to ice water squeeze out water. Blend with a little chili oil or clabbering chilies or red pepper flakes until smooth.",
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "kale",
+              "ice water",
+              "chili oil or Calabrian chilies or red pepper flakes (optional)"
+            ],
+            "steps": [
+              "Blanch kale add to ice water squeeze out water. Blend with chili oil or clabbering chilies or red pepper flakes until smooth."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "recovery": true,
+        "preserve": "clabbering chilies",
+        "forbid": "Calabrian"
+      }
+    },
+    {
+      "phase": 6,
+      "id": "multi",
+      "origin": "synthetic_contract_fixture",
+      "raw": "Rice bowl. Cook rice in stock. Make carrot topping: roast carrots with olive oil until soft. Make a cheese crisp: bake Parmesan until crispy.",
+      "provider": {
+        "title": "Rice bowl",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Rice",
+            "ingredients": [
+              "rice",
+              "stock"
+            ],
+            "steps": [
+              "Cook rice in stock."
+            ]
+          },
+          {
+            "title": "Carrot topping",
+            "ingredients": [
+              "carrots",
+              "olive oil"
+            ],
+            "steps": [
+              "Roast carrots with olive oil until soft."
+            ]
+          },
+          {
+            "title": "Cheese crisp",
+            "ingredients": [
+              "Parmesan"
+            ],
+            "steps": [
+              "Bake Parmesan until crispy."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "minimumComponents": 3,
+        "unknownQuantity": true
+      }
+    },
+    {
+      "phase": 7,
+      "id": "canonical-faithful",
+      "origin": "synthetic_contract_fixture",
+      "raw": null,
+      "provider": {
+        "title": "Kale Pasta",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Kale sauce",
+            "ingredients": [
+              "2 cups kale per person",
+              "1/4 cup olive oil",
+              "1/4 cup Parmesan cheese",
+              "2 cloves garlic",
+              "pinch salt",
+              "chili oil or clabbering chilies or red pepper flakes",
+              "pasta",
+              "1 tbsp cubed cold butter"
+            ],
+            "steps": [
+              "Boil water and season with salt. Add kale and cook until it starts to wet.",
+              "Add to ice water. Move it around cool it down squeeze out all the water.",
+              "Add kale to a blender with olive oil Parmesan cheese garlic salt and chili oil or clabbering chilies or red pepper flakes. Blend till smooth.",
+              "Add to a pan heat up. Boil pasta add pasta to the sauce mix with 1 tablespoon of cubed butter cold butter until glossy.",
+              "Top with kale chips and Parmesan crisp."
+            ]
+          },
+          {
+            "title": "Parmesan crisp",
+            "ingredients": [
+              "Parmesan"
+            ],
+            "steps": [
+              "Take a baking sheet, put a piece of parchment paper on it and shaving fresh Parmesan on it.",
+              "Cook in the oven for about five minutes until crispy."
+            ]
+          },
+          {
+            "title": "Kale chips",
+            "ingredients": [
+              "kale",
+              "olive oil",
+              "salt",
+              "pepper"
+            ],
+            "steps": [
+              "Take some kale top with some olive oil, salt and pepper put in the oven till crispy."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "canonical": "RecipeImportFailure.json",
+        "minimumComponents": 3,
+        "preserve": "clabbering chilies",
+        "forbid": "Calabrian",
+        "unknownQuantity": true
+      }
+    },
+    {
+      "phase": 7,
+      "id": "canonical-v10-rule-shape",
+      "origin": "synthetic_contract_fixture",
+      "raw": null,
+      "provider": {
+        "title": "Kale Pasta",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "2 cups kale per person",
+              "ice water",
+              "salt",
+              "0.25 cup olive oil",
+              "0.25 cup Parmesan cheese",
+              "2 cloves garlic",
+              "pasta",
+              "chili oil or Calabrian chilies or red pepper flakes (optional)",
+              "1 tbsp cold cubed butter",
+              "pepper",
+              "Parmesan cheese for crisp",
+              "kale for kale chips"
+            ],
+            "steps": [
+              "Boil water and season with salt. Add kale and cook until it starts to wet.",
+              "Add to ice water. Move it around cool it down squeeze out all the water.",
+              "Add kale to a blender with olive oil Parmesan cheese garlic salt.",
+              "Blend till smooth add to a pan heat up.",
+              "Boil pasta add pasta to the sauce.",
+              "Mix with 1 tablespoon of cubed butter cold butter until glossy.",
+              "Top with kale chips and Parmesan crisp.",
+              "Line a baking sheet with parchment paper and shave Parmesan on it. Bake for 5 minutes until crispy.",
+              "Coat kale with olive oil salt and pepper and bake until crispy."
+            ]
+          }
+        ]
+      },
+      "checks": {
+        "canonical": "RecipeImportFailure.json",
+        "recovery": true,
+        "preserve": "clabbering chilies",
+        "forbid": "Calabrian",
+        "unknownQuantity": true,
+        "ingredientForbidden": [
+          "baking sheet",
+          "taking",
+          "done by"
+        ],
+        "lastStepRequired": [
+          "kale",
+          "olive oil",
+          "salt",
+          "pepper"
+        ],
+        "methodRequired": [
+          {
+            "component": 0,
+            "step": 7,
+            "words": [
+              "five minutes",
+              "crispy",
+              "parchment paper"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
