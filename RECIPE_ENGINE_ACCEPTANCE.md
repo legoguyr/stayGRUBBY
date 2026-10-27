@@ -1,8 +1,8 @@
 # Recipe Engine reliability and acceptance
 
-Status: **AUTOMATED EDITORIAL ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**.
+Current Recipe Creator contract/status: [RECIPE_CREATOR_REVIEW.md](RECIPE_CREATOR_REVIEW.md). The editorial-only contract below is historical and superseded; its fixtures remain regression coverage. It does not add a separate owner test.
 
-## October 27 editorialization cycle
+## October 27 editorialization cycle — historical
 
 The owner **physically accepted v11** with the unchanged canonical kale text on a real iPhone. That safe baseline is preserved in implementation `9794b926a2206509c247c4c42b2e83742ceea5f5` and starting HEAD `a804628e224730947443f8e74bb1c030427baad8`. This cycle began on clean `main`, aligned with `origin/main`. The sections below headed “v11 historical acceptance” retain the earlier investigation/results, not a pending v11 gate.
 
@@ -37,7 +37,7 @@ Hosted **recipe-import v13 ACTIVE**, `verify_jwt=true`, all seven runtime files 
 
 The physically accepted v11 history remains an ancestor. Implementation checkpoint: `3f4e02d39445914d6bfe524db2f844b984d5b981` (16 files). Deployment/documentation is a separate logical checkpoint. See the owner report for final SHA/normal-push outcome. Evidence remains machine-local under `/private/tmp/recipe-editorial-*`, never in Git. Automated provider responses are synthetic, Auth/budget are mocked, and UI tests use isolated UUID stores/media; no owner credentials are extracted and no real Recipe or provider quota is consumed by tests. Apple real-model inference and new live Gemini editorial quality require the single physical gate below.
 
-### One final physical editorial acceptance
+### Historical editorial acceptance instructions — superseded
 
 1. Build/install the **new Xcode Debug build** (native prompt/source/qualifier checks changed). Use the existing real account; do not reset its data.
 2. Food Bible → Add Recipe → Import Recipe, selecting an existing cooked Dish without a Recipe. Enable **Cloud Formatting**. Paste all of `StayGrubbyTests/Fixtures/RecipeEngineCanonicalKale.txt` unchanged, and Format once.

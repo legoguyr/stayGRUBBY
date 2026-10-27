@@ -1,6 +1,6 @@
 # Bulk ingredient entry + Intelligent Recipe Engine V1
 
-> Historical implementation checkpoint. The October 26 follow-up supersedes its verbatim-only validator, timestamp gate, disabled-provider status and unpublished-policy status. See [current failure investigation](STAYGRUBBY_RECIPE_IMPORT_FAILURE_REVIEW.md). Historical test totals below describe the original cycle only.
+> Historical implementation checkpoint. The October 26 follow-up supersedes its verbatim-only validator, timestamp gate, disabled-provider status and unpublished-policy status. See [current Recipe Creator contract](RECIPE_CREATOR_REVIEW.md) and [historical failure investigation](STAYGRUBBY_RECIPE_IMPORT_FAILURE_REVIEW.md). Historical test totals below describe the original cycle only.
 
 Starting HEAD: `5a5b1f0a26471eb3840696cd27a5b981785b4493`, clean `main` matching `origin/main`. Owner-accepted Food Bible UX 2.0, natural single-line entry, deterministic parsing and ranking behavior were preserved. Single agent, original checkout, one Simulator lane. The final documentation checkpoint/HEAD is identified by `git log -1 --format=%H -- STAYGRUBBY_INTELLIGENT_RECIPE_ENGINE_V1_REVIEW.md`; exact commits and push outcome are recorded in the final report.
 
@@ -45,22 +45,17 @@ Hosted project: existing `lgjxbpycphhsswxoncmz` only.
 - `recipe-import` Edge Function **v1**, ACTIVE, `verify_jwt=true`; original delete-account function unchanged. Four deployed runtime files: index.ts, handler.ts, contract.ts, deno.json. No unpinned external runtime dependency.
 - Gateway requires user JWT. Handler verifies user through Auth, rejects anonymous identities, then uses verified user/session claims for server-only budget reservation. SQL checks an active provisioned account, live matching Auth session, unexpired session and undeleted non-anonymous user. No authorization from editable metadata or caller-selected owner/model/upstream URL.
 - New `staygrubby.recipe_import_usage` contains counters only, RLS enabled, no anon/authenticated table grants or policies. `api.reserve_recipe_import` is service-role-only SECURITY DEFINER with empty search_path and fully qualified references. No new client grants to existing data. Account counters cascade on account deletion; no existing deletion implementation changed.
-- Atomic reservations lock fixed global-month first, then global-day/account-day/account-minute rows. Limits: **3/account/minute, 20/account/day, 100/global/day, 1,000/global/month**. Failed provider calls count; no refund/retry loophole. UTC day/month windows. Old counters older than the previous month are removed during reservations; current month ceiling remains intact.
+- Historical deployment used daily/monthly reservation ceilings. These are retired. Current policy has no StayGrubby product allowance and retains only 3/account/minute burst-abuse protection. See RECIPE_CREATOR_REVIEW.md for the forward migrations and current behavior.
 - Input: ≤12,000 characters /32 KB text, ≤40 KB bounded streaming request body. Structured upstream response ≤128 KB; extracted JSON ≤96 KB. Fixed schema and source validation are enforced on server and client. Google request timeout 25 seconds; Auth/budget requests 8 seconds each. Cancellation suppresses stale client results and propagates to the upstream request when delivered by the transport. No arbitrary proxy, raw provider error or unrestricted CORS. No direct Recipe save/read in the import endpoint.
 - Production function code intentionally logs **no prompt, response, token, secret or raw provider error**. Platform invocation/security logs remain subject to provider policies. Counters retain no recipe text. Errors return stable safe categories only.
 
 There is **no paid mode or recurring date gate**. Only the server-side `STAYGRUBBY_GEMINI_API_KEY` is required. The Google project remains unbilled. No StayGrubby daily/monthly product allowance applies; actual provider quota is authoritative. A short authenticated burst guard and input/output/time limits protect the endpoint. Provider throttling shows a friendly cooldown with manual entry available. No automatic provider retry or paid fallback exists.
 
-A configuration flag cannot independently prove Google billing status. To guarantee the intended zero-paid path, the owner must use a dedicated project with **no linked billing account** and keep it unbilled. If someone later attaches billing while a confirmation is valid, bounded requests could still become chargeable; no application flag can prevent an external project administrator changing billing. Google spend caps/budget alerts are not a substitute (official docs describe delayed enforcement/overages). This residual risk is disclosed, never treated as an automatic free-tier guarantee.
+A configuration flag cannot independently prove Google billing status. To guarantee the intended zero-paid path, the owner must use a dedicated project with **no linked billing account** and keep it unbilled. No application flag can prevent an external project administrator later attaching billing. There is no expiring confirmation setting. Google spend caps/budget alerts are not a substitute (official docs describe delayed enforcement/overages). This residual risk is disclosed, never treated as an automatic free-tier guarantee.
 
-## Secret setup — only owner action still required for Gemini
+## Configuration — historical setup completed
 
-Correction from the follow-up investigation: the CLI inventory returned an authentication error, not a successful empty inventory; the earlier absence claim was not established. The owner subsequently confirmed both settings configured, and physical requests passed the configuration guard. No secret values were read or requested. No Gemini request, free quota or paid token was consumed by this cycle.
-
-1. In Google AI Studio, create/select a **dedicated unbilled project**, confirm it shows Free tier and has no linked Cloud Billing account. Do not upgrade, add a payment method, buy credits, or enable paid usage. Create a provider key restricted to the Generative Language API where available. Keep its value out of chat, source, screenshots, local files and logs.
-2. In the existing StayGrubby Supabase Dashboard, open **Edge Functions → Secrets**. Add `STAYGRUBBY_GEMINI_API_KEY` using the key directly in that secure Dashboard field.
-4. Publish the prepared canonical privacy-policy update through the established website workflow before enabling real cloud use, and review App Store privacy disclosures before a later distributed build. This run prepared/bundled the policy and tested the static site; it did not publish the website or modify App Store Connect.
-5. Perform the physical iPhone 15 acceptance below. No app key edit, client rebuild for secrets or another schema/function deployment is required merely to configure these server settings.
+The owner configured the working server-side `STAYGRUBBY_GEMINI_API_KEY` in Supabase and confirmed the Google project has no billing account/card. Real cloud requests and v11 physical acceptance succeeded. The recurring date-secret mechanism is removed from active behavior; no renewal or second secret is needed. No credential value is requested, read or changed by this cycle. The privacy policy was subsequently published through the approved website workflow. Current Recipe Creator acceptance requires only the one final new-build test documented in RECIPE_CREATOR_REVIEW.md.
 
 ## Failure, privacy and accessibility
 
@@ -78,7 +73,7 @@ Hosted post-deployment checks: all 35 baseline existing-data/Storage fingerprint
 
 Preserved demo baseline is 1 global ranking /12 Dishes /15 attempts/items /356 comparisons /10 Sources /21 tags /48 memberships and 190 media files. Ranking engine/calibration/evidence/unlock/re-rank, photo/structured sync, official assets and Tickets were not changed. Original guest/demo library was never reset or seeded. Test fixtures use fresh UUID stores/media and mock providers.
 
-## Physical iPhone 15 acceptance (pending owner setup)
+## Original physical checklist — historical and superseded
 
 1. Keep existing data; install the reviewed Debug/device build using normal signing. Open Food Bible → Add Recipe → Import Recipe → choose an existing cooked Dish **without a Recipe**.
 2. Paste a simple full Recipe. Enable the disclosed cloud permission and Format Recipe. On ordinary iPhone 15 this automatically uses Gemini; there is no provider picker or Apple-unavailable dead end.
@@ -90,7 +85,7 @@ Preserved demo baseline is 1 global ranking /12 Dishes /15 attempts/items /356 c
 
 ## Remaining boundaries / release gates
 
-Gemini is **not physically ready until the owner configures the two server secrets against an unbilled project**; end-to-end live inference remains unverified. Apple is compile/mock verified, not physically owner-verified. No paid billing enabled. Policy publication/disclosure review and physical acceptance remain explicit gates. Universal Links remain owner-confirmed physically broken and deferred; no investigation in this cycle. Remaining external-beta UGC moderation hardening remains deferred. No Tickets restoration, OCR/photo/PDF/URL import, timers, Start Cooking, serving scaling, groceries, meal planning, Taste Intelligence, ranking changes, TestFlight upload or App Store work was performed.
+These were the original cycle’s gates; Gemini configuration, policy publication and v11 physical acceptance subsequently completed. Current Recipe Creator physical acceptance and observed Apple capability are recorded in RECIPE_CREATOR_REVIEW.md. No paid billing is enabled. Universal Links remain owner-confirmed physically broken and deferred; no investigation in this cycle. Remaining external-beta UGC moderation hardening remains deferred. No Tickets restoration, OCR/photo/PDF/URL import, timers, Start Cooking, serving scaling, groceries, meal planning, Taste Intelligence, ranking changes, TestFlight upload or App Store work was performed.
 
 
 ## Final verification totals and artifacts
