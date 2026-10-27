@@ -23,16 +23,26 @@ export function tokens(input:string):string[] {
  .map(v=>/^\d/.test(v)?rational(v):aliases[v]??v).filter(v=>!stops.has(v));
 }
 function contains(source:string[],value:string[]):boolean {return value.length>0 && (` ${source.join(' ')} `).includes(` ${value.join(' ')} `);}
-export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'metadata_phrase'|'ingredient_phrase';
+export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'preparation_binding'|'metadata_phrase'|'ingredient_phrase';
 export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):GroundingIssue|null {
  if(kind==='ingredient'&&(/^\s*-\s*\d/.test(value)||/\b\d+\s*\/\s*0\b/.test(value)))return 'invalid_quantity';
- const source=tokens(raw),output=tokens(value);if(!output.length)return 'source_empty';
+ const source=editorialTokens(raw,raw,kind),output=editorialTokens(value,raw,kind);if(!output.length)return 'source_empty';
  if(contains(source,output))return null;
  const absent=output.filter(v=>!source.includes(v));
  if(absent.length)return absent.some(v=>/^n\d/.test(v))?'source_number':'source_word';
  for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return 'quantity_unit_pair';
  if(kind==='metadata')return 'metadata_phrase';
  if(kind==='title'||kind==='step')return null;
+ // A descriptor cannot be borrowed from another ingredient in the source.
+ for(let i=0;i<output.length;i++)if(preparation.has(output[i])){
+  const neighbors=(words:string[],at:number)=>{
+   const useful=(w:string)=>!preparation.has(w)&&!units.has(w)&&!/^n\d/.test(w);
+   const after=words.slice(at+1).find(useful),before=words.slice(0,at).reverse().find(useful);
+   return [after,before].filter((v):v is string=>!!v);
+  };
+  const target=neighbors(output,i)[0];
+  if(target&&!source.some((word,n)=>word===output[i]&&neighbors(source,n)[0]===target))return 'preparation_binding';
+ }
  const core=output.filter(v=>!preparation.has(v));const origin=source.filter(v=>!preparation.has(v));
  if(contains(origin,core))return null;
  // Natural quantity-at-end notation may be normalized to quantity first.
@@ -46,3 +56,21 @@ export function numericEvidence(value:string,raw:string):boolean {
  return output.every((v,i)=>!/^n\d/.test(v)||(source.includes(v)&&(!units.has(output[i+1])||contains(source,output.slice(i,i+2)))));
 }
 export function factualWords(value:string):string[] {return tokens(value).filter(v=>!/^n\d/.test(v)&&!units.has(v));}
+
+// A closed, context-dependent editorial vocabulary, not a cooking thesaurus.
+// No ingredient identity, number, unit, variety or doneness word is discarded.
+export function editorialTokens(value:string,raw:string,kind:string):string[] {
+ let text=value.toLowerCase();
+ if(kind==='step') {
+  text=text.replace(/\b(?:put|cook|cooking)\s+(?:it\s+)?(?:in\s+)?(?:the\s+)?oven\b/g,'bake')
+   .replace(/\bmove (?:it )?around\b/g,'stir').replace(/\bcool (?:it )?down\b/g,'cool')
+   .replace(/\bcooled\b/g,'cool').replace(/\bshaving\b/g,'shave');
+  if(/\bmix(?:ing|ed)?\b/i.test(raw))text=text.replace(/\btoss(?:ing|ed)?\b/g,'mix');
+  if(/\b(?:add|put)\b/i.test(raw))text=text.replace(/\b(?:transfer|place)\b/g,'add');
+  if(/\bsqueeze out (?:all )?(?:the )?water\b/i.test(raw))text=text.replace(/\bdrain\b/g,'').replace(/\bas much water as possible\b/g,'water');
+  text=text.replace(/\bheat up\b/g,'heat').replace(/\bsqueeze out (?:all )?(?:the )?water\b/g,'squeeze water').replace(/\b(?:until|add)\b/g,'');
+ }
+ text=text.replace(/\b(?:if (?:you )?(?:want(?: spice)?|desired)|optional)\b/g,'optional')
+  .replace(/\bapproximately\b/g,'about');
+ return tokens(text);
+}

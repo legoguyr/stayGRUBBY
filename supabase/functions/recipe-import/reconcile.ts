@@ -79,7 +79,14 @@ export function reconcile(value:unknown,raw:string):{extraction:Extraction;field
   if(part.title!==null&&groundingIssue(part.title,raw,'title')){part.title=null;record(`components[${i}].title`);}
   for(const [key,kind,max] of [['ingredients','ingredient',500],['steps','step',2000]] as const)for(const [n,text] of part[key].entries()){
    if(!groundingIssue(text,raw,kind))continue;
-   const restored=recover(text,max,kind);if(!restored)return null;
+   // Remove only a closed set of unsupported presentation modifiers when the
+   // remaining edited sentence independently passes every source guard. Do not
+   // erase uncertain ingredient varieties, numbers, negation or cooking verbs.
+   let scoped=text;
+   for(const modifier of ['extra[- ]virgin','freshly','finely','roughly']) {
+    if(!new RegExp(`\\b${modifier}\\b`,'i').test(raw))scoped=scoped.replace(new RegExp(`\\b${modifier}\\b[ ,]*`,'gi'),'');
+   }
+   const restored=scoped!==text&&!groundingIssue(scoped,raw,kind)?scoped:recover(text,max,kind);if(!restored)return null;
    part[key][n]=restored;record(`components[${i}].${key}[${n}]`);
   }
  }

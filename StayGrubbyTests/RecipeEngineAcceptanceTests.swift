@@ -27,7 +27,7 @@ import Testing
     private func cases() throws -> [Case] { try JSONDecoder().decode(Suite.self, from: data("RecipeEngineServerOutputs")).cases }
     @Test func allServerPhasesDecodeNormalizeAndRemainEditorCompatible() throws {
         let cases = try cases()
-        #expect(Set(cases.map(\.phase)) == Set(0...7))
+        #expect(Set(cases.map(\.phase)) == Set(0...8))
         for c in cases {
             let wire = try JSONEncoder().encode(c.extraction)
             let decoded = try RecipeImportValidation.decode(wire)
@@ -66,6 +66,40 @@ import Testing
         for c in try JSONDecoder().decode(Negatives.self, from: data("RecipeEngineNegative")).cases {
             #expect(throws: RecipeImportFailure.invalid) { try RecipeImportValidation.review(c.provider, raw: c.raw, dishTitle: "Dish", provider: "Negative") }
         }
+    }
+    @Test func editorialPairsProtectFactsWithoutRequiringLiteralProse() throws {
+        struct Pair: Decodable { var id: String; var raw: String; var safe: String; var unsafe: String; var kind: String }
+        struct Pairs: Decodable { var cases: [Pair] }
+        for c in try JSONDecoder().decode(Pairs.self, from: data("RecipeEditorialPairs")).cases {
+            let kind: RecipeSourceEvidence.Kind = c.kind == "ingredient" ? .ingredient : .step
+            #expect(RecipeSourceEvidence.grounded(c.safe, raw: c.raw, kind: kind), "\(c.id): safe rewrite rejected")
+            #expect(!RecipeSourceEvidence.grounded(c.unsafe, raw: c.raw, kind: kind), "\(c.id): invented fact accepted")
+        }
+    }
+    @Test func editorialServerProseSurvivesNativeReviewAndPersistence() throws {
+        for c in try cases().filter({ $0.phase == 8 }) {
+            let result = try RecipeImportValidation.review(c.extraction, raw: c.raw, dishTitle: "Dish", provider: "Provider contract")
+            #expect(result.draft.components!.flatMap(\.steps).map(\.instruction) == c.extraction.components.flatMap(\.steps), "\(c.id): polished prose changed on client")
+            let saved = try JSONEncoder().encode(result.draft)
+            #expect(try JSONDecoder().decode(RecipeContent.self, from: saved) == result.draft)
+        }
+    }
+    @Test func sourceQualificationsAreRestoredWithoutDowngradingSteps() throws {
+        let raw = "cook rice about five minutes add a little olive oil and salt to taste"
+        let value = RecipeExtraction(components: [.init(ingredients: ["rice", "olive oil", "salt"], steps: ["Cook rice for 5 minutes.", "Add olive oil and salt."])])
+        let result = try RecipeImportValidation.review(value, raw: raw, dishTitle: "Rice", provider: "Apple contract")
+        #expect(result.draft.steps == ["Cook rice for about 5 minutes.", "Add olive oil and salt."])
+        #expect(result.draft.components![0].ingredients.contains { $0.name.contains("a little") })
+        #expect(result.draft.components![0].ingredients.contains { $0.name == "salt" && $0.note == "to taste" })
+        #expect(value.components[0].steps[0] == "Cook rice for 5 minutes.")
+    }
+    @Test func factLockRejectsDroppedNumbersPreparationAndAlternatives() {
+        #expect(RecipeEditorialEvidence.preserve(RecipeExtraction(components: [.init(ingredients: ["some salt"], steps: [])]), raw: String(repeating: "some salt, ", count: 201)) == nil)
+        for (raw, value) in [
+            ("2 cloves garlic. Blend garlic.", RecipeExtraction(components: [.init(ingredients: ["garlic"], steps: ["Blend garlic."])])),
+            ("Add cold cubed butter.", RecipeExtraction(components: [.init(ingredients: ["butter"], steps: ["Add butter."])])),
+            ("Add oil or uncertain chilies or pepper.", RecipeExtraction(components: [.init(ingredients: ["oil", "pepper"], steps: ["Add oil and pepper."])]))
+        ] { #expect(RecipeEditorialEvidence.preserve(value, raw: raw) == nil) }
     }
     @Test func quantityUnitAliasesAreEquivalentWithoutMathOrInference() {
         for (a,b) in [("quarter cup olive oil","0.25 cup olive oil"),("half cup stock","1/2 cup stock"),("two cloves garlic","2 cloves garlic"),("one tablespoon butter","1 tbsp butter"),("180 degrees Fahrenheit","180 °F"),("180 degrees Celsius","180 °C"),("2 ounces flour","2 oz flour"),("1 pound rice","1 lb rice")] {

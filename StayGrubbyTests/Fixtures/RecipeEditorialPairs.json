@@ -1,0 +1,131 @@
+{
+  "origin": "synthetic-editorial-contrast-fixtures",
+  "cases": [
+    {
+      "id": "fraction-and-variety",
+      "raw": "quarter cup olive oil",
+      "safe": "¼ cup olive oil",
+      "unsafe": "¼ cup extra-virgin olive oil",
+      "kind": "ingredient"
+    },
+    {
+      "id": "spoken-cloves",
+      "raw": "two cloves garlic",
+      "safe": "2 cloves garlic",
+      "unsafe": "3 cloves garlic",
+      "kind": "ingredient"
+    },
+    {
+      "id": "oven-action",
+      "raw": "put in oven till crispy",
+      "safe": "Bake until crispy.",
+      "unsafe": "Bake at 400°F until crispy.",
+      "kind": "step"
+    },
+    {
+      "id": "approximate-time",
+      "raw": "cook about five minutes",
+      "safe": "Cook for about 5 minutes.",
+      "unsafe": "Cook for 5–7 minutes.",
+      "kind": "step"
+    },
+    {
+      "id": "missing-pasta-amount",
+      "raw": "boil pasta",
+      "safe": "Boil the pasta.",
+      "unsafe": "Boil 12 oz pasta in salted water.",
+      "kind": "step"
+    },
+    {
+      "id": "vague-oil",
+      "raw": "a little chili oil",
+      "safe": "Add a little chili oil.",
+      "unsafe": "Add 1 tsp chili oil.",
+      "kind": "step"
+    },
+    {
+      "id": "optional-pepper",
+      "raw": "red pepper flakes if you want spice",
+      "safe": "Add red pepper flakes, if desired.",
+      "unsafe": "Add ½ tsp red pepper flakes.",
+      "kind": "step"
+    },
+    {
+      "id": "cheese-identity",
+      "raw": "Parmesan",
+      "safe": "Parmesan",
+      "unsafe": "Parmigiano-Reggiano",
+      "kind": "ingredient"
+    },
+    {
+      "id": "glossy-cold-butter",
+      "raw": "mix with 1 tablespoon of cubed butter cold butter until glossy",
+      "safe": "Add 1 tablespoon cold, cubed butter and toss until glossy.",
+      "unsafe": "Add 1 tablespoon melted butter and toss until glossy.",
+      "kind": "step"
+    },
+    {
+      "id": "cool-drain",
+      "raw": "Move it around cool it down squeeze out all the water.",
+      "safe": "Stir until cooled, then drain and squeeze out as much water as possible.",
+      "unsafe": "Stir until cooled, then refrigerate overnight.",
+      "kind": "step"
+    },
+    {
+      "id": "equipment",
+      "raw": "Blend garlic in a blender.",
+      "safe": "Blend the garlic in a blender.",
+      "unsafe": "Blend the garlic in a food processor.",
+      "kind": "step"
+    },
+    {
+      "id": "technique",
+      "raw": "cook carrots until soft",
+      "safe": "Cook the carrots until soft.",
+      "unsafe": "Roast carrots until caramelized.",
+      "kind": "step"
+    },
+    {
+      "id": "no-new-garnish",
+      "raw": "cook rice",
+      "safe": "Cook the rice.",
+      "unsafe": "Cook the rice and garnish with parsley.",
+      "kind": "step"
+    },
+    {
+      "id": "no-storage-advice",
+      "raw": "cook rice",
+      "safe": "Cook the rice.",
+      "unsafe": "Cook the rice and refrigerate leftovers.",
+      "kind": "step"
+    },
+    {
+      "id": "no-new-preparation",
+      "raw": "2 cloves garlic",
+      "safe": "2 cloves garlic",
+      "unsafe": "2 cloves minced garlic",
+      "kind": "ingredient"
+    },
+    {
+      "id": "no-new-doneness",
+      "raw": "Bake kale until crispy.",
+      "safe": "Bake the kale until crispy.",
+      "unsafe": "Bake the kale until golden.",
+      "kind": "step"
+    },
+    {
+      "id": "no-salt-type",
+      "raw": "season with salt",
+      "safe": "Season with salt.",
+      "unsafe": "Season with kosher salt.",
+      "kind": "step"
+    },
+    {
+      "id": "descriptor-binding",
+      "raw": "2 cloves garlic and 1 tbsp cold butter",
+      "safe": "1 tbsp cold butter",
+      "unsafe": "2 cloves cold garlic",
+      "kind": "ingredient"
+    }
+  ]
+}

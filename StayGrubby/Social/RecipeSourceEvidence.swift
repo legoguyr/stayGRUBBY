@@ -39,9 +39,35 @@ nonisolated enum RecipeSourceEvidence {
     static func contains(_ source: [String], _ value: [String]) -> Bool {
         !value.isEmpty && (" " + source.joined(separator: " ") + " ").contains(" " + value.joined(separator: " ") + " ")
     }
+    /// Bounded editorial equivalents. Culinary nouns, numbers and units remain evidence.
+    static func editorialTokens(_ value: String, raw: String, kind: Kind) -> [String] {
+        var text = value.lowercased()
+        func replace(_ pattern: String, _ replacement: String) {
+            text = text.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
+        }
+        if case .step = kind {
+            replace(#"\b(?:put|cook|cooking)\s+(?:it\s+)?(?:in\s+)?(?:the\s+)?oven\b"#, "bake")
+            replace(#"\bmove (?:it )?around\b"#, "stir")
+            replace(#"\bcool (?:it )?down\b"#, "cool")
+            replace(#"\bcooled\b"#, "cool")
+            replace(#"\bshaving\b"#, "shave")
+            if raw.range(of: #"\bmix(?:ing|ed)?\b"#, options: [.regularExpression,.caseInsensitive]) != nil { replace(#"\btoss(?:ing|ed)?\b"#, "mix") }
+            if raw.range(of: #"\b(?:add|put)\b"#, options: [.regularExpression,.caseInsensitive]) != nil { replace(#"\b(?:transfer|place)\b"#, "add") }
+            if raw.range(of: #"\bsqueeze out (?:all )?(?:the )?water\b"#, options: [.regularExpression,.caseInsensitive]) != nil {
+                replace(#"\bdrain\b"#, "")
+                replace(#"\bas much water as possible\b"#, "water")
+            }
+            replace(#"\bheat up\b"#, "heat")
+            replace(#"\bsqueeze out (?:all )?(?:the )?water\b"#, "squeeze water")
+            replace(#"\b(?:until|add)\b"#, "")
+        }
+        replace(#"\b(?:if (?:you )?(?:want(?: spice)?|desired)|optional)\b"#, "optional")
+        replace(#"\bapproximately\b"#, "about")
+        return tokens(text)
+    }
     static func grounded(_ value: String, raw: String, kind: Kind) -> Bool {
         if case .ingredient = kind, value.range(of: #"^\s*-\s*\d|\b\d+\s*/\s*0\b"#, options: .regularExpression) != nil { return false }
-        let source = tokens(raw), output = tokens(value)
+        let source = editorialTokens(raw, raw: raw, kind: kind), output = editorialTokens(value, raw: raw, kind: kind)
         guard !output.isEmpty else { return false }
         if contains(source, output) { return true }
         guard output.allSatisfy({ source.contains($0) }) else { return false }
@@ -52,6 +78,13 @@ nonisolated enum RecipeSourceEvidence {
         case .metadata: return false
         case .title, .step: return true
         case .ingredient:
+            func neighbors(_ words: [String], _ at: Int) -> [String] {
+                func useful(_ w: String) -> Bool { !preparation.contains(w) && !units.contains(w) && !(w.hasPrefix("n") && w.dropFirst().first?.isNumber == true) }
+                return [words.dropFirst(at+1).first(where: useful), words.prefix(at).reversed().first(where: useful)].compactMap { $0 }
+            }
+            for i in output.indices where preparation.contains(output[i]) {
+                if let target = neighbors(output, i).first, !source.indices.contains(where: { source[$0] == output[i] && neighbors(source, $0).first == target }) { return false }
+            }
             let core = output.filter { !preparation.contains($0) }, origin = source.filter { !preparation.contains($0) }
             if contains(origin, core) { return true }
             if core.count > 2, core[0].hasPrefix("n"), units.contains(core[1]) { return contains(origin, Array(core.dropFirst(2))+Array(core.prefix(2))) }

@@ -1,4 +1,5 @@
 import { MODEL, INSTRUCTIONS, schema, validationReport } from "./contract.ts";
+import { preserveEditorialFacts } from "./editorial.ts";
 import { reconcile } from "./reconcile.ts";
 export type Dependencies = {
   authenticate: (token:string)=>Promise<{user:string;session:string}|null>;
@@ -100,6 +101,9 @@ export function handler(d:Dependencies) {
      if(!restored)return fail(422,"invalid_recipe",200,validation.issues[0]?.rule,{validationIssues:validation.issues,structure:validation.structure});
      extraction=restored.extraction;recoveredFields=restored.fields;recoveredCount=restored.count;
     }
+    const locked=preserveEditorialFacts(extraction,body.text);
+    if(!locked||!validationReport(locked,body.text).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
+    extraction=locked;
     stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
     return Response.json(extraction,{headers:headers()});
    } catch {

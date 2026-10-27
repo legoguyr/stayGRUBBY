@@ -1,4 +1,4 @@
-import { corpus, runCase, assert } from "../../../DevelopmentTools/recipe_engine_acceptance.ts";
+import { editorial, corpus, runCase, assert } from "../../../DevelopmentTools/recipe_engine_acceptance.ts";
 import { handler } from "./handler.ts";
 import { validationReport } from "./contract.ts";
 import { reconcile } from "./reconcile.ts";
@@ -13,7 +13,7 @@ Deno.test("canonical source bytes and isolated UI contract never drift",async()=
  const ui=JSON.parse(await Deno.readTextFile(new URL("../../../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url)));
  assert(ui.raw===canonical.raw&&JSON.stringify(ui.extraction)===JSON.stringify(golden.cases.find((c:any)=>c.id===ui.id).extraction),'UI fixture differs from server/client contract');
 });
-for(const c of corpus.cases)Deno.test(`phase ${c.phase}: ${c.id} full Edge/client-contract fixture`,async()=>{
+for(const c of [...corpus.cases,...editorial.cases])Deno.test(`phase ${c.phase}: ${c.id} full Edge/client-contract fixture`,async()=>{
  const actual=await runCase(c),expected=golden.cases.find((v:any)=>v.id===c.id);
  assert(!!expected,`${c.id}: missing client contract`);
  assert(JSON.stringify(actual.extraction)===JSON.stringify(expected.extraction),`${c.id}: server/client contract drift`);
@@ -53,4 +53,35 @@ Deno.test("relational ingredient annotations preserve source names and vague qua
  const restored=reconcile(value,raw);assert(!!restored,'annotation recovery failed');
  const lines=restored.extraction.components[0].ingredients;
  assert(lines[0]==='Parmesan cheese'&&lines[1].includes('to taste')&&lines[2].includes('optional'),'uncertainty or ingredient identity lost');
+});
+
+const pairs=JSON.parse(await Deno.readTextFile(new URL("RecipeEditorialPairs.json",fixtures)));
+const {grounded}=await import('./evidence.ts');
+for(const c of pairs.cases)Deno.test(`editorial safe/unsafe pair: ${c.id}`,()=>{
+ assert(grounded(c.safe,c.raw,c.kind),`${c.id}: safe prose rejected`);
+ assert(!grounded(c.unsafe,c.raw,c.kind),`${c.id}: unsupported cooking fact accepted`);
+});
+
+const {preserveEditorialFacts}=await import('./editorial.ts');
+Deno.test("fact lock rejects lost quantities, preparation and collapsed alternatives",()=>{
+ assert(preserveEditorialFacts({title:null,yield:null,source:null,components:[{title:null,ingredients:["some salt"],steps:[]}]},"some salt, ".repeat(201))===null,"source obligation cap silently truncated");
+ for(const [raw,ingredients,steps] of [
+  ['2 cloves garlic. Blend garlic.',['garlic'],['Blend garlic.']],
+  ['Add cold cubed butter.',['butter'],['Add butter.']],
+  ['Add oil or uncertain chilies or pepper.',['oil','pepper'],['Add oil and pepper.']],
+ ] as const)assert(preserveEditorialFacts({title:null,yield:null,source:null,components:[{title:null,ingredients:[...ingredients],steps:[...steps]}]},raw)===null,'dropped source fact accepted');
+});
+Deno.test("native and Gemini editorial instructions remain the same contract",async()=>{
+ const native=await Deno.readTextFile(new URL('../../../StayGrubby/Social/RecipeIntelligence.swift',import.meta.url));
+ const prompt=native.match(/static let instructions = """\n    ([\s\S]*?)\n    """/)?.[1];
+ const {INSTRUCTIONS}=await import('./contract.ts');assert(prompt===INSTRUCTIONS,'provider prompt drift');
+});
+Deno.test("source qualifiers are local, idempotent and never mutate provider text",()=>{
+ const raw='cook rice about five minutes add a little olive oil and salt to taste';
+ const value={title:null,yield:null,source:null,components:[{title:null,ingredients:['rice','olive oil','salt'],steps:['Cook rice for 5 minutes.','Add olive oil and salt.']}]};
+ const before=JSON.stringify(value),locked=preserveEditorialFacts(value,raw);assert(!!locked,'missing qualifiers not recoverable');
+ assert(JSON.stringify(value)===before,'provider mutated');
+ assert(JSON.stringify(preserveEditorialFacts(locked,raw))===JSON.stringify(locked),'qualifiers repeated');
+ assert(locked.components[0].steps[0]==='Cook rice for about 5 minutes.'&&locked.components[0].steps[1]===value.components[0].steps[1],'whole prose replaced');
+ assert(locked.components[0].ingredients[1]==='a little olive oil'&&locked.components[0].ingredients[2]==='salt (to taste)','qualifier assigned to wrong ingredient');
 });

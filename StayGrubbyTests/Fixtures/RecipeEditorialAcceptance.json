@@ -1,0 +1,310 @@
+{
+  "cases": [
+    {
+      "id": "run-on",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "okay so boil pasta add pasta to the sauce mix with one tablespoon cold cubed butter until glossy",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "pasta",
+              "sauce",
+              "1 tbsp cold cubed butter"
+            ],
+            "steps": [
+              "Boil the pasta. Add the pasta to the sauce.",
+              "Add 1 tablespoon cold, cubed butter and toss until glossy."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "absent": [
+          "okay so"
+        ],
+        "maximumStepWords": 25
+      }
+    },
+    {
+      "id": "repetition",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "Blend blend quarter cup olive oil and two cloves garlic blend till smooth.",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "¼ cup olive oil",
+              "2 cloves garlic"
+            ],
+            "steps": [
+              "Blend olive oil and garlic until smooth."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "absent": [
+          "blend blend"
+        ],
+        "maximumStepWords": 15
+      }
+    },
+    {
+      "id": "fragments",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "Move it around cool it down squeeze out all the water.",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "water"
+            ],
+            "steps": [
+              "Stir until cooled, then drain and squeeze out as much water as possible."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "absent": [
+          "Move it around"
+        ],
+        "maximumStepWords": 20
+      }
+    },
+    {
+      "id": "oven-no-inferred-facts",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "take some kale put in the oven till crispy",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "some kale"
+            ],
+            "steps": [
+              "Bake the kale until crispy."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "maximumStepWords": 15
+      }
+    },
+    {
+      "id": "capitalization-filler",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "um so COOK rice in stock until soft then then add salt to taste",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice",
+              "stock",
+              "salt to taste"
+            ],
+            "steps": [
+              "Cook rice in stock until soft.",
+              "Add salt to taste."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "absent": [
+          "um so",
+          "then then"
+        ],
+        "maximumStepWords": 15
+      }
+    },
+    {
+      "id": "vague-alternatives",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "add a little chili oil or uncertain chilies or red pepper flakes if you want spice",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "a little chili oil or uncertain chilies or red pepper flakes (optional)"
+            ],
+            "steps": [
+              "Add a little chili oil or uncertain chilies or red pepper flakes, if desired."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "preserve": "uncertain chilies",
+        "maximumStepWords": 20
+      }
+    },
+    {
+      "id": "scoped-modifier-recovery",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "Blend quarter cup olive oil with garlic until smooth.",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "¼ cup olive oil",
+              "garlic"
+            ],
+            "steps": [
+              "Blend extra-virgin olive oil with garlic until smooth."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "recovery": true,
+        "scopedRecovery": true,
+        "maximumStepWords": 15
+      }
+    },
+    {
+      "id": "qualifier-restoration",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": "cook rice about five minutes add a little olive oil and salt to taste",
+      "provider": {
+        "title": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "rice",
+              "olive oil",
+              "salt"
+            ],
+            "steps": [
+              "Cook rice for 5 minutes.",
+              "Add olive oil and salt."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "editorial": true,
+        "qualifierRestoration": true,
+        "maximumStepWords": 20
+      }
+    },
+    {
+      "id": "canonical-editorial",
+      "phase": 8,
+      "origin": "synthetic-provider-editorial-contract-not-live-output",
+      "raw": null,
+      "provider": {
+        "title": "Kale Pasta",
+        "source": null,
+        "components": [
+          {
+            "title": "Kale sauce",
+            "ingredients": [
+              "2 cups kale per person",
+              "¼ cup olive oil",
+              "¼ cup Parmesan cheese",
+              "2 cloves garlic",
+              "pinch salt",
+              "a little chili oil or clabbering chilies or red pepper flakes (optional)",
+              "pasta",
+              "1 tbsp cold, cubed butter"
+            ],
+            "steps": [
+              "Boil water and season with salt. Add kale and cook until it starts to wet.",
+              "Transfer to ice water. Stir until cooled, then drain and squeeze out as much water as possible.",
+              "Add kale to a blender with olive oil, Parmesan cheese, garlic, salt, and a little chili oil or clabbering chilies or red pepper flakes, if desired. Blend until smooth.",
+              "Heat the sauce in a pan. Boil pasta and add to the sauce.",
+              "Add 1 tablespoon cold, cubed butter and toss until glossy.",
+              "Top with kale chips and Parmesan crisp."
+            ]
+          },
+          {
+            "title": "Parmesan crisp",
+            "ingredients": [
+              "fresh Parmesan"
+            ],
+            "steps": [
+              "Put parchment paper on a baking sheet and shave fresh Parmesan on it.",
+              "Bake for about 5 minutes until crispy."
+            ]
+          },
+          {
+            "title": "Kale chips",
+            "ingredients": [
+              "some kale",
+              "some olive oil",
+              "salt",
+              "pepper"
+            ],
+            "steps": [
+              "Top kale with some olive oil, salt, and pepper. Bake until crispy."
+            ]
+          }
+        ],
+        "yield": null
+      },
+      "checks": {
+        "canonical": "RecipeImportFailure.json",
+        "editorial": true,
+        "minimumComponents": 3,
+        "preserve": "clabbering chilies",
+        "forbid": "Calabrian",
+        "unknownQuantity": true,
+        "maximumStepWords": 35,
+        "absent": [
+          "going to",
+          "done by taking",
+          "cold butter cold butter"
+        ]
+      }
+    }
+  ]
+}

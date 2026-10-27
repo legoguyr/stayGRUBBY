@@ -4,6 +4,7 @@
 import { handler } from "../supabase/functions/recipe-import/handler.ts";
 import { validate, validationReport } from "../supabase/functions/recipe-import/contract.ts";
 const root=new URL("../StayGrubbyTests/Fixtures/",import.meta.url);
+export const editorial=JSON.parse(await Deno.readTextFile(new URL("RecipeEditorialAcceptance.json",root)));
 export const corpus=JSON.parse(await Deno.readTextFile(new URL("RecipeEngineAcceptance.json",root)));
 const canonical=JSON.parse(await Deno.readTextFile(new URL("RecipeImportFailure.json",root)));
 export function assert(ok:unknown,message:string):asserts ok {if(!ok)throw new Error(message);}
@@ -28,13 +29,25 @@ export async function runCase(c:any) {
  for(const forbidden of c.checks?.ingredientForbidden??[])assert(!value.components.flatMap((p:any)=>p.ingredients).join(' ').toLowerCase().includes(forbidden),`${c.id}: preparation prose became an ingredient`);
  for(const required of c.checks?.lastStepRequired??[])assert(value.components.at(-1)?.steps.at(-1)?.toLowerCase().includes(required),`${c.id}: recovered method lost its subject/context`);
  for(const requirement of c.checks?.methodRequired??[])for(const word of requirement.words)assert(value.components[requirement.component].steps[requirement.step].toLowerCase().includes(word),`${c.id}: recovered method lost a supplied completion qualifier`);
+ if(c.checks?.editorial){
+  const method=value.components.flatMap((p:any)=>p.steps).join(' ');
+  for(const absent of c.checks.absent??[])assert(!method.toLowerCase().includes(absent.toLowerCase()),`${c.id}: dictation/filler survived`);
+  for(const p of value.components)for(const step of p.steps){
+   assert(/^[A-Z]/.test(step)&&/[.!?]$/.test(step),`${c.id}: method capitalization/punctuation`);
+   assert(step.split(/\s+/).length<=(c.checks.maximumStepWords??40),`${c.id}: run-on method`);
+  }
+  // Provider prose must survive exactly unless a specifically tested modifier
+  // or missing source qualifier needs a local repair. No whole-step raw fallback.
+  if(!c.checks.scopedRecovery&&!c.checks.qualifierRestoration)assert(JSON.stringify(value.components.map((p:any)=>p.steps))===JSON.stringify(c.provider.components.map((p:any)=>p.steps)),`${c.id}: editorial prose downgraded`);
+  if(c.checks.scopedRecovery)assert(value.components[0].steps[0]==='Blend olive oil with garlic until smooth.',`${c.id}: scoped repair changed unrelated prose`);
+ }
  return {id:c.id,phase:c.phase,raw,extraction:value,checks:c.checks,milliseconds};
 }
 if(import.meta.main){
- const results=[];for(const c of corpus.cases){const r=await runCase(c);results.push(r);console.log(`Phase ${r.phase} ${r.id}: PASS (${r.milliseconds.toFixed(1)} ms; mocked provider)`);}
+ const results=[];for(const c of [...corpus.cases,...editorial.cases]){const r=await runCase(c);results.push(r);console.log(`Phase ${r.phase} ${r.id}: PASS (${r.milliseconds.toFixed(1)} ms; mocked provider)`);}
  if(Deno.args.includes("--record-contracts")){
   const cases=results.map(({milliseconds,...r})=>r);
   await Deno.writeTextFile(new URL("RecipeEngineServerOutputs.json",root),JSON.stringify({origin:"deterministic-production-handler-output; mocked provider",cases},null,2)+"\n");
-  await Deno.writeTextFile(new URL("../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url),JSON.stringify(cases.find(c=>c.id==='canonical-v10-rule-shape'),null,2)+"\n");
+  await Deno.writeTextFile(new URL("../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url),JSON.stringify(cases.find(c=>c.id==='canonical-editorial'),null,2)+"\n");
  }
 }
