@@ -1,5 +1,6 @@
+import { polish, STYLE_INSTRUCTIONS } from './style.ts';
 import { construct, effectiveSource, cuisines, allergens } from "./creator.ts";
-import { MODEL, INSTRUCTIONS, LEGACY_INSTRUCTIONS, schema, creatorSchema, validationReport } from "./contract.ts";
+import { MODEL, INSTRUCTIONS, LEGACY_INSTRUCTIONS, schema, creatorSchema, cookbookSchema, validationReport } from "./contract.ts";
 import { preserveEditorialFacts } from "./editorial.ts";
 import { reconcile } from "./reconcile.ts";
 export type Dependencies = {
@@ -67,9 +68,9 @@ export function handler(d:Dependencies) {
    if(!req.headers.get("content-type")?.startsWith("application/json"))return fail(400,"invalid_request");
    let body;
    try {body=JSON.parse(await boundedText(req,40_000));}catch{return fail(413,"invalid_or_oversized_input");}
-   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&body.contractVersion!==2) || !body.text.trim())return fail(400,"invalid_request");
+   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&![2,3].includes(body.contractVersion)) || !body.text.trim())return fail(400,"invalid_request");
    if([...body.text].length>12_000 || new TextEncoder().encode(body.text).length>32_000)return fail(413,"input_too_long");
-   const creator=body.contractVersion===2;
+   const creator=body.contractVersion===2||body.contractVersion===3, polished=body.contractVersion===3;
    const source=creator?effectiveSource(body.text):body.text;
    // Owner confirmed the dedicated project has no billing. No recurring timestamp gate.
    stage="configuration";
@@ -81,7 +82,7 @@ export function handler(d:Dependencies) {
    try {
     stage="provider";const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
      method:"POST",signal:controller.signal,headers:{"content-type":"application/json","x-goog-api-key":d.key},
-     body:JSON.stringify({systemInstruction:{parts:[{text:creator?INSTRUCTIONS+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?creatorSchema:schema}}}}),
+     body:JSON.stringify({systemInstruction:{parts:[{text:creator?(polished?STYLE_INSTRUCTIONS:INSTRUCTIONS)+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?(polished?cookbookSchema:creatorSchema):schema}}}}),
     });
     if(!upstream.ok){
      let error:unknown;try{error=JSON.parse(await boundedText(upstream,16_000));}catch{/* Never return/log raw upstream bytes. */}
@@ -96,22 +97,30 @@ export function handler(d:Dependencies) {
     if(new TextEncoder().encode(json).length>96_000)return fail(422,"invalid_recipe");
     stage="validation";let extraction;
     try{extraction=JSON.parse(json);}catch{return fail(422,"invalid_recipe",200,"structured_json");}
-    const validation=validationReport(extraction,source);
+    const metadataState=(v:any)=>Object.fromEntries(['yield','prepMinutes','cookMinutes','totalMinutes','cuisine'].map(k=>{const p=v?.metadata?.[k];return[k,{present:p?.value!=null,origin:['provided','derived','estimated','unknown'].includes(p?.origin)?p.origin:'absent'}];}));
+    const metadataBefore=creator?metadataState(extraction):undefined;
+    // Never let presentation cleanup erase hard schema/numeric failures.
+    const initial=validationReport(extraction,source,polished);
+    if(Object.hasOwn(extraction??{},'editorialVersion')||(!initial.valid&&!initial.reconcilable))return fail(422,"invalid_recipe",200,initial.issues[0]?.rule??'object_fields',{validationIssues:initial.issues,structure:initial.structure});
+    if(polished)extraction=polish(extraction,source);
+    const validation=validationReport(extraction,source,polished);
     let recoveredFields:string[]=[],recoveredCount=0;
     if(!validation.valid){
-     const restored=reconcile(extraction,source);
+     const restored=reconcile(extraction,source,polished);
      if(!restored)return fail(422,"invalid_recipe",200,validation.issues[0]?.rule,{validationIssues:validation.issues,structure:validation.structure});
      extraction=restored.extraction;recoveredFields=restored.fields;recoveredCount=restored.count;
     }
     if(creator){
      if(!extraction.metadata)return fail(422,"invalid_recipe",200,"creator_metadata");
-     const built=construct(extraction,source);if(!built)return fail(422,"invalid_recipe",200,"recipe_construction");
+     const built=construct(extraction,source,polished);if(!built)return fail(422,"invalid_recipe",200,"recipe_construction");
      extraction=built;
     }
-    const locked=preserveEditorialFacts(extraction,source);
-    if(!locked||!validationReport(locked,source).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
+    if(polished)extraction=polish(extraction,source);
+    const locked=preserveEditorialFacts(extraction,source,polished);
+    if(!locked||!validationReport(locked,source,polished).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
     extraction=locked;
-    stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
+    if(polished)extraction.editorialVersion=3;
+    stage="complete";report({contractVersion:creator?(polished?3:2):1,...(creator?{metadataBefore,metadataAfter:metadataState(extraction),componentCount:extraction.components.length,unnamedComponents:extraction.components.filter((p:any)=>!p.title?.trim()).length}:{}),result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
     return Response.json(extraction,{headers:headers()});
    } catch {
     if(controller.signal.aborted)return fail(504,"formatting_timeout");

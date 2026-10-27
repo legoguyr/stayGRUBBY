@@ -110,3 +110,15 @@ Deno.test('cloud configuration has no recurring expiration gate',async()=>{
  assert(!runtime.includes('getTime(')&&!runtime.includes('Date.parse('));
  assert((await fixture().run(request())).status===200);
 });
+Deno.test('cookbook audit traces metadata before and after without logging values or reasoning',async()=>{
+ const events:Record<string,unknown>[]=[];
+ const raw='Cook rice and add oil.';
+ const p=(value:unknown)=>({value,origin:'estimated',evidence:'private-reasoning-marker'});
+ const extraction={title:null,yield:null,source:null,components:[{title:null,ingredients:['rice','oil'],steps:['Cook rice. Add oil.'],after:[]}],metadata:{yield:p('2'),prepMinutes:p(5),cookMinutes:p(15),totalMinutes:p(18),cuisine:{value:null,origin:'unknown',evidence:null},allergenHints:[]}};
+ const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(extraction)}]}}]})});
+ const response=await f.run(request({text:raw,cloudConsent:true,contractVersion:3}));assert(response.status===200);
+ const out=await response.json();assert(out.editorialVersion===3&&out.metadata.totalMinutes.value===18);
+ const log=events.at(-1) as any;
+ assert(log.contractVersion===3&&log.metadataBefore.yield.present&&log.metadataAfter.yield.origin==='estimated');
+ assert(!JSON.stringify(events).includes('private-reasoning-marker')&&!JSON.stringify(events).includes(raw)&&!JSON.stringify(events).includes('rice'));
+});

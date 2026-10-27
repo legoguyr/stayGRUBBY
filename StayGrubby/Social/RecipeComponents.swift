@@ -143,14 +143,16 @@ nonisolated enum CookbookSearch {
 
 extension RecipeContent {
     /// Stable IDs survive section corrections; no string parsing or cooking mutations.
-    nonisolated mutating func moveRecipeRow(_ id: UUID, from source: UUID, to destination: UUID, ingredient: Bool) {
-        guard source != destination, let s = components?.firstIndex(where: { $0.id == source }), let d = components?.firstIndex(where: { $0.id == destination }) else { return }
+    nonisolated mutating func moveRecipeRow(_ id: UUID, from source: UUID, to destination: UUID, ingredient: Bool, at destinationIndex: Int? = nil) {
+        guard let s = components?.firstIndex(where: { $0.id == source }), let d = components?.firstIndex(where: { $0.id == destination }) else { return }
         if ingredient {
             guard let i = components?[s].ingredients.firstIndex(where: { $0.id == id }), let row = components?[s].ingredients.remove(at: i) else { return }
-            components?[d].ingredients.append(row)
+            let end = components![d].ingredients.count
+            components?[d].ingredients.insert(row, at: max(0,min(destinationIndex ?? end,end)))
         } else {
             guard let i = components?[s].steps.firstIndex(where: { $0.id == id }), let row = components?[s].steps.remove(at: i) else { return }
-            components?[d].steps.append(row)
+            let end = components![d].steps.count
+            components?[d].steps.insert(row, at: max(0,min(destinationIndex ?? end,end)))
         }
     }
 }

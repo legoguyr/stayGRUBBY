@@ -18,11 +18,11 @@ export const schema = {
   } }, required: ["title","yield","source","components"],
 };
 import type { CreatorMetadata } from "./creator.ts";
-export type Extraction = { metadata?:CreatorMetadata; title: string|null; yield: string|null; source: string|null; components: { title: string|null; ingredients: string[]; steps: string[]; after?:number[] }[] };
+export type Extraction = { editorialVersion?:number; metadata?:CreatorMetadata; title: string|null; yield: string|null; source: string|null; components: { title: string|null; ingredients: string[]; steps: string[]; after?:number[] }[] };
 // Diagnostics contain only fixed rules, generated field indexes and bounded counts.
 // Never include values, unknown property names, rejected words or source/provider text.
 export type ValidationIssue = { field:string; rule:string };
-export function validationReport(value:unknown,raw:string) {
+export function validationReport(value:unknown,raw:string,polished=false) {
  const issues:ValidationIssue[]=[];
  let failed=false,hardFailure=false;
  const add=(field:string,rule:string)=>{failed=true;if(!['source_word','ingredient_phrase','metadata_phrase'].includes(rule))hardFailure=true;if(issues.length<20)issues.push({field,rule});};
@@ -32,10 +32,10 @@ export function validationReport(value:unknown,raw:string) {
   if(typeof v!=='string'){add(path,'field_type');return;}
   if(!v.trim()){add(path,'field_empty');return;}
   if([...v].length>max){add(path,'field_length');return;}
-  const issue=groundingIssue(v,raw,kind);if(issue)add(path,issue);
+  const issue=groundingIssue(v,raw,kind,polished);if(issue)add(path,issue);
  };
  const structure:{componentCount:number|null;ingredientCounts:number[];stepCounts:number[]}={componentCount:null,ingredientCounts:[],stepCounts:[]};
- if(!object(value,['title','yield','source','components'],['metadata']))add('root','object_fields');
+ if(!object(value,['title','yield','source','components'],['metadata','editorialVersion']))add('root','object_fields');
  else {
   field(value.title,'title',120,'title',true);field(value.yield,'yield',100,'metadata',true);field(value.source,'source',500,'metadata',true);
   if(!Array.isArray(value.components))add('components','field_type');
@@ -65,7 +65,7 @@ export function validationReport(value:unknown,raw:string) {
  }
  return {valid:!failed,reconcilable:failed&&!hardFailure,issues,structure};
 }
-export function validate(value:unknown,raw:string):value is Extraction {return validationReport(value,raw).valid;}
+export function validate(value:unknown,raw:string):value is Extraction {return validationReport(value,raw,(value as Extraction)?.editorialVersion===3).valid;}
 
 const provenance={type:"string",enum:["provided","derived","estimated","unknown"]};
 const proposal=(value:unknown)=>({type:"object",additionalProperties:false,properties:{value,origin:provenance,evidence:optional},required:["value","origin","evidence"]});
@@ -73,3 +73,11 @@ export const creatorSchema={...schema,properties:{...schema.properties,
  metadata:{type:"object",additionalProperties:false,properties:{yield:proposal(optional),prepMinutes:proposal({type:["integer","null"]}),cookMinutes:proposal({type:["integer","null"]}),totalMinutes:proposal({type:["integer","null"]}),cuisine:proposal(optional),allergenHints:{type:"array",items:{type:"string"}}},required:["yield","prepMinutes","cookMinutes","totalMinutes","cuisine","allergenHints"]},
  components:{type:"array",items:{...schema.properties.components.items,properties:{...schema.properties.components.items.properties,after:{type:"array",items:{type:"integer"}}},required:["title","ingredients","steps","after"]}}
 },required:[...schema.required,"metadata"]};
+
+// Descriptions improve completeness without increasing nested array grammar states.
+export const cookbookSchema=structuredClone(creatorSchema);
+for(const [key,description] of Object.entries({yield:'Useful overall yield: provided, derived, or a conservative portion estimate. Unknown only when genuinely misleading.',prepMinutes:'Overall active preparation minutes. Estimate from the workflow when unstated.',cookMinutes:'Overall heating/cooking minutes. Estimate when unstated; do not invent procedural times.',totalMinutes:'Realistic elapsed start-to-finish minutes, including inactive and parallel work; not necessarily prep plus cook.'})){
+ (cookbookSchema.properties.metadata.properties as any)[key].description=description;
+}
+
+(cookbookSchema.properties.components.items.properties as any).title={type:'string',description:'Useful concise culinary name for this actual preparation. No Untitled, generic numbered section or missing meaningful name.'};

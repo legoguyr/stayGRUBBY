@@ -24,6 +24,8 @@ struct RecipeEditor: View {
     @State private var bulkSection: RecipeBulkSection?
     @State private var ingredientDetails: RecipeIngredient?
     @State private var ingredientFocusedSection: UUID?
+    @State private var ordering: RecipeOrderingKind?
+    @State private var allergenSelection: RecipeAllergenSelection?
     @FocusState private var focus: RecipeField?
     init(recipe: Recipe? = nil, dishID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, onSave: @escaping (Recipe) -> Void) {
         self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.onSave = onSave
@@ -50,7 +52,7 @@ struct RecipeEditor: View {
                     identity
                     details
                     VStack(alignment: .leading, spacing: 16) {
-                        SGEyebrow(text: "Ingredients")
+                        HStack { SGEyebrow(text: "Ingredients"); Spacer(); Button("Reorder") { beginOrdering(.ingredients) }.accessibilityIdentifier("recipe-reorder-ingredients") }
                         ForEach(parts) { part in ingredientSection(part) }
                         Button("Add Section", systemImage: "plus.rectangle.on.rectangle") {
                             let part = RecipeComponent(); content.components?.append(part); focus = .section(part.id)
@@ -58,7 +60,7 @@ struct RecipeEditor: View {
                     }
                     Divider()
                     VStack(alignment: .leading, spacing: 16) {
-                        SGEyebrow(text: "Method")
+                        HStack { SGEyebrow(text: "Method"); Spacer(); Button("Reorder") { beginOrdering(.steps) }.accessibilityIdentifier("recipe-reorder-steps") }
                         ForEach(parts) { part in methodSection(part) }
                     }
                     Divider()
@@ -95,9 +97,13 @@ struct RecipeEditor: View {
         .onChange(of: content.cuisine) { _, _ in content.metadataOrigins?.removeValue(forKey: "cuisine") }
         .onChange(of: content.components) { before, after in
             let old = before?.flatMap(\.ingredients).map(\.displayText), next = after?.flatMap(\.ingredients).map(\.displayText)
-            if old != next { content.allergens = RecipeAllergenAssessment.derive(next ?? []) }
+            if old?.sorted() != next?.sorted() { content.allergens = RecipeAllergenAssessment.derive(next ?? []) }
         }.onChange(of: focus) { previous, next in
             if next != nil { finishIngredient() }
+        }.sheet(item: $ordering) { kind in
+            RecipeOrderingSheet(content: $content, kind: kind)
+        }.sheet(item: $allergenSelection) { selection in
+            SGAllergenSelector(selection: allergenBinding(selection), title: selection == .contains ? "Contains" : "Possible allergens", identifierPrefix: "recipe-allergen-\(selection.rawValue)", help: RecipeAllergenAssessment.safetyText)
         }.sheet(item: $ingredientDetails) { row in
             IngredientDetailsEditor(ingredient: row) { corrected in
                 for part in parts where part.ingredients.contains(where: { $0.id == corrected.id }) {
@@ -139,25 +145,31 @@ struct RecipeEditor: View {
         if content.metadataOrigins?.values.contains("estimated") == true { Text("Suggested servings and times may be estimates. Adjust them for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
     } }
     private var allergenDetails: some View {
-        DisclosureGroup("Allergens · review ingredients") {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
-                ForEach(Allergen.allCases) { allergen in
-                    Picker(allergen.label, selection: Binding(get: {
-                        if content.allergens?.contains.contains(allergen.rawValue) == true { return "contains" }
-                        if content.allergens?.possible.contains(allergen.rawValue) == true { return "possible" }
-                        return "unmarked"
-                    }, set: { state in
-                        var value = content.allergens ?? .init()
-                        value.contains.removeAll { $0 == allergen.rawValue }; value.possible.removeAll { $0 == allergen.rawValue }
-                        if state == "contains" { value.contains.append(allergen.rawValue) }
-                        if state == "possible" { value.possible.append(allergen.rawValue) }
-                        content.allergens = value
-                    })) { Text("Not marked").tag("unmarked"); Text("Contains").tag("contains"); Text("Possible").tag("possible") }
-                }
-                if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(.footnote).foregroundStyle(.secondary) }
-            }.padding(.top, 12)
-        }.accessibilityIdentifier("recipe-allergen-review")
+        VStack(alignment: .leading, spacing: 12) {
+            Button { finishIngredient(); focus = nil; allergenSelection = .contains } label: {
+                HStack { Label("Contains", systemImage: "checklist"); Spacer(); Text("\(content.allergens?.contains.count ?? 0) selected").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
+                    .frame(minHeight: 44).contentShape(Rectangle())
+            }.accessibilityIdentifier("recipe-allergen-contains")
+            Button { finishIngredient(); focus = nil; allergenSelection = .possible } label: {
+                HStack { Text("Possible · check labels"); Spacer(); Text("\(content.allergens?.possible.count ?? 0) selected").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
+                    .frame(minHeight: 44).contentShape(Rectangle())
+            }.accessibilityIdentifier("recipe-allergen-possible")
+            Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
+            if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(.footnote).foregroundStyle(.secondary) }
+        }.accessibilityElement(children: .contain)
+    }
+    private func allergenBinding(_ selection: RecipeAllergenSelection) -> Binding<Set<Allergen>> {
+        Binding(get: { Set(((selection == .contains ? content.allergens?.contains : content.allergens?.possible) ?? []).compactMap { Allergen(rawValue: $0) }) }, set: { selected in
+            var assessment = content.allergens ?? .init()
+            let codes = selected.map(\.rawValue).sorted()
+            if selection == .contains { assessment.contains = codes; assessment.possible.removeAll { codes.contains($0) } }
+            else { assessment.possible = codes; assessment.contains.removeAll { codes.contains($0) } }
+            content.allergens = assessment
+        })
+    }
+    private func beginOrdering(_ kind: RecipeOrderingKind) {
+        finishIngredient(); focus = nil
+        ordering = kind
     }
     private func sectionHeading(_ part: RecipeComponent) -> some View {
         HStack(alignment: .top) {
@@ -324,7 +336,7 @@ private struct RecipeRowActions: View {
             Button("Move Down", systemImage: "arrow.down", action: down).disabled(!canDown)
             if !destinations.isEmpty { Menu("Move to…") { ForEach(destinations, id: \.0) { id,name in Button(name) { move(id) } } } }
             Button("Delete", systemImage: "trash", role: .destructive) { deleting = true }
-        } label: { Image(systemName: "line.3.horizontal").frame(width: 44, height: 44).contentShape(Rectangle()) }
+        } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44).contentShape(Rectangle()) }
             .accessibilityLabel(label).confirmationDialog("Delete this row?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete Row", role: .destructive, action: remove) }
     }
 }
@@ -333,3 +345,5 @@ private struct RecipeInlineAction: ButtonStyle {
 }
 
 private struct RecipeBulkSection: Identifiable { let id: UUID }
+
+private enum RecipeAllergenSelection: String, Identifiable { case contains, possible; var id: String { rawValue } }

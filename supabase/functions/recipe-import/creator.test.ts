@@ -43,3 +43,31 @@ Deno.test('server cuisine/allergen taxonomy matches the canonical native contrac
  const nativeAllergens=JSON.parse(swift.match(/allergenCodes = (\[[^\n]+\])/u)![1]);
  assert(JSON.stringify(nativeCuisines)===JSON.stringify(cuisines)&&JSON.stringify(nativeAllergens)===JSON.stringify(allergens));
 });
+
+Deno.test('cookbook metadata loss reproduced and estimated explanations retained honestly',()=>{
+ const raw='Boil pasta and blend spinach with olive oil.';
+ const value=m({yield:p('2','estimated',null),prepMinutes:p(10,'estimated','Active chopping'),cookMinutes:p(15,'estimated',null),totalMinutes:p(20,'estimated','Parallel workflow')});
+ assert(metadata(raw,value)!.yield.value===null&&metadata(raw,value)!.prepMinutes.value===null);
+ const fixed=metadata(raw,value,true)!;
+ assert(fixed.yield.value==='2'&&fixed.prepMinutes.value===10&&fixed.cookMinutes.value===15&&fixed.totalMinutes.value===20);
+ assert(fixed.yield.origin==='estimated'&&fixed.totalMinutes.origin==='estimated');
+ assert(metadata(raw,m({yield:p('8','provided',raw)}),true)!.yield.origin==='unknown');
+});
+
+Deno.test('cookbook vocabulary interprets contextual dictation without changing a technique',async()=>{
+ const {grounded}=await import('./evidence.ts');
+ const raw='Blanche spinach in boiling water until it starts to wet. Put it in ice water.';
+ assert(grounded('Blanch spinach until wilted. Transfer to ice water.',raw,'step',true));
+ assert(!grounded('Fry spinach until browned.',raw,'step',true));
+});
+Deno.test('cookbook seasoning follows its real method use and measured allocations stay separate',async()=>{
+ const {polish}=await import('./style.ts');
+ const raw='Season water with salt, add rice. Add 1 tbsp oil. Add 2 tbsp oil.';
+ const value={title:null,yield:null,source:null,components:[{title:null,ingredients:['rice','salt','Salt, to taste','1 tbsp oil','2 tbsp oil'],steps:['Season water with salt. Add rice. Add 1 tbsp oil. Add 2 tbsp oil.']}]};
+ const p=polish(value,raw).components[0];assert(p.ingredients[0]==='salt'&&p.ingredients.length===4&&p.ingredients.includes('1 tbsp oil')&&p.ingredients.includes('2 tbsp oil'));
+});
+Deno.test('ordinary accented culinary wording stays source-grounded',async()=>{
+ const {grounded}=await import('./evidence.ts');
+ assert(grounded('Purée tomatoes.','Blend tomatoes in a blender.','step',true));
+ assert(!grounded('Purée tomatoes with cream.','Blend tomatoes in a blender.','step',true));
+});

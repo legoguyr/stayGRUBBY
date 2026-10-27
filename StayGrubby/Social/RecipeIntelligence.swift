@@ -38,7 +38,7 @@ nonisolated enum RecipeImportValidation {
     static func normalized(_ value: String) -> String { value.lowercased().split(whereSeparator: { $0.isWhitespace }).joined(separator: " ") }
     static func decode(_ data: Data) throws -> RecipeExtraction {
         guard data.count <= 96_000, let object = try? JSONSerialization.jsonObject(with: data) as? [String:Any],
-              Set(object.keys).isSubset(of: ["title","yield","source","components","metadata"]),
+              Set(object.keys).isSubset(of: ["title","yield","source","components","metadata","editorialVersion"]),
               let parts = object["components"] as? [[String:Any]], parts.allSatisfy({ Set($0.keys).isSubset(of: ["title","ingredients","steps","after"]) }) else { throw RecipeImportFailure.invalid }
         do { return try JSONDecoder().decode(RecipeExtraction.self, from: data) } catch { throw RecipeImportFailure.invalid }
     }
@@ -46,12 +46,13 @@ nonisolated enum RecipeImportValidation {
     /// User review remains mandatory; this cannot prove semantic completeness or assignments.
     static func review(_ value: RecipeExtraction, raw: String, dishTitle: String, provider: String) throws -> RecipeImportResult {
         try input(raw)
+        let polished = value.editorialVersion == 3
         let source = value.metadata == nil ? raw : RecipeCreatorValidation.effectiveSource(raw)
         let built = value.metadata == nil ? value : RecipeCreatorValidation.construct(value, raw: source)
         guard let built, let value = RecipeEditorialEvidence.preserve(built, raw: source) else { throw RecipeImportFailure.invalid }
         func excerpt(_ text: String, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String {
             let clean = IngredientParser.trim(text)
-            guard !clean.isEmpty, clean.count <= limit, RecipeSourceEvidence.grounded(clean, raw: source, kind: kind) else { throw RecipeImportFailure.invalid }
+            guard !clean.isEmpty, clean.count <= limit, RecipeSourceEvidence.grounded(clean, raw: source, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
             return clean
         }
         func optional(_ text: String?, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String? {
@@ -122,7 +123,7 @@ nonisolated enum RecipeImportValidation {
 }
 @MainActor enum RecipeIntelligenceService {
     static let instructions = RecipeCreatorContract.providerInstructions
-    static func format(_ raw: String, dishTitle: String, apple: any RecipeIntelligenceProvider, fallback: any RecipeIntelligenceProvider) async throws -> RecipeImportResult {
+    static func format(_ raw: String, dishTitle: String, apple: any RecipeIntelligenceProvider, fallback: any RecipeIntelligenceProvider, preferOnDevice: Bool = true) async throws -> RecipeImportResult {
         try RecipeImportValidation.input(raw)
         #if DEBUG
         RecipeIntelligenceDiagnostics.shared.provider = "None"
@@ -130,7 +131,7 @@ nonisolated enum RecipeImportValidation {
         RecipeIntelligenceDiagnostics.shared.httpStatus = nil
         RecipeIntelligenceDiagnostics.shared.providerStatus = nil
         #endif
-        for provider in [apple, fallback] where provider.isAvailable {
+        for provider in (preferOnDevice ? [apple, fallback] : [fallback]) where provider.isAvailable {
             try Task.checkCancellation()
             #if DEBUG
             RecipeIntelligenceDiagnostics.shared.provider = provider.identity

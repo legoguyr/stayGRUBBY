@@ -5,6 +5,7 @@ import { handler } from "../supabase/functions/recipe-import/handler.ts";
 import { validate, validationReport } from "../supabase/functions/recipe-import/contract.ts";
 const root=new URL("../StayGrubbyTests/Fixtures/",import.meta.url);
 export const editorial=JSON.parse(await Deno.readTextFile(new URL("RecipeEditorialAcceptance.json",root)));
+export const cookbook=JSON.parse(await Deno.readTextFile(new URL("RecipeCookbookAcceptance.json",root)));
 export const creator=JSON.parse(await Deno.readTextFile(new URL("RecipeCreatorAcceptance.json",root)));
 export const corpus=JSON.parse(await Deno.readTextFile(new URL("RecipeEngineAcceptance.json",root)));
 const canonical=JSON.parse(await Deno.readTextFile(new URL("RecipeImportFailure.json",root)));
@@ -42,7 +43,7 @@ export async function runCase(c:any) {
   if(!c.checks.scopedRecovery&&!c.checks.qualifierRestoration)assert(JSON.stringify(value.components.map((p:any)=>p.steps))===JSON.stringify(c.provider.components.map((p:any)=>p.steps)),`${c.id}: editorial prose downgraded`);
   if(c.checks.scopedRecovery)assert(value.components[0].steps[0]==='Blend olive oil with garlic until smooth.',`${c.id}: scoped repair changed unrelated prose`);
  }
- if(c.contractVersion===2){
+ if(c.contractVersion>=2){
   assert(!!value.metadata,`${c.id}: metadata missing`);
   for(const [check,key] of [['expectedYield','yield'],['expectedPrep','prepMinutes'],['expectedCook','cookMinutes'],['expectedTotal','totalMinutes'],['expectedCuisine','cuisine']])if(c.checks[check]!==undefined)assert((value.metadata as any)[key].value===c.checks[check],`${c.id}: ${check} lost`);
   for(const [check,key] of [['unknownYield','yield'],['unknownCook','cookMinutes'],['unknownCuisine','cuisine']])if(c.checks[check])assert((value.metadata as any)[key].value===null,`${c.id}: ${key} invented or misrepresented`);
@@ -52,13 +53,22 @@ export async function runCase(c:any) {
   if(c.checks.expectedFirstStep)assert(value.components[0].steps[0]===c.checks.expectedFirstStep,`${c.id}: chronology begins incorrectly`);
   if(c.checks.expectedLastStep)assert(value.components.at(-1)?.steps.at(-1)===c.checks.expectedLastStep,`${c.id}: assembly before preparation`);
  }
+ if(c.checks.cookbook){
+  assert(value.editorialVersion===3,`${c.id}: cookbook version lost`);
+  for(const p of value.components){
+   if(value.components.length>1)assert(p.title&&p.title.trim()&&!/untitled/i.test(p.title),`${c.id}: unnamed meaningful component`);
+   assert(!p.ingredients.some((s:string)=>/^some\b/i.test(s)),`${c.id}: conversational ingredient qualifier`);
+   assert(!p.steps.some((s:string)=>/is done by|is made by|you are going to/i.test(s)),`${c.id}: dictation method`);
+   const unmeasured=p.ingredients.filter((s:string)=>!/[0-9]/.test(s)).map((s:string)=>s.toLowerCase());assert(new Set(unmeasured).size===unmeasured.length,`${c.id}: unmeasured duplication`);
+  }
+ }
  return {id:c.id,phase:c.phase,raw,extraction:value,checks:c.checks,milliseconds};
 }
 if(import.meta.main){
- const results=[];for(const c of [...corpus.cases,...editorial.cases,...creator.cases]){const r=await runCase(c);results.push(r);console.log(`Phase ${r.phase} ${r.id}: PASS (${r.milliseconds.toFixed(1)} ms; mocked provider)`);}
+ const results=[];for(const c of [...corpus.cases,...editorial.cases,...creator.cases,...cookbook.cases]){const r=await runCase(c);results.push(r);console.log(`Phase ${r.phase} ${r.id}: PASS (${r.milliseconds.toFixed(1)} ms; mocked provider)`);}
  if(Deno.args.includes("--record-contracts")){
   const cases=results.map(({milliseconds,...r})=>r);
   await Deno.writeTextFile(new URL("RecipeEngineServerOutputs.json",root),JSON.stringify({origin:"deterministic-production-handler-output; mocked provider",cases},null,2)+"\n");
-  await Deno.writeTextFile(new URL("../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url),JSON.stringify(cases.find(c=>c.id==='canonical-creator'),null,2)+"\n");
+  await Deno.writeTextFile(new URL("../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url),JSON.stringify(cases.find(c=>c.id==='canonical-cookbook'),null,2)+"\n");
  }
 }

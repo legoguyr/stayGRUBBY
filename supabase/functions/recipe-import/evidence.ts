@@ -1,3 +1,4 @@
+import { styleText, heatAlternative } from './style.ts';
 // Bounded lexical normalization, not culinary inference or AI recipe math.
 // Keep Swift RecipeSourceEvidence behavior aligned with these focused contract fixtures.
 const aliases:Record<string,string>={"tablespoon": "tbsp", "tablespoons": "tbsp", "tbsp": "tbsp", "tbs": "tbsp", "teaspoon": "tsp", "teaspoons": "tsp", "tsp": "tsp", "cup": "cup", "cups": "cup", "oz": "oz", "ounce": "oz", "ounces": "oz", "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb", "g": "g", "gram": "g", "grams": "g", "kg": "kg", "kilogram": "kg", "kilograms": "kg", "ml": "ml", "milliliter": "ml", "milliliters": "ml", "millilitre": "ml", "millilitres": "ml", "l": "l", "liter": "l", "liters": "l", "litre": "l", "litres": "l", "clove": "clove", "cloves": "clove", "minute": "min", "minutes": "min", "min": "min", "mins": "min", "hour": "hour", "hours": "hour", "hr": "hour", "hrs": "hour", "pinch": "pinch", "pinches": "pinch", "fahrenheit": "f", "celsius": "c", "salted": "salt", "blanche": "blanch", "blanched": "blanch", "blanching": "blanch", "boiling": "boil", "boiled": "boil", "cooking": "cook", "cooked": "cook", "baking": "bake", "baked": "bake", "blending": "blend", "blended": "blend", "mixing": "mix", "mixed": "mix", "crispy": "crisp", "till": "until"};
@@ -24,15 +25,16 @@ export function tokens(input:string):string[] {
 }
 function contains(source:string[],value:string[]):boolean {return value.length>0 && (` ${source.join(' ')} `).includes(` ${value.join(' ')} `);}
 export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'preparation_binding'|'metadata_phrase'|'ingredient_phrase';
-export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):GroundingIssue|null {
+export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step',polished=false):GroundingIssue|null {
  if(kind==='ingredient'&&(/^\s*-\s*\d/.test(value)||/\b\d+\s*\/\s*0\b/.test(value)))return 'invalid_quantity';
- const source=editorialTokens(raw,raw,kind),output=editorialTokens(value,raw,kind);if(!output.length)return 'source_empty';
+ const source=editorialTokens(raw,raw,kind,polished),output=editorialTokens(value,raw,kind,polished);if(!output.length)return 'source_empty';
  if(contains(source,output))return null;
  const absent=output.filter(v=>!source.includes(v));
  if(absent.length)return absent.some(v=>/^n\d/.test(v))?'source_number':'source_word';
  for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return 'quantity_unit_pair';
  if(kind==='metadata')return 'metadata_phrase';
  if(kind==='title'||kind==='step')return null;
+ if(polished&&kind==='ingredient'&&heatAlternative(raw)&&output.includes('chile')&&!output.some(t=>/^n\d/.test(t))&&output.every(t=>['chile','oil','or','optional'].includes(t)))return null;
  // A descriptor cannot be borrowed from another ingredient in the source.
  for(let i=0;i<output.length;i++)if(preparation.has(output[i])){
   const neighbors=(words:string[],at:number)=>{
@@ -49,7 +51,7 @@ export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'
  if(/^n\d/.test(core[0])&&units.has(core[1])&&contains(origin,[...core.slice(2),...core.slice(0,2)]))return null;
  return 'ingredient_phrase';
 }
-export function grounded(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step'):boolean {return groundingIssue(value,raw,kind)===null;}
+export function grounded(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step',polished=false):boolean {return groundingIssue(value,raw,kind,polished)===null;}
 // Reconciliation may restore original wording, never invent or move a numeric fact.
 export function numericEvidence(value:string,raw:string):boolean {
  const source=tokens(raw),output=tokens(value);
@@ -59,8 +61,8 @@ export function factualWords(value:string):string[] {return tokens(value).filter
 
 // A closed, context-dependent editorial vocabulary, not a cooking thesaurus.
 // No ingredient identity, number, unit, variety or doneness word is discarded.
-export function editorialTokens(value:string,raw:string,kind:string):string[] {
- let text=value.toLowerCase();
+export function editorialTokens(value:string,raw:string,kind:string,polished=false):string[] {
+ let text=polished?styleText(value,raw,kind):value.toLowerCase();
  if(kind==='step') {
   text=text.replace(/\b(?:put|cook|cooking)\s+(?:it\s+)?(?:in\s+)?(?:the\s+)?oven\b/g,'bake')
    .replace(/\bmove (?:it )?around\b/g,'stir').replace(/\bcool (?:it )?down\b/g,'cool')

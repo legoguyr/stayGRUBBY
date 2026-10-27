@@ -36,7 +36,7 @@ function yieldLabel(raw:string,n:number):string {
  if(!tail.length||['servings','serving','people','persons','person','portions'].includes(tail[0]))return String(n);
  return [String(n),...tail.slice(0,2).filter(w=>/^[a-z]+$/.test(w))].join(' ');
 }
-export function metadata(raw:string,input:unknown):CreatorMetadata|null {
+export function metadata(raw:string,input:unknown,polished=false):CreatorMetadata|null {
  if(!input||typeof input!=='object'||Array.isArray(input))return null;
  const v=input as any, keys=['yield','prepMinutes','cookMinutes','totalMinutes','cuisine'];
  if(Object.keys(v).some(k=>![...keys,'allergenHints'].includes(k))||!keys.every(k=>Object.hasOwn(v,k))||!Array.isArray(v.allergenHints)||v.allergenHints.length>9)return null;
@@ -46,6 +46,10 @@ export function metadata(raw:string,input:unknown):CreatorMetadata|null {
   const explicitValue=explicit(raw,key);
   if(key!=='cuisine'&&explicitValue!==null&&!(key==='yield'&&p.origin==='derived')){(result as any)[key]=key!=='yield'&&explicitValue>10080?unknown():{value:key==='yield'?yieldLabel(raw,explicitValue):Math.ceil(explicitValue),origin:key!=='yield'&&!Number.isInteger(explicitValue)?'derived':'provided',evidence:statement(raw,key)};continue;}
   if(p.origin==='unknown'){(result as any)[key]=unknown();continue;}
+  if(polished&&p.origin==='estimated'){
+   const valid=key==='yield'?typeof p.value==='string'&&p.value.trim()&&p.value.length<=100:key==='cuisine'?cuisines.includes(p.value):Number.isInteger(p.value)&&p.value>=0&&p.value<=10080;
+   (result as any)[key]=valid?{value:p.value,origin:'estimated',evidence:raw.slice(0,500)}:unknown();continue;
+  }
   const string=key==='yield'||key==='cuisine';
   if((string?(typeof p.value!=='string'||!p.value.trim()||p.value.length>100):(!Number.isInteger(p.value)||p.value<0||p.value>10080))||typeof p.evidence!=='string'||!p.evidence.trim()||p.evidence.length>500||!normalize(raw).includes(normalize(p.evidence))){(result as any)[key]=unknown();continue;}
   if(key==='cuisine'){
@@ -71,9 +75,9 @@ export function metadata(raw:string,input:unknown):CreatorMetadata|null {
  result.allergenHints=[...new Set<string>((v.allergenHints as unknown[]).filter((x):x is string=>typeof x==='string'&&allergens.includes(x)))];
  return result;
 }
-export function construct(value:Extraction,raw:string):Extraction|null {
+export function construct(value:Extraction,raw:string,polished=false):Extraction|null {
  const copy=structuredClone(value);
- if(copy.metadata){const m=metadata(raw,copy.metadata);if(!m)return null;copy.metadata=m;}
+ if(copy.metadata){const m=metadata(raw,copy.metadata,polished);if(!m)return null;copy.metadata=m;}
  // Recover explicit measured ingredient facts already present in this
  // component's structured method; never invent an ingredient or sum quantities.
  for(const part of copy.components){

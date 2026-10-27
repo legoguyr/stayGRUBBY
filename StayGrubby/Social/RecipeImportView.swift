@@ -13,7 +13,6 @@ struct RecipeImportView: View {
     @State private var operation: Task<Void,Never>?
     @State private var generation = UUID()
     @State private var discard = false
-    private var appleAvailable: Bool { AppleRecipeIntelligenceProvider().isAvailable && (raw.isEmpty || RecipeCreatorContract.onDeviceSuitable(raw)) }
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -22,16 +21,16 @@ struct RecipeImportView: View {
                     TextEditor(text: $raw).font(.body).frame(minHeight: 260).padding(8)
                         .scrollContentBackground(.hidden).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12))
                         .accessibilityLabel("Recipe text").accessibilityIdentifier("recipe-import-text").disabled(formatting)
-                    Toggle("Allow cloud formatting if needed", isOn: $cloudConsent).accessibilityIdentifier("recipe-import-consent").disabled(formatting)
-                    Text("We try on-device formatting first when available. With your permission, your recipe text may be sent through Supabase to Google Gemini. Google’s free service may use it to improve its products and may have human reviewers. Avoid confidential or personal information. Nothing is saved until you review and tap Save.")
+                    Toggle("Allow Cloud Formatting", isOn: $cloudConsent).accessibilityIdentifier("recipe-import-consent").disabled(formatting)
+                    Text("With your permission, Cloud Formatting sends your recipe text through Supabase to Google Gemini. Google’s free service may use it to improve its products and may have human reviewers. Avoid confidential or personal information. Nothing is saved until you review and tap Save.")
                         .font(.footnote).foregroundStyle(.secondary)
-                    if !appleAvailable && !cloudConsent { Text("Cloud permission is needed to create this recipe automatically. You can always continue manually.").font(.footnote) }
+                    if !cloudConsent { Text("Cloud permission is needed to create this recipe automatically. You can always continue manually.").font(.footnote) }
                     if formatting {
                         ProgressView("Formatting Recipe…").accessibilityIdentifier("recipe-import-progress")
                         Button("Stop Formatting") { cancel() }.frame(minHeight: 44)
                     } else {
                         Button("Format Recipe") { format() }.buttonStyle(SGButtonStyle(prominent: true))
-                            .disabled(raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || (!appleAvailable && !cloudConsent))
+                            .disabled(raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !cloudConsent)
                             .accessibilityIdentifier("recipe-import-format")
                         if let failure { Text(failure.message).font(.subheadline).accessibilityIdentifier("recipe-import-error") }
                         Button("Continue Manually") { review(RecipeImportValidation.manual(raw, dishTitle: dish.name)) }.buttonStyle(SGButtonStyle())
@@ -70,7 +69,7 @@ struct RecipeImportView: View {
         if cloudConsent, let request { fallback = { raw in try await request(raw) } }
         operation = Task { @MainActor in
             do {
-                let value = try await RecipeIntelligenceService.format(original, dishTitle: dish.name, apple: AppleRecipeIntelligenceProvider(), fallback: GeminiRecipeIntelligenceProvider(request: fallback))
+                let value = try await RecipeIntelligenceService.format(original, dishTitle: dish.name, apple: AppleRecipeIntelligenceProvider(), fallback: GeminiRecipeIntelligenceProvider(request: fallback), preferOnDevice: false)
                 guard !Task.isCancelled, generation == token else { return }
                 formatting = false; review(value)
             } catch is CancellationError {} catch {

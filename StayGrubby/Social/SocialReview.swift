@@ -34,6 +34,9 @@ import SwiftData
             let id = UUID(uuidString: "60000000-0000-0000-0000-000000000001")!
             recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
         }
+        if let url = recipeReviewURL, let data = try? Data(contentsOf: url), let saved = try? JSONDecoder().decode([Recipe].self, from: data) {
+            for r in saved { recipes[r.id] = r; if let dish = r.linkedDishID { dishRecipes[dish] = r.id } }
+        }
         if ProcessInfo.processInfo.arguments.contains("--product-review-grid") {
             let own = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: identity.displayName, username: identity.username ?? "review_cook", relationship: .none)
             for (n, title) in ["Lemon Soup", "Slow-roasted Cauliflower with Tahini", "Chocolate Tart"].enumerated() {
@@ -53,6 +56,10 @@ import SwiftData
                 notices.append(.init(id: UUID(uuidString: "50000000-0000-0000-0000-00000000000\(index + 1)")!, kind: kind, actor: actor, targetID: target, postID: ["like", "comment", "recreated"].contains(kind) ? target : nil, createdAt: Date().timeIntervalSince1970 - Double(index), read: false))
             }
         }
+    }
+    private var recipeReviewURL: URL? {
+        guard ProcessInfo.processInfo.arguments.contains("--recipe-persistence-review"), let store = DebugReviewConfiguration.current.storeURL(in: FileManager.default.temporaryDirectory) else { return nil }
+        return store.appendingPathExtension("recipes.json")
     }
     func seedCookbook(context: ModelContext) throws {
         guard DebugReviewConfiguration.current.storeID != nil, ProcessInfo.processInfo.arguments.contains("--bible-review"), dishRecipes.isEmpty else { return }
@@ -131,6 +138,7 @@ import SwiftData
                 let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? "private", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
                 recipes[id] = value
                 if let dish = payload.dishID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish }
+                if let url = recipeReviewURL { try JSONEncoder().encode(Array(recipes.values)).write(to: url, options: .atomic) }
                 return try JSONEncoder().encode(recipes[id])
             }
             if action == "delete" { recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }

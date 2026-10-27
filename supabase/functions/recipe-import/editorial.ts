@@ -1,3 +1,4 @@
+import { heatAlternative, styleText } from './style.ts';
 import type { Extraction } from './contract.ts';
 import { editorialTokens, tokens } from './evidence.ts';
 
@@ -13,7 +14,7 @@ export function sourceLocks(raw:string):Lock[] {
  for(const m of raw.matchAll(/\b(about|approximately)\s+((?:(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)|\d+(?:\.\d+)?)\s+(?:minutes?|mins?|hours?|hrs?))\b/gi))locks.push({identity:m[2],prefix:m[1],method:true});
  return locks;
 }
-export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|null {
+export function preserveEditorialFacts(value:Extraction,raw:string,polished=false):Extraction|null {
  const copy=structuredClone(value);
  const proposals=copy.metadata?Object.values(copy.metadata).filter((p:any)=>p&&typeof p==='object'&&!Array.isArray(p)&&['provided','derived'].includes(p.origin)):[];
  const metadataTokens=proposals.flatMap((p:any)=>tokens(p.origin==='derived'?p.evidence??'':String(p.value??'')));
@@ -21,9 +22,10 @@ export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|n
  const fields=copy.components.flatMap(p=>[...p.ingredients.map((_,i)=>({get:()=>p.ingredients[i],set:(s:string)=>p.ingredients[i]=s,method:false})),...p.steps.map((_,i)=>({get:()=>p.steps[i],set:(s:string)=>p.steps[i]=s,method:true}))]);
  const locks=sourceLocks(raw);if(locks.length>200)return null; // Fail closed; never silently truncate source obligations.
  for(const lock of locks){
-  const identity=tokens(lock.identity);
+  if(polished&&['some','a little'].includes(lock.prefix??''))continue;
+  const identity=polished?editorialTokens(lock.identity,raw,'ingredient',true):tokens(lock.identity);
   if(!identity.length)continue;
-  const candidates=fields.filter(f=>(!lock.method||f.method)&&identity.every(w=>tokens(f.get()).includes(w)));
+  const candidates=fields.filter(f=>(!lock.method||f.method)&&identity.every(w=>(polished?editorialTokens(f.get(),raw,'ingredient',true):tokens(f.get())).includes(w)));
   // Prefer ingredients and unknown amounts, not a different quantified use of
   // the same ingredient (e.g. a garnish vs the main preparation).
   candidates.sort((a,b)=>Number(a.method)-Number(b.method)+Number(tokens(a.get()).some(w=>/^n\d/.test(w)))-Number(tokens(b.get()).some(w=>/^n\d/.test(w))));
@@ -55,6 +57,7 @@ export function preserveEditorialFacts(value:Extraction,raw:string):Extraction|n
  for(const clause of raw.split(/[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b/i)){
   if(!/\bor\b/i.test(clause))continue;
   const group=clause.split(/\bif\b/i)[0].trim();
+  if(polished&&heatAlternative(group)&&fields.some(f=>/\boptional\b/i.test(f.get())&&/\b(?:chiles?|chilies|chili|chillies)\b/i.test(f.get())&&!tokens(f.get()).some(t=>/^n\d/.test(t))))continue;
   const wanted=tokens(group).filter(w=>!['little','optional','maybe'].includes(w));
   if(wanted.length&& !fields.some(f=>wanted.every(w=>tokens(f.get()).includes(w))))return null;
  }

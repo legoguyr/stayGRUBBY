@@ -1,4 +1,4 @@
-import { creator, editorial, corpus, runCase, assert } from "../../../DevelopmentTools/recipe_engine_acceptance.ts";
+import { cookbook, creator, editorial, corpus, runCase, assert } from "../../../DevelopmentTools/recipe_engine_acceptance.ts";
 import { handler } from "./handler.ts";
 import { validationReport } from "./contract.ts";
 import { reconcile } from "./reconcile.ts";
@@ -13,7 +13,7 @@ Deno.test("canonical source bytes and isolated UI contract never drift",async()=
  const ui=JSON.parse(await Deno.readTextFile(new URL("../../../StayGrubbyUITests/Fixtures/RecipeEngineKaleUI.json",import.meta.url)));
  assert(ui.raw===canonical.raw&&JSON.stringify(ui.extraction)===JSON.stringify(golden.cases.find((c:any)=>c.id===ui.id).extraction),'UI fixture differs from server/client contract');
 });
-for(const c of [...corpus.cases,...editorial.cases,...creator.cases])Deno.test(`phase ${c.phase}: ${c.id} full Edge/client-contract fixture`,async()=>{
+for(const c of [...corpus.cases,...editorial.cases,...creator.cases,...cookbook.cases])Deno.test(`phase ${c.phase}: ${c.id} full Edge/client-contract fixture`,async()=>{
  const actual=await runCase(c),expected=golden.cases.find((v:any)=>v.id===c.id);
  assert(!!expected,`${c.id}: missing client contract`);
  assert(JSON.stringify(actual.extraction)===JSON.stringify(expected.extraction),`${c.id}: server/client contract drift`);
@@ -84,4 +84,8 @@ Deno.test("source qualifiers are local, idempotent and never mutate provider tex
  assert(JSON.stringify(preserveEditorialFacts(locked,raw))===JSON.stringify(locked),'qualifiers repeated');
  assert(locked.components[0].steps[0]==='Cook rice for about 5 minutes.'&&locked.components[0].steps[1]===value.components[0].steps[1],'whole prose replaced');
  assert(locked.components[0].ingredients[1]==='a little olive oil'&&locked.components[0].ingredients[2]==='salt (to taste)','qualifier assigned to wrong ingredient');
+});
+
+for(const c of pairs.cases)Deno.test(`cookbook unsafe facts remain rejected: ${c.id}`,()=>{
+ assert(!grounded(c.unsafe,c.raw,c.kind,true),`${c.id}: unsafe fact accepted by cookbook editing`);
 });

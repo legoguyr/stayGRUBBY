@@ -34,6 +34,7 @@ import FoundationModels
 }
 /// Transient provider envelope; permanent content has no provider dependencies.
 @Generable nonisolated struct RecipeExtraction: Codable, Equatable, Sendable {
+    var editorialVersion: Int? = nil
     var title: String? = nil
     var yield: String? = nil
     @Guide(description: "Explicit cookbook/author/source attribution only, otherwise null. Never write Unknown as a string.")

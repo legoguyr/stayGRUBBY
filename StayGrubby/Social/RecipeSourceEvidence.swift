@@ -40,8 +40,8 @@ nonisolated enum RecipeSourceEvidence {
         !value.isEmpty && (" " + source.joined(separator: " ") + " ").contains(" " + value.joined(separator: " ") + " ")
     }
     /// Bounded editorial equivalents. Culinary nouns, numbers and units remain evidence.
-    static func editorialTokens(_ value: String, raw: String, kind: Kind) -> [String] {
-        var text = value.lowercased()
+    static func editorialTokens(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> [String] {
+        var text = polished ? RecipeStyleEvidence.text(value, raw: raw, kind: kind) : value.lowercased()
         func replace(_ pattern: String, _ replacement: String) {
             text = text.replacingOccurrences(of: pattern, with: replacement, options: .regularExpression)
         }
@@ -65,9 +65,9 @@ nonisolated enum RecipeSourceEvidence {
         replace(#"\bapproximately\b"#, "about")
         return tokens(text)
     }
-    static func grounded(_ value: String, raw: String, kind: Kind) -> Bool {
+    static func grounded(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> Bool {
         if case .ingredient = kind, value.range(of: #"^\s*-\s*\d|\b\d+\s*/\s*0\b"#, options: .regularExpression) != nil { return false }
-        let source = editorialTokens(raw, raw: raw, kind: kind), output = editorialTokens(value, raw: raw, kind: kind)
+        let source = editorialTokens(raw, raw: raw, kind: kind, polished: polished), output = editorialTokens(value, raw: raw, kind: kind, polished: polished)
         guard !output.isEmpty else { return false }
         if contains(source, output) { return true }
         guard output.allSatisfy({ source.contains($0) }) else { return false }
@@ -78,6 +78,7 @@ nonisolated enum RecipeSourceEvidence {
         case .metadata: return false
         case .title, .step: return true
         case .ingredient:
+            if polished && RecipeStyleEvidence.heatAlternative(raw) && output.contains("chile") && !output.contains(where: { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true }) && output.allSatisfy({ ["chile","oil","or","optional"].contains($0) }) { return true }
             func neighbors(_ words: [String], _ at: Int) -> [String] {
                 func useful(_ w: String) -> Bool { !preparation.contains(w) && !units.contains(w) && !(w.hasPrefix("n") && w.dropFirst().first?.isNumber == true) }
                 return [words.dropFirst(at+1).first(where: useful), words.prefix(at).reversed().first(where: useful)].compactMap { $0 }

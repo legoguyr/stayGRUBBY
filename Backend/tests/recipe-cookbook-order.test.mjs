@@ -1,0 +1,25 @@
+import {fixture} from './social-harness.mjs';
+import {randomUUID} from 'node:crypto';
+const {db,actor,rpc,cooking,check,finish}=await fixture();
+const graph=await cooking(0),dish=(await db.query('select dish_id from staygrubby.cooking_attempts where id=$1',[graph.attempts[0]])).rows[0].dish_id;
+const ingredient=name=>({id:randomUUID(),order:0,quantity:'',unit:'',name,preparation:'',note:''});
+const step=instruction=>({id:randomUUID(),order:0,instruction});
+const p={id:randomUUID(),title:'Soup',order:0,ingredients:[ingredient('carrots'),ingredient('stock'),ingredient('salt')],steps:[step('Add carrots.'),step('Simmer stock.')]};
+const q={id:randomUUID(),title:'Garnish',order:1,ingredients:[ingredient('parsley')],steps:[step('Add parsley.')]};
+const base={title:'Fixture soup',ingredients:[],steps:[],components:[p,q],yield:'2',prepMinutes:5,cookMinutes:15,elapsedMinutes:18,metadataOrigins:{yield:'estimated',prepMinutes:'estimated',cookMinutes:'estimated',totalMinutes:'estimated'},allergens:{contains:['egg'],possible:['wheat'],reviewIngredients:['stock']}};
+await actor(0);const id=randomUUID();const first=await rpc('recipes','save',{recipeID:id,dishID:dish,recipe:base,visibility:'private'});
+const next=structuredClone(base),[a,b]=next.components;
+a.ingredients=[p.ingredients[1],p.ingredients[2]];b.ingredients=[q.ingredients[0],p.ingredients[0]];
+a.steps=[p.steps[1]];b.steps=[q.steps[0],p.steps[0]];
+for(const part of next.components){part.ingredients.forEach((r,i)=>r.order=i);part.steps.forEach((r,i)=>r.order=i);}
+await rpc('recipes','save',{recipeID:id,dishID:dish,expectedRevision:first.revision,recipe:next,visibility:'private'});
+const restored=(await rpc('recipes','get',{recipeID:id})).content;
+check(restored.components[0].ingredients.map(r=>r.name).join()==='stock,salt','within-component ingredient order');
+check(restored.components[1].ingredients.map(r=>r.name).join()==='parsley,carrots','cross-component ingredient order');
+check(restored.components[1].steps.map(r=>r.instruction).join()==='Add parsley.,Add carrots.','cross-component method order');
+check(new Set(restored.components.flatMap(p=>p.ingredients).map(r=>r.id)).size===4,'same stable ingredient identities, no copies/deletion');
+check(restored.allergens.contains[0]==='egg'&&restored.allergens.possible[0]==='wheat','reviewed allergen corrections survive ordering');
+check(restored.yield==='2'&&restored.prepMinutes===5&&restored.cookMinutes===15&&restored.elapsedMinutes===18,'all four metadata fields restore');
+await db.exec('reset role');const old=(await db.query('select content from staygrubby.recipe_revisions where recipe_id=$1 and revision=1',[id])).rows[0].content;
+check(old.components[0].ingredients[0].name==='carrots','old immutable revision remains unchanged');
+await finish();

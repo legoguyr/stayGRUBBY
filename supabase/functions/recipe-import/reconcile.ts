@@ -33,8 +33,8 @@ function sourceCandidates(raw:string) {
  return [...values].map(text=>({text,anchors:anchors(text),numbers:numbers(text)}));
 }
 
-export function reconcile(value:unknown,raw:string):{extraction:Extraction;fields:string[];count:number}|null {
- const report=validationReport(value,raw);if(!report.reconcilable)return null;
+export function reconcile(value:unknown,raw:string,polished=false):{extraction:Extraction;fields:string[];count:number}|null {
+ const report=validationReport(value,raw,polished);if(!report.reconcilable)return null;
  const extraction=structuredClone(value) as Extraction, fields:string[]=[];
  let count=0;
  const record=(field:string)=>{count++;if(fields.length<20)fields.push(field);};
@@ -74,11 +74,11 @@ export function reconcile(value:unknown,raw:string):{extraction:Extraction;field
   return null;
  };
  // Optional invented labels/metadata become unknown, rather than guessed facts.
- for(const key of ['title','yield','source'] as const)if(extraction[key]!==null&&groundingIssue(extraction[key]!,raw,key==='title'?'title':'metadata')){extraction[key]=null;record(key);}
+ for(const key of ['title','yield','source'] as const)if(extraction[key]!==null&&groundingIssue(extraction[key]!,raw,key==='title'?'title':'metadata',polished)){extraction[key]=null;record(key);}
  for(const [i,part] of extraction.components.entries()){
-  if(part.title!==null&&groundingIssue(part.title,raw,'title')){part.title=null;record(`components[${i}].title`);}
+  if(part.title!==null&&groundingIssue(part.title,raw,'title',polished)){part.title=null;record(`components[${i}].title`);}
   for(const [key,kind,max] of [['ingredients','ingredient',500],['steps','step',2000]] as const)for(const [n,text] of part[key].entries()){
-   if(!groundingIssue(text,raw,kind))continue;
+   if(!groundingIssue(text,raw,kind,polished))continue;
    // Remove only a closed set of unsupported presentation modifiers when the
    // remaining edited sentence independently passes every source guard. Do not
    // erase uncertain ingredient varieties, numbers, negation or cooking verbs.
@@ -86,11 +86,11 @@ export function reconcile(value:unknown,raw:string):{extraction:Extraction;field
    for(const modifier of ['extra[- ]virgin','freshly','finely','roughly']) {
     if(!new RegExp(`\\b${modifier}\\b`,'i').test(raw))scoped=scoped.replace(new RegExp(`\\b${modifier}\\b[ ,]*`,'gi'),'');
    }
-   const restored=scoped!==text&&!groundingIssue(scoped,raw,kind)?scoped:recover(text,max,kind);if(!restored)return null;
+   const restored=scoped!==text&&!groundingIssue(scoped,raw,kind,polished)?scoped:recover(text,max,kind);if(!restored)return null;
    part[key][n]=restored;record(`components[${i}].${key}[${n}]`);
   }
  }
  // No schema/source guard is bypassed, including caps hidden by bounded logs.
- if(!validationReport(extraction,raw).valid||new TextEncoder().encode(JSON.stringify(extraction)).length>96_000)return null;
+ if(!validationReport(extraction,raw,polished).valid||new TextEncoder().encode(JSON.stringify(extraction)).length>96_000)return null;
  return {extraction,fields,count};
 }

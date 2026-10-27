@@ -20,6 +20,7 @@ nonisolated enum RecipeEditorialEvidence {
     struct Field { var part: Int; var index: Int; var method: Bool }
     static func preserve(_ value: RecipeExtraction, raw: String) -> RecipeExtraction? {
         var copy = value
+        let polished = value.editorialVersion == 3
         var metadataTokens: [String] = []
         var metadataEvidence: [String] = []
         if let m = copy.metadata {
@@ -39,9 +40,10 @@ nonisolated enum RecipeEditorialEvidence {
         let sourceLocks = locks(raw)
         guard sourceLocks.count <= 200 else { return nil } // Fail closed, never truncate evidence.
         for lock in sourceLocks {
-            let identity = RecipeSourceEvidence.tokens(lock.identity)
+            if polished && ["some","a little"].contains(lock.prefix ?? "") { continue }
+            let identity = polished ? RecipeSourceEvidence.editorialTokens(lock.identity, raw: raw, kind: .ingredient, polished: true) : RecipeSourceEvidence.tokens(lock.identity)
             if identity.isEmpty { continue }
-            let candidates = fields.filter { f in (!lock.method || f.method) && identity.allSatisfy { RecipeSourceEvidence.tokens(get(f)).contains($0) } }.sorted { weight($0) < weight($1) }
+            let candidates = fields.filter { f in (!lock.method || f.method) && identity.allSatisfy { (polished ? RecipeSourceEvidence.editorialTokens(get(f), raw: raw, kind: .ingredient, polished: true) : RecipeSourceEvidence.tokens(get(f))).contains($0) } }.sorted { weight($0) < weight($1) }
             let marker = lock.prefix ?? lock.suffix!
             let markerTokens = RecipeSourceEvidence.editorialTokens(marker, raw: raw, kind: .step)
             if candidates.contains(where: { f in
@@ -75,6 +77,9 @@ nonisolated enum RecipeEditorialEvidence {
         let clauses = raw.replacingOccurrences(of: separator, with: "\n", options: [.regularExpression,.caseInsensitive]).components(separatedBy: "\n")
         for clause in clauses where clause.range(of: #"\bor\b"#, options: [.regularExpression,.caseInsensitive]) != nil {
             let group = clause.replacingOccurrences(of: #"\bif\b.*$"#, with: "", options: [.regularExpression,.caseInsensitive])
+            if polished && RecipeStyleEvidence.heatAlternative(group) && fields.contains(where: { f in
+                get(f).range(of: #"\boptional\b"#, options: [.regularExpression,.caseInsensitive]) != nil && get(f).range(of: #"\b(?:chiles?|chilies|chili|chillies)\b"#, options: [.regularExpression,.caseInsensitive]) != nil && !RecipeSourceEvidence.tokens(get(f)).contains(where: { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true })
+            }) { continue }
             let wanted = RecipeSourceEvidence.tokens(group).filter { !["little","optional","maybe"].contains($0) }
             if !wanted.isEmpty && !fields.contains(where: { f in wanted.allSatisfy { RecipeSourceEvidence.tokens(get(f)).contains($0) } }) { return nil }
         }

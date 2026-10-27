@@ -40,12 +40,17 @@ nonisolated enum RecipeCreatorValidation {
         if ["servings","serving","people","persons","person","portions"].contains(tail[0]) { return count }
         return ([count] + tail.prefix(2).filter { $0.range(of: #"^[a-z]+$"#, options: .regularExpression) != nil }).joined(separator: " ")
     }
-    static func normalize(_ metadata: RecipeCreatorMetadata, raw: String) -> RecipeCreatorMetadata {
+    static func normalize(_ metadata: RecipeCreatorMetadata, raw: String, polished: Bool = false) -> RecipeCreatorMetadata {
         var m = metadata
         func evidence(_ text: String?) -> Bool { guard let text, !text.isEmpty, text.count <= 500 else { return false }; return RecipeImportValidation.normalized(raw).contains(RecipeImportValidation.normalized(text)) }
         func text(_ p: RecipeTextProposal, key: String) -> RecipeTextProposal {
             if key != "cuisine", let stated = explicit(raw, key: key), p.origin != .derived { return .init(value: yieldLabel(raw, n: stated), origin: .provided, evidence: statement(raw, key: key)) }
-            guard p.origin != .unknown, let value = p.value, !value.isEmpty, value.count <= 100, evidence(p.evidence) else { return .init() }
+            guard p.origin != .unknown, let value = p.value, !value.isEmpty, value.count <= 100 else { return .init() }
+            if polished && p.origin == .estimated {
+                if key == "cuisine" && !CuisineCatalog.predefined.contains(where: { $0.label == value }) { return .init() }
+                return .init(value: value, origin: .estimated, evidence: String(raw.prefix(500)))
+            }
+            guard evidence(p.evidence) else { return .init() }
             if key == "cuisine" {
                 guard CuisineCatalog.predefined.contains(where: { $0.label == value }), p.origin != .provided || RecipeImportValidation.normalized(p.evidence!).contains(RecipeImportValidation.normalized(value)) else { return .init() }
                 return p
@@ -63,7 +68,9 @@ nonisolated enum RecipeCreatorValidation {
         }
         func time(_ p: RecipeTimeProposal, key: String) -> RecipeTimeProposal {
             if let stated = explicit(raw, key: key) { guard stated <= 10080 else { return .init() }; return .init(value: Int(ceil(stated)), origin: stated.rounded() == stated ? .provided : .derived, evidence: statement(raw, key: key)) }
-            guard p.origin != .unknown, let value = p.value, (0...10080).contains(value), evidence(p.evidence) else { return .init() }
+            guard p.origin != .unknown, let value = p.value, (0...10080).contains(value) else { return .init() }
+            if polished && p.origin == .estimated { return .init(value: value, origin: .estimated, evidence: String(raw.prefix(500))) }
+            guard evidence(p.evidence) else { return .init() }
             let stated = explicit(raw, key: key)
             if let stated, Double(value) != stated { return .init() }
             if p.origin == .provided && (stated == nil || Double(value) != stated) { return .init() }
@@ -88,7 +95,7 @@ nonisolated enum RecipeCreatorValidation {
     }
     static func construct(_ value: RecipeExtraction, raw: String) -> RecipeExtraction? {
         var copy = value
-        if let metadata = copy.metadata { copy.metadata = normalize(metadata, raw: raw) }
+        if let metadata = copy.metadata { copy.metadata = normalize(metadata, raw: raw, polished: copy.editorialVersion == 3) }
         for i in copy.components.indices {
             let quantity = #"(?:\d+(?:[./]\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|quarter|half)"#
             let unit = #"(?:(?:tablespoons?|tbsp|teaspoons?|tsp|cups?|cloves?|oz|ounces?|g|grams?|kg|ml|lb|pounds?)\s+)?"#

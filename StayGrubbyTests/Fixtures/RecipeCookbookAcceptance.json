@@ -1,0 +1,539 @@
+{
+  "cases": [
+    {
+      "id": "canonical-cookbook",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Blanche 2 cups of kale per person going to need ice water boil water season with salt add kale cook until it starts to wet. Add to ice water. Move it around cool it down squeeze out all the water. Add it to a blender with a quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic, pinch of salt and a little chili oil or clabbering chilies or red pepper flakes if you want spice blend till smooth add to a pan heat up boil pasta add pasta to the sauce mix with 1 tablespoon of cubed butter cold butter until glossy add to a pan and top with kale chips and Parmesan crisp Parmesan crisp is done by taking a baking sheet, put in a piece of parchment paper on it and shaving fresh Parmesan on it cooking the oven for about five minutes until it\u2019s crispy. Kale chips are going to be take some kale top with some olive oil, salt and pepper put in the oven till crispy.",
+      "contractVersion": 3,
+      "provider": {
+        "title": "Kale Pasta",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Kale Sauce",
+            "ingredients": [
+              "2 cups kale per person",
+              "1/4 cup olive oil",
+              "1/4 cup Parmesan cheese",
+              "2 cloves garlic",
+              "pinch salt",
+              "Chiles, optional"
+            ],
+            "steps": [
+              "Blanch kale in salted boiling water. Transfer to ice water, cool and squeeze out all the water.",
+              "Blend kale with olive oil, Parmesan cheese, garlic, salt and optional chiles until smooth."
+            ],
+            "after": []
+          },
+          {
+            "title": "Parmesan Crisp",
+            "ingredients": [
+              "Fresh Parmesan"
+            ],
+            "steps": [
+              "Line a baking sheet with parchment paper. Shave Parmesan cheese onto the paper.",
+              "Bake for about 5 minutes until crispy."
+            ],
+            "after": []
+          },
+          {
+            "title": "Kale Chips",
+            "ingredients": [
+              "Some kale",
+              "Some olive oil",
+              "Salt",
+              "salt",
+              "Pepper"
+            ],
+            "steps": [
+              "Coat kale with olive oil, salt and pepper. Bake until crispy."
+            ],
+            "after": []
+          },
+          {
+            "title": "Pasta & Assembly",
+            "ingredients": [
+              "Pasta",
+              "1 tbsp cold cubed butter"
+            ],
+            "steps": [
+              "Heat the sauce in a pan. Boil pasta, add it to the sauce and mix with 1 tablespoon of cold cubed butter until glossy.",
+              "Top with kale chips and Parmesan crisp."
+            ],
+            "after": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": 30,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": "Italian",
+            "origin": "estimated",
+            "evidence": "Pasta and Parmesan suggest Italian style."
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "canonical": true,
+        "cookbook": true,
+        "minimumComponents": 4,
+        "expectedYield": "2",
+        "expectedPrep": 15,
+        "expectedCook": 20,
+        "expectedTotal": 30,
+        "expectedCuisine": "Italian",
+        "allergenKnown": [
+          "milk"
+        ],
+        "allergenPossible": [
+          "wheat"
+        ],
+        "expectedLastStep": "Top with kale chips and Parmesan crisp."
+      }
+    },
+    {
+      "id": "cookbook-variable-seasoning",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Cook some rice. Add a little olive oil. Add salt. Add salt again.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "Some rice",
+              "A little olive oil",
+              "Salt",
+              "Salt"
+            ],
+            "steps": [
+              "Cook rice. Add olive oil and salt."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": 5,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true,
+        "ingredientCount": 3
+      }
+    },
+    {
+      "id": "cookbook-measured-allocations",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Heat 1 tbsp olive oil with rice. Add 2 tbsp olive oil to rice.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "1 tbsp olive oil",
+              "rice",
+              "2 tbsp olive oil"
+            ],
+            "steps": [
+              "Heat 1 tbsp olive oil with rice. Add 2 tbsp olive oil to rice."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true,
+        "ingredientCount": 3
+      }
+    },
+    {
+      "id": "cookbook-heat-ambiguity",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Add a little chili oil or garbled chilies or red pepper flakes if you want spice.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "Calabrian chilies, optional"
+            ],
+            "steps": [
+              "Add optional chiles."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true,
+        "ingredientForbidden": [
+          "Calabrian",
+          "garbled"
+        ],
+        "ingredientCount": 1
+      }
+    },
+    {
+      "id": "cookbook-other-options",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Add butter or olive oil if desired to rice. Cook rice.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "butter or olive oil, optional",
+              "rice"
+            ],
+            "steps": [
+              "Add optional butter or olive oil to rice. Cook rice."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true
+      }
+    },
+    {
+      "id": "cookbook-unnamed-preparations",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Dressing: mix olive oil and vinegar. Toss lettuce with dressing.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "olive oil",
+              "vinegar"
+            ],
+            "steps": [
+              "Mix olive oil and vinegar."
+            ],
+            "after": []
+          },
+          {
+            "title": null,
+            "ingredients": [
+              "lettuce"
+            ],
+            "steps": [
+              "Toss lettuce with dressing."
+            ],
+            "after": [
+              0
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true,
+        "minimumComponents": 2
+      }
+    },
+    {
+      "id": "cookbook-imperative-copyedit",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Dressing is made by taking a bowl. Mix oil and vinegar.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "oil",
+              "vinegar"
+            ],
+            "steps": [
+              "Dressing is made by taking a bowl. Mix oil and vinegar."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true
+      }
+    },
+    {
+      "id": "cookbook-estimate-explanation",
+      "phase": 10,
+      "origin": "synthetic-cookbook-contract-not-live-model-output",
+      "raw": "Boil pasta and blend spinach with olive oil.",
+      "contractVersion": 3,
+      "provider": {
+        "title": null,
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": null,
+            "ingredients": [
+              "pasta",
+              "spinach",
+              "olive oil"
+            ],
+            "steps": [
+              "Boil pasta. Blend spinach with olive oil."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2",
+            "origin": "estimated",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": 10,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        }
+      },
+      "checks": {
+        "cookbook": true,
+        "expectedYield": "2",
+        "expectedPrep": 10,
+        "expectedCook": 15,
+        "expectedTotal": 20
+      }
+    }
+  ]
+}

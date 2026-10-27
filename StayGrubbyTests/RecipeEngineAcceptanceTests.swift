@@ -40,7 +40,7 @@ import Testing
     private func cases() throws -> [Case] { try JSONDecoder().decode(Suite.self, from: data("RecipeEngineServerOutputs")).cases }
     @Test func allServerPhasesDecodeNormalizeAndRemainEditorCompatible() throws {
         let cases = try cases()
-        #expect(Set(cases.map(\.phase)) == Set(0...9))
+        #expect(Set(cases.map(\.phase)) == Set(0...10))
         for c in cases {
             let wire = try JSONEncoder().encode(c.extraction)
             let decoded = try RecipeImportValidation.decode(wire)
@@ -115,7 +115,7 @@ import Testing
         ] { #expect(RecipeEditorialEvidence.preserve(value, raw: raw) == nil) }
     }
     @Test func creatorConstructionMetadataAndAllergensSurviveEditorAndSave() throws {
-        for c in try cases().filter({ $0.phase == 9 }) {
+        for c in try cases().filter({ $0.phase >= 9 }) {
             let result = try RecipeImportValidation.review(c.extraction, raw: c.raw, dishTitle: "Existing Dish", provider: "Shared Creator")
             let d = result.draft
             if let v = c.checks.expectedYield { #expect(d.yield == v, "\(c.id): yield") }
@@ -133,6 +133,40 @@ import Testing
             #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(d)) == d)
             #expect(d.metadataOrigins?["yield"] == c.extraction.metadata!.yield.origin.rawValue)
         }
+    }
+    @Test func cookbookEstimatesWithoutLiteralQuotationReachEditorWhileProvidedClaimsStayStrict() throws {
+        let raw = "Boil pasta and blend spinach with olive oil."
+        let m = RecipeCreatorMetadata(yield: .init(value: "2", origin: .estimated), prepMinutes: .init(value: 10, origin: .estimated), cookMinutes: .init(value: 15, origin: .estimated), totalMinutes: .init(value: 20, origin: .estimated))
+        #expect(RecipeCreatorValidation.normalize(m, raw: raw).yield.value == nil) // reproduces v2 loss
+        let fixed = RecipeCreatorValidation.normalize(m, raw: raw, polished: true)
+        #expect(fixed.yield.value == "2" && fixed.prepMinutes.value == 10 && fixed.cookMinutes.value == 15 && fixed.totalMinutes.value == 20)
+        #expect(fixed.yield.origin == .estimated && fixed.totalMinutes.origin == .estimated)
+        let unsupported = RecipeCreatorValidation.normalize(.init(yield: .init(value: "8", origin: .provided, evidence: raw)), raw: raw, polished: true)
+        #expect(unsupported.yield.origin == .unknown)
+    }
+    @Test func cookbookPolicyRetainsEveryExistingUnsafeFactRejection() throws {
+        struct Pair: Decodable { var id: String; var raw: String; var unsafe: String; var kind: String }
+        struct Pairs: Decodable { var cases: [Pair] }
+        for c in try JSONDecoder().decode(Pairs.self, from: data("RecipeEditorialPairs")).cases {
+            #expect(!RecipeSourceEvidence.grounded(c.unsafe, raw: c.raw, kind: c.kind == "ingredient" ? .ingredient : .step, polished: true), "\(c.id): unsafe fact accepted")
+        }
+    }
+    @Test func ingredientAndStepMovesRetainIdentityAndSerializeCanonicalOrder() throws {
+        let a = RecipeComponent(title: "Sauce", ingredients: [.init(name: "tomatoes"),.init(name: "salt"),.init(name: "oil")], steps: [.init(instruction: "Heat oil."),.init(instruction: "Add tomatoes.")])
+        let b = RecipeComponent(title: "Assembly", steps: [.init(instruction: "Serve sauce.")])
+        var d = RecipeContent(title: "Fixture", components: [a,b])
+        let ids = Set(d.orderedComponents.flatMap(\.ingredients).map(\.id))
+        d.moveRecipeRow(a.ingredients[2].id, from: a.id, to: a.id, ingredient: true, at: 0)
+        #expect(d.components![0].ingredients.map(\.name) == ["oil","tomatoes","salt"])
+        d.moveRecipeRow(a.ingredients[1].id, from: a.id, to: b.id, ingredient: true, at: 0)
+        d.moveRecipeRow(a.steps[1].id, from: a.id, to: a.id, ingredient: false, at: 0)
+        #expect(d.components![0].steps[0].instruction == "Add tomatoes.")
+        d.moveRecipeRow(b.steps[0].id, from: b.id, to: a.id, ingredient: false, at: 1)
+        let saved = d.preparedForSave()
+        let restored = try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(saved))
+        #expect(restored == saved && Set(restored.orderedComponents.flatMap(\.ingredients).map(\.id)) == ids)
+        #expect(restored.orderedComponents.flatMap(\.ingredients).count == ids.count)
+        for p in restored.orderedComponents { #expect(p.steps.map(\.order) == Array(p.steps.indices)); #expect(p.ingredients.map(\.order) == Array(p.ingredients.indices)) }
     }
     @Test func creatorProvenanceDistinguishesExplicitAndEstimatedAndHonorsHours() {
         let raw = "Serves 4. Prep time 10 minutes. Cook time 1 hour. Boil rice."

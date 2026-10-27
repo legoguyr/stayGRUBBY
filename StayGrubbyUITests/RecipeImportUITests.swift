@@ -112,4 +112,86 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
         shot(app,"Creator metadata and allergens saved and reopened — isolated store")
     }
 
+    @MainActor private func reach(_ element: XCUIElement, app: XCUIApplication) {
+        for _ in 0..<20 {
+            if !element.exists { app.swipeUp(); continue }
+            let f=element.frame, top:CGFloat=155, bottom:CGFloat=app.keyboards.firstMatch.exists ? app.keyboards.firstMatch.frame.minY-25 : app.frame.maxY-110
+            if element.exists && element.isHittable && f.minY>=top && f.maxY<=bottom { return }
+            let dy:CGFloat=f.height>0 ? max(-240,min(240,(top+bottom)/2-f.midY)) : -180
+            let start=app.coordinate(withNormalizedOffset:CGVector(dx:0.5,dy:0)).withOffset(CGVector(dx:0,dy:(top+bottom)/2))
+            start.press(forDuration:0.05,thenDragTo:start.withOffset(CGVector(dx:0,dy:dy)),withVelocity:.slow,thenHoldForDuration:0.1)
+        }
+        XCTAssertTrue(element.exists && element.isHittable,app.debugDescription)
+    }
+    @MainActor private func openSavedRecipe(_ app: XCUIApplication) {
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20));app.tabBars.buttons["Food Bible"].tap()
+        let card=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout:8));card.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
+    }
+    @MainActor func testCookbookAllMetadataAndSharedAllergenChecklistSurviveSaveAndRelaunch() throws {
+        let bundle=Bundle(for:RecipeImportUITests.self)
+        let url=try XCTUnwrap(bundle.url(forResource:"RecipeEngineKaleUI",withExtension:"json",subdirectory:"Fixtures") ?? bundle.url(forResource:"RecipeEngineKaleUI",withExtension:"json"))
+        let object=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:url)) as? [String:Any])
+        let source=try XCTUnwrap(object["raw"] as? String),fixture=try JSONSerialization.data(withJSONObject:XCTUnwrap(object["extraction"]))
+        let app=launch(["--test-light","--recipe-persistence-review"],fixture:fixture)
+        app.textViews["recipe-import-text"].tap();app.textViews["recipe-import-text"].typeText(source);app.swipeUp();allowCloud(app);app.buttons["recipe-import-format"].tap()
+        XCTAssertTrue(app.textFields["recipe-yield"].waitForExistence(timeout:15))
+        XCTAssertEqual(app.textFields["recipe-yield"].value as? String,"2")
+        XCTAssertEqual(app.textFields["Preparation time in minutes"].value as? String,"15")
+        XCTAssertEqual(app.textFields["Cooking time in minutes"].value as? String,"20")
+        XCTAssertEqual(app.textFields["recipe-total-minutes"].value as? String,"30")
+        let contains=app.buttons["recipe-allergen-contains"];reach(contains,app:app);contains.tap()
+        let milk=app.buttons["recipe-allergen-contains-milk"],egg=app.buttons["recipe-allergen-contains-egg"]
+        XCTAssertTrue(milk.waitForExistence(timeout:5));XCTAssertEqual(milk.value as? String,"Selected");milk.tap();egg.tap()
+        XCTAssertEqual(milk.value as? String,"Not selected");XCTAssertEqual(egg.value as? String,"Selected");shot(app,"Recipe reuses approved allergen checklist")
+        app.buttons["recipe-allergen-contains-done"].tap()
+        let possible=app.buttons["recipe-allergen-possible"];reach(possible,app:app);possible.tap()
+        let wheat=app.buttons["recipe-allergen-possible-wheat"];reach(wheat,app:app);XCTAssertEqual(wheat.value as? String,"Selected")
+        app.buttons["recipe-allergen-possible-done"].tap();app.buttons["recipe-save"].tap()
+        XCTAssertTrue(app.textViews["recipe-import-text"].waitForNonExistence(timeout:8))
+        app.terminate();app.launchWithReviewOptions();openSavedRecipe(app)
+        XCTAssertEqual(app.textFields["recipe-yield"].value as? String,"2");XCTAssertEqual(app.textFields["recipe-total-minutes"].value as? String,"30")
+        reach(app.buttons["recipe-allergen-contains"],app:app);app.buttons["recipe-allergen-contains"].tap()
+        XCTAssertEqual(app.buttons["recipe-allergen-contains-milk"].value as? String,"Not selected");XCTAssertEqual(app.buttons["recipe-allergen-contains-egg"].value as? String,"Selected")
+        shot(app,"Corrected Recipe allergens retained after relaunch")
+    }
+    @MainActor func testNativeIngredientAndStepDragAcrossSectionsPersistsAfterRelaunch() throws {
+        let raw="Soup: add carrots and stock. Add salt. Serve carrots. Garnish: add parsley."
+        let fixture=Data(#"{"title":"Soup","yield":null,"source":null,"components":[{"title":"Soup","ingredients":["carrots","stock","salt"],"steps":["Add carrots and stock.","Add salt.","Serve carrots."]},{"title":"Garnish","ingredients":["parsley"],"steps":["Add parsley."]}]}"#.utf8)
+        let app=launch(["--test-dark","--recipe-persistence-review"],fixture:fixture)
+        app.textViews["recipe-import-text"].tap();app.textViews["recipe-import-text"].typeText(raw);app.swipeUp();allowCloud(app);app.buttons["recipe-import-format"].tap()
+        XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:15))
+        let first=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'recipe-ingredient-row-'")).firstMatch;reach(first,app:app);first.tap()
+        reach(app.buttons["recipe-reorder-ingredients"],app:app);app.buttons["recipe-reorder-ingredients"].tap()
+        let table=app.tables["recipe-order-table"];XCTAssertTrue(table.waitForExistence(timeout:5));XCTAssertFalse(app.keyboards.firstMatch.exists)
+        let originalIDs=Set(table.cells.allElementsBoundByIndex.map(\.identifier));XCTAssertEqual(table.cells.count,4)
+        drag(table.cells.element(boundBy:0),to:table.cells.element(boundBy:2),after:true)
+        XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),["stock","salt","carrots","parsley"])
+        drag(table.cells.element(boundBy:2),to:table.cells.element(boundBy:3),after:true)
+        app.buttons["recipe-order-done"].tap();app.buttons["recipe-reorder-ingredients"].tap()
+        XCTAssertEqual(Set(table.cells.allElementsBoundByIndex.map(\.identifier)),originalIDs)
+        XCTAssertEqual(table.cells.allElementsBoundByIndex.first(where:{$0.label=="carrots"})?.value as? String,"Garnish")
+        let ingredientOrder=table.cells.allElementsBoundByIndex.map(\.label);shot(app,"Native ingredient drag within and between components")
+        app.buttons["recipe-order-done"].tap()
+        reach(app.buttons["recipe-reorder-steps"],app:app);app.buttons["recipe-reorder-steps"].tap()
+        XCTAssertTrue(table.waitForExistence(timeout:5));XCTAssertEqual(table.cells.count,4)
+        drag(table.cells.element(boundBy:0),to:table.cells.element(boundBy:1),after:true)
+        XCTAssertEqual(table.cells.element(boundBy:0).label,"Add salt.")
+        drag(table.cells.matching(NSPredicate(format:"label == %@","Serve carrots.")).firstMatch,to:table.cells.matching(NSPredicate(format:"label == %@","Add parsley.")).firstMatch,after:true)
+        app.buttons["recipe-order-done"].tap();app.buttons["recipe-reorder-steps"].tap()
+        XCTAssertEqual(table.cells.allElementsBoundByIndex.first(where:{$0.label=="Serve carrots."})?.value as? String,"Garnish")
+        let stepOrder=table.cells.allElementsBoundByIndex.map(\.label);shot(app,"Native method drag within and between components")
+        app.buttons["recipe-order-done"].tap();app.buttons["recipe-save"].tap()
+        XCTAssertTrue(app.textViews["recipe-import-text"].waitForNonExistence(timeout:8))
+        let entry=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch;XCTAssertTrue(entry.waitForExistence(timeout:8));entry.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
+        reach(app.buttons["recipe-reorder-steps"],app:app);app.buttons["recipe-reorder-steps"].tap();XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),stepOrder);app.buttons["recipe-order-done"].tap()
+        app.terminate();app.launchWithReviewOptions();openSavedRecipe(app)
+        reach(app.buttons["recipe-reorder-ingredients"],app:app);app.buttons["recipe-reorder-ingredients"].tap();XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),ingredientOrder);XCTAssertEqual(Set(table.cells.allElementsBoundByIndex.map(\.identifier)),originalIDs);app.buttons["recipe-order-done"].tap()
+        reach(app.buttons["recipe-reorder-steps"],app:app);app.buttons["recipe-reorder-steps"].tap();XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),stepOrder);XCTAssertEqual(table.cells.count,4)
+        shot(app,"Ingredient and method ordering survived relaunch")
+    }
+    @MainActor private func drag(_ source:XCUIElement,to target:XCUIElement,after:Bool) {
+        source.coordinate(withNormalizedOffset:CGVector(dx:0.94,dy:0.5)).press(forDuration:0.8,thenDragTo:target.coordinate(withNormalizedOffset:CGVector(dx:0.94,dy:after ? 0.85 : 0.15)),withVelocity:.slow,thenHoldForDuration:0.3)
+    }
+
 }

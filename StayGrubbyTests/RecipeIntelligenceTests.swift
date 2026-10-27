@@ -59,6 +59,13 @@ import Testing
         let apple=Provider(identity:"Apple",value:extraction),gemini=Provider(identity:"Gemini",value:extraction)
         let result=try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
         #expect(result.provider=="Apple" && apple.calls==1 && gemini.calls==0)
+        gemini.error = .quota
+        _ = try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
+        #expect(gemini.calls == 0) // cloud cooldown cannot block a future on-device path
+        gemini.error = nil
+        let cloud = try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini,preferOnDevice:false)
+        #expect(cloud.provider == "Gemini" && apple.calls == 2 && gemini.calls == 1)
+        gemini.calls = 0
         apple.isAvailable=false
         let fallback=try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
         #expect(fallback.provider=="Gemini" && gemini.calls==1)
