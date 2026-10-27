@@ -1,6 +1,6 @@
 # StayGrubby Recipe Creator
 
-**AUTOMATED RECIPE CREATOR ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**
+> Historical Creator checkpoint. The owner physically reviewed it successfully overall and requested a focused cookbook/content/allergen/reorder refinement before freezing mechanics. Current evidence and the single final owner test are in [RECIPE_CREATOR_REFINEMENT_REVIEW.md](RECIPE_CREATOR_REFINEMENT_REVIEW.md). The ownership audit below remains applicable.
 
 Current product definition: **preserve the user's recipe; construct the recipe document intelligently**. This supersedes the v11/v13 transcription/editorial-only product definition. V11's real-iPhone acceptance remains historical evidence, not acceptance of this new Creator contract.
 

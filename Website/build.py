@@ -87,7 +87,7 @@ def build(output, distribution=None):
     association = {"applinks": {"details": [{"appIDs": ["5DSB36G7LZ.com.guyrettig.StayGrubby"], "components": [{"/": "/@*", "comment": "Profile share links; app validates exact usernames and authorizes before display"}]}]}}
     (output / ".well-known/apple-app-site-association").write_text(json.dumps(association, separators=(',', ':')), encoding="utf-8")
     text = POLICY.read_text(encoding="utf-8")
-    assert "Effective date: October 26, 2026" in text
+    assert "Effective date: October 27, 2026" in text
     landing = '''<section class="hero">
       <p class="eyebrow">Your cooking. Your taste.</p>
       <h1>Remember what<br>you loved cooking.</h1>

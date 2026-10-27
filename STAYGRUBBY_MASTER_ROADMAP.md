@@ -141,9 +141,26 @@ Keep future planning canonical here. Specialized documents explain implementatio
 
 ## Current launch sequence
 
-**October 27, 2026:** Food Bible UX 2.0, natural ingredient entry and v11 exact-kale cloud import were physically accepted. The replacement Recipe Creator cycle now constructs cookbook documents with supported components/chronology/ingredient allocations, useful editable yield/time estimates with honest provenance, canonical cuisine and ingredient-based informational allergens. Existing Dish/attempt identity and Grub Rank filtering remain unchanged. Both providers share semantics; live Apple probes verified basic short input but lost complex preparations, so unsuitable input routes directly to consented cloud/manual. Cloud has no StayGrubby daily allowance or recurring expiration; provider limits produce a friendly cooldown, with a short burst-abuse guard retained. No billing/key changes. [Current acceptance evidence, metadata ownership audit and one final owner test](RECIPE_CREATOR_REVIEW.md); historical [editorial/v11 evidence](RECIPE_ENGINE_ACCEPTANCE.md) and [failure investigation](STAYGRUBBY_RECIPE_IMPORT_FAILURE_REVIEW.md). Independent Recipes/linking remain the next approved architecture direction, not implemented here. This is not serving scaling, cooking mode or Personalized Taste Intelligence.
+**October 27, 2026:** The owner’s physical Recipe Creator review succeeded overall but found missing metadata, overly literal prose, incomplete names, an unsuitable Recipe allergen interaction and absent touch dragging. The focused cookbook refinement keeps Cloud Formatting as the standard consented path, adds versioned editorial normalization and honest metadata handling, reuses the cooking Contains checklist, and supplies native ingredient/method ordering. Existing provider allowances remain retired: no daily cap, no recurring expiration, no billing; 3/account/minute abuse guard and friendly cooldown remain. [Current refinement evidence and the single final physical procedure](RECIPE_CREATOR_REFINEMENT_REVIEW.md); [operational Recipe Style Guide](RECIPE_STYLE_GUIDE.md). Earlier [Creator metadata ownership audit](RECIPE_CREATOR_REVIEW.md) and [v11/editorial evidence](RECIPE_ENGINE_ACCEPTANCE.md) remain historical. Mechanics are not frozen until this final owner review passes.
 
 Tickets remain dormant. Ranking/score calibration remains frozen. Physical Universal Links are owner-confirmed broken and intentionally deferred; remaining UGC moderation hardening remains a later external-beta/release gate. No distribution was authorized/performed in this cycle. The later phase ordering and final long-term Taste Intelligence phase remain unchanged.
+
+### Agreed next Recipe sequence — documentation only
+
+After the cookbook mechanics pass physical acceptance, preserve this order. This is not implementation authorization in the current cycle. Existing revision/snapshot/description/social infrastructure is retained, not falsely treated as absent or replaced.
+
+1. Independent Recipe architecture: Recipe and Dish can each exist without the other; optional explicit linking.
+2. Recipe-owned photo upload.
+3. Living Recipe revision UX: editing the same Recipe creates an immutable revision, current remains live, an actual cook remembers the exact revision used, and Save as New Recipe represents real divergence. Build on existing revision/snapshot infrastructure.
+4. Recipe/Dish metadata ownership migration, with Recipe as the primary ingredient/allergen surface and deliberate projections to actual cooks. Do not remove current Dish controls before that migration.
+5. Short Recipe descriptions, building on the existing optional introduction field.
+6. More apparent short Dish/social descriptions, distinct from private Personal Notes.
+7. Dedicated Recipe social posts.
+8. Combined Dish + Recipe social posts when explicitly linked.
+9. Grub List filtering such as All / Grub Ranks / Recipes.
+10. Dedicated Food Bible / Recipe Maker UI overhaul after architecture is stable.
+
+No independent-Recipe linking, Recipe photos, broad metadata migration or UI overhaul is implemented by this refinement. The later overall roadmap and final long-term Personalized Taste Intelligence phase remain unchanged.
 
 ### Foundation chronology (historical)
 

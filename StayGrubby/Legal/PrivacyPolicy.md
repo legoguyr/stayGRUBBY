@@ -1,6 +1,6 @@
 # StayGrubby Privacy Policy
 
-**Effective date: October 26, 2026**
+**Effective date: October 27, 2026**
 
 StayGrubby is a private cooking journal and personal ranking app with optional friends-only social sharing. This policy describes the implemented app, including social identity, friendships, explicit cooking posts, likes, comments, blocking and reporting. It also covers manually created Recipes, private Tickets (Want to Cook), recipe-to-cook provenance and app-first profile links. It does not describe planned community recipe-discovery, advertising or public-web cooking profiles.
 
@@ -48,11 +48,11 @@ Removing a Recipe link removes that Dish from Food Bible without removing the sa
 
 ## Optional automatic Recipe formatting
 
-Paste Ingredients uses deterministic parsing on your device and does not send that ingredient list to an AI provider. Import Recipe can use Apple's on-device Foundation Models when the device and system model are available. If you allow cloud formatting and the on-device path is unavailable or fails, your pasted recipe text is sent through an authenticated Supabase Edge Function to Google Gemini for structured extraction. An ordinary iPhone 15 uses this cloud fallback when permission is enabled. You can leave cloud formatting off and continue in the manual editor.
+Paste Ingredients uses deterministic parsing on your device and does not send that ingredient list to an AI provider. Cloud Formatting is the standard automatic Recipe Creator path. If you explicitly allow it, your pasted recipe text is sent through an authenticated Supabase Edge Function to Google Gemini to construct an editable recipe, including suggested yield/time/cuisine and ingredient information for review. You can leave Cloud Formatting off and create/edit manually or use local ingredient paste. Apple Foundation Models code remains available for future improvements but is not used by this normal Recipe Creator flow.
 
 The configured Gemini service is restricted to an unbilled free-tier project. Under Google's unpaid-service terms, submitted content and responses may be used to improve Google's products and may be reviewed by humans. Do not submit confidential or personal information. See [Gemini API Additional Terms](https://ai.google.dev/gemini-api/terms) and [Google's Privacy Policy](https://policies.google.com/privacy). StayGrubby does not claim cloud processing remains on device or that Google provides zero retention. Google processes network request information as part of providing this service.
 
-Automatic formatting can omit or misassign information. Results always open as an editable draft for your review; formatting itself never saves a Recipe, renames a Dish, changes ranking data or publishes content. StayGrubby does not intentionally log recipe prompts or responses in this function. The server retains only bounded usage counters for abuse prevention and free-tier limits; account-specific counters are removed on account deletion. The original pasted text stays in the current editing session for correction/fallback and is not separately stored by the import endpoint. Normal Recipe storage and sharing rules apply only after you tap Save. Infrastructure and AI providers may retain operational data under their own terms.
+Automatic formatting can omit or misassign information. Results always open as an editable draft for your review; formatting itself never saves a Recipe, renames a Dish, changes ranking data or publishes content. StayGrubby does not intentionally log recipe prompts or responses in this function. The server retains only bounded usage counters for short-burst abuse prevention; there is no StayGrubby daily allowance or recurring expiration; account-specific counters are removed on account deletion. The original pasted text stays in the current editing session for correction/fallback and is not separately stored by the import endpoint. Normal Recipe storage and sharing rules apply only after you tap Save. Infrastructure and AI providers may retain operational data under their own terms.
 
 ## Retention and deletion
 

@@ -1,0 +1,81 @@
+# Recipe Creator cookbook refinement — October 27, 2026
+
+**AUTOMATED RECIPE CREATOR ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**
+
+Starting state: clean `main`, HEAD `5fb9f26bf8aba50879484b10693f692dcc937f08`. Previous accepted/history checkpoints are preserved. One agent, original checkout, one Simulator lane. The owner's v16 physical review succeeded overall but identified content/metadata/allergen/reorder gaps; it did not freeze these mechanics. This cycle does not implement the Recipe/Food Bible redesign or the next architecture phase.
+
+## Findings and corrections
+
+| Finding | Established evidence | Scoped correction |
+|---|---|---|
+| Good model prose/names became literal dictation or blank | The physical request `16d9ff16-ade2-4f6c-9acf-8d587f809cd3` completed at 2026-10-27 21:10:07 UTC in 3,274 ms, Google/function 200. Its safe log identifies seven literal-source recoveries, including component titles `[0]`/`[3]` and method fields. `reconcile` nulls unsupported titles and may replace methods with literal spans. No original provider word values are claimed. | Cookbook contract 3 accepts bounded, contextual editorial equivalents; source-derived fallback names prevent meaningful Untitled components. The model gets an operational cookbook copy-edit contract, not transcription instructions. |
+| “Some,” awkward options and duplicate salt survived | The old fact-lock deliberately reinstates `some`/`a little` and every dictated alternative word. Deduplication only handles identical strings; labels such as Salt and Salt, to taste differ. | Versioned conversational cleanup and same-component unmeasured consolidation, broad use ordering, clear optionality and conservative broadening of an uncertain optional heat choice. Meaningful measured allocations/preparation remain distinct. No fixture-specific output/template. |
+| Estimates disappeared | Reproduction: valid estimated yield/prep/cook/total with null or explanatory evidence all become unknown in v2 because the normalizer requires an exact source quotation. Native validation repeats that restriction. | Contract 3 accepts bounded estimates as estimates, associates source context without falsely calling them provided, and retains strict provided/derived evidence. Provider field descriptions and instructions require useful consideration of all four metadata fields. Tests trace them through actual handler output → Swift decode/normalization → RecipeDraft/editor → Save/relaunch. |
+| Allergen interaction unsuitable | Recipe used a separate tri-state Picker for every allergen; cooking uses approved checkmark rows. | Reuse `SGAllergenChoices` in a shared selector, keeping the existing cooking Contains behavior. Recipe has detected Contains and Possible checklists, disjoint editable selections and informational safety text. No new taxonomy, medical/religious claim or Dish-tag projection. |
+| Drag-looking controls did not drag | Original ingredient/step handles were only `Menu` labels. No drag or native move interaction existed in the nested editor. | Explicit Reorder actions finish text input and open a native UIKit table ordering sheet with real handles. Stable-ID moves work within/between components. No delete/copy/external-drop controls exist there; normal explicit Save persists canonical array order. Existing accessible Move Up/Down/Move To menus remain. |
+
+**Limit of the historical metadata diagnosis:** v16 did not log metadata field presence/origins, the original response was not retained, and the owner did not save a new hosted Recipe during this review. It is not possible to distinguish retrospectively whether every missing value was already unknown in that particular provider response or was discarded by its exact-evidence rule. The loss mechanism above is reproduced, not guessed as an exclusive captured cause. Contract 3 logs only fixed field presence/origin states before/after normalization, contract version, component counts and existing safe stages. No values, reasoning, recipe text, keys or credentials are logged.
+
+## Editing and metadata contract
+
+[RECIPE_STYLE_GUIDE.md](RECIPE_STYLE_GUIDE.md) documents the researched conventions: ingredient/use order, meaningful component headings, conventional preparation wording, imperative executable actions, complete yield/time consideration and internal method/list review. Sources include Virginia Cooperative Extension, Ontario Home Economics Association, professional recipe developer Katie Webster and King Arthur's test-kitchen process. No copyrighted recipe prose was copied. Source-based import remains different from inventing/developing a newly tested recipe.
+
+Contract 3 is still **one provider response**, with no second polish call or automatic retry. Typed construction/source guards run before and after deterministic cleanup. Hard shape/length/count/numeric failures cannot be erased by cleanup. Exact quantity/unit bindings, supplied preparation facts, approximate procedural times and optionality remain protected. Contextual equivalents include lining a supplied parchment-lined vessel, purée/blend, ordinary connective wording and conservative leafy-vegetable speech interpretation; unrelated frying/browning, new cream, new quantities and temperatures still fail. An unsupported precise optional chile variety may be broadened to source-supported chiles, not asserted as a certain new variety.
+
+New native requests send contract 3; the response carries only a transient editorial version marker. Old unversioned and contract 2 clients retain their established semantics. All 39 old server outputs and seven original input/corpus files remain unchanged. The canonical input remains exactly 882 characters, SHA-256 `774a33291a4e216bb55ce4b1d476d0b9c12a4b8aeb3faa2163f3be51da933915`. Eight additive cookbook cases test semantic outcomes rather than a unique prose template. Synthetic responses are not represented as captured live Gemini output.
+
+Provided overall values outrank derived values and conservative estimates. Unknown remains appropriate when evidence is genuinely insufficient; no arbitrary universal serving/time fallback was added. Estimated elapsed time need not equal prep plus cook (tested 5 +15 active minutes with 18 elapsed). Estimates never become invented precise procedural instructions. Existing Recipe JSON fields, immutable revisions, ownership, snapshots and Save API are reused; no schema migration/backfill or ranking change is required.
+
+Cloud Formatting is the standard normal UI path and requires explicit permission. Apple generation is dormant for normal Recipe creation, retained for future improvements; there is no complex on-device quality detour. Manual editing and deterministic paste remain available. **No daily allowance, recurring expiration, secret renewal or paid mode.** Existing 3/account/minute abuse guard, active account/session authorization, JWT verification, body/output/time bounds and friendly provider cooldown remain. No secret or billing configuration was changed.
+
+## Allergen and ordering ownership
+
+Recipe ingredient-derived information remains on Recipe revisions. Actual cooks keep their existing independent tags/Contains assertions until the explicitly planned metadata migration. Recipe checklist bindings reuse the working cook interaction without mutating a cook. Reordering alone no longer regenerates allergen analysis and silently replaces user corrections: only a changed ingredient multiset triggers reassessment.
+
+The ordering sheet uses native row handles and `moveRowAt`, not competing text-field/scroll drag recognizers. Before opening, the current ingredient edit commits and focus clears. UIKit's visual move and the draft's stable-ID arrays update together; Save renumbers order fields through the existing preparation path. Cross-component moves, row counts/identities, backend revision preservation and fresh restore are tested. Cancelling the parent editor still uses its existing dirty/discard protection.
+
+A narrowly gated Debug fixture persists synthetic Recipe responses only when both `--recipe-persistence-review` and a valid isolated UUID test store are present. Its file is beside that temporary test store, never a guest/account/media root. It enables actual UI terminate/relaunch verification without cloud/user writes. The entire implementation is compile-time excluded from Release.
+
+## Verification and closeout
+
+| Verification | Final result |
+|---|---|
+| Edge tests | **149/149 passed**, Deno typecheck passed. Original phases 0–9, original safe/unsafe/adversarial tests, eight cookbook cases, contextual editorial boundaries, nonliteral estimate evidence, metadata trace redaction, no date/daily allowance and friendly provider quota behavior. Mocked provider only. |
+| Broader Recipe regression | **60/60 executions passed**, zero failures/unexpected failures/skips: 52 native tests in seven directly dependent suites, plus eight existing import/editor UI tests, including large Dynamic Type/background, explicit Save, existing Recipe protection, original menu moves/deletion and manual cooldown fallback. One broader pass; no frozen app-wide ranking regression. |
+| New physical-interaction UI coverage | Both new distinct UI tests pass: all four metadata values + checklist preselection/correction + Save/relaunch; and actual ingredient/step touch dragging within/between components + stable IDs/counts + Save/reopen/relaunch. Across broader/focused runs, **52 native +10 distinct UI tests** are verified. Initial focused run: 27 native passed/2 UI failed; follow-up: metadata/checklist passed, drag test reached successful moves but failed at an unwaited reader button; final drag-only follow-up **1/1 passed**. No claim that the earlier failed bundles were green. |
+| Focused backend | **21 assertions passed**: optional Creator metadata 14; ordering, stable identities, corrected allergens, all four metadata values and immutable prior revision/fresh restore 7. Disposable PGlite; no real account writes. |
+| Debug / Release | Debug test build/launch and generic Simulator Release build succeeded. Release excludes Debug Recipe persistence/provider fixtures, test-store/import launch markers, diagnostics and fixture JSON; no Google key pattern. Standard no-AppIntents metadata notice only. No archive/distribution. |
+| Policy rendering | **7/7** static website tests pass, retaining canonical-policy parity, public-file allowlist, security/routing and existing official assets. The exact expected effective date was updated in the builder/test guard; no unrelated website changes or publication. |
+| Secrets / whitespace | Existing privileged-secret/local-artifact scan: **391 text files, zero findings**. Both whitespace checks pass. No dependencies, build products, backups, Supabase local state, signing material, private keys, inference artifacts or fixture media enter Git. |
+
+Evidence is machine-local under `/private/tmp/refinement-*`: focused/broader `.xcresult` bundles and summary JSON, Edge/typecheck/backend/policy/Release logs, data manifests, and passing light checklist/dark native ordering screenshots. No evidence artifacts are committed as product content.
+
+### Deployment and data integrity
+
+`recipe-import` **v17 ACTIVE**, **verify_jwt=true**; all ten runtime files byte-identical to local. Bundle SHA-256 `c12b56360c6816d8d8736f94efebb9c55e4e2eeceb5d029d19b3280e144d9c18`. No migration: **29/29 local/hosted migration hashes still match** and the schema reference is unchanged. Unauthenticated POST returns **401** without AI inference. Existing 3/account/minute guard verified active, with no daily/monthly/success allowance. Private unused receipt ledger remains 0 rows; client execution of the burst RPC remains denied; all application tables have RLS enabled. Security advisor unchanged: zero ERROR, 21 intentional private RPC-only/no-policy INFO and the existing Apple-only-project password-protection WARN. No security/Auth/secret/billing configuration changed.
+
+All **35/35 hosted data and Storage fingerprints match the previously verified Creator checkpoint**, including 39 Dishes, 44 attempts/items, 165 comparisons, 2 Recipes, 5 Recipe revisions and **69 Storage objects**. The comparison baseline is the retained verified Creator checkpoint fingerprint record. No user records or photo bytes were created/reset/deleted by automated checks.
+
+The demo store matches this cycle's actual starting manifest exactly: **1 ranking /12 Dishes /15 attempts/items /356 Comparisons /10 Sources /21 tags /48 memberships /190 unchanged media files**. Manifest SHA-256 remains `bedd790ea8487f3b1baad442acd9092a6890b0a38cede4951aef0018469b9a51`. Original scores, evidence, identities and relationships are unchanged. The exact canonical input and all old corpus files/39 server-output cases remain unchanged.
+
+Implementation checkpoint: `319f04e388284b0816d35aaf9ed4fc3b9e78383b` (**31 files**), following `5fb9f26`. The separate **eight-file** documentation/policy checkpoint records this evidence, the style guide, current architecture/roadmap, canonical privacy text and its exact-date rendering guards. Final HEAD and normal push result are reported at completion. History is preserved; no credential workaround.
+
+The first focused UI attempts caught an accessibility-container identifier shadowing the two new checklist buttons, plus test synchronization assumptions (a row index after a successful move, and tapping Edit before the reader existed). The container now preserves distinct child IDs; tests address moved rows by stable observed identity and wait for the required view. No cross-component, count, metadata, selection, Save, reopen or relaunch assertion was removed.
+
+The canonical privacy source now describes standard consented Cloud Formatting honestly and retains the existing Google free-service disclosure; local static-policy parity/security tests apply. No public website publication, DNS, App Store Connect or TestFlight action is included. Public policy publication remains a separate release step.
+
+## Next roadmap — not implemented
+
+The Master Roadmap preserves the agreed sequence: independent optional Recipe/Dish linking; Recipe-owned photos; living Recipe revision UX and exact cooked-revision provenance; metadata ownership migration; short Recipe descriptions; more apparent Dish/social descriptions separate from private Personal Notes; Recipe posts; combined linked Dish/Recipe posts; Grub List type filters; then the dedicated Food Bible/Recipe Maker overhaul once architecture is stable. Existing revision/description/social infrastructure remains; no new notification, loading animation, ranking, auth, sync, Recipe photo or Universal Links work was performed.
+
+## One final physical acceptance
+
+Install a **new Xcode build** with the existing account/data; do not reset or seed. Open Cloud Formatting once with the exact unchanged `StayGrubbyTests/Fixtures/RecipeEngineCanonicalKale.txt`, using an existing cooked Dish without a Recipe.
+
+Review the title; all useful yield/prep/cook/elapsed suggestions and estimate honesty; named components; ordered, concise ingredients without meaningless Some/unnecessary same-section salt duplicates; optional broad heat wording; preserved measured/per-person quantities and approximate crisp timing; chronological imperative method, including the crisp; conservative cuisine; uncertainty and informational allergens. Supplied quantities/procedure must survive; missing exact oven settings must not be invented.
+
+Open the Contains/Possible checklists, verify preselection and correct selections. Use **Reorder** for both ingredients and steps: drag within and between components; confirm focus/keyboard does not obstruct it and no rows duplicate/disappear. Save explicitly, reopen, then terminate/relaunch and verify corrected selections, ordering, metadata and Recipe contents persist. No intermediate physical retry is requested.
+
+**Could I hand this recipe to another competent home cook and reasonably expect them to understand what to buy, prep, cook, and assemble without hearing my original explanation?**
+
+Only a successful owner answer freezes these content mechanics before the upcoming architecture/UI cycles. Automated tests do not claim equivalent live-model or physical acceptance.
