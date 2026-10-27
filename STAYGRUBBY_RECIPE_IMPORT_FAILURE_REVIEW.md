@@ -1,5 +1,7 @@
 # Recipe import failure investigation — October 26, 2026
 
+> Current: **AUTOMATED ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**. The overnight continuation deployed v11 after phased/negative/server-to-Swift/UI verification. [RECIPE_ENGINE_ACCEPTANCE.md](RECIPE_ENGINE_ACCEPTANCE.md) is the current acceptance/harness report; the chronological v3–v10 investigation below remains historical evidence.
+
 Starting state: clean `main`, HEAD and `origin/main` both `fc93143fdc63b9e662441e0eddf83ed0b356f6b2`. Single agent, existing checkout and Simulator lane. This follow-up supersedes the original Engine V1 review's timestamp gate, strict verbatim-only validation, pending-secret claim and unpublished-policy status.
 
 ## Root cause: confirmed rejection and successful correction
@@ -17,6 +19,14 @@ The physical iPhone requests reached `recipe-import`. Function Edge logs show v3
 The model remains `gemini-3.5-flash-lite`. Current official [model](https://ai.google.dev/gemini-api/docs/models)/[structured-output](https://ai.google.dev/gemini-api/docs/generate-content/structured-output) documentation and the public [v1beta REST discovery schema](https://generativelanguage.googleapis.com/$discovery/rest?version=v1beta) include the selected endpoint and `generationConfig.responseFormat.text` with `APPLICATION_JSON`/JSON schema. No unsupported-model/request-shape root cause has been assumed. Availability and credential acceptance for this project were subsequently confirmed by the successful v9 smoke.
 
 Separately, the old verbatim-only validator deterministically rejected safe number-word/fraction cleanup and organization. This independent defect is fixed; it does not explain the earlier 503s.
+
+## Exact kale acceptance failure — rule-level investigation
+
+After rebuilding, the owner tested the **unchanged original 882-character kale source** and reported failure. The committed test fixture is byte-identical to that original source. The tiny smoke is not acceptance of this real input.
+
+v9 logs on October 26 at 10:50:10, 10:55:53 and 10:56:09 pm EDT show **stage validation / invalid_recipe / HTTP 422**, in 2,043 /2,195 /1,694 ms. The function passed the upstream HTTP, STOP-completion and response-byte checks and reached extraction parsing/server validation. No successful extraction was returned to the client; RecipeDraft decoding, native ingredient normalization and client review did not cause these server 422s. v9's boolean validator cannot identify the exact rejecting rule, and extraction JSON parsing occurred in the same stage, so no narrower cause is assumed.
+
+v10 ACTIVE adds bounded diagnostic structure/counts and up to 20 fixed validation rules with generated field indexes. It distinguishes extraction JSON, object fields/types/count limits, source word/number evidence, quantity/unit pairs, metadata phrase and ingredient phrase checks. No source, output, unknown property name or rejected word is logged. Runtime acceptance rules are unchanged. All **31/31** focused Edge tests, Deno typecheck, privileged-secret scan and whitespace checks pass; deployed files match local bytes. Bundle SHA-256 `b3fe9017d15793cf79ccdc3b9a910154afcd0683b541592d4c47065226df4aa1`. The owner performed that retry. v10 recorded Google 200 and five lexical/phrase failures in a 1-component/12-ingredient/9-step candidate: ingredients[7] source_word, ingredients[10–11] ingredient_phrase, steps[7–8] source_word. No shape/count failure occurred. The overnight general fix now reconciles recoverable wording to literal original source spans and re-runs the complete validator, without accepting unsupported quantities or new ingredients. See the current acceptance report; actual discarded provider word values were never logged and are not fabricated as captured fixtures.
 
 ## Changes
 
