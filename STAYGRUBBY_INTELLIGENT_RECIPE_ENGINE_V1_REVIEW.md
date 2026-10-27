@@ -1,5 +1,7 @@
 # Bulk ingredient entry + Intelligent Recipe Engine V1
 
+> Historical implementation checkpoint. The October 26 follow-up supersedes its verbatim-only validator, timestamp gate, disabled-provider status and unpublished-policy status. See [current failure investigation](STAYGRUBBY_RECIPE_IMPORT_FAILURE_REVIEW.md). Historical test totals below describe the original cycle only.
+
 Starting HEAD: `5a5b1f0a26471eb3840696cd27a5b981785b4493`, clean `main` matching `origin/main`. Owner-accepted Food Bible UX 2.0, natural single-line entry, deterministic parsing and ranking behavior were preserved. Single agent, original checkout, one Simulator lane. The final documentation checkpoint/HEAD is identified by `git log -1 --format=%H -- STAYGRUBBY_INTELLIGENT_RECIPE_ENGINE_V1_REVIEW.md`; exact commits and push outcome are recorded in the final report.
 
 **Implemented and deployed with Gemini deliberately disabled pending owner-only secret/free-tier setup. No live AI parsing or physical acceptance is claimed.** The owner separately approved the quota migration and authenticated function after automatic approval review initially blocked deployment. No paid provider setup, credential values, real Recipe writes, account deletion, TestFlight or App Store Connect actions occurred.
@@ -53,7 +55,7 @@ A configuration flag cannot independently prove Google billing status. To guaran
 
 ## Secret setup — only owner action still required for Gemini
 
-Existing authenticated CLI **name-only** inventory confirmed both settings absent. No secret values were read or requested. No Gemini request, free quota or paid token was consumed by this cycle.
+Correction from the follow-up investigation: the CLI inventory returned an authentication error, not a successful empty inventory; the earlier absence claim was not established. The owner subsequently confirmed both settings configured, and physical requests passed the configuration guard. No secret values were read or requested. No Gemini request, free quota or paid token was consumed by this cycle.
 
 1. In Google AI Studio, create/select a **dedicated unbilled project**, confirm it shows Free tier and has no linked Cloud Billing account. Do not upgrade, add a payment method, buy credits, or enable paid usage. Create a provider key restricted to the Generative Language API where available. Keep its value out of chat, source, screenshots, local files and logs.
 2. In the existing StayGrubby Supabase Dashboard, open **Edge Functions → Secrets**. Add `STAYGRUBBY_GEMINI_API_KEY` using the key directly in that secure Dashboard field.
