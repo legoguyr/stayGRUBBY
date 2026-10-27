@@ -1,19 +1,3 @@
-import { fixture } from './social-harness.mjs';
-const {db,users,check,rejects,finish}=await fixture();
-const call=async(u=users[0])=>(await db.query('select api.reserve_recipe_import($1,$2) ok',[u.user,u.session])).rows[0].ok;
-await db.exec('set role anon');await rejects(()=>call());
-await db.exec('reset role;set role authenticated');await rejects(()=>call());
-await db.exec('reset role;set role service_role');
-check(await call(),'first reservation allowed');check(await call(),'second allowed');check(await call(),'third allowed');check(!await call(),'fourth per minute denied');
-await db.exec('reset role');
-check((await db.query("select attempts from staygrubby.recipe_import_usage where bucket='global-day'")).rows[0].attempts===3,'denial consumes no provider reservation');
-await db.exec('set role service_role');await rejects(()=>call({...users[0],session:users[1].session}));
-await db.exec('reset role');await db.query("update auth.users set is_anonymous=true where id=$1",[users[1].user]);await db.exec('set role service_role');await rejects(()=>call(users[1]));
-await db.exec('reset role');await db.query("update staygrubby.accounts set status='deleting' where id=$1",[users[2].id]);await db.exec('set role service_role');await rejects(()=>call(users[2]));
-await db.exec('reset role');await db.exec("update staygrubby.recipe_import_usage set attempts=100 where bucket='global-day'");await db.exec('set role service_role');check(!await call(users[3]),'global daily ceiling enforced');
-await db.exec('reset role');await db.exec("update staygrubby.recipe_import_usage set attempts=0 where bucket='global-day';update staygrubby.recipe_import_usage set attempts=1000 where bucket='global-month'");await db.exec('set role service_role');check(!await call(users[3]),'global monthly ceiling enforced');
-await db.exec('reset role');await db.exec("update staygrubby.recipe_import_usage set attempts=0 where bucket='global-month'");await db.query("insert into staygrubby.recipe_import_usage(bucket,window_start,account_id,attempts) values($1,date_trunc('day',now() at time zone 'UTC') at time zone 'UTC',$2,20)",[users[3].id+'-day',users[3].id]);await db.exec('set role service_role');check(!await call(users[3]),'per-account daily ceiling enforced');
-await db.exec('reset role');check((await db.query("select relrowsecurity enabled from pg_class where oid='staygrubby.recipe_import_usage'::regclass")).rows[0].enabled,'RLS enabled');
-check(!(await db.query("select has_table_privilege('authenticated','staygrubby.recipe_import_usage','SELECT') ok")).rows[0].ok,'no user table access');
-await db.query('delete from staygrubby.accounts where id=$1',[users[0].id]);check((await db.query('select count(*)::int n from staygrubby.recipe_import_usage where account_id=$1',[users[0].id])).rows[0].n===0,'account deletion cascades counters');
-await finish();
+// The initial daily/monthly budget policy is superseded by the owner-directed
+// beta policy. Keep this entrypoint testing the active burst-only protection.
+await import('./recipe-creator-quota.test.mjs');

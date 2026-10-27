@@ -19,14 +19,8 @@ Deno.serve(handler({
   if(!claims.session_id)return null;
   return {user:user.id,session:claims.session_id};
  },
- reserve:async(user,session,requestID)=>{
-  const response=await fetch(`${url}/rest/v1/rpc/begin_recipe_import`,{method:"POST",headers:{apikey:admin,Authorization:`Bearer ${admin}`,"content-type":"application/json","content-profile":"api"},body:JSON.stringify({p_user:user,p_session:session,p_request:requestID}),signal:AbortSignal.timeout(8000)});
-  if(!response.ok)throw new Error("budget_unavailable");
-  const result=await response.json();
-  return ["allowed","daily_limit","attempt_limit"].includes(result)?result:"attempt_limit";
- },
- finish:async(user,session,requestID,success)=>{
-  const response=await fetch(`${url}/rest/v1/rpc/finish_recipe_import`,{method:"POST",headers:{apikey:admin,Authorization:`Bearer ${admin}`,"content-type":"application/json","content-profile":"api"},body:JSON.stringify({p_user:user,p_session:session,p_request:requestID,p_success:success}),signal:AbortSignal.timeout(8000)});
+ reserve:async(user,session)=>{
+  const response=await fetch(`${url}/rest/v1/rpc/reserve_recipe_import`,{method:"POST",headers:{apikey:admin,Authorization:`Bearer ${admin}`,"content-type":"application/json","content-profile":"api"},body:JSON.stringify({p_user:user,p_session:session}),signal:AbortSignal.timeout(8000)});
   if(!response.ok)throw new Error("budget_unavailable");
   return await response.json()===true;
  },
