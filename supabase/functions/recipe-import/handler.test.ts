@@ -100,3 +100,17 @@ Deno.test("invalid structured JSON is distinct from source validation",async()=>
  const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({candidates:[{finishReason:"STOP",content:{parts:[{text:"private-invalid-json"}]}}]})});
  const body=await (await f.run(request())).json();assert(body.reason==="structured_json" && events[0].stage==="validation" && !JSON.stringify(events).includes("private-invalid-json"));
 });
+Deno.test('successful allowance charges once only after validation',async()=>{
+ const completed:boolean[]=[];const f=fixture({reserve:async()=>"allowed",finish:async(_u,_s,_id,success)=>{completed.push(success);return true;}});
+ assert((await f.run(request())).status===200&&JSON.stringify(completed)==='[true]');
+});
+Deno.test('infrastructure and invalid output release successful-use allowance',async()=>{
+ for(const status of [429,500]){const completed:boolean[]=[];const f=fixture({finish:async(_u,_s,_id,ok)=>{completed.push(ok);return true;},fetch:async()=>new Response('',{status})});assert((await f.run(request())).status!==200&&JSON.stringify(completed)==='[false]');}
+ const completed:boolean[]=[];const f=fixture({finish:async(_u,_s,_id,ok)=>{completed.push(ok);return true;},fetch:async()=>Response.json({candidates:[]})});assert((await f.run(request())).status===422&&JSON.stringify(completed)==='[false]');
+});
+Deno.test('daily successful limit is distinct and does not invoke provider',async()=>{
+ const f=fixture({reserve:async()=>"daily_limit"});const r=await f.run(request());assert(r.status===429&&(await r.json()).code==='cloud_daily_limit'&&!f.sent());
+});
+Deno.test('failed completion cannot return a chargeable recipe',async()=>{
+ const f=fixture({finish:async()=>false});const r=await f.run(request());assert(r.status===503&&(await r.json()).code==='budget_unavailable');
+});

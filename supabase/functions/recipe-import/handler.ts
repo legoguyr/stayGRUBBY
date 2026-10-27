@@ -3,7 +3,8 @@ import { preserveEditorialFacts } from "./editorial.ts";
 import { reconcile } from "./reconcile.ts";
 export type Dependencies = {
   authenticate: (token:string)=>Promise<{user:string;session:string}|null>;
-  reserve: (user:string,session:string)=>Promise<boolean>;
+  reserve: (user:string,session:string,requestID:string)=>Promise<boolean|"allowed"|"daily_limit"|"attempt_limit">;
+  finish?: (user:string,session:string,requestID:string,success:boolean)=>Promise<boolean>;
   fetch: typeof fetch;
   key?: string;
   log?: (event: Record<string,unknown>)=>void;
@@ -72,7 +73,10 @@ export function handler(d:Dependencies) {
    // The old FREE_TIER_UNTIL secret may remain, but is never read or required.
    stage="configuration";
    if(!d.key)return fail(503,"not_configured");
-   stage="account_budget";if(!await d.reserve(actor.user,actor.session))return fail(429,"formatting_limit");
+   stage="account_budget";const allowance=await d.reserve(actor.user,actor.session,requestID);
+   if(allowance==="daily_limit")return fail(429,"cloud_daily_limit");
+   if(allowance!==true&&allowance!=="allowed")return fail(429,"formatting_limit");
+   let charged=false;
    const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),d.timeoutMilliseconds??25_000);
    const abort=()=>controller.abort();req.signal.addEventListener("abort",abort,{once:true});
    if(req.signal.aborted)controller.abort();
@@ -104,13 +108,19 @@ export function handler(d:Dependencies) {
     const locked=preserveEditorialFacts(extraction,body.text);
     if(!locked||!validationReport(locked,body.text).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
     extraction=locked;
+    stage="account_budget_completion";
+    if(d.finish&&!await d.finish(actor.user,actor.session,requestID,true))return fail(503,"budget_unavailable");
+    charged=true;
     stage="complete";report({result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
     return Response.json(extraction,{headers:headers()});
    } catch {
     if(controller.signal.aborted)return fail(504,"formatting_timeout");
-    return stage==="provider" ? fail(503,"provider_connection") : fail(422,"invalid_recipe");
+    return stage==="account_budget_completion" ? fail(503,"budget_unavailable") : stage==="provider" ? fail(503,"provider_connection") : fail(422,"invalid_recipe");
    }
-   finally {clearTimeout(timer);req.signal.removeEventListener("abort",abort);}
+   finally {
+    clearTimeout(timer);req.signal.removeEventListener("abort",abort);
+    if(!charged&&d.finish)try{await d.finish(actor.user,actor.session,requestID,false);}catch{/* Lease expires; no recipe/credential details are logged. */}
+   }
   } catch {return fail(503,"service_unavailable");}
  };
 }
