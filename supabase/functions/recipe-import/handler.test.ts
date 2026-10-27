@@ -58,3 +58,20 @@ Deno.test("structured key error is classified without returning details or unkno
  const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{status:"INVALID_ARGUMENT",message:"synthetic-test-only",details:[{reason:"API_KEY_INVALID",metadata:{key:"synthetic-test-only"}},{reason:"synthetic-test-only"}]}},{status:400})});
  const r=await f.run(request());assert((await r.json()).reason==="invalid_key" && events[0].googleReason==="API_KEY_INVALID" && !JSON.stringify(events).includes("synthetic-test-only"));
 });
+Deno.test("provider grammar avoids nested array bounds while runtime caps stay enforced",async()=>{
+ const f=fixture();assert((await f.run(request())).status===200);
+ const schema=JSON.stringify(JSON.parse(f.sent()!.body as string).generationConfig.responseFormat.text.schema);
+ assert(!schema.includes("maxItems") && !schema.includes("minItems"));
+ const component=value.components[0];
+ for(const excessive of [
+  {...value,components:Array.from({length:21},()=>component)},
+  {...value,components:[{...component,ingredients:Array(101).fill("stock")}]},
+  {...value,components:[{...component,steps:Array(101).fill("cook chicken until done")}]},
+  {...value,components:Array.from({length:2},()=>({...component,ingredients:Array(51).fill("stock")}))},
+ ])assert(!validate(excessive,raw));
+});
+Deno.test("schema compiler rejection logs a safe category without copying provider message",async()=>{
+ const events:Record<string,unknown>[]=[];
+ const f=fixture({log:e=>events.push(e),fetch:async()=>Response.json({error:{status:"INVALID_ARGUMENT",message:"The input schema has too many states for serving. synthetic-test-only"}},{status:400})});
+ assert((await f.run(request())).status===503 && events[0].requestIssue==="schema_complexity" && !JSON.stringify(events).includes("synthetic-test-only"));
+});

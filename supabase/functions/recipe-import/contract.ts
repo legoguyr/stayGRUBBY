@@ -6,9 +6,11 @@ const optional = { type: ["string", "null"] };
 export const schema = {
   type: "object", additionalProperties: false,
   properties: { title: optional, yield: optional, source: optional, components: {
-    type: "array", minItems: 1, maxItems: 20, items: {
+    // Keep the provider grammar small: nested maxItems constraints can exceed
+    // Google's schema compiler state budget. validate() enforces every cap below.
+    type: "array", items: {
       type: "object", additionalProperties: false,
-      properties: { title: optional, ingredients: {type:"array",maxItems:100,items:string}, steps: {type:"array",maxItems:100,items:string} },
+      properties: { title: optional, ingredients: {type:"array",items:string}, steps: {type:"array",items:string} },
       required: ["title","ingredients","steps"],
     },
   } }, required: ["title","yield","source","components"],

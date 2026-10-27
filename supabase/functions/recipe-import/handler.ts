@@ -14,7 +14,7 @@ function providerReason(status: number, error: unknown): string {
  if(reasons.includes("API_KEY_INVALID"))return "invalid_key";
  if(reasons.includes("SERVICE_DISABLED"))return "api_disabled";
  if(reasons.some((r:unknown)=>typeof r==="string"&&["API_KEY_SERVICE_BLOCKED","API_KEY_HTTP_REFERRER_BLOCKED","API_KEY_IP_ADDRESS_BLOCKED","API_KEY_ANDROID_APP_BLOCKED","API_KEY_IOS_APP_BLOCKED"].includes(r)))return "provider_access";
- if (/API key not valid|API_KEY_INVALID/i.test(message)) return "invalid_key";
+ if (/API key not valid|API key expired|API_KEY_INVALID/i.test(message)) return "invalid_key";
  if (/has not been used|is disabled|SERVICE_DISABLED/i.test(message)) return "api_disabled";
  if (/not found|not supported for|not available.*model/i.test(message)) return "model_unavailable";
  if (/location.*not supported|region.*not supported/i.test(message)) return "region_unavailable";
@@ -30,6 +30,7 @@ function providerDiagnostic(error:unknown):Record<string,string> {
  const allowedReasons=["API_KEY_INVALID","SERVICE_DISABLED","API_KEY_SERVICE_BLOCKED","API_KEY_HTTP_REFERRER_BLOCKED","API_KEY_IP_ADDRESS_BLOCKED","API_KEY_ANDROID_APP_BLOCKED","API_KEY_IOS_APP_BLOCKED","BILLING_DISABLED","CONSUMER_INVALID","RATE_LIMIT_EXCEEDED"];
  const reason=details.find((d:any)=>allowedReasons.includes(d?.reason))?.reason;if(reason)result.googleReason=reason;
  const text=[typeof e?.message==="string"?e.message:"",...details.flatMap((d:any)=>Array.isArray(d?.fieldViolations)?d.fieldViolations.map((v:any)=>typeof v?.field==="string"?v.field:""):[])].join(" ");
+ if(/too many states|schema.*(?:too complex|complexity|too large)|(?:complex|large).*schema/i.test(text))result.requestIssue="schema_complexity";
  for(const [field,pattern] of [
   ["response_format",/\bresponse_?format\b/i],["response_json_schema",/\bresponse_?json_?schema\b/i],
   ["response_schema",/\bresponse_?schema\b/i],["temperature",/\btemperature\b/i],
