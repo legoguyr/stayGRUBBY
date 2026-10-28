@@ -1,12 +1,20 @@
 import SwiftUI
 
-/// Readable content shared with immutable cook snapshots. No timers, scaling or cooking-session state.
+/// Readable content shared with immutable cook snapshots; optional scaling is a value-only projection.
 struct RecipeReadingBody: View {
     let content: RecipeContent
+    var allowScaling = false
+    @State private var servings: Int?
+    private var displayed: RecipeContent { allowScaling ? RecipeScaling.content(content, servings: servings) : content }
     @Environment(\.dynamicTypeSize) private var size
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
-            RecipeSummaryMetrics(content: content)
+            if allowScaling, let base = RecipeScaling.canonicalServings(content.yield) {
+                Stepper(value: Binding(get: { servings ?? base }, set: { servings = $0 }), in: 1...100) { Text("Servings: \(servings ?? base)") }.accessibilityIdentifier("recipe-servings")
+                Text("Quantities adjust for this view only. Unmeasured, ambiguous and per-person amounts stay as written; check the method for original quantities.").font(.footnote).foregroundStyle(.secondary)
+                if servings != nil && servings != base { Button("Reset to \(base) servings") { servings = nil } }
+            }
+            RecipeSummaryMetrics(content: displayed)
             if content.metadataOrigins?.values.contains("estimated") == true { Text("Servings and times may include estimates. Adjust for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
             if let allergens = content.allergens {
                 VStack(alignment: .leading, spacing: 8) {
@@ -17,7 +25,7 @@ struct RecipeReadingBody: View {
             }
             VStack(alignment: .leading, spacing: 20) {
                 SGEyebrow(text: "Ingredients")
-                ForEach(content.orderedComponents) { part in
+                ForEach(displayed.orderedComponents) { part in
                     VStack(alignment: .leading, spacing: 0) {
                         sectionTitle(part)
                         ForEach(part.ingredients) { ingredient in
@@ -29,7 +37,7 @@ struct RecipeReadingBody: View {
             }
             VStack(alignment: .leading, spacing: 24) {
                 SGEyebrow(text: "Method")
-                ForEach(content.orderedComponents) { part in
+                ForEach(displayed.orderedComponents) { part in
                     VStack(alignment: .leading, spacing: 20) {
                         sectionTitle(part)
                         ForEach(Array(part.steps.enumerated()), id: \.element.id) { index, step in
@@ -47,7 +55,7 @@ struct RecipeReadingBody: View {
                     Text(tips).font(.body).lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
-        }.accessibilityIdentifier("recipe-reading-body").textSelection(.enabled)
+        }.textSelection(.enabled)
     }
     @ViewBuilder private func sectionTitle(_ part: RecipeComponent) -> some View {
         if content.orderedComponents.count > 1 { Text(part.title?.isEmpty == false ? part.title! : "Untitled section").font(.title3.bold()).accessibilityAddTraits(.isHeader).padding(.top, 4) }

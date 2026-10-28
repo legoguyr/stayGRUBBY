@@ -1,3 +1,13 @@
+# Recipe-owned photos — Architecture V2, October 28, 2026
+
+Recipe photography extends existing ImageIO preparation and account-generation-guarded SDK transport without changing cooking-photo files, metadata or sync. Recipe uses one optimized metadata-stripped JPEG, at most 2 MiB, with an immutable server-owned asset manifest/path/SHA-256 and a private `recipe-photos` bucket. The current Recipe content/revision holds an optional asset UUID. Ready bytes and ownership are checked before Save, and downloads validate bytes/hash. Existing cook photo variants still behave exactly as described below.
+
+Display order is Recipe-owned photo → linked Dish/cook photo → branded placeholder. Changing/removing a Recipe photo changes current content through normal revision Save; archived revision and cooked-snapshot references protect old bytes. Published paths cannot be overwritten. Current eligible friends may read only a photo referenced by an accessible current Recipe; historical inspection remains owner-only. Unreferenced upload cleanup has a bounded owner-authorized RPC and Storage policy; staged/orphan bytes remain private until cleanup or account deletion. Account deletion v7 includes this bucket and refuses graph/Auth cleanup if any Recipe bytes remain. No real account deletion was tested or invoked.
+
+See [current architecture](STAYGRUBBY_ARCHITECTURE.md) and [Architecture V2 evidence](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md). The cooking-photo protocol and historical validation below remain intact; Recipe photos do not join SwiftData cooking-media rows or the cooking outbox.
+
+---
+
 # Private cooking-photo backup and restore — Phase 3D Part 2
 
 This extends the approved structured outbox; it does not replace local photos, SwiftData, authentication or the ranking engine. The development library never connects. No public/social media, signed/public URLs, original Photos assets, video, camera, new photo UI or background-execution service is introduced.

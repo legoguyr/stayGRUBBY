@@ -13,6 +13,8 @@ import SwiftData
     var posts: [SocialPost] = []
     var comments: [UUID: [SocialComment]] = [:]
     var recipes: [UUID: Recipe] = [:]
+    var recipeVersions: [UUID: [Recipe]] = [:]
+    var recipePhotos: [UUID: RecipePhotoDescriptor] = [:]
     var reviewContext: ModelContext?
     var dishRecipes: [UUID: UUID] = [:]
     var ticketDates: [UUID: Double] = [:]
@@ -34,8 +36,12 @@ import SwiftData
             let id = UUID(uuidString: "60000000-0000-0000-0000-000000000001")!
             recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
         }
-        if let url = recipeReviewURL, let data = try? Data(contentsOf: url), let saved = try? JSONDecoder().decode([Recipe].self, from: data) {
-            for r in saved { recipes[r.id] = r; if let dish = r.linkedDishID { dishRecipes[dish] = r.id } }
+        if ProcessInfo.processInfo.arguments.contains("--bible-v2-empty") || ProcessInfo.processInfo.arguments.contains("--bible-review") { recipes = [:] }
+        if let url = recipeReviewURL, let data = try? Data(contentsOf: url) {
+            let archive = try? JSONDecoder().decode(RecipeReviewArchive.self, from: data)
+            let saved = archive?.versions ?? (try? JSONDecoder().decode([Recipe].self, from: data)) ?? []
+            if let archive { recipePhotos = archive.photos; avatars = archive.bytes }
+            for r in saved { recipeVersions[r.id, default: []].append(r); if (recipes[r.id]?.revision ?? 0) <= r.revision { recipes[r.id] = r; if let dish = r.linkedDishID { dishRecipes[dish] = r.id } } }
         }
         if ProcessInfo.processInfo.arguments.contains("--product-review-grid") {
             let own = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: identity.displayName, username: identity.username ?? "review_cook", relationship: .none)
@@ -56,6 +62,10 @@ import SwiftData
                 notices.append(.init(id: UUID(uuidString: "50000000-0000-0000-0000-00000000000\(index + 1)")!, kind: kind, actor: actor, targetID: target, postID: ["like", "comment", "recreated"].contains(kind) ? target : nil, createdAt: Date().timeIntervalSince1970 - Double(index), read: false))
             }
         }
+    }
+    private struct RecipeReviewArchive: Codable { var versions: [Recipe]; var photos: [UUID: RecipePhotoDescriptor]; var bytes: [String: Data] }
+    private func persistRecipes() throws {
+        if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars)).write(to: url, options: .atomic) }
     }
     private var recipeReviewURL: URL? {
         guard ProcessInfo.processInfo.arguments.contains("--recipe-persistence-review"), let store = DebugReviewConfiguration.current.storeURL(in: FileManager.default.temporaryDirectory) else { return nil }
@@ -102,6 +112,25 @@ import SwiftData
         if endpoint == "recipes" {
             if action == "save", recipeSaveFailures > 0 { recipeSaveFailures -= 1; throw URLError(.notConnectedToInternet) }
             if action == "get" { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
+            if ["prepare_photo", "complete_photo", "photo"].contains(action), let id = payload.assetID {
+                if action == "prepare_photo", let hash = payload.photoHash { recipePhotos[id] = .init(id: id, path: "10000000-0000-0000-0000-000000000099/\(id.uuidString.lowercased()).jpg", sha256: hash, ready: false) }
+                guard let previous = recipePhotos[id] else { throw URLError(.resourceUnavailable) }
+                if action == "complete_photo" { recipePhotos[id] = .init(id: id, path: previous.path, sha256: previous.sha256, ready: true) }
+                return try JSONEncoder().encode(recipePhotos[id])
+            }
+            if action == "library_index" {
+                let entries = recipes.values.map { r in CookbookEntry(dishID: dishRecipes.first { $0.value == r.id }?.key, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID) }.sorted { $0.id.uuidString < $1.id.uuidString }
+                return try JSONEncoder().encode(CookbookPage(entries: entries))
+            }
+            if action == "history", let id = payload.recipeID, let current = recipes[id] {
+                let values = recipeVersions[id] ?? [current]
+                return try JSONEncoder().encode(RecipeHistoryPage(versions: values.sorted { $0.revision > $1.revision }.map { .init(revision: $0.revision, createdAt: $0.updatedAt, title: $0.content.title) }))
+            }
+            if action == "revision", let id = payload.recipeID, let r = (recipeVersions[id] ?? recipes[id].map { [$0] } ?? []).first(where: { $0.revision == payload.expectedRevision }) { return try JSONEncoder().encode(RecipeRevisionContent(content: r.content, revision: r.revision)) }
+            if action == "restore", let id = payload.recipeID, let current = recipes[id], current.revision == payload.expectedRevision, let old = recipeVersions[id]?.first(where: { $0.revision == payload.sourceRevision }) {
+                var next = current; next.content = old.content; next.revision += 1; recipes[id] = next; recipeVersions[id, default: []].append(next)
+                return try JSONEncoder().encode(next)
+            }
             if action == "cookbook" || action == "cookbook_index" {
                 let entries = dishRecipes.compactMap { dish, recipeID -> CookbookEntry? in
                     guard let recipe = recipes[recipeID] else { return nil }
@@ -136,9 +165,11 @@ import SwiftData
             guard let id = payload.recipeID else { throw URLError(.badURL) }
             if action == "save", let content = payload.recipe {
                 let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? "private", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
+                if let prior = recipes[id], recipeVersions[id] == nil { recipeVersions[id] = [prior] }
+                recipeVersions[id, default: []].append(value)
                 recipes[id] = value
                 if let dish = payload.dishID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish }
-                if let url = recipeReviewURL { try JSONEncoder().encode(Array(recipes.values)).write(to: url, options: .atomic) }
+                try persistRecipes()
                 return try JSONEncoder().encode(recipes[id])
             }
             if action == "delete" { recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }
@@ -298,9 +329,10 @@ struct SocialReviewModifier: ViewModifier {
             content.environment(\.socialMedia, { action in
                 if action.isDownload { if let data = review.avatars[action.paths[0]] { return data }; throw URLError(.fileDoesNotExist) }
                 if case .avatarUpload(let path, let bytes) = action { review.avatars[path] = bytes }
+                if case .recipeUpload(let path, let bytes) = action { review.avatars[path] = bytes }
                 if case .avatarRemove(let paths) = action { for path in paths { review.avatars[path] = nil } }
                 return Data()
-            }).environment(\.recipeImportRequest, { raw in
+            }).environment(\.scoreMilestoneScope, "development.\(DebugReviewConfiguration.current.storeID!.uuidString)").environment(\.recipeImportRequest, { raw in
                 guard ProcessInfo.processInfo.arguments.contains("--recipe-import-review") else { throw RecipeImportFailure.unavailable }
                 if ProcessInfo.processInfo.arguments.contains("--recipe-import-failure") { throw RecipeImportFailure.quota }
                 try await Task.sleep(for: .milliseconds(200))

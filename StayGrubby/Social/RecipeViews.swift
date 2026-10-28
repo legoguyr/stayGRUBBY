@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Preserved standalone recipes are explicitly separate from the derived cookbook.
+/// Existing saved-Recipe picker retained for explicit Dish linkage.
 struct RecipeLibraryView: View {
     var dishID: UUID? = nil
     @Environment(\.socialRequest) private var request
@@ -14,7 +14,7 @@ struct RecipeLibraryView: View {
     @State private var loading = true
     var body: some View {
         SGEditorialList {
-            Text(dishID == nil ? "Recipes not yet linked to a cooked dish stay safe here. Make one, or link it from Dish Detail, to add it to your cookbook." : "Choose a saved recipe for this dish. Nothing in your cooking history will change.")
+            Text(dishID == nil ? "Recipes live in Food Bible, whether or not they’re linked to a Dish." : "Choose a saved recipe for this dish. Nothing in your cooking history will change.")
             ForEach(recipes) { recipe in
                 if dishID != nil { Button(recipe.content.title) { Task { await attach(recipe) } } }
                 else { NavigationLink { RecipeDetailView(id: recipe.id) } label: { RecipeSummaryRow(recipe: recipe, ticket: false) }.accessibilityLabel(recipe.content.title) }
@@ -93,9 +93,12 @@ struct RecipeDetailView: View {
     @State private var detaching = false
     @State private var failed = false
     @State private var busy = false
+    @State private var showingHistory = false
+    @State private var showingLinker = false
+    @State private var newRecipeSource: Recipe?
     @State private var reservation = UUID()
     @State private var generation = UUID()
-    private var linkedDish: Dish? { dishes.first { $0.id == (dishID ?? recipe?.linkedDishID) } }
+    private var linkedDish: Dish? { dishes.first { $0.id == recipe?.linkedDishID } }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
@@ -112,27 +115,27 @@ struct RecipeDetailView: View {
             .onChange(of: phase) { _, next in generation = UUID(); if recipe?.isOwner != true { recipe = nil }; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .sheet(item: $editingRecipe, onDismiss: { Task { await load() } }) { snapshot in RecipeEditor(recipe: snapshot, dishID: dishID ?? snapshot.linkedDishID) { self.recipe = $0 } }
+            .sheet(isPresented: $showingHistory) { if let recipe { RecipeHistoryView(recipe: recipe) { self.recipe = $0 } } }
+            .sheet(isPresented: $showingLinker, onDismiss: { Task { await load() } }) { if let recipe { RecipeDishLinker(recipe: recipe) {} } }
+            .sheet(item: $newRecipeSource, onDismiss: { Task { await load() } }) { source in RecipeEditor(draft: source.content) { _ in } }
             .sheet(item: $claim, onDismiss: { reservation = UUID() }) { claim in if let list { AddCookingView(list: list, dish: linkedDish, origin: claim) } }
             .confirmationDialog("Remove Recipe from this Dish?", isPresented: $detaching, titleVisibility: .visible) {
                 Button("Remove Recipe from Dish", role: .destructive) { Task { await detach() } }
-            } message: { Text("The saved recipe stays available. This Dish leaves Food Bible; cooking history, photos and ranking stay intact.") }
+            } message: { Text("The saved recipe stays available. Both Recipe and Dish remain available; cooking history, photos and ranking stay intact.") }
             .confirmationDialog("Delete this recipe?", isPresented: $deleting, titleVisibility: .visible) {
                 Button("Delete Recipe", role: .destructive) { Task { await delete() } }
             } message: { Text("This deletes the saved recipe and its references. Dishes, cooks, rankings and photos stay intact; saved cook snapshots remain.") }
     }
     private func reader(_ recipe: Recipe) -> some View {
         VStack(alignment: .leading, spacing: 28) {
-            Group {
-                if let media = linkedDish?.cookbookRepresentativeCook?.primaryImage { DishPhoto(media: media, name: recipe.content.title) }
-                else { CookbookPhoto(dish: nil, name: recipe.content.title) }
-            }.frame(height: 260).clipShape(RoundedRectangle(cornerRadius: 16)).accessibilityIdentifier("recipe-hero")
+            RecipePhoto(id: recipe.content.photoID, dish: linkedDish, name: recipe.content.title).frame(height: 260).clipShape(RoundedRectangle(cornerRadius: 16)).accessibilityIdentifier("recipe-hero")
             VStack(alignment: .leading, spacing: 12) {
                 SGEyebrow(text: linkedDish == nil ? "Recipe" : "From your Food Bible")
                 Text(recipe.content.title).font(SGTheme.TypeRole.hero).accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 Text([recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
                 if let introduction = recipe.content.description, !introduction.isEmpty { Text(introduction).font(.body).lineSpacing(6) }
             }
-            RecipeReadingBody(content: recipe.content)
+            RecipeReadingBody(content: recipe.content, allowScaling: true)
             Divider()
             VStack(alignment: .leading, spacing: 10) {
                 if let creator = recipe.content.originalCreator, !creator.isEmpty { Text("Original creator · \(creator)") }
@@ -144,7 +147,12 @@ struct RecipeDetailView: View {
             }.font(.subheadline)
             Button { Task { await begin() } } label: { Label(linkedDish == nil ? "Make This" : "Cook It Again", systemImage: "fork.knife").frame(maxWidth: .infinity) }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-make")
             Text("Review your cook, then rank it. Your recipe stays just as you saved it.").font(.footnote).foregroundStyle(.secondary)
-            if dishID != nil { Button("Remove Recipe from Dish", role: .destructive) { detaching = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-detach") }
+            if recipe.isOwner {
+                Button("Version History") { showingHistory = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-history")
+                Button("Save as New Recipe") { newRecipeSource = recipe }.frame(minHeight: 44).accessibilityIdentifier("recipe-save-new")
+            }
+            if linkedDish == nil { Button("Link to Existing Dish") { showingLinker = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-link") }
+            if linkedDish != nil { Button("Remove Recipe from Dish", role: .destructive) { detaching = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-detach") }
             if recipe.isOwner { Button("Delete Recipe", role: .destructive) { deleting = true }.frame(minHeight: 44).disabled(busy) }
         }
     }
@@ -165,8 +173,8 @@ struct RecipeDetailView: View {
         catch is CancellationError {} catch { failed = true }
     }
     private func detach() async {
-        guard let request, let dishID else { return }
-        do { _ = try await request("recipes", "detach", .init(dishID: dishID, recipeID: id)); try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss() } catch { failed = true }
+        guard let request, let linkedID = linkedDish?.id else { return }
+        do { _ = try await request("recipes", "detach", .init(dishID: linkedID, recipeID: id)); try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss() } catch { failed = true }
     }
     private func delete() async {
         guard let request else { return }

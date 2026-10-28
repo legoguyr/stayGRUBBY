@@ -3,15 +3,16 @@ import XCTest
 final class RecipeImportUITests: StayGrubbyUITestCase {
     @MainActor private func launch(_ extra: [String] = [], dish: String = "Matzo Ball Soup", expectImport: Bool = true, fixture: Data? = nil) -> XCUIApplication {
         continueAfterFailure=false
-        let app=XCUIApplication();app.launchArguments=["--ui-test-store",UUID().uuidString,"--social-review","--social-review-ready","--recipes-review","--recipe-import-review","--score-unlock-fixture",extra.contains("--bible-review") ? "10" : "1"]+extra
+        let app=XCUIApplication();app.launchArguments=["--ui-test-store",UUID().uuidString,"--social-review","--social-review-ready","--recipes-review","--recipe-import-review","--bible-v2-empty","--score-unlock-fixture",extra.contains("--bible-review") ? "10" : "1"]+extra
         if let fixture { app.launchEnvironment["STAYGRUBBY_RECIPE_TEST_RESPONSE"] = fixture.base64EncodedString() }
         app.launchWithReviewOptions();XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20))
-        app.tabBars.buttons["Food Bible"].tap();XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout:8))
+        for _ in 0..<3 { app.tabBars.buttons["Food Bible"].tap(); if app.textFields["bible-search"].waitForExistence(timeout:3) { break } };XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout:8))
         app.buttons["bible-add"].tap();XCTAssertTrue(app.buttons["bible-import"].waitForExistence(timeout:8));app.buttons["bible-import"].tap()
-        if dish != "Matzo Ball Soup" { let search=app.textFields["choose-dish-search"];XCTAssertTrue(search.waitForExistence(timeout:5));search.tap();search.typeText(dish) }
-        XCTAssertTrue(app.buttons[dish].waitForExistence(timeout:8));app.buttons[dish].tap()
-        if expectImport { XCTAssertTrue(app.textViews["recipe-import-text"].waitForExistence(timeout:8)) }
-        else { XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8)) };return app
+        if expectImport {
+            if app.buttons["recipe-disclosure-continue"].waitForExistence(timeout:3) { app.buttons["recipe-disclosure-continue"].tap() }
+            XCTAssertTrue(app.textViews["recipe-import-text"].waitForExistence(timeout:8))
+        }
+        return app
     }
     @MainActor private func input(_ app:XCUIApplication) {
         let text=app.textViews["recipe-import-text"];text.tap();text.typeText("Soup\n2 carrots\nstock\ncook chicken until done")
@@ -19,14 +20,7 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
         app.swipeUp();allowCloud(app)
     }
     @MainActor private func allowCloud(_ app: XCUIApplication) {
-        let toggle = app.switches["recipe-import-consent"]
-        XCTAssertTrue(toggle.waitForExistence(timeout:8))
-        if toggle.value as? String != "1" {
-            let native = toggle.switches.firstMatch
-            (native.exists ? native : toggle).tap()
-        }
-        let enabled = NSPredicate(format:"value == '1'")
-        XCTAssertEqual(XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:enabled,object:toggle)],timeout:8),.completed)
+        XCTAssertFalse(app.switches["recipe-import-consent"].exists)
         XCTAssertTrue(app.buttons["recipe-import-format"].isEnabled)
     }
     @MainActor private func shot(_ app:XCUIApplication,_ name:String) {let a=XCTAttachment(screenshot:app.screenshot());a.name=name;a.lifetime = .keepAlways;add(a)}
@@ -43,7 +37,7 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
     @MainActor func testQuotaFailureManualFallbackKeepsEntireOriginalAndCancelReturnsText() {
         let app=launch(["--test-dark","--recipe-import-failure"]);input(app)
         app.buttons["recipe-import-format"].tap();XCTAssertTrue(app.staticTexts["recipe-import-error"].waitForExistence(timeout:8));shot(app,"Import unavailable raw text retained dark")
-        app.buttons["recipe-import-manual"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8));XCTAssertEqual(app.textFields["recipe-edit-title"].value as? String,"Matzo Ball Soup")
+        app.buttons["recipe-import-manual"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8));XCTAssertEqual(app.textFields["recipe-edit-title"].value as? String,"Recipe")
         app.buttons["recipe-editor-cancel"].tap();XCTAssertTrue(app.textViews["recipe-import-text"].waitForExistence(timeout:8));XCTAssertEqual(app.textViews["recipe-import-text"].value as? String,"Soup\n2 carrots\nstock\ncook chicken until done")
         app.buttons["recipe-import-cancel"].tap();XCTAssertTrue(app.buttons["Keep Editing"].waitForExistence(timeout:5));app.buttons["Keep Editing"].tap()
         XCTAssertTrue(app.textViews["recipe-import-text"].exists)
@@ -54,12 +48,17 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
         XCUIDevice.shared.press(.home);app.activate();XCTAssertTrue(app.textViews["recipe-import-text"].waitForExistence(timeout:8));XCTAssertEqual(app.textViews["recipe-import-text"].value as? String,"Soup")
         app.buttons["recipe-import-cancel"].tap();app.buttons["Discard"].tap()
     }
-    @MainActor func testImportChoiceOpensExistingRecipeWithoutOverwrite() {
-        let app=launch(["--bible-review","--test-dark"],dish:"Braised Short Ribs with Polenta",expectImport:false)
-        XCTAssertTrue(app.textViews["recipe-import-text"].waitForNonExistence(timeout:8))
+    @MainActor func testStandaloneImportDoesNotOverwriteExistingLinkedRecipe() {
+        let app=launch(["--bible-review","--test-dark"])
+        XCTAssertTrue(app.textViews["recipe-import-text"].exists)
+        app.buttons["recipe-import-cancel"].tap()
+        app.buttons["Done"].firstMatch.tap()
+        XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8))
+        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised")
+        let card=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout:8));card.tap()
+        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
         XCTAssertTrue(app.staticTexts["recipe-title"].label.contains("Braised"))
-        XCTAssertTrue(app.buttons["recipe-edit"].exists)
-        shot(app,"Existing recipe protected from import replacement")
     }
 
     @MainActor func testCanonicalKaleServerContractOpensEditorWithoutSaving() throws {

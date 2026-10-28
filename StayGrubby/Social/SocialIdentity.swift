@@ -59,6 +59,10 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var course: String?
     var cuisine: String?
     var recipeID: UUID?
+    var sourceRevision: Int?
+    var photoHash: String?
+    var photoBytes: Int?
+    var removeRecipePhoto: Bool?
     var recipe: RecipeContent?
     var visibility: String?
     var postDescription: String?

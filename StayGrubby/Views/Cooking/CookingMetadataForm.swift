@@ -73,8 +73,11 @@ struct CookingMetadataForm: View {
                     } else { cookedDate }
                 }
                 selector("Dietary", value: draft.dietary.isEmpty ? "Optional" : "\(draft.dietary.count) selected", symbol: "leaf") { selection = .dietary }
-                selector("Contains", value: draft.contains.isEmpty ? "Optional" : "\(draft.contains.count) selected", symbol: "checklist") { selection = .contains }
-                    .accessibilityIdentifier("cook-contains")
+                DisclosureGroup("Cook-specific ingredients") {
+                    Text("Recipe Contains/Possible records ingredient-derived allergens. Keep changes or substitutions specific to this cook here; existing selections remain saved.").font(.footnote).foregroundStyle(.secondary)
+                    selector("Contains", value: draft.contains.isEmpty ? "Optional" : "\(draft.contains.count) selected", symbol: "checklist") { selection = .contains }
+                        .accessibilityIdentifier("cook-contains")
+                }
                 if !draft.allergy.isEmpty {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                         Text("Legacy free-of labels: " + draft.allergy.map(\.label).sorted().joined(separator: ", "))

@@ -75,7 +75,7 @@ extension RecipeContent {
 }
 
 nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
-    var dishID: UUID
+    var dishID: UUID?
     var recipeID: UUID
     var dishTitle: String
     var recipeTitle: String
@@ -90,7 +90,8 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var source: String? = nil
     var elapsedMinutes: Int? = nil
     var creatorMetadata: Bool? = nil
-    var id: UUID { dishID }
+    var photoID: UUID? = nil
+    var id: UUID { recipeID }
     var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
     var duration: Int? { if let elapsedMinutes { return elapsedMinutes }; if creatorMetadata == true { return nil }; return prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
 }
@@ -120,7 +121,7 @@ nonisolated enum CookbookSearch {
         values.filter { matches($0.searchableText, query: query) && (course.isEmpty || $0.course == course) && (cuisine.isEmpty || $0.cuisine == cuisine) }
             .sorted { a,b in
                 if !alphabetical, a.updatedAt != b.updatedAt { return (a.updatedAt ?? 0) > (b.updatedAt ?? 0) }
-                let result = a.dishTitle.localizedStandardCompare(b.dishTitle)
+                let result = a.recipeTitle.localizedStandardCompare(b.recipeTitle)
                 return result == .orderedSame ? a.id.uuidString < b.id.uuidString : result == .orderedAscending
             }
     }
@@ -131,7 +132,7 @@ nonisolated enum CookbookSearch {
         repeat {
             try Task.checkCancellation()
             var payload = SocialPayload(); payload.beforeID = cursor
-            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", "cookbook_index", payload))
+            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", "library_index", payload))
             let fresh = page.entries.filter { seen.insert($0.id).inserted }
             entries += fresh
             if page.entries.count < 50 || fresh.isEmpty { break }

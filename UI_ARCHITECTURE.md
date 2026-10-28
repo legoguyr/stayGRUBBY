@@ -1,3 +1,11 @@
+# Current Food Bible presentation — Architecture V2, October 28, 2026
+
+Food Bible keeps the existing four-tab shell and editorial components, now displaying independent Recipe cards keyed by Recipe UUID. Add Recipe offers Paste Recipe/Add Manually without Choose Dish. Dish-context creation and explicit link/unlink reuse the existing cooking objects. Recipe reader/editor adds optional Recipe photography, owner Version History/restore, Save as New Recipe and deterministic view-only serving adjustment; no major visual redesign or new social post type is included.
+
+Paste Recipe shows first-use external-AI disclosure before transmission, then remembers acknowledgement per account/device. Cancel/Add Manually never invokes the AI path. The accepted Creator/editor/allergen/reorder mechanics remain. Recipe Contains/Possible is primary ingredient-derived information; existing actual-cook assertions remain in cook-specific controls. Privacy/access, portrait/accessibility and semantic score/export rules are unchanged. See [current architecture](STAYGRUBBY_ARCHITECTURE.md), [V2 verification](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md) and [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md). Earlier checkpoint descriptions below retain their historical scope.
+
+---
+
 # Integrated presentation — October 22, 2026
 
 > Current-state entry point: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); future work: [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow/verification: [AGENTS.md](AGENTS.md). This file retains detailed UI contracts and dated checkpoint sections. Old review-pending and hidden-Feed statements in those sections are historical, not instructions to undo the current four-tab shell or repeat accepted reviews.

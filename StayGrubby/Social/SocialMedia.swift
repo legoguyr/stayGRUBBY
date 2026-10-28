@@ -5,10 +5,11 @@ import ImageIO
 nonisolated enum SocialMediaAction: Sendable {
     case upload(path: String, bytes: Data), download(path: String), remove(paths: [String])
     case avatarUpload(path: String, bytes: Data), avatarDownload(path: String), avatarRemove(paths: [String])
-    var isDownload: Bool { switch self { case .download, .avatarDownload: true; default: false } }
-    var bucket: String { switch self { case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
+    case recipeUpload(path: String, bytes: Data), recipeDownload(path: String), recipeRemove(paths: [String])
+    var isDownload: Bool { switch self { case .download, .avatarDownload, .recipeDownload: true; default: false } }
+    var bucket: String { switch self { case .recipeUpload, .recipeDownload, .recipeRemove: "recipe-photos"; case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
     var paths: [String] {
-        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path): [path]; case .remove(let paths), .avatarRemove(let paths): paths }
+        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path), .recipeUpload(let path, _), .recipeDownload(let path): [path]; case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): paths }
     }
 }
 nonisolated enum SocialMediaRules {
@@ -41,8 +42,13 @@ extension SupabaseAccountBackend: SocialMediaBackend {
         case .upload(let path, let bytes), .avatarUpload(let path, let bytes):
             guard SocialMediaRules.validJPEG(bytes) else { throw AccountFoundationError.invalidResolution }
             _ = try await bucket.upload(path, data: bytes, options: FileOptions(cacheControl: "0", contentType: "image/jpeg", upsert: true)); result = Data()
-        case .download(let path), .avatarDownload(let path): result = try await bucket.download(path: path, cacheNonce: UUID().uuidString)
-        case .remove(let paths), .avatarRemove(let paths): _ = try await bucket.remove(paths: paths); result = Data()
+        case .recipeUpload(let path, let bytes):
+            guard SocialMediaRules.validJPEG(bytes) else { throw AccountFoundationError.invalidResolution }
+            do { _ = try await bucket.upload(path, data: bytes, options: FileOptions(cacheControl: "0", contentType: "image/jpeg", upsert: false)) }
+            catch let error as StorageError where error.statusCode == "409" { } // Immutable retry; service verifies downloaded hash.
+            result = Data()
+        case .download(let path), .avatarDownload(let path), .recipeDownload(let path): result = try await bucket.download(path: path, cacheNonce: UUID().uuidString)
+        case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): _ = try await bucket.remove(paths: paths); result = Data()
         }
         try Task.checkCancellation()
         guard client.auth.currentSession?.user.id == user else { throw AccountFoundationError.identityChanged }

@@ -20,7 +20,7 @@ import Testing
         let values = (0..<520).map { entry("Dish \($0)",text:$0==319 ? "saffron cookbook" : "stock") }.sorted { $0.id.uuidString < $1.id.uuidString }
         var calls=0
         let request: SocialRequest = { endpoint, action, payload in
-            #expect(endpoint=="recipes" && action=="cookbook_index");calls+=1
+            #expect(endpoint=="recipes" && action=="library_index");calls+=1
             let rest=values.filter { payload.beforeID == nil || $0.id.uuidString > payload.beforeID!.uuidString }
             return try JSONEncoder().encode(CookbookPage(entries:Array(rest.prefix(50))))
         }

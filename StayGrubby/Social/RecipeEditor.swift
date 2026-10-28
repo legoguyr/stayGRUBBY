@@ -5,6 +5,7 @@ import SwiftData
 struct RecipeEditor: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.socialMedia) private var media
     @Environment(\.dynamicTypeSize) private var textSize
     @Query private var dishes: [Dish]
     let recipe: Recipe?
@@ -16,6 +17,10 @@ struct RecipeEditor: View {
     private let originallyShared: Bool
     @State private var shared: Bool
     @State private var recipeID: UUID
+    @State private var photoBytes: Data?
+    @State private var photoRemoved = false
+    @State private var photoAssetID = UUID()
+    @State private var photoLoading = false
     @State private var saving = false
     @State private var failed = false
     @State private var discard = false
@@ -35,7 +40,7 @@ struct RecipeEditor: View {
         _content = State(initialValue: value); _shared = State(initialValue: recipe?.visibility == "friends")
         _recipeID = State(initialValue: recipe?.id ?? UUID())
     }
-    private var dirty: Bool { content != original || shared != originallyShared || ingredientEntry.hasChanges }
+    private var dirty: Bool { content != original || shared != originallyShared || ingredientEntry.hasChanges || photoBytes != nil || photoRemoved }
     private var parts: [RecipeComponent] { content.components ?? [] }
     private var dish: Dish? { dishes.first { $0.id == dishID } }
     var body: some View {
@@ -76,7 +81,7 @@ struct RecipeEditor: View {
                         finishIngredient(); focus = nil
                         if changed || dirty { discard = true } else { dismiss() }
                     }.disabled(saving).accessibilityIdentifier("recipe-editor-cancel") }
-                    ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { finishIngredient(); focus = nil; Task { await save() } }.disabled(saving || !ingredientEntry.isValid(content)).accessibilityIdentifier("recipe-save") }
+                    ToolbarItem(placement: .confirmationAction) { Button(saving ? "Saving…" : "Save") { finishIngredient(); focus = nil; Task { await save() } }.disabled(saving || photoLoading || !ingredientEntry.isValid(content)).accessibilityIdentifier("recipe-save") }
                     ToolbarItemGroup(placement: .keyboard) {
                         if ingredientFocusedSection == nil { Spacer(); Button("Done") { focus = nil }.accessibilityIdentifier("recipe-keyboard-done") }
                     }
@@ -124,9 +129,9 @@ struct RecipeEditor: View {
     }
     private var identity: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if dish != nil { CookbookPhoto(dish: dish, name: dish?.name ?? content.title).frame(height: 155).clipShape(RoundedRectangle(cornerRadius: 14)) }
+            RecipePhotoEditor(id: content.photoID, dish: dish, name: content.title, bytes: $photoBytes, removed: $photoRemoved, assetID: $photoAssetID, loading: $photoLoading)
             TextField("Recipe title", text: $content.title, axis: .vertical).font(SGTheme.TypeRole.hero).focused($focus, equals: .title).accessibilityIdentifier("recipe-edit-title")
-            TextField("A little about this recipe…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
+            TextField("Describe the recipe in 1–3 useful sentences…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
         }
     }
     @ViewBuilder private var details: some View {
@@ -136,7 +141,7 @@ struct RecipeEditor: View {
         }.padding(.vertical, 8)
         totalField
     }
-    private var yieldField: some View { VStack(alignment: .leading, spacing: 6) { Text("YIELD").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
+    private var yieldField: some View { VStack(alignment: .leading, spacing: 6) { Text("YIELD").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. Serves 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
     private var prepField: some View { VStack(alignment: .leading, spacing: 6) { Text("PREP · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.prepMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Preparation time in minutes") }.frame(minWidth: 75) }
     private var cookField: some View { VStack(alignment: .leading, spacing: 6) { Text("COOK · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.cookMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Cooking time in minutes") }.frame(minWidth: 75) }
     private var totalField: some View { VStack(alignment: .leading, spacing: 6) {
@@ -311,7 +316,12 @@ struct RecipeEditor: View {
         guard let request else { failed = true; return }; saving = true; failed = false; defer { saving = false }
         do {
             var payload = SocialPayload(); payload.recipeID = recipeID; payload.dishID = dishID; payload.expectedRevision = recipe?.revision
-            payload.recipe = ingredientEntry.prepared(content); payload.visibility = shared ? "friends" : "private"
+            var saved = ingredientEntry.prepared(content)
+            if let photoBytes {
+                guard let media else { throw AccountFoundationError.accountNotResolved }
+                saved.photoID = try await RecipePhotoService.upload(photoBytes, id: photoAssetID, request: request, media: media)
+            } else if photoRemoved { saved.photoID = nil; payload.removeRecipePhoto = true }
+            payload.recipe = saved; payload.visibility = shared ? "friends" : "private"
             let next = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "save", payload))
             try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); onSave(next); dismiss()
         } catch is CancellationError {} catch { failed = true }

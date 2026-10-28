@@ -2,6 +2,8 @@
 
 > Historical Creator checkpoint, followed by the cookbook/content/allergen/reorder refinement. **Recipe Creator V1 + refinement is OWNER PHYSICALLY ACCEPTED**, confirmed in the October 28 workflow re-tool request. [Current architecture](STAYGRUBBY_ARCHITECTURE.md) and [accepted refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md) supersede pending gates and contract-2 details below; the ownership audit remains useful. Preserve this checkpoint’s original test/procedure evidence as history.
 
+Architecture V2 now supplies standalone Recipe creation and the account-scoped first-use Paste Recipe disclosure; old Cloud Formatting/toggle/Dish-required entry descriptions below are historical. Accepted Creator contract-3 mechanics remain unchanged; see [current architecture](STAYGRUBBY_ARCHITECTURE.md).
+
 Current product definition: **preserve the user's recipe; construct the recipe document intelligently**. This supersedes the v11/v13 transcription/editorial-only product definition. V11's real-iPhone acceptance remains historical evidence, not acceptance of this new Creator contract.
 
 Starting checkpoint: `cd7bda8b686b3dad21957f013090c34363fe3b73`, clean main aligned with origin/main. V11 baseline `a804628e224730947443f8e74bb1c030427baad8` remains an ancestor. Single agent, existing checkout, one Simulator test lane. No independent Recipe/Dish, ranking, notification/loading-animation, social, photo-sync, authentication or distribution implementation.

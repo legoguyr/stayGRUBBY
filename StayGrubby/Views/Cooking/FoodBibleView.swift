@@ -32,8 +32,8 @@ struct FoodBibleView: View {
                 if !loading && visible.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Image(systemName: "book.closed").font(.system(size: 44, weight: .light)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-                        Text(entries.isEmpty ? "Your best recipes.\nAll in one place." : "Nothing on this page. Yet.").font(SGTheme.TypeRole.hero)
-                        Text(entries.isEmpty ? "Keep the recipes for dishes you’ve cooked. Your photos, your little improvements, your Food Bible." : "Try another ingredient, dish or cuisine, or clear your filters.").foregroundStyle(.secondary)
+                        Text(entries.isEmpty ? "Your recipes.\nAll in one place." : "Nothing on this page. Yet.").font(SGTheme.TypeRole.hero)
+                        Text(entries.isEmpty ? "Keep recipes you love and ideas you want to try. Link a Dish whenever you’re ready." : "Try another ingredient, dish or cuisine, or clear your filters.").foregroundStyle(.secondary)
                         Button(entries.isEmpty ? "Add Recipe" : "Clear search & filters") {
                             if entries.isEmpty { choosing = true } else { query = ""; course = ""; cuisine = "" }
                         }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("bible-empty-add")
@@ -42,8 +42,8 @@ struct FoodBibleView: View {
                 LazyVGrid(columns: textSize.isAccessibilitySize ? [GridItem(.flexible(minimum: 0), alignment: .top)] : [GridItem(.flexible(minimum: 0), alignment: .top), GridItem(.flexible(minimum: 0), alignment: .top)], alignment: .leading, spacing: 24) {
                     ForEach(visible) { entry in
                         Button { selected = .init(recipeID: entry.recipeID, dishID: entry.dishID) } label: {
-                            CookbookCard(entry: entry, dish: lookup[entry.dishID])
-                        }.buttonStyle(.plain).accessibilityIdentifier("bible-entry-\(entry.dishID)")
+                            CookbookCard(entry: entry, dish: entry.dishID.flatMap { lookup[$0] })
+                        }.buttonStyle(.plain).accessibilityIdentifier("bible-entry-\(entry.recipeID)")
                     }
                 }
                 if !entries.isEmpty { Text("\(entries.count) recipes, made yours.").font(.footnote).foregroundStyle(.secondary) }
@@ -83,7 +83,7 @@ struct FoodBibleView: View {
         catch is CancellationError {} catch { if generation == token { entries = []; failed = true } }
     }
 }
-private struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID }
+private struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID? }
 
 struct CookbookPhoto: View {
     var dish: Dish?
@@ -108,7 +108,7 @@ private struct CookbookCard: View {
     var dish: Dish?
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            CookbookPhoto(dish: dish, name: entry.dishTitle).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
+            RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
             Text(entry.recipeTitle).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
             Text([entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")

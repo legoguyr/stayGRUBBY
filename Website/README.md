@@ -1,6 +1,6 @@
 # StayGrubby public website
 
-> Current privacy/release status: [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md) and [Master Roadmap](../STAYGRUBBY_MASTER_ROADMAP.md). The canonical bundled policy is now effective October 27; the latest clarification was prepared/tested but not published in the refinement checkpoint. Older effective dates below are historical. [AGENTS.md](../AGENTS.md) governs verification and explicit publication authorization.
+> Current privacy/release status: [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md) and [Master Roadmap](../STAYGRUBBY_MASTER_ROADMAP.md). The canonical bundled policy is now effective October 28 and includes Architecture V2/Paste Recipe disclosure. It is prepared/tested; publication is pending owner Cloudflare login. Older effective dates below are historical. [AGENTS.md](../AGENTS.md) governs verification and explicit publication authorization.
 
 The production site is the existing **assets-only Cloudflare Worker `staygrubby`**, attached to `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. It is not a Pages project. Do not create a second site or replace its custom domain/DNS setup. The release-readiness review records deployment IDs and live verification.
 
@@ -8,7 +8,7 @@ The website is a minimal app-first landing, privacy/support pages, generic profi
 
 ## Source and local verification
 
-`StayGrubby/Legal/PrivacyPolicy.md` is the canonical policy, bundled offline in the app and rendered completely for the public site. The current clarification is effective October 22, 2026 and describes Dish-linked Food Bible, Recipe components/tips/revisions and the current account-deletion navigation. Official artwork comes from the existing asset catalog. Never reconstruct the wordmark.
+`StayGrubby/Legal/PrivacyPolicy.md` is the canonical policy, bundled offline in the app and rendered completely for the public site. The current clarification is effective October 28, 2026 and describes independent Recipes, private Recipe photos/revisions, current deletion behavior and first-use external-AI Paste Recipe disclosure. Official artwork comes from the existing asset catalog. Never reconstruct the wordmark.
 
 From the repository root:
 
@@ -41,3 +41,19 @@ Only `https://staygrubby.com/@username` is enabled. AASA names `5DSB36G7LZ.com.g
 `Website/distribution.json` remains explicitly `{"url": null}`. The page honestly explains that external beta access is not open. Once the owner supplies the actual approved External TestFlight public URL, configure it, rebuild/test and publish. The builder only accepts genuine-format Apple HTTPS join/product URLs, rejects arbitrary hosts/credentials/query/fragment injection, and does not invent a destination. No public link, archive, upload or App Store Connect change is created by this workflow.
 
 Physical association testing remains necessary: confirm Associated Domains capability/provisioning for the existing Team/bundle; install a newly signed build and open shared links from Messages/Mail with cold/warm and signed-in/signed-out states. Same-domain Safari navigation and HTTP/AASA checks alone do not prove iPhone routing. Existing Apple association caches may delay updates.
+
+## Architecture V2 publication handoff — October 28
+
+Seven static-policy/routing/security tests pass. The existing connected Cloudflare API can inspect the Worker, but its request interface does not expose the upload-session Authorization header needed for new asset bytes. The official Wrangler CLI reports **not authenticated**. No temporary preview account, alternate credential, DNS/configuration or publication workaround was used.
+
+Owner action after normal Cloudflare login: rebuild/test and deploy with the existing commands above, retaining this Worker/domain/configuration. The task installed official Wrangler 4.154.0 only under `/private/tmp/staygrubby-v2-website-tools`, not as a repository dependency. If that temporary tool still exists, run these from the repository root:
+
+```sh
+/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js login
+python3 Website/build.py
+python3 -m unittest discover -s Website -p 'test_site.py'
+/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js deploy --config Website/wrangler.jsonc --dry-run
+/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js deploy --config Website/wrangler.jsonc
+```
+
+Complete the browser login yourself; never paste credentials into Codex. If the temporary tool is gone, use a normally installed current Wrangler instead. Then perform the existing live URL/header checks above. A local static build is not publication evidence.
