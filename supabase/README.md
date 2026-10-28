@@ -1,5 +1,7 @@
 # StayGrubby hosted setup — October 11, 2026
 
+> This setup record preserves historical deployment evidence. Current product/provider/privacy boundaries are in [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md); development/deployment rules are in [AGENTS.md](../AGENTS.md). Old initial empty-project counts, provisioning limitations and publication requirements below are dated observations. Inspect actual migration history and current authorization for a deployment; do not replay historical setup against the live project.
+
 ## Post-V1 account deletion deployment — October 20, 2026
 
 The ninth migration `20261020141022_account_deletion_foundation.sql` and authenticated `delete-account` version 2 are deployed. Supabase assigned that version at deployment; the earlier unapplied local filename was `20261018202309_account_deletion_foundation.sql`. SQL bytes/hash are unchanged, and all nine local hashes match hosted history. The original eight migrations were not edited. The function has JWT verification enabled and rejects unauthenticated POSTs. All 17 private tables have RLS, with zero anonymous table grants and zero direct authenticated writes. No user/account/data deletion was invoked.

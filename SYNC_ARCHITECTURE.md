@@ -1,5 +1,7 @@
 # Current Phase 3D Part 2 — private photo sync
 
+> Current overview: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). Structured and private photo sync are implemented and physically reviewed. Old two-tab/hidden-Feed and pending-photo-review statements below describe their dated checkpoints. Protocol/outbox contracts remain applicable; [AGENTS.md](AGENTS.md) governs risk-based verification, rather than automatic full historical regression.
+
 The authenticated foreground worker now complements the structured durable outbox with private optimized-JPEG backup, validated account-root recovery and retired-object cleanup. Existing metadata/evidence/revision/conflict behavior is preserved. Both display and thumbnail variants use immutable account/media/SHA-256 paths; Profile only reports fully current after byte work completes. See MEDIA_SYNC_ARCHITECTURE.md and PHASE_3D_PHOTO_SYNC_REVIEW.md for the authoritative current design, security, limits, validation and pending physical-iPhone approval. Earlier structured-only media boundaries below describe the completed Part 1 checkpoint.
 
 ---

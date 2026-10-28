@@ -1,5 +1,7 @@
 # StayGrubby public website
 
+> Current privacy/release status: [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md) and [Master Roadmap](../STAYGRUBBY_MASTER_ROADMAP.md). The canonical bundled policy is now effective October 27; the latest clarification was prepared/tested but not published in the refinement checkpoint. Older effective dates below are historical. [AGENTS.md](../AGENTS.md) governs verification and explicit publication authorization.
+
 The production site is the existing **assets-only Cloudflare Worker `staygrubby`**, attached to `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. It is not a Pages project. Do not create a second site or replace its custom domain/DNS setup. The release-readiness review records deployment IDs and live verification.
 
 The website is a minimal app-first landing, privacy/support pages, generic profile fallback and AASA. No web accounts, public recipe/feed/catalog, Supabase requests, JavaScript, analytics or cookies. Preserve all email MX/TXT records; deployment must not change DNS.

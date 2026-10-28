@@ -1,6 +1,8 @@
 # Recipe Creator cookbook refinement — October 27, 2026
 
-**AUTOMATED RECIPE CREATOR ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE PENDING**
+**AUTOMATED ACCEPTANCE PASSED — OWNER PHYSICAL ACCEPTANCE CONFIRMED**
+
+Owner acceptance of Recipe Creator V1 and this refinement is confirmed by the October 28, 2026 workflow re-tool request. These mechanics are now accepted/stable. The dated findings, test totals and original acceptance procedure below remain historical evidence; no new tests or physical review were performed during this documentation update. Current implementation and next planned scope are authoritative in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) and [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md).
 
 Starting state: clean `main`, HEAD `5fb9f26bf8aba50879484b10693f692dcc937f08`. Previous accepted/history checkpoints are preserved. One agent, original checkout, one Simulator lane. The owner's v16 physical review succeeded overall but identified content/metadata/allergen/reorder gaps; it did not freeze these mechanics. This cycle does not implement the Recipe/Food Bible redesign or the next architecture phase.
 
@@ -64,11 +66,11 @@ The first focused UI attempts caught an accessibility-container identifier shado
 
 The canonical privacy source now describes standard consented Cloud Formatting honestly and retains the existing Google free-service disclosure; local static-policy parity/security tests apply. No public website publication, DNS, App Store Connect or TestFlight action is included. Public policy publication remains a separate release step.
 
-## Next roadmap — not implemented
+## Next roadmap — historical sequence, not implementation
 
 The Master Roadmap preserves the agreed sequence: independent optional Recipe/Dish linking; Recipe-owned photos; living Recipe revision UX and exact cooked-revision provenance; metadata ownership migration; short Recipe descriptions; more apparent Dish/social descriptions separate from private Personal Notes; Recipe posts; combined linked Dish/Recipe posts; Grub List type filters; then the dedicated Food Bible/Recipe Maker overhaul once architecture is stable. Existing revision/description/social infrastructure remains; no new notification, loading animation, ranking, auth, sync, Recipe photo or Universal Links work was performed.
 
-## One final physical acceptance
+## Historical final physical acceptance procedure — now passed
 
 Install a **new Xcode build** with the existing account/data; do not reset or seed. Open Cloud Formatting once with the exact unchanged `StayGrubbyTests/Fixtures/RecipeEngineCanonicalKale.txt`, using an existing cooked Dish without a Recipe.
 
@@ -78,4 +80,4 @@ Open the Contains/Possible checklists, verify preselection and correct selection
 
 **Could I hand this recipe to another competent home cook and reasonably expect them to understand what to buy, prep, cook, and assemble without hearing my original explanation?**
 
-Only a successful owner answer freezes these content mechanics before the upcoming architecture/UI cycles. Automated tests do not claim equivalent live-model or physical acceptance.
+The owner has now confirmed physical acceptance, closing this gate and freezing these content mechanics before the planned architecture/UI cycles. The automation recorded above does not substitute for that owner confirmation.

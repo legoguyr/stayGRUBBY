@@ -1,5 +1,7 @@
 # StayGrubby social architecture
 
+> Current product/release boundaries are reconciled in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) and the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md). Counts/function versions and review gates below belong to their dated checkpoints; they are not live catalog claims. Permanent verification rules are in [AGENTS.md](AGENTS.md).
+
 Profile-photo/sharing-default enhancements are implemented and deployed: 18 aligned migrations, three private photo buckets and avatar-aware delete-account v4. Verification and remaining physical/privacy release actions are recorded in [SOCIAL_UX_REVIEW.md](SOCIAL_UX_REVIEW.md).
 
 Private cooking history and the social graph are separate. Social APIs never return the CookingGraph, private media paths, Auth identities, email or sync metadata. Social engagement never changes comparisons, strengths, scores, personal ranks or score-unlock eligibility. Existing accounts may keep using private StayGrubby without social setup.

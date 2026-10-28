@@ -1,177 +1,102 @@
 # StayGrubby Master Roadmap
 
-Canonical product roadmap, reconciled October 22, 2026. Future sections are **planning only**, not implemented features or authorization to build them.
+**Canonical roadmap — reconciled October 28, 2026.** This is the existing Master Roadmap, consolidated rather than duplicated as PRODUCT_ROADMAP.md. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes actual current implementation. Planned items are not implementation or deployment authorization.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE**
 
-Personal comparison ranking remains central. Saving something never means it was cooked or ranked. Popularity and commercial relationships never affect personal scores.
+Personal cooking/comparison ranking stays central. Saving, cooking, ranking and publishing are separate actions. Recipes, engagement, recommendations, sponsorship and commercial relationships never change personal ranking evidence or scores.
 
-## Current status and review gates
+## CURRENT — implemented foundation
 
-- Core V1, Apple account gating, private structured/photo sync, versions, re-ranking, score visibility and native local sharing are implemented. Combined V1 checkpoint: `9968390465658c2a118d2668ee44a0958ea1ec1b`; release configuration: `067c7b69b223ea60067297132a765a0ccd352238`.
-- User-confirmed **StayGrubby 1.0 (1)** archive, validation and **TestFlight Internal Only upload succeeded**. Upload is not outstanding. This build predates the three presentation branches.
-- Completed Onboarding/Profile/Sharing work is integrated and passed physical-iPhone review as one application through [V1_INTEGRATION_REVIEW.md](V1_INTEGRATION_REVIEW.md).
-- The integrated physical approval does not authorize an automatic upload, build-number change or tester addition.
-- Default development is one primary workflow on main, one Simulator lane; see [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md). Feature worktrees remain for later cleanup.
-- Coordinated account deletion and canonical in-app/public policy foundations are implemented. The owner configured the Apple server credential, published the minimal Cloudflare website and completed the prior App Store privacy entries. Contact foundations remain `staygrubby.com`, `https://staygrubby.com/privacy`, `privacy@staygrubby.com` and `support@staygrubby.com`. The new optional-social policy is effective October 21, 2026 locally; publication and App Privacy review for social practices remain owner release actions. Physical Apple revocation/deletion verification is intentionally deferred, not a development blocker. No new app distribution occurred; do not reimplement existing account/cloud systems.
+| Area | Current status / important boundary |
+| --- | --- |
+| Core/V1 | Actual Dish/cooks/versions, photos, Course, Dietary/Contains/Avoid/custom tags, Sources, search/filter, global comparison ranking, re-rank, Top Version / All Versions and numerical score unlock implemented |
+| Ranking/calibration | Owner-accepted and frozen: Bradley–Terry evidence/order and reaction-conditioned displayed calibration; no manual ordering |
+| Accounts/cloud/privacy | Required Apple/Supabase permanent account; isolated offline working cooking store, structured/photo sync, restore, tombstones and coordinated account deletion implemented |
+| Release foundation | Static public website/policy foundation and prior App Privacy entries exist; historical 1.0 (1) Internal Only TestFlight upload succeeded; current release gates are separate below |
+| Post-TestFlight Cuisine | Optional primary Dish Cuisine/custom values, selection/search/filter and hosted migration complete |
+| Social foundation | Optional identity/avatar, mutual Sous Chefs/requests, explicit friends-only chronological Grub List, Hands/comments, blocks/reports, sharing preferences, Shared Cooking/Run It Back and in-app Order Up! implemented |
+| V1 product correction | Four tabs, cooking/Recipe separation, My Kitchen/Settings hierarchy and accepted score calibration implemented; ranking remains independent of social |
+| Food Bible foundation | Derived cooked-Dish cookbook, structured Recipe content, components, stable Recipe IDs, revision archive/link/provenance infrastructure and explicit manual Save implemented |
+| Food Bible UX 2.0 | Cookbook/Choose Dish search and photography, Recipe editor/reader and hosted cookbook search implemented; normal cookbook remains Dish-linked |
+| Natural/bulk ingredient entry | Deterministic offline ingredient parsing/paste, exact rational quantities and component-aware bulk entry implemented |
+| Recipe Creator V1 + refinement | **OWNER PHYSICALLY ACCEPTED**, confirmed in the October 28 workflow re-tool request; accepted content/metadata/allergen/native-ordering mechanics are stable |
 
-## Architecture and ranking independence
+Recipe Creator is an intelligent cookbook editor for messy input, not merely transcription formatting. Gemini is the standard consented intelligent path; Apple infrastructure is dormant for normal creation. No daily StayGrubby cap, recurring 30-day/date expiration, secret renewal or paid billing; burst abuse protection, friendly provider cooldown and manual/deterministic fallback remain. See [current architecture](STAYGRUBBY_ARCHITECTURE.md), [Recipe Style Guide](RECIPE_STYLE_GUIDE.md) and [accepted refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md).
 
-| Domain | Concepts | Boundary |
-| --- | --- | --- |
-| Private cooking history | Dish → CookingAttempt/version → unique RankedItem → Comparison | Things actually cooked; personal evidence, score/rank and history |
-| Recipe discovery | Recipe → Source/Creator → Want to Cook relationship | Discovered/saved ideas, separate from cooking/ranking |
-| Social | Profile → Friendship → Post → Tag → Like/Comment → Notification | Explicit publication and backend-enforced audience access |
+Current backend Recipe identity/revisions and preserved unlinked Recipes do **not** establish the standalone Recipe product planned next. Existing RecipeCook snapshots do **not** establish universal exact-revision binding for every CookingAttempt. Recipe photos and serving scaling are not implemented. Tickets/Want to Cook remain implemented infrastructure/data but dormant in normal V1 surfaces. Existing factual share achievements are not the future Stars system.
 
-A post may reference cooking; a recipe may supply provenance. Neither transfers another user's score/comparisons. Profile and post privacy are distinct. A public profile never automatically exposes private cooking records. A notification/deep link is never authorization to private content.
+Physical Apple account-deletion/revocation verification is intentionally deferred, not a development blocker. Owner acceptance is never inferred from automated tests. Default work is single-agent/main/one Simulator lane, with risk-based verification under AGENTS.md.
 
-Likes, comments, saves, made counters, creator popularity, friend activity, sponsorship and community popularity never modify ranking evidence or scores. Every user's ranking remains independent.
+## NEXT — Food Bible Architecture V2 (PLANNED, NOT IMPLEMENTED)
 
-## 1. Core App / V1 — current
+Goal: make Recipes independent, living cookbook objects while preserving actual cooking history, ranking, attribution and privacy. Build on the existing UUIDs, revision archive, explicit links and snapshots rather than replacing them.
 
-Implemented contracts to preserve:
+Planned scope:
 
-- iPhone upright portrait, light/dark, accessible Dynamic Type; canonical supplied **#stayGRUBBY** logo/icons and cream/red/charcoal system.
-- Native Apple → Supabase → permanent account → exact account-store readiness → personal app. No production guest mode; development bypass is Debug-only.
-- Local cooking/photos, notes, Sources, Course/Dietary/Contains/Avoid/custom tags, search/filter and Add/Edit/New Version workflows.
-- One global comparison ranking. Top Version / All Versions are projections preserving true global ranks, not alternative ranking truth.
-- Re-rank: Liked/Fine/Didn't Like → adaptive comparisons → automatic finalize/result; same CookingAttempt/version/RankedItem, retained historical evidence, no extra entry/unlock count.
-- **10 eligible ranked entries/versions** reveal numerical scores; visibility only. Delete below threshold relocks without changing evidence. No score leakage through UI/export/accessibility. First-unlock celebration is locally account-scoped; passive hydration does not replay it.
-- In-app score colors: muted coral 1.0–4.9, orange 5.0–7.5, gold 7.6–10.0. Exported scores always official red.
-- Approved image-only sharing: photo card 1080 × 1350; universal no-photo fallback 1080 × 1080; Top 3 1080 × 1350. Private global rank/movement never exports.
-- Evidence-backed achievements. NEW #1 and optional Updated Top 3 require a genuine new global leader; individual sharing stays primary. Reusable Profile Top 3 omits SCORES UNLOCKED; the genuine milestone includes it.
-- Private structured/photo backup/restore, durable retry, exact identities/evidence, tombstones/account isolation and no resurrection. Existing conflict rejection remains; no silent overwrite.
-- Integrated presentation: branded onboarding/loading/recovery, cooking-focused Profile/current Top 3, result identity/privacy hierarchy, preview retry and truthful native Save Image feedback. The subsequent friends-only Feed is implemented separately in section 5.
+- Recipe and Dish can each exist without the other, with optional explicit Recipe ↔ Dish linking and standalone Recipe creation.
+- Recipe-owned photo infrastructure, separate from cook-photo ownership, reusing safe private media patterns.
+- Stable Recipe identity/current revision, immutable historical revisions, living revision/history UX and **Save as New Recipe** for meaningful divergence.
+- An actual CookingAttempt preserves the exact Recipe revision/snapshot used; later edits do not rewrite cooking history.
+- Deterministic serving/yield scaling using existing exact rational foundations; AI does not perform quantity/unit math.
+- Simplified Paste Recipe with Gemini as standard intelligent implementation, just-in-time external-AI disclosure before first use, no redundant global AI toggle, and a corresponding privacy-policy update. This UX is planned; existing explicit consent must remain until replaced safely.
+- Begin Recipe/Dish metadata ownership cleanup. Recipe allergens become the primary ingredient-derived surface; determine cuisine ownership/projections from architecture evidence. Do not casually remove existing cook assertions or backfill classifications.
+- Short Recipe description if appropriate to the architecture, reusing the existing optional content field.
 
-Historical physical approvals apply to their tested builds; integrated approval is separate. See integration review and [V1_FINAL_REVISIONS_REVIEW.md](V1_FINAL_REVISIONS_REVIEW.md).
+Keep accepted Creator mechanics and ranking frozen. This documentation task does not authorize implementation, schema deployment, data migration or media transport. A future cycle should explicitly scope implementation/checkpoints against these goals.
 
-## 2. Accounts + Cloud / Privacy Foundation
+## AFTER V2 — Social Recipe Sharing + Description Improvements (PLANNED)
 
-Already implemented: native Apple/Supabase authentication, protected permanent-account ownership, private structured/photo sync, restore, receipts/revisions/tombstones and account isolation. A minimal private profile table and case-insensitive username constraint also exist; optional social display names/usernames and discoverability are implemented; mutual friendship and minimal friend-profile access are implemented; public web profiles remain future work. Build on this.
+- Make short Dish/CookingAttempt public descriptions apparent; keep Personal Notes private.
+- Recipe short descriptions, Recipe-only posts, rank-only posts and combined linked ranking + Recipe posts.
+- Deliberate deduplication: no duplicate/spam posts; Recipe edits do not automatically publish. Optional update sharing is a later explicit choice.
+- Grub List filters such as **All / Grub Ranks / Recipes**; Recipe posts open the Recipe.
+- Preserve creator/source attribution, revision provenance and Run It Back integration without copying another person's ranking.
+- Broader Sous Chef/notification overhaul, including the observed **Tag a Sous Chef notification issue**. Existing in-app notifications are not a claim that this issue is resolved.
 
-Implemented for the next release: deliberate account deletion UI, fresh Apple verification, a deployed server-only idempotent deletion state machine, private Storage/account/Auth cleanup ordering, exact local cleanup, and signed-in/signed-out access to the canonical policy with a public system link and offline copy. Owner-completed release closeout: the static Cloudflare website is publicly deployed with operational HTTPS/routing and App Store Connect App Privacy answers are complete. Real physical Apple credential revocation/deletion testing is intentionally deferred and remains unverified; it does not block continued core development. The single-source policy is `StayGrubby/Legal/PrivacyPolicy.md`; the app bundles it and the website build renders it. Optional identity, minimal friend profiles, explicit friends-only posts and server-enforced social ownership/visibility are now implemented. Future work includes public web profiles and compatibility with saved recipes, creator attribution and shared cooking. Backend enforcement is mandatory, not merely hidden UI.
+## THEN — dedicated Food Bible / Recipe UI overhaul (PLANNED)
 
-## 2A. Cuisine Selection — Post-TestFlight Core Enhancement
+Design around the settled architecture: exceptionally functional, clean, fast, beautiful, photo-forward and distinctly StayGrubby.
 
-Implemented and deployed: one optional primary Cuisine per Dish, stable predefined identifiers and account-owned custom values, searchable Add/Edit selection and display-only Rankings filtering that preserves global ranks. No inference, ranking change or recommendation system. See [Cuisine architecture and verification](CUISINE_REVIEW.md).
+Cover cookbook browsing, Recipe reader/create/edit, serving scaling, Recipe photos, revision/history, standalone/linking, metadata/allergens, keyboard response, reorder interaction, accessibility, restrained motion and light/dark appearance. Reuse accepted components and content mechanics. Do not redesign prematurely during the architecture task.
 
-Release-foundation owner closeout: public staygrubby.com HTTPS/routing and App Store Connect App Privacy questionnaire are complete; account-deletion foundation and delete-account v3 (private and social photos) are deployed. Implemented and automated/security verified; real Apple credential revocation remains physically unverified and intentionally deferred by the owner. No physical Apple revocation/deletion test is claimed. The new social policy is prepared locally; its public publication and App Privacy review remain owner actions before broader social distribution.
+## LATER — deferred product development
 
-## 3. Profiles + Friends
+This preserves the established broader progression after the nearer Recipe cycles. It is not a V1 backlog to implement all at once.
 
-Social identity is implemented: optional display name, unique editable @username, permanent anti-recycling profile-link reservations in addition to the original temporary handle reservation and discoverability off by default. Mutual friendship, blocking, minimal social profile lookup and Friends UI are implemented; the bounded chronological Friends Feed is enabled. See [social review](SOCIAL_DEVELOPMENT_REVIEW.md).
+| Sequence | Planned scope / boundary |
+| --- | --- |
+| Social/notification hardening | Reliable Sous Chef and in-app notification behavior; timing depends on actual social changes/release risk |
+| Personal History + Stats | Private history/activity/statistics from actual cooking/evidence; no ranking retuning |
+| Recipe Engine / Food Library / Tickets expansion | Resume Want to Cook/Tickets as appropriate; saving never creates cooked/ranked history; source/creator attribution and eligible save/made counters |
+| Public Web Sharing | Explicit native deep links to authorized destinations; minimal app-first fallback, not a public browsable Recipe catalog/feed or native-app replacement |
+| Social + Recipe Expansion / Send to Friend | Friend-directed Recipe/dish sharing, notifications, save/cook/rank/dismiss; no full chat platform without demonstrated need |
+| Social Polish / Push | APNs, preferences and privacy/tagging polish after reliable in-app behavior; no engagement spam |
+| Challenges / Bigger Social / Community Discovery | Only after dependable personal/social/safety foundations; sponsorship cannot change personal scores |
+| Creator / Commerce / broader discovery | Possible following/public-private follower migration, creator profiles/collections, partnerships and affiliate commerce; no conventional native display ads |
+| Personalized Taste Intelligence & Discovery | **Final long-term major phase**, after social, Recipes, public sharing and discovery foundations |
 
-Dedicated Friends experience/navigation. Prioritize **mutual friendship**, not followers: username search, requests, accept/decline, friends list/removal, minimal friend profiles and explicitly shared cooking posts. A profile does not publish private history. One-way following comes later for creators/chefs.
+Stars and a public/private follower model remain future product work. Mutual friendship is today's model. Tickets remain deferred from current user-facing V1 navigation; do not delete their records/domain because they are hidden.
 
-## 4. Online Safety / Moderation — before public social release
+Future Taste Intelligence may use permitted cooking/evidence, cuisines/ingredients/techniques, Recipes/sources, photos and explicit preferences to explain taste/discovery. Separate preference from execution, respect small-data uncertainty and never infer allergens/flavor with certainty from images. Recommendations, popularity, sponsorship and monetization never alter Bradley–Terry ranking. Personal ranking remains free; any future subscriptions must add genuine new value. **No new Taste Intelligence/AI infrastructure or paid service is authorized now.** Existing Recipe Creator is a separate accepted system.
 
-Minimum technical foundation implemented: authoritative blocks, private profile/post/comment reporting, moderation states and service-only hiding, friends-only content visibility and account-deletion cascades. Operator review/response procedures remain a distribution responsibility; no AI/vendor/admin dashboard is claimed.
+## RELEASE — separate authorization and gates
 
-Published-image moderation; text moderation for captions/comments/bios/display names/usernames; reporting, blocking, moderation states/hooks and enforcement. Build these with social authorization/lifecycles. Private local photos are not automatically public social content.
+Before broader external distribution, complete the relevant release work once, without treating every future idea as a release blocker:
 
-## 5. Friends Feed + Social Part 1
+- UGC filtering and operational moderation response: technical blocks/reports/states exist; actual safety coverage, responsible operator/cadence and response process still require release readiness.
+- Physical Universal Links verification/fix: native profile-route/AASA/fallback infrastructure exists, but physical behavior is owner-reported broken/deferred. Do not label it verified from configuration alone.
+- Launch/loading experience, including planned pasta-machine animation, under an explicit polish cycle.
+- Publish the latest tested canonical policy on the existing site; review privacy/AI/social disclosures and current App Store privacy answers. Latest local clarification is effective October 27; the refinement checkpoint did not publish it.
+- Confirm target OS/device support, age rating, screenshots/metadata, reviewer setup/access and actual beta distribution link. Do not invent a TestFlight link.
+- Explicitly approved External TestFlight preparation/Beta App Review/controlled beta; fixes as needed; Release Candidate; App Store 1.0.
 
-Chronological friends feed and explicit cooking snapshots are implemented, newest first, with pagination, friend-only social photos, private/profile boundaries and blocking/reporting/moderation. Basic likes/comments are implemented with server authorization, bounded comment pages and visible counts. No TikTok/Reels-style personalized feed. Safety/privacy dependencies precede public social release.
+Historical **1.0 (1) Internal Only upload is complete**; later feature checkpoints are not automatically uploaded. No new build number/archive/upload/App Store Connect action is authorized here. Deferred physical Apple deletion is not a reason to block unrelated development or another requirement to delete the owner's account.
 
-## 5A. Social UX enhancement — implemented, verified and deployed
+Use AGENTS.md's minimum justified verification. Broader regression/Release verification belongs at an actual release checkpoint, not every documentation or feature change.
 
-Optional profile photos/initials, normal Social settings, account-synced sharing defaults, social setup choice and per-entry New Dish/New Version sharing are implemented and deployed. Legacy/unset defaults OFF; each new entry can override. The completed-cook outbox reuses explicit social snapshots, preserves private ranking on failure, supports retry and pauses for review if scores unlock while a formerly locked share remains pending. Edit/re-rank/restore do not create sharing intent. Native image sharing remains separate.
+## Evidence and document ownership
 
-At the Social UX closeout, two additive migrations and the avatar-aware account-deletion function update were deployed with 18 aligned hashes and 24 RLS tables. The subsequent Shared Cooking phase adds its separate provenance/notification foundation (see section 6). Three photo buckets remain private and original private-data fingerprints remain preserved. Physical review remains before a separately approved upload. See [Social UX implementation/review](SOCIAL_UX_REVIEW.md). Publish the updated canonical policy and review App Privacy for profile photos before broader distribution. No next-phase functionality is included.
+Keep future planning canonical **here**. Current contracts live in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) and its task-specific source map. Domain specs explain implementation; historical reviews retain dated decisions, commands, tests and deployments. Old pending gates/provider preferences/counts are not current instructions.
 
-## 6. Shared Cooking + Social Part 2 + In-App Notifications
-
-Shared Cooking/Recreated/in-app notifications are implemented, with final integrated verification recorded in [SHARED_SOCIAL_REVIEW.md](SHARED_SOCIAL_REVIEW.md). Up to eight current friends can be invited through Cooked With after the owner's independent saved/ranked cook. Recipients explicitly Add to My Cooking or decline; claims reserve stable personal item IDs without creating cooking history. The normal editable new-cook/ranking flow creates their own attempt/item/evidence. Make This carries only consented safe metadata from accessible social posts. Retries/duplicate claims never merge rankings or copy scores. Sharing defaults/per-entry overrides still decide independent Feed publication.
-
-Notifications cover requests/acceptance, invitations/joining, completed recreations, likes and comments. Native bell/list/read state/Mark All Read, bounded chronological pages and authorized destinations respect current friendship/block/moderation/source access. Participant consent, pending removal/cancellation, deletion/nullification and private-history preservation are enforced server-side. Physical multi-account review remains separate from automated/Simulator verification. Push, public routes, Shared Cooking analytics and future recipe systems are not implemented.
-
-## 7. Personal History + Stats
-
-Useful private history/activity and understandable statistics from actual cooking/evidence. Historical milestone/recap cards and advanced achievements need separate scope. Presentation/statistics never retune ranking math.
-
-## 8. Recipe Engine / Food Library / Want to Cook
-
-True Recipe identity, dedicated saved **Want to Cook** collection, add/remove/find and retained Source/creator. Saving/discovering never creates cooked/ranked entries.
-
-**Discover → optionally Save → Cook → Made It → personal photos/notes/details → personal CookingAttempt → normal ranking.** Retain original provenance; never copy another score.
-
-Source types remain My Own, Online, Cookbook, Restaurant, Friend/Family and Other. Later source assistance may retrieve online title/thumbnail/site/platform/canonical link and cookbook catalog title/author/cover. Avoid unnecessary manual entry; no new source taxonomy now.
-
-Preserve original StayGrubby creator, website, cookbook/publisher or external social-post attribution. Recreation/sharing never falsely transfers authorship.
-
-Eventually show distinct eligible users who saved/made and friends who made, rather than raw attempt counts. Private/deleted/ineligible activity must not leak. Counters are informational and never affect personal ranking.
-
-The Recipes/Tickets/shareable-foundation cycle implements manual Recipe identity, private/friends recipe visibility, account-owned Tickets, editable Recipe → existing cooking/ranking, historical recipe snapshots and independent Run It Back provenance. See [RECIPE_TICKETS_SHARING_REVIEW.md](RECIPE_TICKETS_SHARING_REVIEW.md) for verification and remaining release gates. Recipe photos, discovery counters, scraping, parsing, nutrition and AI are not included.
-
-Profile links (`staygrubby.com/@username`) now have a native authenticated resolver, durable account identity, permanent anti-recycling slug reservations, native sharing and an app-only static fallback/AASA prepared from the existing signing identity. Hosted website publication and device association verification must be checked in the review; repository configuration alone is not end-to-end Universal Link approval. QR remains deferred.
-
-## 9. Public Web Sharing
-
-Future public StayGrubby web links are routing/deep-link surfaces into the native app, not a public recipe/content website. Stable intentionally shareable profile/post/dish/Shared Cooking/Recreated/recipe identifiers should open the exact native destination through a later Universal-Link layer; when the app is absent, a minimal branded interstitial should primarily offer Open/Download StayGrubby.
-
-Do not turn the website into a browsable recipe catalog, public web Feed, cooking-history site, SEO publication platform or native-app replacement. Nothing becomes public automatically; later resolvers must enforce explicit publication/privacy. Native local image sharing stays independent. No URLs, Universal Links, Associated Domains, QR or landing routes are implemented by the Shared Cooking phase.
-
-## 10. Social + Recipe Expansion / Send to Friend
-
-Send recipe/dish using Friends + notifications. Recipient may view, Save to Want to Cook, make a personal version, rank after cooking or dismiss. No full messaging/chat platform without demonstrated need. External sharing uses native sheets/public links.
-
-## 11. Social Polish / Push Notifications
-
-After reliable in-app notifications: Apple push, preferences, additional tagging/privacy controls and creator discovery improvements. No engagement spam.
-
-## 12. Challenges + Bigger Social
-
-Challenges/sponsored challenges only after reliable personal/social/safety foundations. Sponsorship never changes personal scores.
-
-## 13. Creator / Commerce / Discovery — later
-
-Possible creator profiles, one-way following, public web profiles, recipe/premium creator collections, brand/publisher partnerships, affiliate commerce and advanced discovery/trending. Tasteful website advertising may be considered; **keep conventional display advertising out of the native app**. Commercial relationships never alter personal ranking.
-
-## 14. Personalized Taste Intelligence & Discovery
-
-Final long-term major phase, after Friends, Social, Recipe Engine, public sharing and community discovery. Future inputs may include personal ranking/comparison history, cuisines, ingredients/proteins, techniques, flavor characteristics, recipes/original sources, permitted photos and explicit preferences/feedback. Possible outputs: individual taste profiles, favorite cuisines/ingredients/proteins, flavor profiles, personalized recipes/Discover, friend taste compatibility, recommendation explanations and optional premium advanced analytics.
-
-AI-assisted recipe/photo analysis may suggest characteristics; images alone never prove ingredients, allergens or flavor. Distinguish taste preference from execution quality and avoid confident conclusions from small datasets. Personal ranking and recommendations remain independent: recommendations, popularity, sponsorship, social engagement and monetization NEVER alter Bradley–Terry rankings. Personal ranking remains free; subscriptions must add genuine new value rather than restricting existing core features. No AI infrastructure, processing costs or intelligence integrations are introduced now.
-
-## Supporting references
-
-[RANKING_MODEL.md](RANKING_MODEL.md), [COOKING_MODEL.md](COOKING_MODEL.md), [ACCOUNT_ARCHITECTURE.md](ACCOUNT_ARCHITECTURE.md), [SYNC_ARCHITECTURE.md](SYNC_ARCHITECTURE.md), [MEDIA_SYNC_ARCHITECTURE.md](MEDIA_SYNC_ARCHITECTURE.md), [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), [V1_SHARING_ARCHITECTURE.md](V1_SHARING_ARCHITECTURE.md), [TESTFLIGHT_READINESS_REVIEW.md](TESTFLIGHT_READINESS_REVIEW.md).
-
-Keep future planning canonical here. Specialized documents explain implementation and dated verification rather than duplicating roadmap entries.
-
-## Current launch sequence
-
-**October 27, 2026:** The owner’s physical Recipe Creator review succeeded overall but found missing metadata, overly literal prose, incomplete names, an unsuitable Recipe allergen interaction and absent touch dragging. The focused cookbook refinement keeps Cloud Formatting as the standard consented path, adds versioned editorial normalization and honest metadata handling, reuses the cooking Contains checklist, and supplies native ingredient/method ordering. Existing provider allowances remain retired: no daily cap, no recurring expiration, no billing; 3/account/minute abuse guard and friendly cooldown remain. [Current refinement evidence and the single final physical procedure](RECIPE_CREATOR_REFINEMENT_REVIEW.md); [operational Recipe Style Guide](RECIPE_STYLE_GUIDE.md). Earlier [Creator metadata ownership audit](RECIPE_CREATOR_REVIEW.md) and [v11/editorial evidence](RECIPE_ENGINE_ACCEPTANCE.md) remain historical. Mechanics are not frozen until this final owner review passes.
-
-Tickets remain dormant. Ranking/score calibration remains frozen. Physical Universal Links are owner-confirmed broken and intentionally deferred; remaining UGC moderation hardening remains a later external-beta/release gate. No distribution was authorized/performed in this cycle. The later phase ordering and final long-term Taste Intelligence phase remain unchanged.
-
-### Agreed next Recipe sequence — documentation only
-
-After the cookbook mechanics pass physical acceptance, preserve this order. This is not implementation authorization in the current cycle. Existing revision/snapshot/description/social infrastructure is retained, not falsely treated as absent or replaced.
-
-1. Independent Recipe architecture: Recipe and Dish can each exist without the other; optional explicit linking.
-2. Recipe-owned photo upload.
-3. Living Recipe revision UX: editing the same Recipe creates an immutable revision, current remains live, an actual cook remembers the exact revision used, and Save as New Recipe represents real divergence. Build on existing revision/snapshot infrastructure.
-4. Recipe/Dish metadata ownership migration, with Recipe as the primary ingredient/allergen surface and deliberate projections to actual cooks. Do not remove current Dish controls before that migration.
-5. Short Recipe descriptions, building on the existing optional introduction field.
-6. More apparent short Dish/social descriptions, distinct from private Personal Notes.
-7. Dedicated Recipe social posts.
-8. Combined Dish + Recipe social posts when explicitly linked.
-9. Grub List filtering such as All / Grub Ranks / Recipes.
-10. Dedicated Food Bible / Recipe Maker UI overhaul after architecture is stable.
-
-No independent-Recipe linking, Recipe photos, broad metadata migration or UI overhaul is implemented by this refinement. The later overall roadmap and final long-term Personalized Taste Intelligence phase remain unchanged.
-
-### Foundation chronology (historical)
-
-The Product Structure + Score Calibration cycle is owner accepted at `2770700`. **Food Bible Foundation** is the current authorized phase: Dish-linked derived cookbook, structured multi-component recipes, manual editor/reader and clearly separate Tickets lifecycle. This preserves ranking and reaction calibration. It does not implement the Intelligent Recipe Engine.
-
-After this foundation and owner physical review: **External TestFlight preparation + controlled beta**, then beta fixes / Release Candidate, then App Store 1.0. Intelligent Recipe Engine V1 is targeted during/after beta for 1.0 but is **not an App Store launch blocker**.
-
-Future RecipeParser providers return the same editable RecipeDraft: Apple Intelligence / Foundation Models on supported devices first, Google Gemini through a protected Supabase Edge Function as free-tier-only fallback, then manual entry. Providers remain invisible to users. No paid billing/API cost without explicit owner approval. Native deterministic Swift performs future quantities/scaling/unit math, never AI. No AI SDK, keys, model, function or conversion engine is implemented here.
-
-Later roadmap sequencing, including final Personalized Taste Intelligence & Discovery, remains unchanged. See STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md for implementation and release gates.
-
-### V1 owner-acceptance correction: Food Bible UX 2.0
-
-The current correction cycle redesigns cookbook browsing, Choose Dish search/photography and the single RecipeDraft editor/reader. **Tickets / Want to Cook is deferred from V1 user-facing navigation and actions**, while its implemented backend/domain/data remain preserved for the later Recipe/Food Library phase above. The accepted reaction-informed score calibration stays frozen. Universal Links require an owner physical retest after the verified profile-fallback routing correction. This is not authorization to begin the Intelligent Recipe Engine; no provider, scaling, timers or full cooking mode is introduced. See STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md for current evidence.
+Historical milestone evidence remains in [V1_INTEGRATION_REVIEW.md](V1_INTEGRATION_REVIEW.md), [SOCIAL_DEVELOPMENT_REVIEW.md](SOCIAL_DEVELOPMENT_REVIEW.md), [SHARED_SOCIAL_REVIEW.md](SHARED_SOCIAL_REVIEW.md), [RECIPE_TICKETS_SHARING_REVIEW.md](RECIPE_TICKETS_SHARING_REVIEW.md), [STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md](STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md), [STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md](STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md), [RECIPE_CREATOR_REVIEW.md](RECIPE_CREATOR_REVIEW.md), [RECIPE_CREATOR_REFINEMENT_REVIEW.md](RECIPE_CREATOR_REFINEMENT_REVIEW.md) and [release evidence](STAYGRUBBY_V1_RELEASE_READINESS_REVIEW.md). Reconciliation replaces the prior roadmap's stale launch sequence/duplicated chronology; it does not erase those historical evidence files.

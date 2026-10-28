@@ -1,5 +1,7 @@
 # Integrated account presentation — October 15, 2026
 
+> Current overview: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). Required Apple/Supabase authentication, structured/photo sync and the four-tab social/cooking/Recipe shell are implemented. Sections below record successive account checkpoints: old guest/hidden-Feed/queued-only/no-photo boundaries and deployment counts are historical. Use [AGENTS.md](AGENTS.md) for verification and deployment authority.
+
 The onboarding and cooking-focused Profile presentation were integrated without changes to Apple/Supabase services, account resolution, store readiness, session restoration, sign-out or sync contracts. AuthenticationGatePresentation is copy/recovery-action projection only. ProfileSnapshot reads eligible global entries through ScoreUnlockPolicy; it cannot grant access, fit rankings or mutate the graph. ProfileAccountReview is an explicitly isolated DEBUG-only subtree with disposable account/backend state, absent from Release.
 
 Current release: user-confirmed 1.0 (1) Internal Only upload succeeded. The newer integrated presentation passed physical-iPhone review on October 18, 2026; that approval did not create a new upload. Sign-out and individual cooking deletion remain distinct from permanent account deletion. The next-release account-deletion implementation is described below. Future usernames, public profile concepts and friendship/privacy work are planning in STAYGRUBBY_MASTER_ROADMAP.md, not current behavior.

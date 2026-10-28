@@ -1,5 +1,7 @@
 > Current presentation, October 22, 2026: ranking mathematics, evidence and adaptive selection in this document are unchanged. User-facing `RankedItem.score` now uses the reaction-conditioned `ScoreCalibration` mapping described in [STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md](STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md). `PreferenceEstimate.score` and its interval remain the historical relative diagnostic transform, not the current calibrated UI scale. Latest completed re-rank assessment is persisted in existing opaque diagnostic JSON, without changing BT priors/outcomes or score-unlock eligibility.
 
+> Current application contract: one global cooking ranking, independent versions, Top Version / All Versions projections, re-ranking and score visibility are implemented. Ranking mathematics/evidence and current calibration are accepted/frozen under [AGENTS.md](AGENTS.md). The MVP status below is historical; use [current architecture](STAYGRUBBY_ARCHITECTURE.md) for product state and the calibration note above for displayed scores.
+
 # StayGrubby ranking system — technical specification
 
 Status: local native MVP, hardened October 2, 2026. Ranking logic lives in

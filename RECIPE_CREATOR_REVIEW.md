@@ -1,6 +1,6 @@
 # StayGrubby Recipe Creator
 
-> Historical Creator checkpoint. The owner physically reviewed it successfully overall and requested a focused cookbook/content/allergen/reorder refinement before freezing mechanics. Current evidence and the single final owner test are in [RECIPE_CREATOR_REFINEMENT_REVIEW.md](RECIPE_CREATOR_REFINEMENT_REVIEW.md). The ownership audit below remains applicable.
+> Historical Creator checkpoint, followed by the cookbook/content/allergen/reorder refinement. **Recipe Creator V1 + refinement is OWNER PHYSICALLY ACCEPTED**, confirmed in the October 28 workflow re-tool request. [Current architecture](STAYGRUBBY_ARCHITECTURE.md) and [accepted refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md) supersede pending gates and contract-2 details below; the ownership audit remains useful. Preserve this checkpoint’s original test/procedure evidence as history.
 
 Current product definition: **preserve the user's recipe; construct the recipe document intelligently**. This supersedes the v11/v13 transcription/editorial-only product definition. V11's real-iPhone acceptance remains historical evidence, not acceptance of this new Creator contract.
 
@@ -93,7 +93,7 @@ All **35/35 existing hosted data/Storage counts and hashes match this cycle's fr
 
 Checkpoint history preserves the accepted v11 baseline: `9d96c19` initially implemented the original allowance request, then `4692c1e` removed it after the owner's steering. Creator implementation checkpoint: `e125a66d9fda532851ac05c7d933b02d3d9731e8` (**31 files**). The separate six-file documentation checkpoint records the final evidence/current contract and removes obsolete active setup instructions. Its final HEAD and normal-push result are reported at completion; no history rewrite or credential workaround. Ranking/calibration/unlock/re-ranking, independent Recipes/Dish linking, Tickets, Universal Links, notifications/loading animation, social/photo-sync/auth architecture and TestFlight/App Store Connect remain out of scope.
 
-## One final owner test
+## Historical owner test procedure — acceptance now confirmed
 
 Install a **new Xcode build**, use the existing account and **Cloud Formatting**, and paste all of `StayGrubbyTests/Fixtures/RecipeEngineCanonicalKale.txt` unchanged once. Do not reset data or repeatedly retry intermediate versions.
 

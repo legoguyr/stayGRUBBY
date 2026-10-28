@@ -1,4 +1,6 @@
-# StayGrubby development workflow
+# StayGrubby development workflow — retained integration history
+
+> Permanent development instructions now live in [AGENTS.md](AGENTS.md). Current product state is [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); future scope is [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md). This file preserves the completed parallel experiment and its checkout-safety evidence, not a competing instruction system.
 
 ## Default: one primary Codex workflow on main
 
@@ -24,13 +26,6 @@ Integration preserves the three worker commits as ancestors. [V1_INTEGRATION_REV
 
 Do **not** delete worker branches/worktrees during integration. They are eligible for later cleanup only after their exact commits are confirmed ancestors of main and their checkouts are clean; preserve any subsequent work.
 
-## Continuing contracts
+## Continuing authority
 
-- Preserve ranking math/evidence, score visibility, independent versions and true global ranks.
-- Preserve account readiness, ownership, structured/photo sync, tombstones and official assets/renderers.
-- Use isolated test stores/media; never reset/seed the real account or preserved demo library as test fixtures.
-- Keep development controls compile-time excluded from Release; never embed privileged credentials.
-- Verify the combined application after cross-surface changes. Stop and diagnose process exhaustion; do not start more Simulators.
-- No automatic upload, tester changes or submission. Version 1.0 (1) already uploaded Internal Only; a later build follows physical review and explicit distribution approval.
-
-The canonical future plan is [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md); specialized architecture documents remain authoritative for implementation contracts.
+Use AGENTS.md for scope, data safety, protected systems, isolated fixtures, risk-based testing, commits and distribution permissions. A combined verification pass is justified by actual cross-surface risk, not required for every unrelated change. The retained worktrees above must not be deleted automatically; preserve subsequent owner work and obtain scoped cleanup authorization.

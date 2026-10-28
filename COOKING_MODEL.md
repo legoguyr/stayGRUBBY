@@ -1,5 +1,7 @@
 # StayGrubby cooking data foundation
 
+> Current product state is indexed in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). This domain specification retains dated Phase 1 and later implementation evidence; old phase limitations are not current app boundaries. [AGENTS.md](AGENTS.md) governs workflow/verification; the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md) owns future scope.
+
 The dated validation/file inventories below describe historical checkpoints. The current project/app identity is StayGrubby; domain entities, schema and store paths are unchanged by the rename (see `PROJECT_RENAME.md`).
 
 Phase 1 adds local cooking metadata around the existing generic ranking system. The Bradley–Terry fit, score mapping, insertion policy, confidence calculation, and original ranking tests are unchanged. See `RANKING_MODEL.md` for inference details.

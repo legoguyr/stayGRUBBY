@@ -1,5 +1,7 @@
 # StayGrubby V1 release readiness
 
+> Historical release-readiness evidence. Current release status/gates are consolidated in [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md), with implementation truth in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) and verification policy in [AGENTS.md](AGENTS.md). Later Food Bible/Recipe Creator work supersedes old no-AI, active Tickets, pending Creator acceptance and policy-version statements below. Recipe Creator V1/refinement is now owner physically accepted. No new release test or distribution is claimed by this reconciliation.
+
 This is the central release-readiness record, superseding historical pending-state reports where explicitly updated below. Starting HEAD: `9a0e9934005b3ccdd2d9e887e0312369e7996772`, clean `main`, three ahead of tracking `origin/main`. Preserve the three accepted Food Bible commits. One agent/current checkout/one Simulator lane. No archive, TestFlight upload, App Store Connect change, real account deletion or AI implementation is authorized or performed.
 
 ## Assessment and remaining gates
