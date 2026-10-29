@@ -6,9 +6,20 @@ Populate yield, prepMinutes, cookMinutes and totalMinutes for an interpretable c
 export function heatAlternative(raw:string):boolean {
  return raw.split(/[.;\n]/).some(s=>/\bor\b/i.test(s)&&/\b(?:chili|chile|chilies|chiles|chillies|pepper flakes)\b/i.test(s));
 }
+export function broilerClause(raw:string):string|undefined {
+ return raw.split(/[.!?;\n]/).find(c=>/\bturn on (?:the )?(?:boiler|broiler)\b/i.test(c)&&/\b(?:cook|heat)\b.{0,80}\bunder\b/i.test(c));
+}
 export function styleText(value:string,raw:string,kind:string):string {
  let s=value.toLowerCase().replace(/\b(?:chili|chilies|chiles|chillies)\b/g,'chile');
+ // Closed spelling/inflection equivalences, applied to source AND output.
+ // No stemming of ingredient varieties, amounts, temperatures or doneness.
+ s=s.replace(/\b(?:wisk|whisking|whisked)\b/g,'whisk')
+  .replace(/\b(?:stirring|stirred)\b/g,'stir').replace(/\b(?:heated|heating)\b/g,'heat')
+  .replace(/\b(?:browned|browning)\b/g,'brown').replace(/\bprevents\b/g,'prevent');
  if(kind==='ingredient'||kind==='step'){
+  // An explicitly singular measure OF an ingredient means one measure. A
+  // bare vessel ("crack an egg into a cup") supplies no ingredient quantity.
+  s=s.replace(/\b(?:a|an)\s+(teaspoon|tablespoon|cup|pinch|ounce|pound|gram|kilogram|milliliter|millilitre|liter|litre)\s+of\b/g,'1 $1 of');
   s=s.replace(/\b(?:some|a little|as needed|to taste|preferred)\b/g,'');
   if(heatAlternative(raw))s=s.replace(/\b(?:red\s+)?pepper flakes\b/g,'chile');
  }
@@ -17,6 +28,11 @@ export function styleText(value:string,raw:string,kind:string):string {
   s=s.replace(/\b(?:assembly|preparation)\b/g,'preparation')+' preparation';
  }
  if(kind==='step'){
+  s=s.replace(/\b(?:diced|dicing)\b/g,'dice').replace(/\b(?:chopped|chopping)\b/g,'chop').replace(/\b(?:sliced|slicing)\b/g,'slice')
+   .replace(/\bsaut(?:é|e)(?:ing|ed)?(?!\p{L})/gu,'saute');
+  if(broilerClause(raw))s=s.replace(/\b(?:boiler|broiler|broil(?:ed|ing)?)\b/g,'broiler');
+  if(/\b(?:mid|medium)[ -]low\b/i.test(raw)&&/\b(?:heat|pan)\b/i.test(raw))s=s.replace(/\bmid[ -]low\b/g,'medium-low');
+  if(/\bdunk(?:ed|ing)?\b/i.test(raw))s=s.replace(/\b(?:dunk(?:ed|ing)?|dip(?:ped|ping)?)\b/g,'dunk');
   s=s.replace(/\b(?:onto|over)\b/g,'on');
   s=s.replace(/\bbring (?:it )?to (?:a )?boil\b/g,'boil').replace(/\bice bath\b/g,'ice water');
   if(/\b(?:kale|spinach|chard|greens|leaves)\b/i.test(raw)&&/\b(?:blanch|blanche|boil)\b/i.test(raw)&&/\bstarts? to wet\b/i.test(raw))s=s.replace(/\bwilt(?:ed|ing)?\b/g,'wet');

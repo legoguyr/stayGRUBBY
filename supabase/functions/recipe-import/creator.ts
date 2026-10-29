@@ -14,6 +14,11 @@ export function effectiveSource(raw:string):string {
  return raw.replace(new RegExp(`\\b${q}\\s+([a-z]+(?:\\s+[a-z]+){0,2})\\s*,?\\s+(?:no,?|actually,?|sorry,? I mean)\\s+(${q})\\s+\\1\\b`,'gi'),(_all,name,amount)=>`${amount} ${name}`);
 }
 function numericToken(word:string):number|null {const m=word?.match(/^n(\d+)\/(\d+)$/);return m?+m[1]/+m[2]:null;}
+function servingHeader(raw:string):string|null {
+ const first=raw.split(/[.!?\n]/)[0].trim();
+ if(/^(?:cook|bake|simmer|boil|poach|heat|fry|roast|wait|rest)\b/i.test(first))return null;
+ return first.match(/^.{1,120}\b(for\s+(?:\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s+(?:people|servings|portions))?)$/i)?.[1]??null;
+}
 function durations(text:string):number[]{const t=tokens(text);return t.flatMap((w,i)=>{const n=numericToken(w);return n!==null&&['min','hour'].includes(t[i+1])?[n*(t[i+1]==='hour'?60:1)]:[];});}
 function explicit(raw:string,key:string):number|null {
  const t=tokens(raw);
@@ -24,11 +29,11 @@ function explicit(raw:string,key:string):number|null {
    const n=numericToken(t[i+2]);if(n!==null&&['min','hour'].includes(t[i+3]))return n*(t[i+3]==='hour'?60:1);
   }
  }
- return null;
+ return key==='yield'&&servingHeader(raw)?number(servingHeader(raw)!):null;
 }
 function statement(raw:string,key:string):string {
  const role=key==='yield'?'(?:serves|servings|yield|makes)':key==='prepMinutes'?'(?:prep(?:aration)? time)':key==='cookMinutes'?'(?:cook(?:ing)? time)':'(?:total time|elapsed time)';
- return raw.match(new RegExp(`\\b${role}\\b[^.;\\n]{0,180}`,'i'))?.[0]??raw.slice(0,180);
+ return raw.match(new RegExp(`\\b${role}\\b[^.;\\n]{0,180}`,'i'))?.[0]??(key==='yield'?servingHeader(raw):null)??raw.slice(0,180);
 }
 
 function yieldLabel(raw:string,n:number):string {

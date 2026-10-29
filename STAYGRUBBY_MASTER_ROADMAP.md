@@ -33,6 +33,8 @@ Physical Apple account-deletion/revocation verification is intentionally deferre
 
 Implementation is complete; automated verification/deployment evidence is maintained in [FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md). Owner physical acceptance remains pending and must not be inferred from tests. Recipe Creator V1/refinement remains owner-accepted/frozen; V2 changed its entry/consent/ownership integration, not its accepted construction mechanics. The latest local policy is prepared/tested; public publication requires the owner’s existing Cloudflare login.
 
+October 29 physical Paste Recipe acceptance failed on the owner's informal French toast and Shakshuka inputs. The combined server/native source-validation correction is automated-verified (187 Edge/39 distinct native tests). The French toast subset is deployed as `recipe-import` v18; final v19 deployment awaits explicit approval after automatic review rejected the additional live update. Deployment plus a fresh iPhone build/retest is required before closing this gate; no new product phase has begun.
+
 No broader Recipe UI redesign, Recipe social post types, social description/notification overhaul, Universal Links fix or distribution is included.
 
 ## NEXT — Social Recipe Sharing + Description Improvements (PLANNED, after V2 acceptance)

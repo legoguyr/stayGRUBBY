@@ -49,12 +49,18 @@ export function preserveEditorialFacts(value:Extraction,raw:string,polished=fals
    else return null;
   } else target.set(target.get().replace(/[.]$/,'')+` (${lock.suffix})${target.method?'.':''}`);
  }
- const text=fields.map(f=>f.get()).join('\n'),output=editorialTokens(text,raw,'step');
+ const text=fields.map(f=>f.get()).join('\n'),output=editorialTokens(text,raw,'step',polished);
  // Amount/time/temperature evidence and preparation words may not disappear
  // merely to improve prose. Existing field guards still check their bindings.
- for(const word of tokens(raw))if((/^n\d/.test(word)||['cold','cubed','fresh','minced','chopped','grated','peeled','trimmed','softened'].includes(word))&&!output.includes(word)&&!(/^n\d/.test(word)&&metadataTokens.includes(word)))return null;
+ for(const word of tokens(raw))if(/^n\d/.test(word)||['cold','cubed','fresh','minced','chopped','grated','peeled','trimmed','softened'].includes(word)){
+  const required=polished&&!/^n\d/.test(word)?editorialTokens(word,raw,'step',true):[word];
+  if((!required.length||required.some(w=>!output.includes(w)))&&!(/^n\d/.test(word)&&metadataTokens.includes(word)))return null;
+ }
  // Keep each supplied alternative group together, including uncertain words.
- for(const clause of raw.split(/[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b/i)){
+ for(const original of raw.split(/[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b/i)){
+  // "A day or so old" is approximation, not an ingredient alternative.
+  // Other OR groups still require their supplied alternatives together.
+  const clause=polished?original.replace(/\bor so\b/gi,''):original;
   if(!/\bor\b/i.test(clause))continue;
   const group=clause.split(/\bif\b/i)[0].trim();
   if(polished&&heatAlternative(group)&&fields.some(f=>/\boptional\b/i.test(f.get())&&/\b(?:chiles?|chilies|chili|chillies)\b/i.test(f.get())&&!tokens(f.get()).some(t=>/^n\d/.test(t))))continue;

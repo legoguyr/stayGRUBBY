@@ -1,0 +1,532 @@
+{
+  "origin": "Owner exact input October 29, 2026; literal backslash/newline separators retained. Output is synthetic, NOT a captured Gemini response.",
+  "rawSHA256": "1ad40c62f6d27cfbe0a0ca3150fb9f9ee90744f95af34385c01243b321f9b91d",
+  "raw": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the eggs) continue until all is mixed. Let cool a little but stay lukewarm\\\nHeat a pan on mid-low and melt some butter. Dunk bread in custard for 15 seconds per side (the heat makes it soak in really fast and too much time will make it fall apart). Gently cook over mid low heat /low to prevent burning. Flip once brown. Keep under a towel to stay hot. Serve with warm Vermont maple syrup, cinnamon and sugar, berries and powdered sugar\\\nI like this French toast bc it makes the bread rly soft and kinda mushy.",
+  "provider": {
+    "title": "Challah French Toast",
+    "yield": null,
+    "source": null,
+    "metadata": {
+      "yield": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "prepMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "cookMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "totalMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "cuisine": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "allergenHints": []
+    },
+    "components": [
+      {
+        "title": "Custard",
+        "after": [],
+        "ingredients": [
+          "1 cup heavy cream",
+          "2 cups whole milk",
+          "4 egg yolks",
+          "1/2 cup sugar",
+          "1 tbsp cinnamon",
+          "pinch of salt"
+        ],
+        "steps": [
+          "Heat 1 cup heavy cream and 2 cups whole milk on low until around 135 (warm), stirring frequently to prevent burning on the bottom.",
+          "Whisk 4 egg yolks with 1/2 cup sugar, 1 tbsp cinnamon and a pinch of salt.",
+          "Sea salt is preferred for this.",
+          "Temper the yolks to form a custard: slowly pour in a little warm dairy, whisking to prevent cooking the eggs. Continue until all is mixed.",
+          "Let the custard cool a little but stay lukewarm."
+        ]
+      },
+      {
+        "title": "French Toast",
+        "after": [
+          0
+        ],
+        "ingredients": [
+          "challah bread",
+          "butter",
+          "warm Vermont maple syrup",
+          "cinnamon",
+          "sugar",
+          "berries",
+          "powdered sugar"
+        ],
+        "steps": [
+          "Use challah bread that is a day or so old and firm. Slice into thick pieces and let sit to dry out.",
+          "Heat a pan on medium-low and melt butter.",
+          "Dip the bread in custard for 15 seconds per side. Too much time will make it fall apart.",
+          "Gently cook on medium-low heat to prevent burning. Flip once browned.",
+          "Keep under a towel to stay hot.",
+          "Serve with warm Vermont maple syrup, cinnamon and sugar, berries and powdered sugar."
+        ]
+      }
+    ]
+  },
+  "pairs": [
+    {
+      "kind": "ingredient",
+      "text": "1 cup heavy cream",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Whisk the egg yolks.",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Stirring frequently prevents burning.",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Stir frequently to prevent burning.",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Heat the pan on medium-low.",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Dip bread in custard for 15 seconds per side.",
+      "valid": true
+    },
+    {
+      "kind": "step",
+      "text": "Flip once browned.",
+      "valid": true
+    },
+    {
+      "kind": "ingredient",
+      "text": "2 cups heavy cream",
+      "valid": false
+    },
+    {
+      "kind": "ingredient",
+      "text": "1 cup whole milk",
+      "valid": false
+    },
+    {
+      "kind": "ingredient",
+      "text": "1 tbsp ground cinnamon",
+      "valid": false
+    },
+    {
+      "kind": "ingredient",
+      "text": "4 large egg yolks",
+      "valid": false
+    },
+    {
+      "kind": "ingredient",
+      "text": "vanilla extract",
+      "valid": false
+    },
+    {
+      "kind": "step",
+      "text": "Heat dairy to 135°F.",
+      "valid": false
+    },
+    {
+      "kind": "step",
+      "text": "Bake the bread at 350°F for 20 minutes.",
+      "valid": false
+    },
+    {
+      "kind": "step",
+      "text": "Flip once golden brown.",
+      "valid": false
+    }
+  ],
+  "otherCases": [
+    {
+      "raw": "Soup tonight. Use chopped 2 cups carrots with 1 cup stock. Heat on mid-low, stirring frequently. Cook until carrots are soft.",
+      "provider": {
+        "title": "Soup",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "Soup",
+            "after": [],
+            "ingredients": [
+              "2 cups chopped carrots",
+              "1 cup stock"
+            ],
+            "steps": [
+              "Heat 2 cups chopped carrots with 1 cup stock on medium-low, stirring frequently.",
+              "Cook until carrots are soft."
+            ]
+          }
+        ]
+      },
+      "extraction": {
+        "title": "Soup",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "Soup",
+            "after": [],
+            "ingredients": [
+              "2 cups chopped carrots",
+              "1 cup stock"
+            ],
+            "steps": [
+              "Heat 2 cups chopped carrots with 1 cup stock on medium-low, stirring frequently.",
+              "Cook until carrots are soft."
+            ]
+          }
+        ],
+        "editorialVersion": 3
+      }
+    },
+    {
+      "raw": "Wisk 2 eggs with salt. Heat a pan on mid-low. Cook eggs in butter. Flip once brown.",
+      "provider": {
+        "title": "Eggs",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "Eggs",
+            "after": [],
+            "ingredients": [
+              "2 eggs",
+              "salt",
+              "butter"
+            ],
+            "steps": [
+              "Whisk 2 eggs with salt.",
+              "Heat a pan on medium-low. Cook eggs in butter. Flip once browned."
+            ]
+          }
+        ]
+      },
+      "extraction": {
+        "title": "Eggs",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "Eggs",
+            "after": [],
+            "ingredients": [
+              "2 eggs",
+              "salt",
+              "butter"
+            ],
+            "steps": [
+              "Whisk 2 eggs with salt.",
+              "Heat a pan on medium-low. Cook eggs in butter. Flip once browned."
+            ]
+          }
+        ],
+        "editorialVersion": 3
+      }
+    },
+    {
+      "raw": "Use dry 1/2 cup white wine and 1 cup stock. Heat on low while stirring.",
+      "provider": {
+        "title": "White Wine",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "White Wine",
+            "after": [],
+            "ingredients": [
+              "1/2 cup dry white wine",
+              "1 cup stock"
+            ],
+            "steps": [
+              "Heat dry white wine and stock on low while stirring."
+            ]
+          }
+        ]
+      },
+      "extraction": {
+        "title": "White Wine",
+        "yield": null,
+        "source": null,
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cookMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "totalMinutes": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "cuisine": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "allergenHints": []
+        },
+        "components": [
+          {
+            "title": "White Wine",
+            "after": [],
+            "ingredients": [
+              "1/2 cup dry white wine",
+              "1 cup stock"
+            ],
+            "steps": [
+              "Heat dry white wine and stock on low while stirring."
+            ]
+          }
+        ],
+        "editorialVersion": 3
+      }
+    }
+  ],
+  "extraction": {
+    "title": "Challah French Toast",
+    "yield": null,
+    "source": null,
+    "metadata": {
+      "yield": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "prepMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "cookMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "totalMinutes": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "cuisine": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "allergenHints": []
+    },
+    "components": [
+      {
+        "title": "Custard",
+        "after": [],
+        "ingredients": [
+          "1 cup heavy cream",
+          "2 cups whole milk",
+          "4 egg yolks",
+          "1/2 cup sugar",
+          "1 tbsp cinnamon",
+          "pinch of salt"
+        ],
+        "steps": [
+          "Heat 1 cup heavy cream and 2 cups whole milk on low until around 135 (warm), stirring frequently to prevent burning on the bottom.",
+          "Whisk 4 egg yolks with 1/2 cup sugar, 1 tbsp cinnamon and a pinch of salt.",
+          "Sea salt is preferred for this.",
+          "Temper the yolks to form a custard: slowly pour in a little warm dairy, whisking to prevent cooking the eggs. Continue until all is mixed.",
+          "Let the custard cool a little but stay lukewarm."
+        ]
+      },
+      {
+        "title": "French Toast",
+        "after": [],
+        "ingredients": [
+          "challah bread",
+          "butter",
+          "15 seconds per side",
+          "warm Vermont maple syrup",
+          "cinnamon",
+          "sugar",
+          "powdered sugar",
+          "berries"
+        ],
+        "steps": [
+          "Use challah bread that is a day or so old and firm. Slice into thick pieces and let sit to dry out.",
+          "Heat a pan on medium-low and melt butter.",
+          "Dip the bread in custard for 15 seconds per side. Too much time will make it fall apart.",
+          "Gently cook on medium-low heat to prevent burning. Flip once browned.",
+          "Keep under a towel to stay hot.",
+          "Serve with warm Vermont maple syrup, cinnamon and sugar, berries and powdered sugar."
+        ]
+      }
+    ],
+    "editorialVersion": 3
+  }
+}

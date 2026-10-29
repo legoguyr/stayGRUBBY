@@ -1,4 +1,4 @@
-import { styleText, heatAlternative } from './style.ts';
+import { styleText, heatAlternative, broilerClause } from './style.ts';
 // Bounded lexical normalization, not culinary inference or AI recipe math.
 // Keep Swift RecipeSourceEvidence behavior aligned with these focused contract fixtures.
 const aliases:Record<string,string>={"tablespoon": "tbsp", "tablespoons": "tbsp", "tbsp": "tbsp", "tbs": "tbsp", "teaspoon": "tsp", "teaspoons": "tsp", "tsp": "tsp", "cup": "cup", "cups": "cup", "oz": "oz", "ounce": "oz", "ounces": "oz", "lb": "lb", "lbs": "lb", "pound": "lb", "pounds": "lb", "g": "g", "gram": "g", "grams": "g", "kg": "kg", "kilogram": "kg", "kilograms": "kg", "ml": "ml", "milliliter": "ml", "milliliters": "ml", "millilitre": "ml", "millilitres": "ml", "l": "l", "liter": "l", "liters": "l", "litre": "l", "litres": "l", "clove": "clove", "cloves": "clove", "minute": "min", "minutes": "min", "min": "min", "mins": "min", "hour": "hour", "hours": "hour", "hr": "hour", "hrs": "hour", "pinch": "pinch", "pinches": "pinch", "fahrenheit": "f", "celsius": "c", "salted": "salt", "blanche": "blanch", "blanched": "blanch", "blanching": "blanch", "boiling": "boil", "boiled": "boil", "cooking": "cook", "cooked": "cook", "baking": "bake", "baked": "bake", "blending": "blend", "blended": "blend", "mixing": "mix", "mixed": "mix", "crispy": "crisp", "till": "until"};
@@ -24,11 +24,31 @@ export function tokens(input:string):string[] {
  .map(v=>/^\d/.test(v)?rational(v):aliases[v]??v).filter(v=>!stops.has(v));
 }
 function contains(source:string[],value:string[]):boolean {return value.length>0 && (` ${source.join(' ')} `).includes(` ${value.join(' ')} `);}
+// Informal "heavy 1 cup cream" -> "1 cup heavy cream". Move only ONE
+// unchanged amount/unit block inside ONE source phrase, preserving every other
+// word's order. Conjunction/clause boundaries must survive stop-word removal:
+// "cream and 1 cup milk" is never evidence for a cream/milk ingredient amount.
+function quantityFirstIngredient(output:string[],raw:string,polished:boolean):boolean {
+ if(!polished||!/^n\d/.test(output[0])||output.slice(1).some(w=>/^n\d/.test(w)))return false;
+ const size=units.has(output[1])?2:1,quantity=output.slice(0,size),identity=output.slice(size);
+ if(!identity.length)return false;
+ const phrases=raw.split(/[,;:\n\\()]|(?<!\d)\.|\.(?!\d)|\b(?:and|or|with|then|until|but)\b/i);
+ for(const phrase of phrases){
+  const source=editorialTokens(phrase,raw,'ingredient',true);
+  for(let i=0;i<=source.length-output.length;i++){
+   const span=source.slice(i,i+output.length);
+   for(let n=0;n<=span.length-size;n++)if(span.slice(n,n+size).join(' ')===quantity.join(' ')&&[...span.slice(0,n),...span.slice(n+size)].join(' ')===identity.join(' '))return true;
+  }
+ }
+ return false;
+}
 export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'preparation_binding'|'metadata_phrase'|'ingredient_phrase';
 export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step',polished=false):GroundingIssue|null {
  if(kind==='ingredient'&&(/^\s*-\s*\d/.test(value)||/\b\d+\s*\/\s*0\b/.test(value)))return 'invalid_quantity';
+ if(polished&&kind==='step'&&/\b(?:boiler|broiler|broil(?:ed|ing)?)\b/i.test(value)&&/\b(?:alternatively|or|optional)\b/i.test(broilerClause(raw)??'')&&!/\b(?:alternatively|or|optional)\b/i.test(value))return 'source_word';
  const source=editorialTokens(raw,raw,kind,polished),output=editorialTokens(value,raw,kind,polished);if(!output.length)return 'source_empty';
  if(contains(source,output))return null;
+ if(kind==='ingredient'&&quantityFirstIngredient(output,raw,polished))return null;
  const absent=output.filter(v=>!source.includes(v));
  if(absent.length)return absent.some(v=>/^n\d/.test(v))?'source_number':'source_word';
  for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return 'quantity_unit_pair';

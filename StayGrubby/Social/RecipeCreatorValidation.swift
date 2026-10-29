@@ -20,6 +20,11 @@ nonisolated enum RecipeCreatorValidation {
         let t = RecipeSourceEvidence.tokens(text)
         return t.indices.compactMap { i in guard i+1 < t.count, let n = tokenNumber(t[i]), ["min","hour"].contains(t[i+1]) else { return nil }; return n * (t[i+1] == "hour" ? 60 : 1) }
     }
+    private static func servingHeader(_ raw: String) -> String? {
+        let first = raw.components(separatedBy: CharacterSet(charactersIn: ".!?\n")).first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard first.range(of: #"^(?:cook|bake|simmer|boil|poach|heat|fry|roast|wait|rest)\b"#, options: [.regularExpression,.caseInsensitive]) == nil else { return nil }
+        return RecipeEditorialEvidence.matches(#"^.{1,120}\b(for\s+(?:\d{1,3}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?:\s+(?:people|servings|portions))?)$"#, first).first?[1]
+    }
     static func explicit(_ raw: String, key: String) -> Double? {
         let t = RecipeSourceEvidence.tokens(raw)
         for i in t.indices {
@@ -27,11 +32,11 @@ nonisolated enum RecipeCreatorValidation {
             let role = key == "prepMinutes" ? ["prep","preparation"] : key == "cookMinutes" ? ["cook","cooking"] : ["total","elapsed"]
             if key != "yield", role.contains(t[i]), i+3 < t.count, t[i+1] == "time", let n = tokenNumber(t[i+2]), ["min","hour"].contains(t[i+3]) { return n * (t[i+3] == "hour" ? 60 : 1) }
         }
-        return nil
+        return key == "yield" ? servingHeader(raw).flatMap(number) : nil
     }
     static func statement(_ raw: String, key: String) -> String {
         let role = key == "yield" ? "(?:serves|servings|yield|makes)" : key == "prepMinutes" ? "(?:prep(?:aration)? time)" : key == "cookMinutes" ? "(?:cook(?:ing)? time)" : "(?:total time|elapsed time)"
-        return RecipeEditorialEvidence.matches(#"\b"# + role + #"\b[^.;\n]{0,180}"#, raw).first?.first ?? String(raw.prefix(180))
+        return RecipeEditorialEvidence.matches(#"\b"# + role + #"\b[^.;\n]{0,180}"#, raw).first?.first ?? (key == "yield" ? servingHeader(raw) : nil) ?? String(raw.prefix(180))
     }
     static func yieldLabel(_ raw: String, n: Double) -> String {
         let t = RecipeSourceEvidence.tokens(statement(raw, key: "yield")), count = String(format: "%g", n)

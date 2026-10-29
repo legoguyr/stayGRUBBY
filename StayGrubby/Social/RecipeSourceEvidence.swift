@@ -39,6 +39,28 @@ nonisolated enum RecipeSourceEvidence {
     static func contains(_ source: [String], _ value: [String]) -> Bool {
         !value.isEmpty && (" " + source.joined(separator: " ") + " ").contains(" " + value.joined(separator: " ") + " ")
     }
+    /// Move one unchanged quantity block inside one source phrase. Never borrow
+    /// an amount across a conjunction/clause or change the identity word order.
+    private static func quantityFirstIngredient(_ output: [String], raw: String, polished: Bool) -> Bool {
+        func numeric(_ word: String) -> Bool { word.hasPrefix("n") && word.dropFirst().first?.isNumber == true }
+        guard polished, let first = output.first, numeric(first), !output.dropFirst().contains(where: numeric) else { return false }
+        let size = output.count > 1 && units.contains(output[1]) ? 2 : 1
+        let quantity = Array(output.prefix(size)), identity = Array(output.dropFirst(size))
+        guard !identity.isEmpty else { return false }
+        let boundary = #"[,;:\n\\()]|(?<!\d)\.|\.(?!\d)|\b(?:and|or|with|then|until|but)\b"#
+        let phrases = raw.replacingOccurrences(of: boundary, with: "\n", options: [.regularExpression,.caseInsensitive]).components(separatedBy: "\n")
+        for phrase in phrases {
+            let source = editorialTokens(phrase, raw: raw, kind: .ingredient, polished: true)
+            guard source.count >= output.count else { continue }
+            for i in 0...(source.count-output.count) {
+                let span = Array(source[i..<(i+output.count)])
+                for n in 0...(span.count-size) where Array(span[n..<(n+size)]) == quantity {
+                    if Array(span.prefix(n)) + Array(span.dropFirst(n+size)) == identity { return true }
+                }
+            }
+        }
+        return false
+    }
     /// Bounded editorial equivalents. Culinary nouns, numbers and units remain evidence.
     static func editorialTokens(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> [String] {
         var text = polished ? RecipeStyleEvidence.text(value, raw: raw, kind: kind) : value.lowercased()
@@ -67,9 +89,15 @@ nonisolated enum RecipeSourceEvidence {
     }
     static func grounded(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> Bool {
         if case .ingredient = kind, value.range(of: #"^\s*-\s*\d|\b\d+\s*/\s*0\b"#, options: .regularExpression) != nil { return false }
+        if polished, case .step = kind,
+           value.range(of: #"\b(?:boiler|broiler|broil(?:ed|ing)?)\b"#, options: [.regularExpression,.caseInsensitive]) != nil,
+           let clause = RecipeStyleEvidence.broilerClause(raw),
+           clause.range(of: #"\b(?:alternatively|or|optional)\b"#, options: [.regularExpression,.caseInsensitive]) != nil,
+           value.range(of: #"\b(?:alternatively|or|optional)\b"#, options: [.regularExpression,.caseInsensitive]) == nil { return false }
         let source = editorialTokens(raw, raw: raw, kind: kind, polished: polished), output = editorialTokens(value, raw: raw, kind: kind, polished: polished)
         guard !output.isEmpty else { return false }
         if contains(source, output) { return true }
+        if case .ingredient = kind, quantityFirstIngredient(output, raw: raw, polished: polished) { return true }
         guard output.allSatisfy({ source.contains($0) }) else { return false }
         for i in output.indices where output[i].hasPrefix("n") && output[i].dropFirst().first?.isNumber == true {
             if i+1 < output.count && units.contains(output[i+1]) && !contains(source, Array(output[i...i+1])) { return false }

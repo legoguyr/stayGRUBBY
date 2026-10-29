@@ -68,14 +68,20 @@ nonisolated enum RecipeEditorialEvidence {
                 set(f, text + " (" + lock.suffix! + ")" + (f.method ? "." : ""))
             }
         }
-        let output = RecipeSourceEvidence.editorialTokens(fields.map(get).joined(separator: "\n"), raw: raw, kind: .step)
+        let output = RecipeSourceEvidence.editorialTokens(fields.map(get).joined(separator: "\n"), raw: raw, kind: .step, polished: polished)
         for word in RecipeSourceEvidence.tokens(raw) {
             let numeric = word.hasPrefix("n") && word.dropFirst().first?.isNumber == true
-            if (numeric || ["cold","cubed","fresh","minced","chopped","grated","peeled","trimmed","softened"].contains(word)) && !output.contains(word) && !(numeric && metadataTokens.contains(word)) { return nil }
+            if numeric || ["cold","cubed","fresh","minced","chopped","grated","peeled","trimmed","softened"].contains(word) {
+                let required = polished && !numeric ? RecipeSourceEvidence.editorialTokens(word, raw: raw, kind: .step, polished: true) : [word]
+                if (required.isEmpty || required.contains(where: { !output.contains($0) })) && !(numeric && metadataTokens.contains(word)) { return nil }
+            }
         }
         let separator = #"[.,;:\n]|\b(?:add|blend|cook|boil|mix|top|take|with|and)\b"#
         let clauses = raw.replacingOccurrences(of: separator, with: "\n", options: [.regularExpression,.caseInsensitive]).components(separatedBy: "\n")
-        for clause in clauses where clause.range(of: #"\bor\b"#, options: [.regularExpression,.caseInsensitive]) != nil {
+        for original in clauses {
+            // Approximate prose "a day or so old" is not an ingredient choice.
+            let clause = polished ? original.replacingOccurrences(of: #"\bor so\b"#, with: "", options: [.regularExpression,.caseInsensitive]) : original
+            guard clause.range(of: #"\bor\b"#, options: [.regularExpression,.caseInsensitive]) != nil else { continue }
             let group = clause.replacingOccurrences(of: #"\bif\b.*$"#, with: "", options: [.regularExpression,.caseInsensitive])
             if polished && RecipeStyleEvidence.heatAlternative(group) && fields.contains(where: { f in
                 get(f).range(of: #"\boptional\b"#, options: [.regularExpression,.caseInsensitive]) != nil && get(f).range(of: #"\b(?:chiles?|chilies|chili|chillies)\b"#, options: [.regularExpression,.caseInsensitive]) != nil && !RecipeSourceEvidence.tokens(get(f)).contains(where: { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true })
