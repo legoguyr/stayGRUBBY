@@ -54,6 +54,7 @@ struct RecipeLiveRegressionView: View {
             let backend = SupabaseAccountBackend(configuration: try .load())
             guard let identity = try await backend.restoredIdentity() else { report.blocked = "existing_session_missing"; try write(); message = "Existing session unavailable; no provider call made."; return }
             let args = ProcessInfo.processInfo.arguments
+            let diagnosticReview = args.contains("--recipe-regression-diagnostic-review")
             let position = args.firstIndex(of: "--recipe-regression-batch")
             let batch = position.flatMap { $0+1 < args.count ? Int(args[$0+1]) : nil } ?? 1
             // Inspect this request's result before explicitly launching another fixture.
@@ -74,9 +75,9 @@ struct RecipeLiveRegressionView: View {
                 message = "Approved call \(index+1) of at most 6 · \(item.id)"
                 let began = Date()
                 var entry = Entry(id: item.id, duration: 0)
-                struct Input: Encodable { var text: String; let cloudConsent = true; let contractVersion = 3 }
+                struct Input: Encodable { var text: String; let cloudConsent = true; let contractVersion = 3; var diagnosticReview: Bool? }
                 do {
-                    let wire: Wire = try await backend.client.functions.invoke("recipe-import", options: FunctionInvokeOptions(body: Input(text: item.raw)), decode: { data, response in
+                    let wire: Wire = try await backend.client.functions.invoke("recipe-import", options: FunctionInvokeOptions(body: Input(text: item.raw, diagnosticReview: diagnosticReview ? true : nil)), decode: { data, response in
                         Wire(data: data, status: response.statusCode, requestID: response.value(forHTTPHeaderField: "x-recipe-request-id"), stage: response.value(forHTTPHeaderField: "x-recipe-stage"))
                     })
                     entry.status = wire.status; entry.requestID = wire.requestID; entry.stage = wire.stage
@@ -89,6 +90,8 @@ struct RecipeLiveRegressionView: View {
                 } catch FunctionsError.httpError(let status, let data) {
                     entry.status = status
                     let object = (try? JSONSerialization.jsonObject(with: data)) as? [String:Any]
+                    // Private test artifact only; still rejected and never opened/saved as a Recipe.
+                    if diagnosticReview, status == 422, object?["review"] is [String:Any] { entry.wire = data }
                     func safe(_ name: String) -> String? { guard let value = object?[name] as? String, value.range(of: #"^[a-z_]{1,48}$"#, options: .regularExpression) != nil else { return nil }; return value }
                     entry.stage = safe("stage"); entry.code = safe("code"); entry.reason = safe("reason")
                     entry.requestID = (object?["requestID"] as? String).flatMap { UUID(uuidString: $0)?.uuidString }

@@ -54,11 +54,16 @@ export async function boundedText(response: Request|Response, maximum:number): P
 export function handler(d:Dependencies) {
  return async (req:Request):Promise<Response>=>{
   const requestID=crypto.randomUUID(), start=Date.now();let stage="request";
+  // Request-local, opt-in review for the authenticated caller's own generation.
+  // Never send this candidate to diagnostics/logging or treat it as an accepted Recipe.
+  let diagnosticReview=false, reviewCandidate:unknown;
   const report=(event:Record<string,unknown>)=>d.log?.({requestID,stage,durationMS:Date.now()-start,...event});
   const headers=()=>({"Cache-Control":"no-store","x-recipe-request-id":requestID,"x-recipe-stage":stage,"x-recipe-configured":d.key?"true":"false"});
   const fail=(status:number,code:string,providerStatus?:number,reason?:string,diagnostic:Record<string,unknown>={})=>{
    report({result:code,httpStatus:status,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{}),...diagnostic});
-   return Response.json({code,stage,requestID,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{})},{status,headers:headers()});
+   const review=diagnosticReview&&status===422&&stage==="validation"&&reviewCandidate!==undefined
+    ? {candidate:reviewCandidate,...diagnostic} : undefined;
+   return Response.json({code,stage,requestID,...(providerStatus?{providerStatus}:{}),...(reason?{reason}:{}),...(review?{review}:{})},{status,headers:headers()});
   };
   if(req.method!=="POST")return fail(405,"method_not_allowed");
   const token=req.headers.get("authorization")?.match(/^Bearer (\S+)$/i)?.[1];
@@ -68,7 +73,8 @@ export function handler(d:Dependencies) {
    if(!req.headers.get("content-type")?.startsWith("application/json"))return fail(400,"invalid_request");
    let body;
    try {body=JSON.parse(await boundedText(req,40_000));}catch{return fail(413,"invalid_or_oversized_input");}
-   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&![2,3].includes(body.contractVersion)) || !body.text.trim())return fail(400,"invalid_request");
+   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion","diagnosticReview"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&![2,3].includes(body.contractVersion)) || (body.diagnosticReview!==undefined&&typeof body.diagnosticReview!=="boolean") || !body.text.trim())return fail(400,"invalid_request");
+   diagnosticReview=body.diagnosticReview===true;
    if([...body.text].length>12_000 || new TextEncoder().encode(body.text).length>32_000)return fail(413,"input_too_long");
    const creator=body.contractVersion===2||body.contractVersion===3, polished=body.contractVersion===3;
    const source=creator?effectiveSource(body.text):body.text;
@@ -97,6 +103,7 @@ export function handler(d:Dependencies) {
     if(new TextEncoder().encode(json).length>96_000)return fail(422,"invalid_recipe");
     stage="validation";let extraction;
     try{extraction=JSON.parse(json);}catch{return fail(422,"invalid_recipe",200,"structured_json");}
+    if(diagnosticReview)reviewCandidate=structuredClone(extraction);
     const metadataState=(v:any)=>Object.fromEntries(['yield','prepMinutes','cookMinutes','totalMinutes','cuisine'].map(k=>{const p=v?.metadata?.[k];return[k,{present:p?.value!=null,origin:['provided','derived','estimated','unknown'].includes(p?.origin)?p.origin:'absent'}];}));
     const metadataBefore=creator?metadataState(extraction):undefined;
     // Never let presentation cleanup erase hard schema/numeric failures.

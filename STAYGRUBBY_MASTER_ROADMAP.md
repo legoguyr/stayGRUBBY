@@ -37,6 +37,8 @@ October 29 physical Paste Recipe acceptance failed on the owner's informal Frenc
 
 November 1 recovery preserved the committed/deployed implementation, passed focused V2/scaling/diagnostic checks and installed the normal 1.0 (2) iPhone development build. Owner physical acceptance and live Paste Recipe accuracy remain pending; zero of the six approved diagnostic calls have run. Public policy publication/live-route verification remains a release follow-up. The dated recovery evidence and one owner checklist are in the V2 review. No next-phase implementation was started.
 
+Subsequent Live Recipe Creator validation remains open: **1/6** approved live calls used; French toast received Gemini HTTP 200 but v19 returned a source-validation HTTP 422. Shakshuka/kale have not run. The owner-approved diagnostic-only **v20 is deployed/source-verified**; 195 mocked Edge tests pass, with normal validation/provider behavior unchanged. The direct diagnostic request is blocked because the phone cannot launch while locked and the Simulator SDK has no session. No credential/Auth-policy workaround was used. Capture the actual rejected candidate through an authorized client before changing validation; no live quality acceptance or next-phase progress is claimed.
+
 No broader Recipe UI redesign, Recipe social post types, social description/notification overhaul, Universal Links fix or distribution is included.
 
 ## NEXT — Social Recipe Sharing + Description Improvements (PLANNED, after V2 acceptance)
