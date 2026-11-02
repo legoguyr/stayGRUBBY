@@ -1,4 +1,4 @@
-import { type Extraction, validationReport } from "./contract.ts";
+import { type Extraction, validationReport, componentReferenceSource } from "./contract.ts";
 import { factualWords, groundingIssue, numericEvidence, tokens } from "./evidence.ts";
 
 // Retrieval only: these words do NOT become an acceptance allowlist. Every
@@ -78,7 +78,7 @@ export function reconcile(value:unknown,raw:string,polished=false):{extraction:E
  for(const [i,part] of extraction.components.entries()){
   if(part.title!==null&&groundingIssue(part.title,raw,'title',polished)){part.title=null;record(`components[${i}].title`);}
   for(const [key,kind,max] of [['ingredients','ingredient',500],['steps','step',2000]] as const)for(const [n,text] of part[key].entries()){
-   if(!groundingIssue(text,raw,kind,polished))continue;
+   if(!groundingIssue(text,polished&&kind==='step'?componentReferenceSource(extraction,raw):raw,kind,polished))continue;
    // Remove only a closed set of unsupported presentation modifiers when the
    // remaining edited sentence independently passes every source guard. Do not
    // erase uncertain ingredient varieties, numbers, negation or cooking verbs.

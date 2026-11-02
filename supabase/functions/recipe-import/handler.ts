@@ -1,4 +1,4 @@
-import { polish, STYLE_INSTRUCTIONS } from './style.ts';
+import { polish, STYLE_INSTRUCTIONS, FIDELITY_INSTRUCTIONS } from './style.ts';
 import { construct, effectiveSource, cuisines, allergens } from "./creator.ts";
 import { MODEL, INSTRUCTIONS, LEGACY_INSTRUCTIONS, schema, creatorSchema, cookbookSchema, validationReport } from "./contract.ts";
 import { preserveEditorialFacts } from "./editorial.ts";
@@ -88,7 +88,7 @@ export function handler(d:Dependencies) {
    try {
     stage="provider";const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
      method:"POST",signal:controller.signal,headers:{"content-type":"application/json","x-goog-api-key":d.key},
-     body:JSON.stringify({systemInstruction:{parts:[{text:creator?(polished?STYLE_INSTRUCTIONS:INSTRUCTIONS)+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?(polished?cookbookSchema:creatorSchema):schema}}}}),
+     body:JSON.stringify({systemInstruction:{parts:[{text:creator?(polished?STYLE_INSTRUCTIONS+"\n"+FIDELITY_INSTRUCTIONS:INSTRUCTIONS)+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?(polished?cookbookSchema:creatorSchema):schema}}}}),
     });
     if(!upstream.ok){
      let error:unknown;try{error=JSON.parse(await boundedText(upstream,16_000));}catch{/* Never return/log raw upstream bytes. */}
@@ -128,7 +128,10 @@ export function handler(d:Dependencies) {
     extraction=locked;
     if(polished)extraction.editorialVersion=3;
     stage="complete";report({contractVersion:creator?(polished?3:2):1,...(creator?{metadataBefore,metadataAfter:metadataState(extraction),componentCount:extraction.components.length,unnamedComponents:extraction.components.filter((p:any)=>!p.title?.trim()).length}:{}),result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
-    return Response.json(extraction,{headers:headers()});
+    // Explicit development tooling can inspect the original successful
+    // candidate too: HTTP 200 alone does not establish construction quality.
+    const capture=diagnosticReview&&req.headers.get('x-staygrubby-development-review')==='candidate';
+    return Response.json(capture?{extraction,review:{candidate:reviewCandidate,recoveredFields}}:extraction,{headers:headers()});
    } catch {
     if(controller.signal.aborted)return fail(504,"formatting_timeout");
     return stage==="provider" ? fail(503,"provider_connection") : fail(422,"invalid_recipe");

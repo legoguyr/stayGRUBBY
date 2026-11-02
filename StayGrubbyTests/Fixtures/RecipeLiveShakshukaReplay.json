@@ -1,0 +1,162 @@
+{
+  "origin": "Real Gemini candidate from failed call 6/v24; offline final-handler replay only, NOT a new live pass",
+  "raw": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press out all the juices add in tomato sauce mix and let simmer for 5 to 10 minutes. Crack egg into a cup use a spoon to make a divot in the sauce and pour the egg in there. Repeat until all eggs are used cover poach until egg whites are cooked and yolk is still runny about 3 minutes.  Alternatively, you can turn on the boiler and cook the eggs under there. Serve with toast and feta cheese.",
+  "provider": {
+    "title": "Shakshuka",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": "Vegetable Base and Sauce",
+        "ingredients": [
+          "2 yellow onions, diced",
+          "1 bell pepper, diced",
+          "3 cloves garlic, chopped",
+          "olive oil",
+          "salt to taste",
+          "pepper to taste",
+          "2 cups cherry tomatoes, sliced in half the long way",
+          "1 teaspoon paprika",
+          "2 pinches cumin",
+          "2 cups tomato sauce"
+        ],
+        "steps": [
+          "Sauté diced onion and bell pepper in olive oil until translucent, seasoning with salt and pepper.",
+          "Add chopped garlic while sautéing after onions are translucent.",
+          "Add sliced cherry tomatoes, 1 teaspoon paprika, and 2 pinches of cumin.",
+          "Cover and let cook until mushy, then press out all the juices.",
+          "Add in tomato sauce, mix, and let simmer for 5 to 10 minutes."
+        ],
+        "after": []
+      },
+      {
+        "title": "Eggs and Assembly",
+        "ingredients": [
+          "8 eggs",
+          "toast, for serving",
+          "feta cheese, for serving"
+        ],
+        "steps": [
+          "Crack each egg into a cup, use a spoon to make a divot in the Vegetable Base and Sauce, and pour the egg in there.",
+          "Repeat until all eggs are used.",
+          "Cover and poach until egg whites are cooked and yolk is still runny, about 3 minutes, or alternatively, turn on the broiler and cook the eggs under there.",
+          "Serve with toast and feta cheese."
+        ],
+        "after": [
+          0
+        ]
+      }
+    ],
+    "metadata": {
+      "yield": {
+        "value": "4 servings",
+        "origin": "provided",
+        "evidence": "Shakshuka for 4."
+      },
+      "prepMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Estimated active preparation time for chopping onions, bell pepper, garlic, and halving cherry tomatoes."
+      },
+      "cookMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Estimated from sautéing onions and bell pepper, cooking tomatoes until mushy, simmering sauce for 5 to 10 minutes, and poaching or broiling eggs for about 3 minutes."
+      },
+      "totalMinutes": {
+        "value": 30,
+        "origin": "estimated",
+        "evidence": "Total estimated time combining prep and cooking workflow."
+      },
+      "cuisine": {
+        "value": "Middle Eastern",
+        "origin": "derived",
+        "evidence": "Shakshuka is a traditional Middle Eastern and North African dish."
+      },
+      "allergenHints": [
+        "milk",
+        "egg",
+        "wheat"
+      ]
+    }
+  },
+  "extraction": {
+    "title": "Shakshuka",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": "Vegetable Base and Sauce",
+        "ingredients": [
+          "2 yellow onions, diced",
+          "1 bell pepper, diced",
+          "pepper to taste",
+          "olive oil",
+          "salt to taste",
+          "3 cloves garlic, chopped",
+          "2 cups cherry tomatoes, sliced in half the long way",
+          "1 teaspoon paprika",
+          "2 pinches cumin",
+          "2 cups tomato sauce"
+        ],
+        "steps": [
+          "Sauté diced onion and bell pepper in olive oil until translucent, seasoning with salt and pepper.",
+          "Add chopped garlic while sautéing after onions are translucent.",
+          "Add sliced cherry tomatoes, 1 teaspoon paprika, and 2 pinches of cumin.",
+          "Cover and let cook until mushy, then press out all the juices.",
+          "Add in tomato sauce, mix, and let simmer for 5 to 10 minutes."
+        ],
+        "after": []
+      },
+      {
+        "title": "Eggs and Assembly",
+        "ingredients": [
+          "8 eggs",
+          "toast, for serving",
+          "feta cheese, for serving"
+        ],
+        "steps": [
+          "Crack each egg into a cup, use a spoon to make a divot in the Vegetable Base and Sauce, and pour the egg in there.",
+          "Repeat until all eggs are used.",
+          "Cover and poach until egg whites are cooked and yolk is still runny, about 3 minutes, or alternatively, turn on the broiler and cook the eggs under there.",
+          "Serve with toast and feta cheese."
+        ],
+        "after": []
+      }
+    ],
+    "metadata": {
+      "yield": {
+        "value": "4",
+        "origin": "provided",
+        "evidence": "for 4"
+      },
+      "prepMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+      },
+      "cookMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+      },
+      "totalMinutes": {
+        "value": 30,
+        "origin": "estimated",
+        "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+      },
+      "cuisine": {
+        "value": null,
+        "origin": "unknown",
+        "evidence": null
+      },
+      "allergenHints": [
+        "milk",
+        "egg",
+        "wheat"
+      ]
+    },
+    "editorialVersion": 3
+  },
+  "pairs": []
+}

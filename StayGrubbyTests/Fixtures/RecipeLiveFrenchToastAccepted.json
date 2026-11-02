@@ -1,0 +1,185 @@
+{
+  "origin": "Real Gemini candidate from call 5/v23, replayed through final corrected handler offline; NOT a fresh live call or physical acceptance",
+  "raw": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the eggs) continue until all is mixed. Let cool a little but stay lukewarm\\\nHeat a pan on mid-low and melt some butter. Dunk bread in custard for 15 seconds per side (the heat makes it soak in really fast and too much time will make it fall apart). Gently cook over mid low heat /low to prevent burning. Flip once brown. Keep under a towel to stay hot. Serve with warm Vermont maple syrup, cinnamon and sugar, berries and powdered sugar\\\nI like this French toast bc it makes the bread rly soft and kinda mushy.",
+  "provider": {
+    "title": "French Toast",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": "Challah Preparation",
+        "ingredients": [
+          "challah bread"
+        ],
+        "steps": [
+          "Slice day or so old challah bread into thick pieces.",
+          "Let the slices sit to dry out."
+        ],
+        "after": []
+      },
+      {
+        "title": "Custard",
+        "ingredients": [
+          "1 cup cream",
+          "2 cups whole milk",
+          "4 egg yolks",
+          "1/2 cup sugar",
+          "1 tbsp cinnamon",
+          "pinch sea salt"
+        ],
+        "steps": [
+          "Heat heavy cream and whole milk on low till around 135, stirring frequently to prevent burning on the bottom.",
+          "Whisk egg yolks with sugar, cinnamon, and sea salt.",
+          "Temper the yolks once the dairy is heated by slowly pouring in a little dairy to begin with while whisking to avoid cooking the eggs, then continue until all is mixed.",
+          "Let the custard cool a little while staying lukewarm."
+        ],
+        "after": []
+      },
+      {
+        "title": "Cooking and Serving",
+        "ingredients": [
+          "butter",
+          "warm Vermont maple syrup",
+          "cinnamon",
+          "sugar",
+          "berries",
+          "powdered sugar"
+        ],
+        "steps": [
+          "Heat a pan on mid-low and melt butter.",
+          "Dunk challah bread slices from Challah Preparation into Custard for 15 seconds per side.",
+          "Gently cook over mid-low heat or low to prevent burning.",
+          "Flip once brown.",
+          "Keep under a towel to stay hot.",
+          "Serve with warm Vermont maple syrup, cinnamon, sugar, berries, and powdered sugar."
+        ],
+        "after": [
+          0,
+          1
+        ]
+      }
+    ],
+    "metadata": {
+      "yield": {
+        "value": "4 servings",
+        "origin": "estimated",
+        "evidence": null
+      },
+      "prepMinutes": {
+        "value": 20,
+        "origin": "estimated",
+        "evidence": null
+      },
+      "cookMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": null
+      },
+      "totalMinutes": {
+        "value": 35,
+        "origin": "estimated",
+        "evidence": null
+      },
+      "cuisine": {
+        "value": "French",
+        "origin": "provided",
+        "evidence": "French toast recipe."
+      },
+      "allergenHints": [
+        "milk",
+        "egg",
+        "wheat"
+      ]
+    }
+  },
+  "extraction": {
+    "title": "French Toast",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": "Challah Preparation",
+        "ingredients": [
+          "challah bread"
+        ],
+        "steps": [
+          "Slice day or so old challah bread into thick pieces.",
+          "Let the slices sit to dry out."
+        ],
+        "after": []
+      },
+      {
+        "title": "Custard",
+        "ingredients": [
+          "1 cup heavy cream",
+          "2 cups whole milk",
+          "4 egg yolks",
+          "1/2 cup sugar",
+          "1 tbsp cinnamon",
+          "pinch sea salt"
+        ],
+        "steps": [
+          "Heat heavy cream and whole milk on low till around 135, stirring frequently to prevent burning on the bottom.",
+          "Whisk egg yolks with sugar, cinnamon, and sea salt.",
+          "Temper the yolks once the dairy is heated by slowly pouring in a little dairy to begin with while whisking to avoid cooking the eggs, then continue until all is mixed.",
+          "Let the custard cool a little while staying lukewarm."
+        ],
+        "after": []
+      },
+      {
+        "title": "Cooking and Serving",
+        "ingredients": [
+          "butter",
+          "warm Vermont maple syrup",
+          "cinnamon",
+          "sugar",
+          "powdered sugar",
+          "berries"
+        ],
+        "steps": [
+          "Heat a pan on mid-low and melt butter.",
+          "Dunk challah bread slices from Challah Preparation into Custard for 15 seconds per side (the heat makes it soak in really fast and too much time will make it fall apart).",
+          "Gently cook over mid-low heat or low to prevent burning.",
+          "Flip once brown.",
+          "Keep under a towel to stay hot.",
+          "Serve with warm Vermont maple syrup, cinnamon, sugar, berries, and powdered sugar."
+        ],
+        "after": []
+      }
+    ],
+    "metadata": {
+      "yield": {
+        "value": "4 servings",
+        "origin": "estimated",
+        "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+      },
+      "prepMinutes": {
+        "value": 20,
+        "origin": "estimated",
+        "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+      },
+      "cookMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+      },
+      "totalMinutes": {
+        "value": 35,
+        "origin": "estimated",
+        "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+      },
+      "cuisine": {
+        "value": "French",
+        "origin": "estimated",
+        "evidence": "French toast recipe."
+      },
+      "allergenHints": [
+        "milk",
+        "egg",
+        "wheat"
+      ]
+    },
+    "editorialVersion": 3
+  },
+  "pairs": []
+}

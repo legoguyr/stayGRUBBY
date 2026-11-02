@@ -40,3 +40,8 @@ Deno.test('diagnostic candidate state cannot leak into another request',async()=
 Deno.test('malformed and oversized provider output is never reflected as private review',async()=>{
  for(const text of ['not structured JSON','x'.repeat(96_001)]){const f=setup({fetch:async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text}]}}]})});const r=await f.run(request({diagnosticReview:true}));assert(r.status===422&&!Object.hasOwn(await r.json(),'review'));}
 });
+Deno.test('explicit development capture privately returns successful original candidate without changing normal responses',async()=>{
+ const f=setup({},value),req=request({diagnosticReview:true});req.headers.set('x-staygrubby-development-review','candidate');
+ const r=await f.run(req),b=await r.json();assert(r.status===200&&JSON.stringify(b.extraction)===JSON.stringify(value)&&JSON.stringify(b.review.candidate)===JSON.stringify(value));
+ const normal=request();normal.headers.set('x-staygrubby-development-review','candidate');assert(!Object.hasOwn(await (await f.run(normal)).json(),'review'));
+});

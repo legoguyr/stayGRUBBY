@@ -1,0 +1,33 @@
+import {fixture} from './social-harness.mjs';
+import {randomUUID} from 'node:crypto';
+const f=await fixture(),{db,check,rejects}=f;
+const id=randomUUID(),hash='a'.repeat(64),u=f.users[0].user;
+await db.exec("alter table auth.users add column email text;alter table auth.users add column raw_app_meta_data jsonb default '{}';");
+check((await db.query("select count(*) n from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='development' and c.relkind='r' and c.relrowsecurity")).rows[0].n===2,'private tables use RLS');
+for(const role of ['anon','authenticated','service_role']){
+ await db.exec(`set role ${role}`);
+ await rejects(()=>db.query('select development.issue_recipe_test_login($1,$2)',[id,hash]));
+ await rejects(()=>db.query('select * from development.recipe_test_identity'));
+ if(role!=='service_role')for(const sql of ['select api.consume_recipe_test_login($1,$2)','select api.bind_recipe_test_identity($1,$2::uuid)'])await rejects(()=>db.query(sql,[id,sql.includes('bind_')?u:hash]));
+ await db.exec('reset role');
+}
+await db.query('select development.issue_recipe_test_login($1,$2)',[id,hash]);
+await db.exec('set role service_role');
+await rejects(()=>db.query('select api.consume_recipe_test_login($1,$2)',[id,'b'.repeat(64)]));
+await rejects(()=>db.query('select api.bind_recipe_test_identity($1,$2)',[id,u]));
+check((await db.query('select api.consume_recipe_test_login($1,$2) v',[id,hash])).rows[0].v.userID===null,'valid proof consumed before identity exists');
+await rejects(()=>db.query('select api.consume_recipe_test_login($1,$2)',[id,hash]));
+await rejects(()=>db.query('select api.bind_recipe_test_identity($1,$2)',[id,u]));
+await db.exec('reset role');
+await db.query("update auth.users set email='recipe-validation@staygrubby.invalid',raw_app_meta_data=$2::jsonb where id=$1",[u,JSON.stringify({staygrubby_development_identity:'recipe-validation'})]);
+await db.exec('set role service_role');
+await db.query('select api.bind_recipe_test_identity($1,$2)',[id,u]);check(true,'valid fixed test identity can be bound');
+await db.exec('reset role');
+const expired=randomUUID();await db.query('select development.issue_recipe_test_login($1,$2)',[expired,hash]);await db.query("update development.recipe_test_login set expires_at=now()-interval '1 second' where id=$1",[expired]);
+await db.exec('set role service_role');await rejects(()=>db.query('select api.consume_recipe_test_login($1,$2)',[expired,hash]));
+await db.exec('reset role');
+const other=f.users[1].user;await db.query("update auth.users set email='recipe-validation@staygrubby.invalid',raw_app_meta_data=$2::jsonb where id=$1",[other,JSON.stringify({staygrubby_development_identity:'recipe-validation'})]);
+await db.exec('set role service_role');await rejects(()=>db.query('select api.bind_recipe_test_identity($1,$2)',[id,other]));
+await db.exec('reset role');
+check((await db.query('select auth_user_id from development.recipe_test_identity')).rows[0].auth_user_id===u,'pin cannot be reassigned');
+await f.finish();

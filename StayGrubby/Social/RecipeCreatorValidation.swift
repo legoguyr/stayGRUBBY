@@ -58,6 +58,7 @@ nonisolated enum RecipeCreatorValidation {
             guard evidence(p.evidence) else { return .init() }
             if key == "cuisine" {
                 guard CuisineCatalog.predefined.contains(where: { $0.label == value }), p.origin != .provided || RecipeImportValidation.normalized(p.evidence!).contains(RecipeImportValidation.normalized(value)) else { return .init() }
+                if p.origin == .provided && p.evidence!.range(of: #"\bcuisine\b"#, options: [.regularExpression,.caseInsensitive]) == nil { return .init(value: value, origin: .estimated, evidence: p.evidence) }
                 return p
             }
             let n = number(value), stated = explicit(raw, key: key)
@@ -111,9 +112,11 @@ nonisolated enum RecipeCreatorValidation {
                     let line = match[0]
                     guard RecipeSourceEvidence.grounded(line, raw: raw, kind: .ingredient) else { continue }
                     let identity = RecipeSourceEvidence.tokens(line).filter { !($0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true) && !["cup","tbsp","tsp","clove","oz","g","kg","ml","lb"].contains($0) }
+                    let words = RecipeSourceEvidence.tokens(line)
+                    guard !words.contains(where: { ["second","seconds","sec","secs","min","hour","degree","degrees","f","c","side","sides"].contains($0) }) else { continue }
                     if let j = copy.components[i].ingredients.firstIndex(where: { ingredient in identity.allSatisfy { RecipeSourceEvidence.tokens(ingredient).contains($0) } }) {
                         if !RecipeSourceEvidence.tokens(copy.components[i].ingredients[j]).contains(where: { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true }) { copy.components[i].ingredients[j] = line }
-                    } else { copy.components[i].ingredients.append(line) }
+                    }
                 }
             }
         }

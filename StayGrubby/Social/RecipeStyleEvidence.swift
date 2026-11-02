@@ -31,10 +31,23 @@ nonisolated enum RecipeStyleEvidence {
         default: break
         }
         if case .title = kind {
+            if raw.range(of: #"\b(?:onions?|tomatoes|peppers?|carrots?|cabbage|broccoli|spinach|zucchini|eggplant|celery)\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bvegetables?\b"#, with: "", options: .regularExpression) }
             if raw.range(of: #"\b(?:blend|blender|sauce|mix|top)\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\b(?:sauce|garnish)\b"#, with: "", options: .regularExpression) }
-            s = s.replacingOccurrences(of: #"\b(?:assembly|preparation)\b"#, with: "preparation", options: .regularExpression) + " preparation"
+            s = s.replacingOccurrences(of: #"\b(?:assembly|preparation|base)\b"#, with: "preparation", options: .regularExpression) + " preparation"
         }
         if case .step = kind {
+            if raw.range(of: #"\brepeat\b.{0,60}\ball\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\beach\b"#, with: "", options: .regularExpression) }
+            if raw.range(of: #"\balternatively\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bor alternatively\b"#, with: "alternatively", options: .regularExpression) }
+            s = s.replacingOccurrences(of: #"\b(?:poured|pouring)\b"#, with: "pour", options: .regularExpression)
+                .replacingOccurrences(of: #"\bstaying\b"#, with: "stay", options: .regularExpression)
+                .replacingOccurrences(of: #"\b(?:while|them)\b"#, with: "", options: .regularExpression)
+                .replacingOccurrences(of: #"\bpreparation\b"#, with: "", options: .regularExpression)
+            s = RecipeSourceEvidence.replacing(s, pattern: #"\bavoid\s+([a-z]+)ing\b"#) { phrase in
+                let stem = String(phrase.dropFirst(6).dropLast(3))
+                return raw.range(of: "\\bnot\\s+" + stem + "\\b", options: [.regularExpression,.caseInsensitive]) != nil ? "not " + stem : phrase
+            }
+            if raw.range(of: #"\bmix(?:ed|ing|ture)?\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bmixture\b"#, with: "mix", options: .regularExpression) }
+            if raw.range(of: #"\b(?:continue|all)\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bremaining\b"#, with: "", options: .regularExpression) }
             s = s.replacingOccurrences(of: #"\b(?:diced|dicing)\b"#, with: "dice", options: .regularExpression)
                 .replacingOccurrences(of: #"\b(?:chopped|chopping)\b"#, with: "chop", options: .regularExpression)
                 .replacingOccurrences(of: #"\b(?:sliced|slicing)\b"#, with: "slice", options: .regularExpression)
@@ -57,6 +70,8 @@ nonisolated enum RecipeStyleEvidence {
             if raw.range(of: #"\bparchment\b"#, options: [.regularExpression,.caseInsensitive]) != nil && raw.range(of: #"\b(?:sheet|pan|tin)\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bline\b"#, with: "put", options: .regularExpression).replacingOccurrences(of: #"\bbaking\b"#, with: "bake", options: .regularExpression) }
             s = s.replacingOccurrences(of: #"\b(?:you are going to|you're going to|youre gonna|you are gonna|is done by|is made by)\b"#, with: "", options: .regularExpression).replacingOccurrences(of: #"\btaking\b"#, with: "take", options: .regularExpression)
         }
+        if case .title = kind, raw.range(of: #"\bserve\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bserving\b"#, with: "serve", options: .regularExpression) }
+        if case .ingredient = kind { s = s.replacingOccurrences(of: #"^prepared\s+"#, with: "", options: .regularExpression) }
         return s
     }
 }

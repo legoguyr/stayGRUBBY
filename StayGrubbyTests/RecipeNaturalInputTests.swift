@@ -92,4 +92,36 @@ import Testing
         #expect(RecipeEditorialEvidence.preserve(value(["Use bread."]), raw: "Use bread or rice.") == nil)
         #expect(RecipeEditorialEvidence.preserve(value(["Use day-old bread."]), raw: "Use bread a day or so old, or rice.") == nil)
     }
+    @Test func measuredRecoveryDoesNotTurnTimeOrTemperatureIntoIngredients() throws {
+        let raw = "Use bread and butter. Dunk bread for 15 seconds per side. Heat to 135 on low. Add 1 tbsp butter."
+        let value = RecipeExtraction(components: [.init(ingredients: ["bread","butter"], steps: ["Dunk bread for 15 seconds per side.","Heat to 135 on low.","Add 1 tbsp butter."])])
+        let made = try #require(RecipeCreatorValidation.construct(value, raw: raw))
+        #expect(made.components[0].ingredients == ["bread","1 tbsp butter"])
+        #expect(RecipeSourceEvidence.grounded("Custard Base", raw: "Mix to form a custard.", kind: .title, polished: true))
+    }
+    @Test func capturedLiveFrenchToastReplayedThroughFinalServerReachesSerializableNativeDraft() throws {
+        let f = try fixture("RecipeLiveFrenchToastAccepted")
+        let decoded = try RecipeImportValidation.decode(JSONEncoder().encode(f.extraction))
+        let result = try RecipeImportValidation.review(decoded, raw: f.raw, dishTitle: "", provider: "Captured Gemini; offline final-handler replay")
+        #expect(result.draft.isValidDraft)
+        let rows = result.draft.orderedComponents.flatMap(\.ingredients)
+        #expect(rows.contains { $0.name == "heavy cream" && $0.quantity == "1" && $0.unit == "cup" })
+        #expect(!rows.contains { $0.displayText.contains("seconds") || $0.displayText.contains("till") })
+        #expect(result.draft.steps.contains { $0.contains("avoid cooking the eggs") })
+        #expect(result.draft.steps.contains { $0.contains("fall apart") })
+        #expect(result.draft.metadataOrigins?["cuisine"] == "estimated")
+        #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
+    }
+    @Test func capturedShakshukaOfflineCorrectionReachesDraftWithoutNewFacts() throws {
+        let f = try fixture("RecipeLiveShakshukaReplay")
+        let result = try RecipeImportValidation.review(f.extraction, raw: f.raw, dishTitle: "", provider: "Captured failed Gemini; offline correction replay")
+        #expect(result.draft.isValidDraft && result.draft.yield == "4")
+        #expect(result.draft.steps.contains { $0.contains("5 to 10 minutes") })
+        #expect(result.draft.steps.contains { $0.contains("about 3 minutes") && $0.contains("alternatively") && $0.contains("broiler") })
+        #expect(result.draft.cuisine == nil)
+        #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
+        for (raw,line) in [("Dice carrots. Slice onions.","onions, diced"),("2 yellow onions. Dice red onions.","2 yellow onions, diced"),("3 cloves garlic, chopped.","4 cloves garlic, chopped")] {
+            #expect(!RecipeSourceEvidence.grounded(line, raw: raw, kind: .ingredient, polished: true))
+        }
+    }
 }

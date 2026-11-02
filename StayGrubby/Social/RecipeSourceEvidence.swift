@@ -62,6 +62,32 @@ nonisolated enum RecipeSourceEvidence {
         return false
     }
     /// Bounded editorial equivalents. Culinary nouns, numbers and units remain evidence.
+    private static func preparedIngredient(_ value: String, raw: String) -> Bool {
+        guard let comma = value.firstIndex(of: ",") else { return false }
+        let base = String(value[..<comma]).trimmingCharacters(in: .whitespaces)
+        let detail = String(value[value.index(after: comma)...]).trimmingCharacters(in: .whitespaces)
+        guard grounded(base, raw: raw, kind: .ingredient, polished: true) else { return false }
+        let identity = editorialTokens(base, raw: raw, kind: .step, polished: true).filter { !($0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true) && !units.contains($0) }
+        guard !identity.isEmpty else { return false }
+        if detail.lowercased() == "for serving" {
+            return raw.components(separatedBy: CharacterSet(charactersIn: ".!?;\n")).contains { $0.range(of: #"\bserve\b"#, options: [.regularExpression,.caseInsensitive]) != nil && contains(editorialTokens($0, raw: raw, kind: .step, polished: true), identity) }
+        }
+        let prep = editorialTokens(detail, raw: raw, kind: .step, polished: true)
+        let origins = raw.components(separatedBy: CharacterSet(charactersIn: ".!?;,\n")).map { editorialTokens($0, raw: raw, kind: .step, polished: true) }
+        guard let verb = prep.first, ["dice","chop","slice","mince","grate","peel"].contains(verb) else { return false }
+        for i in identity.indices {
+            let name = Array(identity.dropFirst(i))
+            if origins.contains(where: { contains($0, [verb]+name+Array(prep.dropFirst())) || contains($0, name+prep) }) { return true }
+        }
+        if prep.count == 1 {
+            for match in RecipeEditorialEvidence.matches(#"\b(diced?|chopped?|sliced?|minced?|grated?|peeled?)\s+([^.;\n]{1,180})"#, raw) {
+                guard editorialTokens(match[1], raw: raw, kind: .step, polished: true).first == verb else { continue }
+                let list = match[2].replacingOccurrences(of: #"\b(?:chop(?:ped)?|dice[ds]?|slice[ds]?|mince[ds]?|grate[ds]?|peel(?:ed)?|add|cook|saute|sauté|heat|serve|season|mix)\b.*$"#, with: "", options: [.regularExpression,.caseInsensitive])
+                if list.replacingOccurrences(of: #"\band\b"#, with: ",", options: [.regularExpression,.caseInsensitive]).components(separatedBy: ",").contains(where: { editorialTokens($0, raw: raw, kind: .step, polished: true) == identity }) { return true }
+            }
+        }
+        return false
+    }
     static func editorialTokens(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> [String] {
         var text = polished ? RecipeStyleEvidence.text(value, raw: raw, kind: kind) : value.lowercased()
         func replace(_ pattern: String, _ replacement: String) {
@@ -85,10 +111,20 @@ nonisolated enum RecipeSourceEvidence {
         }
         replace(#"\b(?:if (?:you )?(?:want(?: spice)?|desired)|optional)\b"#, "optional")
         replace(#"\bapproximately\b"#, "about")
-        return tokens(text)
+        let result = tokens(text)
+        guard polished else { return result }
+        let actual = tokens(raw)
+        return result.map { word in
+            if word.count >= 3 && word.hasSuffix("s") && actual.contains(String(word.dropLast())) { return String(word.dropLast()) }
+            guard word.count >= 3 && !actual.contains(word) else { return word }
+            if actual.contains(word + "s") { return word + "s" }
+            if word.hasSuffix("s") && actual.contains(String(word.dropLast())) { return String(word.dropLast()) }
+            return word
+        }
     }
     static func grounded(_ value: String, raw: String, kind: Kind, polished: Bool = false) -> Bool {
         if case .ingredient = kind, value.range(of: #"^\s*-\s*\d|\b\d+\s*/\s*0\b"#, options: .regularExpression) != nil { return false }
+        if polished, case .ingredient = kind, preparedIngredient(value, raw: raw) { return true }
         if polished, case .step = kind,
            value.range(of: #"\b(?:boiler|broiler|broil(?:ed|ing)?)\b"#, options: [.regularExpression,.caseInsensitive]) != nil,
            let clause = RecipeStyleEvidence.broilerClause(raw),
@@ -98,6 +134,16 @@ nonisolated enum RecipeSourceEvidence {
         guard !output.isEmpty else { return false }
         if contains(source, output) { return true }
         if case .ingredient = kind, quantityFirstIngredient(output, raw: raw, polished: polished) { return true }
+        if polished, case .ingredient = kind {
+            let pattern = #"\b([a-z]+)\s*\(i (?:like|prefer|use) ((?:[a-z]+ ){0,3}\1)(?: for this)?\)"#
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                for match in regex.matches(in: raw, range: NSRange(raw.startIndex..., in: raw)) {
+                    guard let range = Range(match.range, in: raw), let preferred = Range(match.range(at: 2), in: raw) else { continue }
+                    let expanded = raw.replacingCharacters(in: range, with: String(raw[preferred]))
+                    if contains(editorialTokens(expanded, raw: raw, kind: kind, polished: true), output) { return true }
+                }
+            }
+        }
         guard output.allSatisfy({ source.contains($0) }) else { return false }
         for i in output.indices where output[i].hasPrefix("n") && output[i].dropFirst().first?.isNumber == true {
             if i+1 < output.count && units.contains(output[i+1]) && !contains(source, Array(output[i...i+1])) { return false }

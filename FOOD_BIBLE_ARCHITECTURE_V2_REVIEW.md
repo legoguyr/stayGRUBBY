@@ -144,3 +144,54 @@ Use a new Xcode build with the existing account/data; do not reset/seed:
 6. Use the existing Recipe-based cook/version path once; note its Recipe revision. Edit the live Recipe afterward and verify the completed cook’s Recipe snapshot remains the old state. This checks the new historical Recipe binding; do not reset data or repeat a frozen ranking regression checklist.
 
 V2 owner physical acceptance remains pending. Do not begin Social Recipe Sharing/Description Improvements or the major Recipe UI overhaul until separately instructed.
+
+## November 2 — unattended authenticated validation (supersedes locked-phone blocker)
+
+The owner explicitly authorized a minimal development-only authentication mechanism and continued the existing six-call unbilled budget. Started clean on `main` at `27033a0f8acf4c91e5ad8146baed7cf77abe625f`, matching `origin/main`; no earlier checkpoint was repeated. One primary agent/checkout/Simulator lane; no physical iPhone, UI login automation, ranking work, distribution or paid configuration.
+
+### Authentication and private evidence
+
+Migration **20261102181733** adds only two closed/RLS tables in unexposed `development` and constrained service-only consume/bind RPCs. A project administrator issues a SHA-256 proof hash with five-minute validity; a 256-bit private preimage is consumed once before Auth activity. `development-test-session` **v1, JWT enabled**, can create/get only the reserved non-anonymous, admin-marked/pinned test identity, then use supported Auth Admin link generation and ordinary verification/refresh. No arbitrary target/email adoption, real-user credential changes, emails, provider-key extraction or production-auth settings changes. Public settings independently confirm Apple enabled, email/anonymous disabled. A forced local test-session deadline exercised supported refresh successfully for the same identity.
+
+CLI/session/artifacts are outside every Xcode target; no helper endpoint, issuer or test identity reference occurs in app sources/project. Local files are mode 600 inside a mode 700 directory outside Git. This is source/target exclusion, not a new Release build claim. The previously existing Debug SDK diagnostic harness is retained; normal app/Release login is unchanged. See [the reusable procedure](DevelopmentTools/README.md). Missing budget state now fails closed rather than initializing another allowance.
+
+Explicit private development capture now retains successful original candidates as well as rejected candidates. Both require authenticated opt-in; the success envelope additionally requires `x-staygrubby-development-review: candidate`. Normal app responses, JWT/ownership checks, provider bounds and content-free production logs remain unchanged. Tracked captures contain only the already owner-supplied canonical Recipes/model responses; session/account identifiers and private runtime artifacts remain outside Git.
+
+### Actual live evidence — six-call approval exhausted
+
+| Call | Function | Actual request/result |
+| --- | --- | --- |
+| 1, prior owner test | v19 | French toast: Gemini 200, source validation 422; 14 failing fields, original wording not retained |
+| 2 | v20 | Unchanged French toast: Gemini 200, validation 422; original candidate retained, 13 failing fields |
+| 3 | v21 | French toast HTTP 200; quality failed on deterministic method-fragment ingredient recovery |
+| 4 | v22 | French toast HTTP 200; quality still failed on a duplicated method fragment and degraded section/prose recovery |
+| 5 | v23 | French toast HTTP 200; original and final structures retained; remaining prose degradation corrected and verified offline |
+| 6 | v24 | Unchanged Shakshuka: Gemini 200, validation 422; actual candidate retained and corrected offline |
+
+Final deployed **recipe-import v25 / JWT enabled** has **not received another live Gemini verification call**. All six calls are consumed; no seventh call, automatic retry, billing/quota change or provider key extraction. No quota/billing issue occurred. Pre-provider DNS/login/provision connection failures made zero Gemini requests and did not silently consume additional live calls. A per-process public address resolved the local DNS timeout without changing DNS/TLS/auth/Git configuration.
+
+**French toast:** captured real provider response passes final server replay and native RecipeDraft decoding/review/serialization. This is an **offline replay PASS**, not a fresh final-hosted live PASS. **Shakshuka:** last actual live request **FAIL (422)**; exact retained response now passes corrected server/native replay. Fresh live verification is **NOT RUN**. **Kale:** **NOT RUN LIVE**; existing deterministic fixtures pass. The requested three-fixture unattended LIVE acceptance gate therefore remains **OPEN**, and owner physical acceptance is pending. Do not report `UNATTENDED LIVE RECIPE CREATOR VALIDATION PASSED`.
+
+### Proven causes and bounded correction
+
+The original call's 14 exact values remain unavailable; do not pretend the later reproduction recovers them. Retained reproductions prove a combination of:
+
+- False lexical rejection of supported inflection/singular references, connective wording, ingredient preferences, preparation annotations and valid component-name references. Examples: `pinch of sea salt` from `pinch of salt (I like sea salt for this)`, `yolk mixture`, `remaining dairy`, `2 yellow onions, diced`, `1 bell pepper, diced`, `2 cups cherry tomatoes, sliced in half the long way`, `for serving`, and `or alternatively`.
+- Actual unsupported provider details in call 2, notably Fahrenheit for a bare `135` and optional labels not supplied for serving ingredients. These remain rejected; prompt fidelity guidance now expressly forbids inventing scales, optionality, ingredient amounts/varieties or metadata justifications.
+- Deterministic ingredient recovery treated numeric method fragments as ingredients; it could produce `15 seconds per side` and `2 cups whole milk till`. Recovery now refines an already identified ingredient only, rejects procedural measures and cannot manufacture another ingredient from arbitrary prose.
+- Whole-field retrieval degraded otherwise valid professional wording. Bound preparation clauses, grammatical equivalence and references to source-validated section titles now preserve the actual edited prose. Evidence still checks quantities/ingredient identities and local preparation binding; adversarial coverage rejects descriptor/amount/technique borrowing and sentence-boundary leakage. A parenthetical preference adds evidence without removing the valid generic name.
+
+Supplied displaced descriptors and measured-action handling cautions are retained. Cuisine inferred from a dish name is labeled estimated rather than provided. Unsupported source/attribution or claimed derived cuisine without literal evidence remains unknown. The server and native source guards stay aligned. No general hallucination guard, schema/numeric cap, options/doneness obligation, model, token/time bounds, normal burst guard, manual fallback, ranking or saved Recipe architecture was disabled.
+
+Final French-toast replay: three coherent preparations, original bread/dairy/yolk/spice/garnish quantities, heavy cream restored, unmeasured bread/butter/toppings retained, bare approximately 135 without invented scale, 15 seconds/side and supplied handling caution, low heat/tempering/lukewarm instructions. Yield 4 and 20/15/35-minute metadata are honestly estimated; cuisine is estimated. Final Shakshuka replay: two named prerequisite/assembly sections, all measured allocations and unmeasured oil/seasoning/serving items retained, four servings provided, 5–10 minute simmer and approximately three-minute poach unchanged, broiler remains an alternative without invented settings, 15/15/30-minute metadata estimated and unsupported cuisine unknown. Ingredient-derived Milk/Egg/Wheat information remains informational/editable. The existing extraction contract has no generated description field; no description was invented. No live draft was saved to hosted Recipes.
+
+### Focused verification and preservation
+
+- **215 Recipe Edge tests, 10 test-auth Edge tests, 2 CLI budget tests, 20 database authorization assertions pass.** Providers in these automated tests are mocked; retained real candidates are replayed without network.
+- Final native focused Debug build/test: **34 tests passed, zero failures/skips**, result `test_sim_2026-11-02T19-13-21-262Z_pid5762_3f8bf854.xcresult`. Tests include both captured real responses through native review and serialization. Earlier self-tests exposed a preference regression and sentence-boundary preparation borrowing; both were fixed and meaningful checks retained. Existing unrelated actor-isolation warning remains. No broad UI suite, Release build or phone test was run.
+- All **31 local/hosted migration SQL hashes match**; reference schema is the sorted concatenation. Hosted v25's ten runtime files and helper v1's runtime files match tested local sources.
+- Before/after original row hashes across **36 table/Storage groups** are retained. Real data remains **42 Dishes /47 attempts/items /185 comparisons /3 Recipes /6 revisions /4 Recipe-cook snapshots /0 Recipe-photo manifests /78 Storage objects**. Existing identities/evidence/revisions/media are preserved. Intentional additions: exactly one dedicated Auth user/account/profile/link, private proof bookkeeping and normal test-account import-usage rows; no test cooking library or Recipe was created.
+- All **39 tables** (37 application +2 development) retain RLS; four buckets private, zero anonymous table grants/direct authenticated writes. Proof issuer unavailable to anon/authenticated/service_role. Security advisor has zero ERROR, 24 intentional closed-table INFO findings (two new), same existing Apple-only leaked-password WARN. Production Auth and protected secrets/billing unchanged.
+- Simulator development data remains **1 ranking /12 Dishes /15 attempts/items /356 comparisons /10 Sources /21 tags /48 memberships**; all **190** normal-media SHA-256 values match the historical preserved manifest. No fixture data leaked into that store.
+
+Documentation now records the reusable development workflow, current architecture/account boundary, source-style rules and the still-open roadmap acceptance gate. Secret/local-artifact and whitespace checks are required before the checkpoint. No next product phase was begun. A later explicitly authorized bounded live campaign should verify the final hosted French toast and Shakshuka, then run unchanged kale before one owner physical acceptance procedure; do not request the phone for this cycle or reuse the exhausted budget.

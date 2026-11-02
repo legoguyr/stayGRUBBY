@@ -22,7 +22,12 @@ export type Extraction = { editorialVersion?:number; metadata?:CreatorMetadata; 
 // Diagnostics contain only fixed rules, generated field indexes and bounded counts.
 // Never include values, unknown property names, rejected words or source/provider text.
 export type ValidationIssue = { field:string; rule:string };
+export function componentReferenceSource(value:any,raw:string):string {
+ const titles=Array.isArray(value?.components)?value.components.slice(0,20).map((p:any)=>p?.title).filter((t:unknown)=>typeof t==='string'&&t.length<=120&&!groundingIssue(t,raw,'title',true)):[];
+ return raw+'\n'+titles.join('\n');
+}
 export function validationReport(value:unknown,raw:string,polished=false) {
+ const references=polished?componentReferenceSource(value,raw):raw;
  const issues:ValidationIssue[]=[];
  let failed=false,hardFailure=false;
  const add=(field:string,rule:string)=>{failed=true;if(!['source_word','ingredient_phrase','metadata_phrase'].includes(rule))hardFailure=true;if(issues.length<20)issues.push({field,rule});};
@@ -32,7 +37,7 @@ export function validationReport(value:unknown,raw:string,polished=false) {
   if(typeof v!=='string'){add(path,'field_type');return;}
   if(!v.trim()){add(path,'field_empty');return;}
   if([...v].length>max){add(path,'field_length');return;}
-  const issue=groundingIssue(v,raw,kind,polished);if(issue)add(path,issue);
+  const issue=groundingIssue(v,kind==='step'?references:raw,kind,polished);if(issue)add(path,issue);
  };
  const structure:{componentCount:number|null;ingredientCounts:number[];stepCounts:number[]}={componentCount:null,ingredientCounts:[],stepCounts:[]};
  if(!object(value,['title','yield','source','components'],['metadata','editorialVersion']))add('root','object_fields');

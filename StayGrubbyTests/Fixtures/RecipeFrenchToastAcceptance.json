@@ -142,17 +142,67 @@
     },
     {
       "kind": "step",
-      "text": "Heat dairy to 135°F.",
+      "text": "Heat dairy to 135\u00b0F.",
       "valid": false
     },
     {
       "kind": "step",
-      "text": "Bake the bread at 350°F for 20 minutes.",
+      "text": "Bake the bread at 350\u00b0F for 20 minutes.",
       "valid": false
     },
     {
       "kind": "step",
       "text": "Flip once golden brown.",
+      "valid": false
+    },
+    {
+      "text": "Pinch of sea salt",
+      "kind": "ingredient",
+      "valid": true
+    },
+    {
+      "text": "Once dairy is heated, slowly pour a little of the warm dairy into the yolk mixture while whisking to temper the eggs and prevent them from cooking.",
+      "kind": "step",
+      "valid": true
+    },
+    {
+      "text": "Continue pouring in the remaining dairy until all is mixed to form a custard.",
+      "kind": "step",
+      "valid": true
+    },
+    {
+      "text": "Let the custard cool a little while staying lukewarm.",
+      "kind": "step",
+      "valid": true
+    },
+    {
+      "text": "Prepared custard",
+      "kind": "ingredient",
+      "valid": true
+    },
+    {
+      "text": "Heat heavy cream and whole milk on low until around 135\u00b0F (warm), stirring frequently to prevent burning on the bottom.",
+      "kind": "step",
+      "valid": false
+    },
+    {
+      "text": "Warm Vermont maple syrup (optional)",
+      "kind": "ingredient",
+      "valid": false
+    },
+    {
+      "text": "1 cup sea salt",
+      "kind": "ingredient",
+      "valid": false
+    },
+    {
+      "text": "Pinch of smoked sea salt",
+      "kind": "ingredient",
+      "valid": false
+    },
+    {
+      "text": "Deep-fry the bread until brown.",
+      "kind": "step",
       "valid": false
     }
   ],

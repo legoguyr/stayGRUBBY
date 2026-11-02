@@ -42,13 +42,42 @@ function quantityFirstIngredient(output:string[],raw:string,polished:boolean):bo
  }
  return false;
 }
+function preparedIngredient(value:string,raw:string):boolean {
+ const comma=value.indexOf(',');if(comma<0)return false;
+ const base=value.slice(0,comma).trim(),detail=value.slice(comma+1).trim();
+ if(groundingIssue(base,raw,'ingredient',true))return false;
+ const identity=editorialTokens(base,raw,'step',true).filter(w=>!/^n\d/.test(w)&&!units.has(w));
+ if(!identity.length)return false;
+ if(/^for serving$/i.test(detail))return raw.split(/[.!?;\n]/).some(s=>/\bserve\b/i.test(s)&&contains(editorialTokens(s,raw,'step',true),identity));
+ const prep=editorialTokens(detail,raw,'step',true),origins=raw.split(/[.!?;,\n]/).map(s=>editorialTokens(s,raw,'step',true));
+ if(!['dice','chop','slice','mince','grate','peel'].includes(prep[0]))return false;
+ for(let i=0;i<identity.length;i++){
+  const name=identity.slice(i);
+  if(origins.some(origin=>contains(origin,[prep[0],...name,...prep.slice(1)])||contains(origin,[...name,...prep])))return true;
+ }
+ // One preparation verb may govern a comma-separated ingredient list, ending
+ // before the next action. Never borrow a different ingredient's descriptor.
+ if(prep.length===1)for(const m of raw.matchAll(/\b(diced?|chopped?|sliced?|minced?|grated?|peeled?)\s+([^.;\n]{1,180})/gi)){
+  if(editorialTokens(m[1],raw,'step',true)[0]!==prep[0])continue;
+  const list=m[2].split(/\b(?:chop(?:ped)?|dice[ds]?|slice[ds]?|mince[ds]?|grate[ds]?|peel(?:ed)?|add|cook|saute|sauté|heat|serve|season|mix)\b/i)[0];
+  if(list.split(/,|\band\b/i).some(s=>editorialTokens(s,raw,'step',true).join(' ')===identity.join(' ')))return true;
+ }
+ return false;
+}
 export type GroundingIssue = 'invalid_quantity'|'source_empty'|'source_number'|'source_word'|'quantity_unit_pair'|'preparation_binding'|'metadata_phrase'|'ingredient_phrase';
 export function groundingIssue(value:string,raw:string,kind:'metadata'|'title'|'ingredient'|'step',polished=false):GroundingIssue|null {
  if(kind==='ingredient'&&(/^\s*-\s*\d/.test(value)||/\b\d+\s*\/\s*0\b/.test(value)))return 'invalid_quantity';
+ if(polished&&kind==='ingredient'&&preparedIngredient(value,raw))return null;
  if(polished&&kind==='step'&&/\b(?:boiler|broiler|broil(?:ed|ing)?)\b/i.test(value)&&/\b(?:alternatively|or|optional)\b/i.test(broilerClause(raw)??'')&&!/\b(?:alternatively|or|optional)\b/i.test(value))return 'source_word';
  const source=editorialTokens(raw,raw,kind,polished),output=editorialTokens(value,raw,kind,polished);if(!output.length)return 'source_empty';
  if(contains(source,output))return null;
  if(kind==='ingredient'&&quantityFirstIngredient(output,raw,polished))return null;
+ if(polished&&kind==='ingredient')for(const m of raw.matchAll(/\b([a-z]+)\s*\(i (?:like|prefer|use) ((?:[a-z]+ ){0,3}\1)(?: for this)?\)/gi)){
+  // Add evidence for this adjacent preference; retain the original base-name
+  // evidence too. Do not make a preference erase legitimate generic wording.
+  const expanded=raw.slice(0,m.index)+m[2]+raw.slice(m.index+m[0].length);
+  if(contains(editorialTokens(expanded,raw,kind,true),output))return null;
+ }
  const absent=output.filter(v=>!source.includes(v));
  if(absent.length)return absent.some(v=>/^n\d/.test(v))?'source_number':'source_word';
  for(let i=0;i<output.length;i++)if(output[i].startsWith('n')&&/^n\d/.test(output[i])&&units.has(output[i+1])&&!contains(source,output.slice(i,i+2)))return 'quantity_unit_pair';
@@ -94,5 +123,10 @@ export function editorialTokens(value:string,raw:string,kind:string,polished=fal
  }
  text=text.replace(/\b(?:if (?:you )?(?:want(?: spice)?|desired)|optional)\b/g,'optional')
   .replace(/\bapproximately\b/g,'about');
- return tokens(text);
+ const result=tokens(text);
+ if(!polished)return result;
+ // Match a singular reference only to its actual plural in this source. Never
+ // erase a noun or borrow an ingredient identity from a culinary dictionary.
+ const actual=tokens(raw);
+ return result.map(w=>w.length>=3&&w.endsWith('s')&&actual.includes(w.slice(0,-1))?w.slice(0,-1):w.length>=3&&!actual.includes(w)&&actual.includes(w+'s')?w+'s':w);
 }

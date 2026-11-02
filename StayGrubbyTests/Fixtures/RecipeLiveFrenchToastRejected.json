@@ -1,0 +1,86 @@
+{
+  "origin": "Captured Gemini response, recipe-import v20, 2026-11-02; rejected, NOT an accepted Recipe",
+  "requestID": "99993b2b-d37a-4351-987d-02ba10dc40db",
+  "candidate": {
+    "title": "French Toast",
+    "yield": null,
+    "source": null,
+    "components": [
+      {
+        "title": "Custard",
+        "ingredients": [
+          "1 cup heavy cream",
+          "2 cups whole milk",
+          "4 egg yolks",
+          "1/2 cup sugar",
+          "1 tbsp cinnamon",
+          "Pinch of sea salt"
+        ],
+        "steps": [
+          "Slice day-old challah bread into thick pieces and let sit to dry out.",
+          "Heat heavy cream and whole milk on low until around 135\u00b0F (warm), stirring frequently to prevent burning on the bottom.",
+          "Whisk egg yolks with sugar, cinnamon, and sea salt.",
+          "Once dairy is heated, slowly pour a little of the warm dairy into the yolk mixture while whisking to temper the eggs and prevent them from cooking.",
+          "Continue pouring in the remaining dairy until all is mixed to form a custard.",
+          "Let the custard cool a little while staying lukewarm."
+        ],
+        "after": []
+      },
+      {
+        "title": "Cooking and Serving",
+        "ingredients": [
+          "Prepared challah bread",
+          "Prepared custard",
+          "Butter",
+          "Warm Vermont maple syrup (optional)",
+          "Cinnamon and sugar (optional)",
+          "Berries (optional)",
+          "Powdered sugar (optional)"
+        ],
+        "steps": [
+          "Heat a pan on mid-low and melt some butter.",
+          "Dunk the bread in the custard for 15 seconds per side.",
+          "Gently cook over mid-low to low heat until brown, then flip.",
+          "Keep the cooked French toast under a towel to stay hot.",
+          "Serve with warm Vermont maple syrup, cinnamon and sugar, berries, and powdered sugar as desired."
+        ],
+        "after": [
+          0
+        ]
+      }
+    ],
+    "metadata": {
+      "yield": {
+        "value": "4 servings",
+        "origin": "estimated",
+        "evidence": "Uses 4 egg yolks, 1 cup cream, 2 cups milk, and a loaf of challah, which typically yields about 4 servings of thick-cut French toast."
+      },
+      "prepMinutes": {
+        "value": 20,
+        "origin": "estimated",
+        "evidence": "Estimated active time for slicing bread, heating dairy, whisking yolks, and tempering."
+      },
+      "cookMinutes": {
+        "value": 15,
+        "origin": "estimated",
+        "evidence": "Estimated cooking time for batches of thick-cut French toast in a pan over mid-low heat."
+      },
+      "totalMinutes": {
+        "value": 35,
+        "origin": "estimated",
+        "evidence": "Combined estimated preparation and cooking workflow time including letting bread dry and cooling custard."
+      },
+      "cuisine": {
+        "value": "French",
+        "origin": "provided",
+        "evidence": "Explicitly named French toast."
+      },
+      "allergenHints": [
+        "milk",
+        "egg",
+        "wheat",
+        "sesame"
+      ]
+    }
+  }
+}

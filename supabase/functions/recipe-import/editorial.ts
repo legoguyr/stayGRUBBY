@@ -20,6 +20,20 @@ export function preserveEditorialFacts(value:Extraction,raw:string,polished=fals
  const metadataTokens=proposals.flatMap((p:any)=>tokens(p.origin==='derived'?p.evidence??'':String(p.value??'')));
 
  const fields=copy.components.flatMap(p=>[...p.ingredients.map((_,i)=>({get:()=>p.ingredients[i],set:(s:string)=>p.ingredients[i]=s,method:false})),...p.steps.map((_,i)=>({get:()=>p.steps[i],set:(s:string)=>p.steps[i]=s,method:true}))]);
+ // Keep a source handling caution attached to its measured action. Retrieval
+ // uses both the exact number and shared action nouns, never a nearby recipe's
+ // advice. This copies supplied evidence only; it cannot invent a warning.
+ if(polished)for(const match of raw.matchAll(/\(([^()]{1,500})\)/g)){
+  const caution=match[1];if(!/\b(?:too much|fall apart|prevent|avoid|burn)\b/i.test(caution))continue;
+  const before=raw.slice(0,match.index),lead=before.slice(Math.max(before.lastIndexOf('.'),before.lastIndexOf('\n'))+1);
+  const evidence=editorialTokens(lead,raw,'step',true),numbers=evidence.filter(w=>/^n\d/.test(w));if(!numbers.length)continue;
+  const anchors=evidence.filter(w=>!/^n\d/.test(w)&&!['per','side','second','seconds','min','hour'].includes(w));
+  const target=fields.filter(f=>f.method).find(f=>{const words=editorialTokens(f.get(),raw,'step',true);return numbers.every(w=>words.includes(w))&&anchors.filter(w=>words.includes(w)).length>=Math.min(2,anchors.length);});
+  if(!target)continue;
+  const risks=caution.split(/\b(?:and|but|because)\b/i).filter(c=>/\b(?:too much|fall apart|prevent|avoid|burn)\b/i.test(c));
+  const required=editorialTokens(risks.join(' '),raw,'step',true),present=editorialTokens(target.get(),raw,'step',true);
+  if(required.some(w=>!present.includes(w)))target.set(target.get().replace(/[.]$/,'')+` (${caution}).`);
+ }
  const locks=sourceLocks(raw);if(locks.length>200)return null; // Fail closed; never silently truncate source obligations.
  for(const lock of locks){
   if(polished&&['some','a little'].includes(lock.prefix??''))continue;

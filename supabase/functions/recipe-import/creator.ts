@@ -59,6 +59,7 @@ export function metadata(raw:string,input:unknown,polished=false):CreatorMetadat
   if((string?(typeof p.value!=='string'||!p.value.trim()||p.value.length>100):(!Number.isInteger(p.value)||p.value<0||p.value>10080))||typeof p.evidence!=='string'||!p.evidence.trim()||p.evidence.length>500||!normalize(raw).includes(normalize(p.evidence))){(result as any)[key]=unknown();continue;}
   if(key==='cuisine'){
    if(!cuisines.includes(p.value)||(p.origin==='provided'&&!normalize(p.evidence).includes(normalize(p.value))))result.cuisine=unknown();
+   else if(p.origin==='provided'&&!/\bcuisine\b/i.test(p.evidence))result.cuisine={...p,origin:'estimated'};
    continue;
   }
   const value=string?number(p.value):p.value, stated=explicit(raw,key);
@@ -94,8 +95,14 @@ export function construct(value:Extraction,raw:string,polished=false):Extraction
    const line=match[0].trim();if(!grounded(line,raw,'ingredient'))continue;
    const identity=tokens(line).filter(w=>!/^n\d/.test(w)&&!['cup','tbsp','tsp','clove','oz','g','kg','ml','lb'].includes(w));
    const existing=part.ingredients.findIndex(i=>identity.every(w=>tokens(i).includes(w)));
-   if(existing<0)part.ingredients.push(line);
-   else if(!tokens(part.ingredients[existing]).some(w=>/^n\d/.test(w)))part.ingredients[existing]=line;
+   // Procedural measures are not ingredients. New lines need a real ingredient
+   // measure; bare counts may only refine an already identified ingredient.
+   const words=tokens(line);
+   if(words.some(w=>['second','seconds','sec','secs','min','hour','degree','degrees','f','c','side','sides'].includes(w)))continue;
+   if(existing<0&&!['cup','tbsp','tsp','clove','oz','g','kg','ml','lb'].includes(words[1]))continue;
+   // Source words alone cannot establish that a numeric method fragment is a
+   // new ingredient. Recover measures only for an existing ingredient identity.
+   if(existing>=0&&!tokens(part.ingredients[existing]).some(w=>/^n\d/.test(w)))part.ingredients[existing]=line;
   }
  }
  const ordered:number[]=[],pending=new Set(copy.components.map((_,i)=>i));

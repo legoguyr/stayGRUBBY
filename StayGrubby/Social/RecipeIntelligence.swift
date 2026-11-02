@@ -50,9 +50,12 @@ nonisolated enum RecipeImportValidation {
         let source = value.metadata == nil ? raw : RecipeCreatorValidation.effectiveSource(raw)
         let built = value.metadata == nil ? value : RecipeCreatorValidation.construct(value, raw: source)
         guard let built, let value = RecipeEditorialEvidence.preserve(built, raw: source) else { throw RecipeImportFailure.invalid }
+        let references = source + "\n" + value.components.compactMap(\.title).filter { $0.count <= 120 && RecipeSourceEvidence.grounded($0, raw: source, kind: .title, polished: true) }.joined(separator: "\n")
         func excerpt(_ text: String, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String {
             let clean = IngredientParser.trim(text)
-            guard !clean.isEmpty, clean.count <= limit, RecipeSourceEvidence.grounded(clean, raw: source, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
+            let evidenceSource: String
+            if polished, case .step = kind { evidenceSource = references } else { evidenceSource = source }
+            guard !clean.isEmpty, clean.count <= limit, RecipeSourceEvidence.grounded(clean, raw: evidenceSource, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
             return clean
         }
         func optional(_ text: String?, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String? {

@@ -1,4 +1,25 @@
-# Manual development cooking seed
+# Development tools
+
+## Unattended authenticated Recipe Creator validation
+
+`recipe_live_test.mjs` is explicit development tooling, **outside every Xcode target**. It never runs at app launch or in Release/TestFlight/App Store; the app does not reference its endpoint. Production stays Apple-only, with email and anonymous sign-in disabled. Never use Guy's account/phone/SDK Keychain or extract the Gemini key.
+
+`development-test-session` keeps JWT verification and requires an additional administrator-issued, random 256-bit proof. Only its SHA-256 hash enters SQL; it expires in five minutes and is consumed atomically before Auth operations. Clients and service_role cannot issue proofs. The helper uses supported Auth Admin create/get/generate-link APIs and `/verify`, sends no email, and issues an ordinary non-anonymous session **only** for `recipe-validation@staygrubby.invalid`. Admin-controlled app_metadata and a pinned UUID prevent real-user targets or collision adoption. Privileged keys stay inside Edge Functions. Two closed/RLS tables are in the unexposed `development` schema; constrained service-only consume/bind RPCs have fixed search paths. Migration `20261102181733_development_recipe_test_auth.sql` changes no existing app ownership or production Auth settings. This is the explicitly authorized November 2 testing exception, not a second app sign-in path.
+
+Future authorized workflow:
+
+1. Inspect the task/deployment and existing private budget. **The present `77dd8c13-six-approved-calls` budget is exhausted: 6/6. Never reset it or make a seventh call.** A new campaign needs explicit live-call authorization; do not silently create another allowance.
+2. Reuse `~/Library/Application Support/StayGrubbyDevelopment/recipe-validation/session.json`. Directory mode 700, files 600, outside Git. Normal Auth refresh rotation rechecks the fixed identity. Never display/copy tokens into chat or tracked files.
+3. If a session is unavailable, run `node --use-system-ca DevelopmentTools/recipe_live_test.mjs prepare`. It privately stores the raw proof and prints only the UUID/hash issuance SQL. Execute that statement through the existing Supabase administrator connection, then run the CLI's `login` within five minutes. Expired/failed proofs require new issuance, never relaxed authorization or an owner phone.
+4. Private `public-client.json` has only the existing project's public `anon` JWT (gateway compatibility) and `publishable` key from Supabase `get_publishable_keys`, never privileged credentials. `provision` uses the normal parameterless account RPC for this identity. It creates no cooking library/ranking, Recipe or upload. `status` verifies the test session and public provider settings without calling Gemini.
+5. With a new available approved budget, `run french`, `run shakshuka` or `run kale` verifies unchanged canonical bytes, locks exclusively, and persists a reservation **before one** normal authenticated `recipe-import` invocation. No batching, automatic provider retries or direct Gemini calls. Quota/billing/configuration/authentication or ambiguous transport failures stop the campaign. Inspect each result before proceeding.
+6. Private `call-N-fixture.json` files retain source, bounded candidate and result. `diagnosticReview` plus `x-staygrubby-development-review: candidate` captures successful originals too; normal app responses/logs do not. Offline replay is not another live/physical pass. Tracked regression captures contain only the owner-supplied canonical acceptance Recipes, never session/account identifiers or another user's private Recipe.
+
+Node 24 `--use-system-ca` keeps TLS verification. The Mac's configured DNS resolver timed out during this cycle. Optional `STAYGRUBBY_TEST_ADDRESS` supplies an independently verified public IPv4 for the fixed Supabase hostname, analogous to curl `--resolve`; hostname/certificate verification remains enabled. Normally omit it and never blindly reuse a stale address. No system DNS, credential, Git or TLS configuration is changed.
+
+Focused checks: `node --test DevelopmentTools/recipe_live_test.test.mjs`, `node Backend/tests/development-test-auth.test.mjs`, and Deno tests in `supabase/functions/development-test-session` / `recipe-import`. Hosted deployment still needs current-cycle authorization. Retire this facility later by deliberately retiring its helper/grants and dedicated test session/identity, never real accounts.
+
+## Historical manual development cooking seed
 
 **Historical utilities:** the Swift seed/allergen tools below retain their original module and bundle guards and must not be retargeted to the renamed app. Current project/app identity is StayGrubby, `com.guyrettig.StayGrubby`. See `PROJECT_RENAME.md` for the separate, explicit Simulator-only library transfer. Its Python tool is outside all Xcode targets and never runs at app startup. Run its isolated safety tests with `python3 -m unittest discover -s DevelopmentTools -p 'test_simulator_transfer.py' -v`.
 

@@ -1044,7 +1044,7 @@
           },
           "cuisine": {
             "value": "Italian",
-            "origin": "provided",
+            "origin": "estimated",
             "evidence": "Italian Pasta"
           },
           "allergenHints": []
@@ -1431,7 +1431,7 @@
           },
           "cuisine": {
             "value": "Italian",
-            "origin": "provided",
+            "origin": "estimated",
             "evidence": "Italian pasta"
           },
           "allergenHints": []
