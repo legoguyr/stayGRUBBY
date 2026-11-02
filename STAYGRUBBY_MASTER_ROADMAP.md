@@ -35,6 +35,8 @@ Implementation is complete; automated verification/deployment evidence is mainta
 
 October 29 physical Paste Recipe acceptance failed on the owner's informal French toast and Shakshuka inputs. The combined server/native source-validation correction is automated-verified (187 Edge/39 distinct native tests). The final `recipe-import` v19 correction is deployed and source/data-verified following explicit owner approval; a fresh iPhone build/retest is required before closing this gate; no new product phase has begun.
 
+November 1 recovery preserved the committed/deployed implementation, passed focused V2/scaling/diagnostic checks and installed the normal 1.0 (2) iPhone development build. Owner physical acceptance and live Paste Recipe accuracy remain pending; zero of the six approved diagnostic calls have run. Public policy publication/live-route verification remains a release follow-up. The dated recovery evidence and one owner checklist are in the V2 review. No next-phase implementation was started.
+
 No broader Recipe UI redesign, Recipe social post types, social description/notification overhaul, Universal Links fix or distribution is included.
 
 ## NEXT — Social Recipe Sharing + Description Improvements (PLANNED, after V2 acceptance)

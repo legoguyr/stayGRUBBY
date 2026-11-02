@@ -1,6 +1,6 @@
 # StayGrubby — current product and architecture
 
-**Canonical current-state overview — October 28, 2026.** Read [AGENTS.md](AGENTS.md) for development rules and the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md) for planned work. This overview reconciles the implementation and owner decisions; dated domain/review sections remain evidence for their checkpoints, not claims that their old counts, gates or future boundaries still apply.
+**Canonical current-state overview — updated November 1, 2026.** Read [AGENTS.md](AGENTS.md) for development rules and the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md) for planned work. This overview reconciles the implementation and owner decisions; dated domain/review sections remain evidence for their checkpoints, not claims that their old counts, gates or future boundaries still apply.
 
 ## Product and navigation
 
@@ -63,6 +63,8 @@ Recipe-owned optional photos take precedence over linked cook photography, then 
 
 Ingredient entry/paste and native within/between-component row ordering are unchanged. Explicit Save, revision conflict protection, dirty/cancel protection and editable import review remain. Unsaved force-quit recovery is not claimed. See [Architecture V2 verification/release state](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md); owner physical acceptance of V2 remains separate from accepted Creator mechanics.
 
+November 1 recovery confirmed that V2 is already committed/deployed and preserved its implementation. Focused checks passed; a normal 1.0 (2) development build is installed on the owner's iPhone for the final checklist. The special-build import investigation harness is excluded from Release and normal navigation, permits one explicitly launched fixture at a time and retains the six-call safety budget; no live regression calls have run. Physical acceptance, live Paste Recipe quality and public policy publication remain pending. See the dated recovery section in the V2 review; historical deployment counts are not current account-state guarantees.
+
 ### Recipe Creator V1 + refinement — OWNER PHYSICALLY ACCEPTED
 
 The owner confirms acceptance in the October 28 workflow re-tool request. This closes the earlier pending physical gate in [refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md). Accepted mechanics are stable unless actual regression/evidence or explicit new scope reopens them.
@@ -75,7 +77,7 @@ Semantic/factual guards preserve supplied ingredients, quantities, options and p
 
 The October 29 V2 physical French toast/Shakshuka failures reopened narrow guard defects: source-supported spelling/inflection, contextual culinary wording, singular measures of ingredients and moving one unchanged quantity block within one ingredient phrase must not be rejected as invented facts. The correction also distinguishes “or so” approximation from real choices and retains explicit title-for-count serving headers. Broiler spelling is accepted only in a supported cook-under context, preserving alternative status. **The final combined v19 correction is deployed and verified**, following explicit owner approval after an initial automatic-review block. All ten hosted runtime files match the tested checkpoint; JWT verification and all saved-data fingerprints remain intact. Both server/native changes are required. No model/prompt/limits, ranking or persistence change; no live-provider request was made for regression verification. [Evidence and fresh-build retest](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md). Owner physical acceptance remains pending.
 
-Recipe allergens use the established ingredient taxonomy, possible/label-review distinctions and shared checklist interaction. User corrections survive pure reordering. Actual cook tags/Contains remain independently owned today; Recipe-primary metadata ownership migration has **not** happened. No religious compliance or allergen/cross-contact guarantee is inferred.
+Recipe allergens use the established ingredient taxonomy, possible/label-review distinctions and shared checklist interaction. User corrections survive pure reordering. Recipe Contains/Possible is the primary ingredient-information surface; existing actual cook tags/Contains remain independently owned. No automatic migration or overwrite of historical cook assertions was performed. No religious compliance or allergen/cross-contact guarantee is inferred.
 
 **No StayGrubby daily usage allowance, 30-day expiration, date-based disablement, free-tier-date secret renewal or paid billing.** The existing authenticated 3/account/minute burst protection, request/output/time bounds and server-only key remain. Provider 429/cooldown produces friendly Cloud AI guidance, manual/deterministic fallback and later retry; no automatic retry loop. The first Paste Recipe entry shows external-AI disclosure with Continue, Cancel/Add Manually and policy access before any text transmission. Device-local acknowledgement is durable/account-scoped and versioned. No global AI toggle/provider chooser remains in normal creation; Add Manually invokes no AI. Cancelling disclosure sends nothing. The accepted contract-3 Creator/guards remain unchanged.
 

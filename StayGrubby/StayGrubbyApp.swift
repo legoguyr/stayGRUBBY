@@ -10,7 +10,14 @@ struct StayGrubbyApp: App {
     @State private var accountSession = AccountSessionCoordinator()
     var body: some Scene {
         WindowGroup {
-            AccountApplicationRoot().environment(accountSession).environment(links).modifier(DebugPresentationOverrides())
+            Group {
+                #if DEBUG && RECIPE_LIVE_REGRESSION
+                if RecipeLiveRegressionView.requested { RecipeLiveRegressionView() }
+                else { AccountApplicationRoot() }
+                #else
+                AccountApplicationRoot()
+                #endif
+            }.environment(accountSession).environment(links).modifier(DebugPresentationOverrides())
                 .onOpenURL { links.receive($0) }
                 .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { if let url = $0.webpageURL { links.receive(url) } }
         }
