@@ -6,6 +6,8 @@
 
 `development-test-session` keeps JWT verification and requires an additional administrator-issued, random 256-bit proof. Only its SHA-256 hash enters SQL; it expires in five minutes and is consumed atomically before Auth operations. Clients and service_role cannot issue proofs. The helper uses supported Auth Admin create/get/generate-link APIs and `/verify`, sends no email, and issues an ordinary non-anonymous session **only** for `recipe-validation@staygrubby.invalid`. Admin-controlled app_metadata and a pinned UUID prevent real-user targets or collision adoption. Privileged keys stay inside Edge Functions. Two closed/RLS tables are in the unexposed `development` schema; constrained service-only consume/bind RPCs have fixed search paths. Migration `20261102181733_development_recipe_test_auth.sql` changes no existing app ownership or production Auth settings. This is the explicitly authorized November 2 testing exception, not a second app sign-in path.
 
+The separately owner-authorized **v25 final-verification** campaign is also exhausted: **3/3**, French toast/Shakshuka/kale once each. `STAYGRUBBY_RECIPE_CAMPAIGN=v25-final-live-20261102` selects its independent `v25-final-budget.json` and prefixed artifacts; it cannot reset or spend the old grant, repeat a fixture or exceed three calls. Missing state fails closed. Neither exhausted campaign authorizes another call.
+
 Future authorized workflow:
 
 1. Inspect the task/deployment and existing private budget. **The present `77dd8c13-six-approved-calls` budget is exhausted: 6/6. Never reset it or make a seventh call.** A new campaign needs explicit live-call authorization; do not silently create another allowance.

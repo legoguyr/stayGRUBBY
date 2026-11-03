@@ -36,6 +36,7 @@ nonisolated enum RecipeStyleEvidence {
             s = s.replacingOccurrences(of: #"\b(?:assembly|preparation|base)\b"#, with: "preparation", options: .regularExpression) + " preparation"
         }
         if case .step = kind {
+            if raw.range(of: #"\bto begin with\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bat first\b"#, with: "to begin with", options: .regularExpression) }
             if raw.range(of: #"\brepeat\b.{0,60}\ball\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\beach\b"#, with: "", options: .regularExpression) }
             if raw.range(of: #"\balternatively\b"#, options: [.regularExpression,.caseInsensitive]) != nil { s = s.replacingOccurrences(of: #"\bor alternatively\b"#, with: "alternatively", options: .regularExpression) }
             s = s.replacingOccurrences(of: #"\b(?:poured|pouring)\b"#, with: "pour", options: .regularExpression)

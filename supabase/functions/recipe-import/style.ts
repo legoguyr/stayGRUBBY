@@ -30,6 +30,7 @@ export function styleText(value:string,raw:string,kind:string):string {
   s=s.replace(/\b(?:assembly|preparation|base)\b/g,'preparation')+' preparation';
  }
  if(kind==='step'){
+  if(/\bto begin with\b/i.test(raw))s=s.replace(/\bat first\b/g,'to begin with');
   if(/\brepeat\b.{0,60}\ball\b/i.test(raw))s=s.replace(/\beach\b/g,'');
   if(/\balternatively\b/i.test(raw))s=s.replace(/\bor alternatively\b/g,'alternatively');
   s=s.replace(/\b(?:poured|pouring)\b/g,'pour').replace(/\bstaying\b/g,'stay');

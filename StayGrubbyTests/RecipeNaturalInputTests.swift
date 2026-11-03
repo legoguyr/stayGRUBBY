@@ -6,6 +6,8 @@ import Testing
     private final class ResourceAnchor: NSObject {}
     private struct Pair: Decodable { var text: String; var kind: String; var valid: Bool }
     private struct Case: Decodable { var raw: String; var extraction: RecipeExtraction }
+    private struct LiveCase: Decodable { var id: String; var raw: String; var extraction: RecipeExtraction?; var provider: RecipeExtraction; var expectedStatus: Int }
+    private struct LiveCases: Decodable { var cases: [LiveCase] }
     private struct Fixture: Decodable {
         var raw: String
         var extraction: RecipeExtraction
@@ -122,6 +124,33 @@ import Testing
         #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
         for (raw,line) in [("Dice carrots. Slice onions.","onions, diced"),("2 yellow onions. Dice red onions.","2 yellow onions, diced"),("3 cloves garlic, chopped.","4 cloves garlic, chopped")] {
             #expect(!RecipeSourceEvidence.grounded(line, raw: raw, kind: .ingredient, polished: true))
+        }
+    }
+    @Test func freshV25LiveResponsesRemainHonestAfterFocusedCorrection() throws {
+        let bundle = Bundle(for: ResourceAnchor.self)
+        let url = bundle.url(forResource: "RecipeV25FinalVerification", withExtension: "json", subdirectory: "Fixtures") ?? bundle.url(forResource: "RecipeV25FinalVerification", withExtension: "json")
+        let f = try JSONDecoder().decode(LiveCases.self, from: Data(contentsOf: #require(url)))
+        for c in f.cases {
+            if c.expectedStatus == 200 {
+                let value = try #require(c.extraction)
+                let result = try RecipeImportValidation.review(RecipeImportValidation.decode(JSONEncoder().encode(value)), raw: c.raw, dishTitle: "", provider: "Fresh v25 capture; offline native check")
+                #expect(result.draft.isValidDraft)
+                #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
+                if c.id == "french" {
+                    #expect(result.draft.orderedComponents.flatMap(\.ingredients).contains { $0.name == "Custard Base" && $0.quantity.isEmpty })
+                    #expect(result.draft.steps.contains { $0.contains("at first") })
+                }
+            } else {
+                var rejected = c.provider; rejected.editorialVersion = 3
+                #expect(throws: (any Error).self) { try RecipeImportValidation.review(rejected, raw: c.raw, dishTitle: "", provider: "Rejected real capture") }
+            }
+        }
+    }
+    @Test func ingredientComponentReferencesCannotAddAmountsOrUnknownIngredients() {
+        let raw = "Use bread and cream. Form a custard. Cook bread in custard."
+        for line in ["1 cup Custard Base","Custard Base and bacon","Saffron Custard"] {
+            let value = RecipeExtraction(editorialVersion: 3, components: [.init(title: "Custard Base", ingredients: ["cream"], steps: ["Form a custard."]),.init(title: "Cooking", ingredients: [line], steps: ["Cook bread in custard."])])
+            #expect(throws: (any Error).self) { try RecipeImportValidation.review(value, raw: raw, dishTitle: "", provider: "Synthetic unsafe reference") }
         }
     }
 }

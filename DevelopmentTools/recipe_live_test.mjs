@@ -8,12 +8,15 @@ import {fileURLToPath} from 'node:url';
 import {request as httpsRequest} from 'node:https';
 import {isIP} from 'node:net';
 export const approval='77dd8c13-six-approved-calls';
+export const finalV25={approval:'v25-final-live-20261102',maximum:3,minimum:0,once:true,budget:'v25-final-budget.json',prefix:'v25-final-'};
+const legacy={approval,maximum:6,minimum:1,once:false,budget:'budget.json',prefix:''};
 export const directory=join(homedir(),'Library/Application Support/StayGrubbyDevelopment/recipe-validation');
 const root=fileURLToPath(new URL('../',import.meta.url));
 const project='https://lgjxbpycphhsswxoncmz.supabase.co';
 const digest=s=>createHash('sha256').update(s).digest('hex');
-export function reserve(budget,id,hash) {
- if(budget.approval!==approval||!Array.isArray(budget.attempts)||budget.attempts.length<1||budget.attempts.length>=6||budget.stopped)throw Error('budget_unavailable');
+export function reserve(budget,id,hash,grant=legacy) {
+ if(budget.approval!==grant.approval||!Array.isArray(budget.attempts)||budget.attempts.length<grant.minimum||budget.attempts.length>=grant.maximum||budget.stopped)throw Error('budget_unavailable');
+ if(grant.once&&(!['french','shakshuka','kale'].includes(id)||budget.attempts.some(a=>a.id===id)))throw Error('fixture_already_reserved');
  return {...budget,attempts:[...budget.attempts,{id,sha256:hash,at:new Date().toISOString()}]};
 }
 async function save(name,value){const temp=join(directory,name+'.tmp');await writeFile(temp,JSON.stringify(value,null,2)+'\n',{mode:0o600});await chmod(temp,0o600);await rename(temp,join(directory,name));}
@@ -62,6 +65,9 @@ async function main() {
   await save('account.json',r.value);console.log('Dedicated account provisioned through the normal authenticated RPC; no cooking library created.');return;
  }
  if(command!=='run')throw Error('usage_prepare_login_provision_status_run');
+ const selected=process.env.STAYGRUBBY_RECIPE_CAMPAIGN;
+ if(selected&&selected!==finalV25.approval)throw Error('unknown_campaign');
+ const grant=selected?finalV25:legacy;
  const cases={french:['RecipeFrenchToastAcceptance.json','1ad40c62f6d27cfbe0a0ca3150fb9f9ee90744f95af34385c01243b321f9b91d'],shakshuka:['RecipeShakshukaAcceptance.json','18bc8a3d1f9e669cde93fc6db926dc5bfc9689068611999021a2b87a721859c9'],kale:['RecipeEngineCanonicalKale.txt','774a33291a4e216bb55ce4b1d476d0b9c12a4b8aeb3faa2163f3be51da933915']};
  const id=process.argv[3],spec=cases[id];if(!spec)throw Error('unknown_fixture');
  const text=await readFile(join(root,'StayGrubbyTests/Fixtures',spec[0]),'utf8'),raw=spec[0].endsWith('.json')?JSON.parse(text).raw:text;
@@ -69,14 +75,15 @@ async function main() {
  const lock=await open(join(directory,'live-call.lock'),'wx',0o600);
  try {
   // Missing state must fail closed, never silently reset a spent approval.
-  let b=await read('budget.json');
-  b=reserve(b,id,spec[1]);await save('budget.json',b); // Persist BEFORE invocation; ambiguous failures consume the call.
+  let b=await read(grant.budget);
+  b=reserve(b,id,spec[1],grant);await save(grant.budget,b); // Persist BEFORE invocation; ambiguous failures consume the call.
   const number=b.attempts.length;
   let r;try{r=await api('/functions/v1/recipe-import',{text:raw,cloudConsent:true,contractVersion:3,diagnosticReview:true},config.publishable,s.access_token);}
-  catch{await save('budget.json',{...b,stopped:'transport_ambiguous'});throw Error('live_transport_stopped');}
-  await save(`call-${number}-${id}.json`,{fixture:id,raw,sha256:spec[1],at:new Date().toISOString(),...r});
-  if([401,403,429,503].includes(r.status)||['configuration','authentication','quota'].includes(r.value.stage))await save('budget.json',{...b,stopped:'auth_configuration_or_provider_limit'});
-  console.log(JSON.stringify({fixture:id,call:number,maximum:6,status:r.status,stage:r.value.stage??'success',code:r.value.code??null,requestID:r.requestID??r.value.requestID??null,artifact:`call-${number}-${id}.json`}));
+  catch{await save(grant.budget,{...b,stopped:'transport_ambiguous'});throw Error('live_transport_stopped');}
+  const artifact=`${grant.prefix}call-${number}-${id}.json`;
+  await save(artifact,{fixture:id,raw,sha256:spec[1],at:new Date().toISOString(),...r});
+  if([401,403,429,503].includes(r.status)||['configuration','authentication','quota'].includes(r.value.stage))await save(grant.budget,{...b,stopped:'auth_configuration_or_provider_limit'});
+  console.log(JSON.stringify({fixture:id,call:number,maximum:grant.maximum,status:r.status,stage:r.value.stage??'success',code:r.value.code??null,requestID:r.requestID??r.value.requestID??null,artifact}));
  } finally{await lock.close();await unlink(join(directory,'live-call.lock'));}
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))main().catch(e=>{console.error('Development validation stopped safely; inspect the private artifact/state. No retry was made.');if(/^[a-z_]{3,60}$/.test(e.message??''))console.error(e.message);for(const code of [e.code,e.cause?.code])if(/^[A-Z_]{3,40}$/.test(code??''))console.error(code);process.exitCode=1;});

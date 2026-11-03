@@ -51,11 +51,11 @@ nonisolated enum RecipeImportValidation {
         let built = value.metadata == nil ? value : RecipeCreatorValidation.construct(value, raw: source)
         guard let built, let value = RecipeEditorialEvidence.preserve(built, raw: source) else { throw RecipeImportFailure.invalid }
         let references = source + "\n" + value.components.compactMap(\.title).filter { $0.count <= 120 && RecipeSourceEvidence.grounded($0, raw: source, kind: .title, polished: true) }.joined(separator: "\n")
-        func excerpt(_ text: String, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String {
+        func excerpt(_ text: String, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata, componentReference: Bool = false) throws -> String {
             let clean = IngredientParser.trim(text)
             let evidenceSource: String
             if polished, case .step = kind { evidenceSource = references } else { evidenceSource = source }
-            guard !clean.isEmpty, clean.count <= limit, RecipeSourceEvidence.grounded(clean, raw: evidenceSource, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
+            guard !clean.isEmpty, clean.count <= limit, componentReference || RecipeSourceEvidence.grounded(clean, raw: evidenceSource, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
             return clean
         }
         func optional(_ text: String?, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String? {
@@ -66,7 +66,11 @@ nonisolated enum RecipeImportValidation {
         let parts = try value.components.enumerated().map { i, part in
             guard part.ingredients.count <= 100, part.steps.count <= 100, !part.ingredients.isEmpty || !part.steps.isEmpty else { throw RecipeImportFailure.invalid }
             let ingredients = try part.ingredients.enumerated().map { n, text in
-                IngredientParser.parse(RecipeSourceEvidence.ingredientLine(try excerpt(text, limit: 500, kind: .ingredient))).ingredient(id: UUID(), order: n)
+                let unmeasured = !RecipeSourceEvidence.tokens(text).contains { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true }
+                let reference = polished && unmeasured && value.components.prefix(i).compactMap(\.title).contains { title in
+                    title.count <= 120 && normalized(title) == normalized(text) && RecipeSourceEvidence.grounded(title, raw: source, kind: .title, polished: true)
+                }
+                return IngredientParser.parse(RecipeSourceEvidence.ingredientLine(try excerpt(text, limit: 500, kind: .ingredient, componentReference: reference))).ingredient(id: UUID(), order: n)
             }
             let steps = try part.steps.enumerated().map { n, text in RecipeStep(order: n, instruction: try excerpt(text, limit: 2000, kind: .step)) }
             count += ingredients.count + steps.count

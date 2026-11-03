@@ -1,0 +1,505 @@
+{
+  "origin": "Fresh hosted v25 real Gemini requests, November 2 2026; French toast 422, Shakshuka 200, kale 422. Corrected French output is an OFFLINE replay, not another live request.",
+  "cases": [
+    {
+      "id": "french",
+      "raw": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the eggs) continue until all is mixed. Let cool a little but stay lukewarm\\\nHeat a pan on mid-low and melt some butter. Dunk bread in custard for 15 seconds per side (the heat makes it soak in really fast and too much time will make it fall apart). Gently cook over mid low heat /low to prevent burning. Flip once brown. Keep under a towel to stay hot. Serve with warm Vermont maple syrup, cinnamon and sugar, berries and powdered sugar\\\nI like this French toast bc it makes the bread rly soft and kinda mushy.",
+      "liveStatus": 422,
+      "requestID": "baf5bcde-9dff-4cb9-bd6e-367c9f8db972",
+      "expectedStatus": 200,
+      "provider": {
+        "title": "French Toast",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Bread Preparation",
+            "ingredients": [
+              "challah bread"
+            ],
+            "steps": [
+              "Slice challah bread into thick pieces and let sit to dry out."
+            ],
+            "after": []
+          },
+          {
+            "title": "Custard Base",
+            "ingredients": [
+              "1 cup cream",
+              "2 cups whole milk",
+              "4 egg yolks",
+              "1/2 cup of sugar",
+              "1 tbsp of cinnamon",
+              "pinch of sea salt"
+            ],
+            "steps": [
+              "Heat heavy cream and whole milk on low to around 135, stirring frequently to prevent burning on the bottom.",
+              "Whisk egg yolks with sugar, cinnamon, and sea salt.",
+              "Temper the yolks once the dairy is heated by slowly pouring in a little dairy at first while whisking to avoid cooking the eggs, then continue until all is mixed.",
+              "Let the custard cool a little while staying lukewarm."
+            ],
+            "after": [
+              0
+            ]
+          },
+          {
+            "title": "Cooking and Serving",
+            "ingredients": [
+              "butter",
+              "Bread Preparation",
+              "Custard Base",
+              "Vermont maple syrup",
+              "cinnamon",
+              "sugar",
+              "berries",
+              "powdered sugar"
+            ],
+            "steps": [
+              "Heat a pan on mid-low and melt butter.",
+              "Dunk Bread Preparation in Custard Base for 15 seconds per side.",
+              "Gently cook over mid-low heat or low to prevent burning.",
+              "Flip once brown.",
+              "Keep under a towel to stay hot.",
+              "Serve with warm Vermont maple syrup, cinnamon, sugar, berries, and powdered sugar."
+            ],
+            "after": [
+              0,
+              1
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "4 servings",
+            "origin": "derived",
+            "evidence": "4 egg yolks, 1 cup cream, and 2 cups whole milk"
+          },
+          "prepMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "Slice bread, heat dairy, whisk yolks, temper, and dunk."
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Gently cook over mid low heat /low."
+          },
+          "totalMinutes": {
+            "value": 35,
+            "origin": "estimated",
+            "evidence": "Prep plus cooking time including resting slices to dry."
+          },
+          "cuisine": {
+            "value": "French",
+            "origin": "provided",
+            "evidence": "French toast recipe"
+          },
+          "allergenHints": [
+            "milk",
+            "egg",
+            "wheat"
+          ]
+        }
+      },
+      "extraction": {
+        "title": "French Toast",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Bread Preparation",
+            "ingredients": [
+              "challah bread"
+            ],
+            "steps": [
+              "Slice challah bread into thick pieces and let sit to dry out."
+            ],
+            "after": []
+          },
+          {
+            "title": "Custard Base",
+            "ingredients": [
+              "1 cup heavy cream",
+              "2 cups whole milk",
+              "4 egg yolks",
+              "1/2 cup of sugar",
+              "1 tbsp of cinnamon",
+              "pinch of sea salt"
+            ],
+            "steps": [
+              "Heat heavy cream and whole milk on low to around 135, stirring frequently to prevent burning on the bottom.",
+              "Whisk egg yolks with sugar, cinnamon, and sea salt.",
+              "Temper the yolks once the dairy is heated by slowly pouring in a little dairy at first while whisking to avoid cooking the eggs, then continue until all is mixed.",
+              "Let the custard cool a little while staying lukewarm."
+            ],
+            "after": []
+          },
+          {
+            "title": "Cooking and Serving",
+            "ingredients": [
+              "butter",
+              "Bread Preparation",
+              "Custard Base",
+              "Vermont maple syrup",
+              "cinnamon",
+              "sugar",
+              "powdered sugar",
+              "berries"
+            ],
+            "steps": [
+              "Heat a pan on mid-low and melt butter.",
+              "Dunk Bread Preparation in Custard Base for 15 seconds per side (the heat makes it soak in really fast and too much time will make it fall apart).",
+              "Gently cook over mid-low heat or low to prevent burning.",
+              "Flip once brown.",
+              "Keep under a towel to stay hot.",
+              "Serve with warm Vermont maple syrup, cinnamon, sugar, berries, and powdered sugar."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": null,
+            "origin": "unknown",
+            "evidence": null
+          },
+          "prepMinutes": {
+            "value": 20,
+            "origin": "estimated",
+            "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+          },
+          "totalMinutes": {
+            "value": 35,
+            "origin": "estimated",
+            "evidence": "French toast recipe. Use day or so old challah bread so it's kinda firm. Slice into thick pieces and let sit to dry out.\\\nHeat heavy 1 cup cream and 2 cups whole milk till around 135 (warm) on low. make sure to stir frequently to prevent it from burning in the bottom.\\\nWisk 4 egg yolks with 1/2 cup of sugar and 1 tbsp of cinnamon and a pinch of salt (I like sea salt for this). Once dairy is heated temper the yolks to form a custard (slowly pour in a little to begin with whisking to not cook the "
+          },
+          "cuisine": {
+            "value": "French",
+            "origin": "estimated",
+            "evidence": "French toast recipe"
+          },
+          "allergenHints": [
+            "milk",
+            "egg",
+            "wheat"
+          ]
+        },
+        "editorialVersion": 3
+      },
+      "rejectionIssues": []
+    },
+    {
+      "id": "shakshuka",
+      "raw": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press out all the juices add in tomato sauce mix and let simmer for 5 to 10 minutes. Crack egg into a cup use a spoon to make a divot in the sauce and pour the egg in there. Repeat until all eggs are used cover poach until egg whites are cooked and yolk is still runny about 3 minutes.  Alternatively, you can turn on the boiler and cook the eggs under there. Serve with toast and feta cheese.",
+      "liveStatus": 200,
+      "requestID": "34d87933-b4e8-4bdd-ac0b-4de4fc3ec6fa",
+      "expectedStatus": 200,
+      "provider": {
+        "title": "Shakshuka",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Vegetable Base",
+            "ingredients": [
+              "2 yellow onions, diced",
+              "1 bell pepper, diced",
+              "3 cloves garlic, chopped",
+              "Olive oil",
+              "Salt",
+              "Pepper",
+              "2 cups cherry tomatoes, sliced in half the long way",
+              "1 teaspoon paprika",
+              "2 pinches cumin"
+            ],
+            "steps": [
+              "Sauté the diced onion and bell pepper in olive oil until translucent, seasoning with salt and pepper.",
+              "Add the chopped garlic while sautéing after onions are translucent.",
+              "Add 1 teaspoon of paprika, 2 pinches of cumin, and the sliced cherry tomatoes.",
+              "Cover and let cook until mushy, then press out all the juices."
+            ],
+            "after": []
+          },
+          {
+            "title": "Shakshuka Sauce and Eggs",
+            "ingredients": [
+              "2 cups of tomato sauce",
+              "8 eggs",
+              "Toast, for serving",
+              "Feta cheese, for serving"
+            ],
+            "steps": [
+              "Add in the tomato sauce, mix, and let simmer for 5 to 10 minutes.",
+              "Crack an egg into a cup, use a spoon to make a divot in the sauce, and pour the egg in there.",
+              "Repeat until all eggs are used.",
+              "Cover and poach until egg whites are cooked and yolk is still runny, about 3 minutes. Alternatively, turn on the broiler and cook the eggs under there.",
+              "Serve with toast and feta cheese."
+            ],
+            "after": [
+              0
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "4 servings",
+            "origin": "provided",
+            "evidence": "Shakshuka for 4."
+          },
+          "prepMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Estimated active preparation time for dicing onions, bell pepper, chopping garlic, slicing cherry tomatoes, and cracking eggs."
+          },
+          "cookMinutes": {
+            "value": 18,
+            "origin": "estimated",
+            "evidence": "Estimated from sautéing onions and bell pepper until translucent, cooking cherry tomatoes until mushy, simmering tomato sauce for 5 to 10 minutes, and poaching eggs for about 3 minutes."
+          },
+          "totalMinutes": {
+            "value": 33,
+            "origin": "estimated",
+            "evidence": "Sum of estimated prep and cook minutes."
+          },
+          "cuisine": {
+            "value": "Middle Eastern",
+            "origin": "estimated",
+            "evidence": "Shakshuka is traditionally recognized as a Middle Eastern and North African dish."
+          },
+          "allergenHints": [
+            "egg",
+            "milk",
+            "wheat"
+          ]
+        }
+      },
+      "extraction": {
+        "title": "Shakshuka",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Vegetable Base",
+            "ingredients": [
+              "2 yellow onions, diced",
+              "1 bell pepper, diced",
+              "Pepper",
+              "Olive oil",
+              "Salt",
+              "3 cloves garlic, chopped",
+              "1 teaspoon paprika",
+              "2 pinches cumin",
+              "2 cups cherry tomatoes, sliced in half the long way"
+            ],
+            "steps": [
+              "Sauté the diced onion and bell pepper in olive oil until translucent, seasoning with salt and pepper.",
+              "Add the chopped garlic while sautéing after onions are translucent.",
+              "Add 1 teaspoon of paprika, 2 pinches of cumin, and the sliced cherry tomatoes.",
+              "Cover and let cook until mushy, then press out all the juices."
+            ],
+            "after": []
+          },
+          {
+            "title": "Shakshuka Sauce and Eggs",
+            "ingredients": [
+              "2 cups of tomato sauce",
+              "8 eggs",
+              "Toast, for serving",
+              "Feta cheese, for serving"
+            ],
+            "steps": [
+              "Add in the tomato sauce, mix, and let simmer for 5 to 10 minutes.",
+              "Crack an egg into a cup, use a spoon to make a divot in the sauce, and pour the egg in there.",
+              "Repeat until all eggs are used.",
+              "Cover and poach until egg whites are cooked and yolk is still runny, about 3 minutes. Alternatively, turn on the broiler and cook the eggs under there.",
+              "Serve with toast and feta cheese."
+            ],
+            "after": []
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "4",
+            "origin": "provided",
+            "evidence": "for 4"
+          },
+          "prepMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+          },
+          "cookMinutes": {
+            "value": 18,
+            "origin": "estimated",
+            "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+          },
+          "totalMinutes": {
+            "value": 33,
+            "origin": "estimated",
+            "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+          },
+          "cuisine": {
+            "value": "Middle Eastern",
+            "origin": "estimated",
+            "evidence": "Shakshuka for 4. 2 cups cherry tomatoes, three cloves garlic, one bell pepper, two yellow onions, 2 cup of tomato sauce, and eight eggs. Diced onion, bell pepper, chopped garlic, sauté in olive oil till translucent seasoning with salt and pepper the onions and bell pepper add garlic while it sautéing sliced cherry tomatoes in half the long way add garlic after onions are translucent add a teaspoon of paprika and 2 pinches of cumin, add cherry tomatoes, cover, and let cook until mushy then press "
+          },
+          "allergenHints": [
+            "egg",
+            "milk",
+            "wheat"
+          ]
+        },
+        "editorialVersion": 3
+      },
+      "rejectionIssues": []
+    },
+    {
+      "id": "kale",
+      "raw": "Blanche 2 cups of kale per person going to need ice water boil water season with salt add kale cook until it starts to wet. Add to ice water. Move it around cool it down squeeze out all the water. Add it to a blender with a quarter cup of olive oil quarter cup Parmesan cheese, two cloves of garlic, pinch of salt and a little chili oil or clabbering chilies or red pepper flakes if you want spice blend till smooth add to a pan heat up boil pasta add pasta to the sauce mix with 1 tablespoon of cubed butter cold butter until glossy add to a pan and top with kale chips and Parmesan crisp Parmesan crisp is done by taking a baking sheet, put in a piece of parchment paper on it and shaving fresh Parmesan on it cooking the oven for about five minutes until it’s crispy. Kale chips are going to be take some kale top with some olive oil, salt and pepper put in the oven till crispy.",
+      "liveStatus": 422,
+      "requestID": "b8551f5a-beb7-4274-adbc-283a8d0bad1d",
+      "expectedStatus": 422,
+      "provider": {
+        "title": "Blanched Kale Pasta with Kale Chips and Parmesan Crisps",
+        "yield": null,
+        "source": null,
+        "components": [
+          {
+            "title": "Parmesan Crisps",
+            "ingredients": [
+              "Fresh Parmesan cheese"
+            ],
+            "steps": [
+              "Take a baking sheet and put a piece of parchment paper on it.",
+              "Shave fresh Parmesan on it.",
+              "Cook in the oven for about five minutes until it is crispy."
+            ],
+            "after": []
+          },
+          {
+            "title": "Kale Chips",
+            "ingredients": [
+              "Kale",
+              "Olive oil",
+              "Salt",
+              "Pepper"
+            ],
+            "steps": [
+              "Take kale and top with some olive oil, salt, and pepper.",
+              "Put in the oven until crispy."
+            ],
+            "after": []
+          },
+          {
+            "title": "Blanched Kale Puree",
+            "ingredients": [
+              "Water",
+              "Ice",
+              "Salt",
+              "Kale",
+              "Olive oil",
+              "Parmesan cheese",
+              "Garlic cloves",
+              "Chili oil or Calabrian chilies or red pepper flakes (optional)",
+              "Salt"
+            ],
+            "steps": [
+              "Prepare an ice water bath.",
+              "Boil water, season with salt, add kale, and cook until it starts to wilt.",
+              "Add to ice water, move it around to cool it down, and squeeze out all the water.",
+              "Add the kale to a blender with a quarter cup of olive oil, a quarter cup of Parmesan cheese, two cloves of garlic, a pinch of salt, and a little chili oil or Calabrian chilies or red pepper flakes if you want spice.",
+              "Blend until smooth."
+            ],
+            "after": []
+          },
+          {
+            "title": "Pasta and Sauce Assembly",
+            "ingredients": [
+              "Blanched Kale Puree",
+              "Pan",
+              "Water",
+              "Pasta",
+              "Cold butter",
+              "Kale Chips",
+              "Parmesan Crisps"
+            ],
+            "steps": [
+              "Add Blanched Kale Puree to a pan and heat up.",
+              "Boil water in a separate pot and add pasta, cooking until done.",
+              "Add pasta to the sauce, mix with 1 tablespoon of cubed cold butter until glossy.",
+              "Add to a pan and top with Kale Chips and Parmesan Crisps."
+            ],
+            "after": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "metadata": {
+          "yield": {
+            "value": "2 cups of kale per person",
+            "origin": "provided",
+            "evidence": "Blanche 2 cups of kale per person"
+          },
+          "prepMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Blanche kale, prepare ice bath, blend ingredients, set up chips and crisps."
+          },
+          "cookMinutes": {
+            "value": 15,
+            "origin": "estimated",
+            "evidence": "Boil kale, cook pasta, bake parmesan crisps for about five minutes and bake kale chips."
+          },
+          "totalMinutes": {
+            "value": 30,
+            "origin": "estimated",
+            "evidence": "Active prep combined with boiling and oven time."
+          },
+          "cuisine": {
+            "value": "Italian",
+            "origin": "derived",
+            "evidence": "Parmesan cheese, pasta, chili oil or Calabrian chilies."
+          },
+          "allergenHints": [
+            "milk",
+            "wheat"
+          ]
+        }
+      },
+      "extraction": null,
+      "rejectionIssues": [
+        {
+          "field": "components[2].title",
+          "rule": "source_word"
+        },
+        {
+          "field": "components[2].ingredients[7]",
+          "rule": "ingredient_phrase"
+        },
+        {
+          "field": "components[2].steps[0]",
+          "rule": "source_word"
+        },
+        {
+          "field": "components[2].steps[3]",
+          "rule": "source_word"
+        },
+        {
+          "field": "components[3].ingredients[0]",
+          "rule": "source_word"
+        },
+        {
+          "field": "components[3].steps[1]",
+          "rule": "source_word"
+        }
+      ]
+    }
+  ]
+}
