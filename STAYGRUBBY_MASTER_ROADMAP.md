@@ -1,6 +1,6 @@
 # StayGrubby Master Roadmap
 
-**Canonical roadmap — reconciled October 28, 2026.** This is the existing Master Roadmap, consolidated rather than duplicated as PRODUCT_ROADMAP.md. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes actual current implementation. Planned items are not implementation or deployment authorization.
+**Canonical roadmap — reconciled November 3, 2026.** This is the existing Master Roadmap, consolidated rather than duplicated as PRODUCT_ROADMAP.md. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes actual current implementation. Planned items are not implementation or deployment authorization.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE**
 
@@ -29,13 +29,13 @@ Food Bible now includes linked and standalone Recipes exactly once. Existing Rec
 
 Physical Apple account-deletion/revocation verification is intentionally deferred, not a development blocker. Owner acceptance is never inferred from automated tests. Default work is single-agent/main/one Simulator lane, with risk-based verification under AGENTS.md.
 
-## CURRENT — Recipe + Social Integration
+## ACCEPTED BASELINE — Recipe + Social Integration
 
 Owner acceptance of Gemini-first v27 and Food Bible Architecture V2 (independent Dish/Recipe identities, revisions, photos, deterministic scaling and review-before-Save) was confirmed in the November 2 integration request. Those mechanics remain frozen; no more live AI calls are authorized under the exhausted grants.
 
-This cycle implements deliberate friends-visible Recipe attachments on existing cook posts, pinned historical reading, Recipe descriptions throughout sharing/history, independent private forks and Run It Back/Shared Cooking snapshot integration. Existing chronological Grub List/Hands/comments remain post-centered. Current architecture and [integration evidence](RECIPE_SOCIAL_INTEGRATION_REVIEW.md) specify privacy/revocation/ownership. Owner acceptance of this new integration remains pending until automated closeout and the concise checklist.
+The completed Recipe + Social checkpoint implements deliberate friends-visible Recipe attachments on existing cook posts, pinned historical reading, Recipe descriptions throughout sharing/history, independent private forks and Run It Back/Shared Cooking snapshot integration. Existing chronological Grub List/Hands/comments remain post-centered. Current architecture and [integration evidence](RECIPE_SOCIAL_INTEGRATION_REVIEW.md) specify privacy/revocation/ownership. It is the baseline for the current Next-Version acceptance cycle.
 
-Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters, automatic Recipe-update posts and broader Sous Chef/notification work are not implemented or implied. The known Tag a Sous Chef notification issue stays in the later social cycle.
+Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
 ## THEN — dedicated Food Bible / Recipe UI overhaul (PLANNED)
 
@@ -63,14 +63,18 @@ Stars and a public/private follower model remain future product work. Mutual fri
 
 Future Taste Intelligence may use permitted cooking/evidence, cuisines/ingredients/techniques, Recipes/sources, photos and explicit preferences to explain taste/discovery. Separate preference from execution, respect small-data uncertainty and never infer allergens/flavor with certainty from images. Recommendations, popularity, sponsorship and monetization never alter Bradley–Terry ranking. Personal ranking remains free; any future subscriptions must add genuine new value. **No new Taste Intelligence/AI infrastructure or paid service is authorized now.** Existing Recipe Creator is a separate accepted system.
 
+## Next-Version Integration — current cycle
+
+Foreground social refresh/shared unread state, stable Comments/list refresh, direct Recipe availability, current/pinned Recipe links, actual own-Kitchen routing and contained hosted website correction are implemented. Focused checks plus one broader integration pass precede the checkpoint; owner two-account/device acceptance remains pending. [Review/checklist](NEXT_VERSION_INTEGRATION_REVIEW.md). This explicitly supersedes the earlier deferral of the small sharing-link dependency; public web browsing remains deferred.
+
 ## RELEASE — separate authorization and gates
 
 Before broader external distribution, complete the relevant release work once, without treating every future idea as a release blocker:
 
 - UGC filtering and operational moderation response: technical blocks/reports/states exist; actual safety coverage, responsible operator/cadence and response process still require release readiness.
-- Physical Universal Links verification/fix: native profile-route/AASA/fallback infrastructure exists, but physical behavior is owner-reported broken/deferred. Do not label it verified from configuration alone.
+- Two-iPhone physical Universal Links acceptance: the confirmed website redirect loop and native routing gaps are corrected; profile/post/current-Recipe/pinned-Recipe direct hosted routes and explicit app-open fallback are verified. Association caching/browser preference and recipient-device behavior still require physical acceptance.
 - Launch/loading experience, including planned pasta-machine animation, under an explicit polish cycle.
-- Publish the latest tested canonical policy on the existing site; review privacy/AI/social disclosures and current App Store privacy answers. Latest local policy is effective October 28; its publication is pending owner Cloudflare login. The tested static build is ready; no DNS or credential workaround is authorized.
+- Current canonical policy (effective November 2) is published and `/privacy` works after the link-router fix. Review current App Store privacy answers, AI/social disclosures and release metadata before wider distribution. No DNS/credential workaround or distribution is authorized.
 - Confirm target OS/device support, age rating, screenshots/metadata, reviewer setup/access and actual beta distribution link. Do not invent a TestFlight link.
 - Explicitly approved External TestFlight preparation/Beta App Review/controlled beta; fixes as needed; Release Candidate; App Store 1.0.
 

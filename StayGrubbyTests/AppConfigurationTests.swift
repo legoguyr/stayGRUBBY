@@ -8,6 +8,13 @@ import Testing
         #expect(Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String == "StayGrubby")
     }
 
+    @Test func explicitWebFallbackCanOpenOnlyTheStayGrubbyScheme() {
+        let types = Bundle.main.infoDictionary?["CFBundleURLTypes"] as? [[String: Any]]
+        #expect(types?.count == 1)
+        #expect(types?.first?["CFBundleURLSchemes"] as? [String] == ["staygrubby"])
+        #expect(types?.first?["CFBundleTypeRole"] as? String == "Viewer")
+    }
+
     @Test func iPhoneSupportsOnlyUprightPortrait() {
         // Read the built application bundle, so generated Info.plist settings
         // are verified rather than duplicating the project configuration.

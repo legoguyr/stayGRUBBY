@@ -1,24 +1,46 @@
 import SwiftUI
 
 nonisolated enum AppRoute: Equatable, Identifiable, Sendable {
-    case profile(String)
-    case invalid
-    var id: String { switch self { case .profile(let username): "profile:" + username; case .invalid: "invalid" } }
+    case profile(String), post(UUID), recipe(UUID), sharedRecipe(UUID), invalid
+    var id: String {
+        switch self {
+        case .profile(let name): "profile:" + name
+        case .post(let id): "post:" + id.uuidString
+        case .recipe(let id): "recipe:" + id.uuidString
+        case .sharedRecipe(let id): "shared-recipe:" + id.uuidString
+        case .invalid: "invalid"
+        }
+    }
     init(url: URL) {
-        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false), parts.scheme == "https", parts.host == "staygrubby.com",
-              parts.user == nil, parts.password == nil, parts.port == nil, parts.query == nil, parts.fragment == nil,
-              parts.percentEncodedPath == parts.path, parts.path.hasPrefix("/@") else { self = .invalid; return }
-        let name = String(parts.path.dropFirst(2))
-        guard SocialIdentityRules.valid(name: "Cook", username: name), name == SocialIdentityRules.username(name) else { self = .invalid; return }
-        self = .profile(name)
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              (parts.scheme == "https" && parts.host == "staygrubby.com") || (parts.scheme == "staygrubby" && parts.host == "open"),
+              parts.user == nil, parts.password == nil, parts.port == nil, parts.query == nil, parts.fragment == nil else { self = .invalid; return }
+        // Decode ordinary URL escaping, then validate the complete route. No open redirects or private paths.
+        let path = parts.path
+        if path.hasPrefix("/@") {
+            let name = String(path.dropFirst(2))
+            guard SocialIdentityRules.valid(name: "Cook", username: name), name == SocialIdentityRules.username(name) else { self = .invalid; return }
+            self = .profile(name); return
+        }
+        let pieces = path.split(separator: "/", omittingEmptySubsequences: false)
+        guard pieces.count >= 3, pieces[0].isEmpty, let uuid = UUID(uuidString: String(pieces[2])), String(pieces[2]).count == 36 else { self = .invalid; return }
+        if pieces.count == 3 && pieces[1] == "p" { self = .post(uuid) }
+        else if pieces.count == 3 && pieces[1] == "r" { self = .recipe(uuid) }
+        else if pieces.count == 4 && pieces[1] == "p" && pieces[3] == "recipe" { self = .sharedRecipe(uuid) }
+        else { self = .invalid }
     }
     static func profileURL(username: String) -> URL? {
         guard SocialIdentityRules.valid(name: "Cook", username: username), username == SocialIdentityRules.username(username) else { return nil }
         return URL(string: "https://staygrubby.com/@" + username)
     }
+    static func postURL(_ id: UUID) -> URL { URL(string: "https://staygrubby.com/p/" + id.uuidString.lowercased())! }
+    static func recipeURL(_ id: UUID) -> URL { URL(string: "https://staygrubby.com/r/" + id.uuidString.lowercased())! }
+    static func sharedRecipeURL(postID: UUID) -> URL { URL(string: postURL(postID).absoluteString + "/recipe")! }
 }
 @MainActor @Observable final class AppLinkRouter {
     var pending: AppRoute?
+    private(set) var ownKitchenRequests = 0
+    func openOwnKitchen() { pending = nil; ownKitchenRequests += 1 }
     func receive(_ url: URL) { pending = AppRoute(url: url) }
 }
 struct AppLinkPresentation: ViewModifier {
@@ -26,13 +48,26 @@ struct AppLinkPresentation: ViewModifier {
     func body(content: Content) -> some View {
         @Bindable var router = router
         content.sheet(item: $router.pending) { route in
-            NavigationStack { ProfileLinkDestination(route: route).toolbar {
+            NavigationStack { AppLinkDestination(route: route).toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { router.pending = nil } }
             } }
         }
     }
 }
+struct AppLinkDestination: View {
+    let route: AppRoute
+    var body: some View {
+        switch route {
+        case .profile: ProfileLinkDestination(route: route)
+        case .post(let id): SocialPostDetailView(postID: id)
+        case .recipe(let id): RecipeDetailView(id: id)
+        case .sharedRecipe(let id): SharedRecipeView(postID: id)
+        case .invalid: ContentUnavailableView("Link unavailable", systemImage: "link", description: Text("This StayGrubby link is invalid or no longer supported."))
+        }
+    }
+}
 struct ProfileLinkDestination: View {
+    @Environment(AppLinkRouter.self) private var router
     let route: AppRoute
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
@@ -60,6 +95,7 @@ struct ProfileLinkDestination: View {
             let page = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("profile_link", "resolve", .init(username: username)))
             guard !Task.isCancelled, token == generation else { return }
             person = page.people.first; isOwn = page.isOwn == true; failed = person == nil
+            if isOwn && person != nil { router.openOwnKitchen() }
         } catch is CancellationError {} catch { if token == generation { failed = true; person = nil } }
     }
 }

@@ -2,7 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
+    @Environment(AppLinkRouter.self) private var links
     @Environment(AccountSessionCoordinator.self) private var accountSession
+    @State private var activity = SocialActivityCoordinator()
     @State private var selection: StayGrubbyTab = .rankings
 
     var body: some View {
@@ -20,10 +22,12 @@ struct ContentView: View {
             NavigationStack {
                 AccountView()
             }
-            .tabItem { Label("My Kitchen", systemImage: "person") }.tag(StayGrubbyTab.profile)
+            .tabItem { Label("My Kitchen", systemImage: "person") }.badge(activity.unread).tag(StayGrubbyTab.profile)
         }
         .tint(SGTheme.ColorToken.accent)
+        .onChange(of: links.ownKitchenRequests) { _, _ in selection = .profile }
         .modifier(AppLinkPresentation())
+        .modifier(SocialActivityHost(coordinator: activity))
         .modifier(SocialPublicationHost())
         #if DEBUG
         .modifier(SocialReviewModifier())

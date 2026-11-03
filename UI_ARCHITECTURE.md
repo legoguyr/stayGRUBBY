@@ -1,3 +1,11 @@
+# Next-Version integrated presentation — November 2, 2026
+
+Four tabs remain Grub List / Grub Rank (initial) / Food Bible / My Kitchen. The fixed My Kitchen header now keeps Order Up! beside Settings; the tab badge and Grub List bell use one foreground account-scoped unread state. Feed cards expose Recipe availability without requiring Post Detail. Recipe cook/copy/Run It Back actions precede long methods, with explicit private-copy/source/revision wording and common reader width. Social/cookbook no-photo states use a shared official-wordmark placeholder; existing photos, export layouts and score colors are unchanged.
+
+Visible read-only social surfaces refresh on bounded foreground activity updates; drafts/editors are never overwritten. Successful lists replace their rows after authorization, preserving Comments/modal anchors while loading. Errors/background clear unauthorized friend content. A failed cookbook refresh shows recovery rather than a false empty-library prompt. Own-profile links select the actual My Kitchen tab; post/current Recipe/pinned Recipe links present their authorized destination with a Done action, retained across the authentication gate.
+
+Review remains upright portrait, light/dark, Dynamic Type, VoiceOver labels/values, at least 44-point actions and Reduce Motion. No new animation or screen-level rotation workaround. [Current integration evidence](NEXT_VERSION_INTEGRATION_REVIEW.md) separates automated evidence from pending physical acceptance. Historical screen/test descriptions below remain dated.
+
 # Current Food Bible presentation — Architecture V2, October 28, 2026
 
 Food Bible keeps the existing four-tab shell and editorial components, now displaying independent Recipe cards keyed by Recipe UUID. Add Recipe offers Paste Recipe/Add Manually without Choose Dish. Dish-context creation and explicit link/unlink reuse the existing cooking objects. Recipe reader/editor adds optional Recipe photography, owner Version History/restore, Save as New Recipe and deterministic view-only serving adjustment; no major visual redesign or new social post type is included.

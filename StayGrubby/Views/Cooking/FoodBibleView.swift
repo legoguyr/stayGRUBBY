@@ -29,7 +29,7 @@ struct FoodBibleView: View {
                     Label("Your cookbook needs a connection to refresh.", systemImage: "wifi.exclamationmark").font(.subheadline)
                     Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle())
                 }
-                if !loading && visible.isEmpty {
+                if !loading && !failed && visible.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Image(systemName: "book.closed").font(.system(size: 44, weight: .light)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
                         Text(entries.isEmpty ? "Your recipes.\nAll in one place." : "Nothing on this page. Yet.").font(SGTheme.TypeRole.hero)
@@ -93,13 +93,7 @@ struct CookbookPhoto: View {
         if let media = dish?.cookbookRepresentativeCook?.primaryImage {
             DishPhoto(media: media, thumbnail: true, name: name)
         } else {
-            ZStack {
-                SGTheme.ColorToken.surface
-                VStack(spacing: 10) {
-                    Image(systemName: "fork.knife").font(.system(size: compact ? 23 : 32, weight: .ultraLight))
-                    if !compact { Text("FROM YOUR KITCHEN").font(.system(.caption2, weight: .semibold)).tracking(1.2).lineLimit(2).multilineTextAlignment(.center) }
-                }.foregroundStyle(SGTheme.ColorToken.accent).padding(8)
-            }.accessibilityLabel("No photo for \(name)")
+            SGFoodPlaceholder().accessibilityLabel("No photo for \(name)")
         }
     }
 }

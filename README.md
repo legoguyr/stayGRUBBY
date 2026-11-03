@@ -13,3 +13,5 @@ The architecture overview indexes task-specific domain documents. Dated review f
 Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Current target is iPhone, upright portrait only. Do not reset data to build or review the app. See the architecture overview for account/development isolation and existing verification tools.
 
 Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini constructs content, the app validates structure, and the user reviews before Save. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.
+
+Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).

@@ -36,6 +36,9 @@ struct SocialEngagementView: View {
             }.disabled(busy || failed).frame(minHeight: 44)
             if failed { Text("Post unavailable or connection interrupted.").font(.footnote); Button("Refresh post") { Task { await update(nil) } } }
         }
+        .onChange(of: post.commentCount) { _, _ in latest = nil }
+        .onChange(of: post.likeCount) { _, _ in latest = nil }
+        .onChange(of: post.liked) { _, _ in latest = nil }
         .sensoryFeedback(.selection, trigger: reactionFeedback)
         .animation(reduceMotion ? nil : SGTheme.Motion.quick, value: current.liked)
         .sheet(isPresented: $showingComments, onDismiss: { Task { await update(nil) } }) { SocialCommentsView(postID: post.id) }
@@ -45,8 +48,10 @@ struct SocialEngagementView: View {
         defer { busy = false }
         do {
             let response = try await request(action == nil ? "social_feed" : "social_interactions", action ?? "post", .init(postID: post.id))
-            guard !Task.isCancelled, let next = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { return }
+            guard !Task.isCancelled else { return }
+            guard let next = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { failed = true; latest = nil; NotificationCenter.default.post(name: .socialContentChanged, object: nil); return }
             if action != nil { reactionFeedback += 1 }; latest = next; failed = false
+            if action != nil { NotificationCenter.default.post(name: .socialEngagementChanged, object: nil) }
         } catch is CancellationError { } catch { failed = true }
     }
 }
@@ -115,6 +120,7 @@ struct SocialCommentsView: View {
                     }
                 }
                 .refreshable { await load() }.task { await load() }
+                .onSocialRefresh { if !busy && !writingComment { await load() } }
                 .onChange(of: scenePhase) { _, phase in
                     generation = UUID(); comments = []; post = nil
                     if phase == .active { Task { await load() } }
@@ -160,13 +166,13 @@ struct SocialCommentsView: View {
         defer { busy = false }
         do {
             _ = try await request("social_interactions", "comment", .init(postID: postID, commentID: commentID, body: text))
-            guard !Task.isCancelled else { return }; writingComment = false; text = ""; commentID = UUID(); await load()
+            guard !Task.isCancelled else { return }; writingComment = false; text = ""; commentID = UUID(); await load(); NotificationCenter.default.post(name: .socialEngagementChanged, object: nil)
         } catch is CancellationError { } catch { failed = true }
     }
     private func remove(_ comment: SocialComment) async {
         guard let request else { return }; busy = true
         defer { busy = false }
-        do { _ = try await request("social_interactions", "deleteComment", .init(postID: postID, commentID: comment.id)); await load() }
+        do { _ = try await request("social_interactions", "deleteComment", .init(postID: postID, commentID: comment.id)); await load(); NotificationCenter.default.post(name: .socialEngagementChanged, object: nil) }
         catch is CancellationError { } catch { failed = true }
     }
 }

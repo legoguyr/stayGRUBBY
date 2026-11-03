@@ -52,6 +52,8 @@ struct SocialFeedView: View {
         }
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
         .refreshable { await load() }
+        .onSocialRefresh { if isSelected { await load() } }
+        .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in if isSelected { Task { await load() } } }
         .task(id: "\(isSelected):\(revision)") {
             guard isSelected else { generation = UUID(); posts = []; return }
             await load()
@@ -79,7 +81,7 @@ struct SocialFeedView: View {
         guard let request else { return }
         let token = UUID(); generation = token; loading = true; failed = false
         let cursor = more ? posts.last : nil
-        if !more { posts = []; hasMore = false }
+        if !more { hasMore = false }
         defer { if generation == token { loading = false } }
         do {
             let ownIdentity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init()))
@@ -89,7 +91,7 @@ struct SocialFeedView: View {
             let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, generation == token else { return }
             friendCount = people.people.count
-            let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) }; hasMore = next.posts.count == 25
+            if more { let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) } } else { posts = next.posts }; hasMore = next.posts.count == 25
             await SocialPhotoCleanup.run(request: request, media: media)
         } catch is CancellationError { } catch {
             guard generation == token else { return }; posts = []; hasMore = false; failed = true
@@ -139,7 +141,10 @@ struct SocialFeedCard: View {
             }
             if isDetail {
                 if let metadata = post.metadata { SocialPostMetadata(metadata: metadata) }
-                if post.recipeID != nil { Button("View Recipe") { navigate(.recipe(post.id)) }.accessibilityIdentifier("post-recipe") }
+            }
+            if post.recipeID != nil && post.published && post.moderationState == "active" {
+                Button { navigate(.recipe(post.id)) } label: { Label("View Recipe", systemImage: "book.closed") }
+                    .frame(minHeight: SGTheme.Size.minimumTap).accessibilityIdentifier("post-recipe")
             }
             if let provenance = post.provenance {
                 if provenance.kind == "recreated", let creator = provenance.creator {

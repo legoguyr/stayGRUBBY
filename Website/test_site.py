@@ -43,11 +43,13 @@ class SiteTests(unittest.TestCase):
         config = json.loads((Path(__file__).parent / 'wrangler.jsonc').read_text())
         self.assertEqual(config['name'], 'staygrubby')
         self.assertEqual(config['assets']['directory'], './public')
-        self.assertFalse(config['assets']['run_worker_first'])
+        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/privacy', '/support', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
+        self.assertEqual(config['main'],'link-worker.mjs')
+        self.assertEqual(config['assets']['binding'],'ASSETS')
         self.assertEqual(config['assets']['html_handling'], 'none')
         self.assertFalse(config['workers_dev'])
         self.assertFalse(config['preview_urls'])
-        self.assertTrue(set(config).isdisjoint({'main', 'routes', 'route', 'vars', 'kv_namespaces', 'r2_buckets', 'd1_databases', 'services', 'analytics_engine_datasets'}))
+        self.assertTrue(set(config).isdisjoint({'routes', 'route', 'vars', 'kv_namespaces', 'r2_buckets', 'd1_databases', 'services', 'analytics_engine_datasets'}))
 
     def test_publish_directory_is_an_exact_public_allowlist(self):
         self.assertEqual({str(p.relative_to(self.output)) for p in self.output.rglob("*") if p.is_file()},
@@ -103,7 +105,7 @@ class SiteTests(unittest.TestCase):
         import json
         association = json.loads((self.output / '.well-known/apple-app-site-association').read_text())
         self.assertEqual(association['applinks']['details'][0]['appIDs'], ['5DSB36G7LZ.com.guyrettig.StayGrubby'])
-        self.assertEqual((self.output / '_redirects').read_text(), '/privacy /privacy.html 200\n/support /support.html 200\n/kitchen /kitchen.html 200\n/@* /kitchen.html 200\n')
+        self.assertEqual((self.output / '_redirects').read_text(), '')
         landing = (self.output / 'kitchen.html').read_text()
         for forbidden in ['supabase', '<script', '<form', 'testflight.apple.com/join/', 'apps.apple.com']:
             self.assertNotIn(forbidden, landing)

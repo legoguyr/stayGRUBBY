@@ -106,6 +106,7 @@ struct SharedCookingEntryView: View {
             }
         }.navigationTitle(eventID == nil ? "Run It Back" : "Cooked Together").navigationBarTitleDisplayMode(.inline)
             .task { await load() }.refreshable { await load() }
+            .onSocialRefresh { if !busy { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); event = nil; post = nil; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .sheet(item: $claim, onDismiss: { Task { await load() } }) { claim in

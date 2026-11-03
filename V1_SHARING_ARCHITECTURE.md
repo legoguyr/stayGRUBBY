@@ -1,3 +1,9 @@
+# Current sharing integration — November 3, 2026
+
+The accepted image models/renderers/layouts, score colors/unlock and native image-sheet behavior below remain frozen. Dish/cook and Signature Dishes exports are still images with no private-ranking URL. Separately, the current social app uses native URL share actions for authorized profile, published post, current friends-visible Recipe and pinned post-Recipe destinations. These are pointers requiring account readiness and fresh server authorization, never public Recipe/post content or access tokens.
+
+The contained hosted link correction fixes the proven rewrite/HTML-canonicalization redirect loop, accepts encoded profile handles, and supplies matching native routes/AASA and privacy-safe web fallbacks with an explicit app-open button. Own-profile links select actual My Kitchen. [Current full route contract/deployment](Website/README.md) and [automated evidence/two-iPhone acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md) supersede older profile-only/no-social-URL claims. Automatic installed-app Universal Link delivery remains physical acceptance, distinct from tested native routing, actual Simulator custom-scheme delivery and origin/Apple-CDN association checks.
+
 # Integrated sharing presentation — October 15, 2026
 
 The approved card model/renderer/compositions, export dimensions, brand-red scores and eligibility/achievement policy remain unchanged. Profile's permanent Top 3 and completion/milestone actions share the same image-only native sheet. Reusable Top 3 stays distinct from the genuine SCORES UNLOCKED milestone; Updated Top 3 still requires a genuine new global #1.

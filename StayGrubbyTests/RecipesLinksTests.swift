@@ -7,11 +7,32 @@ import Testing
     @Test func routesAreExactAndDoNotAcceptPrivateObjectsOrRedirects() throws {
         let good = try #require(URL(string: "https://staygrubby.com/@friendly_cook"))
         #expect(AppRoute(url: good) == .profile("friendly_cook"))
-        for value in ["http://staygrubby.com/@friendly_cook", "https://staygrubby.com.evil/@friendly_cook", "https://evil@staygrubby.com/@friendly_cook", "https://staygrubby.com:443/@friendly_cook", "https://staygrubby.com/@friendly_cook?next=private", "https://staygrubby.com/@friendly_cook#private", "https://staygrubby.com/@Friendly_Cook", "https://staygrubby.com/@ab", "https://staygrubby.com/@friendly_cook/private", "https://staygrubby.com/recipe/secret", "https://staygrubby.com/%40friendly_cook"] {
+        #expect(AppRoute(url: URL(string: "https://staygrubby.com/%40friendly_cook")!) == .profile("friendly_cook"))
+        for value in ["http://staygrubby.com/@friendly_cook", "https://staygrubby.com.evil/@friendly_cook", "https://evil@staygrubby.com/@friendly_cook", "https://staygrubby.com:443/@friendly_cook", "https://staygrubby.com/@friendly_cook?next=private", "https://staygrubby.com/@friendly_cook#private", "https://staygrubby.com/@Friendly_Cook", "https://staygrubby.com/@ab", "https://staygrubby.com/@friendly_cook/private", "https://staygrubby.com/recipe/secret"] {
             #expect(AppRoute(url: try #require(URL(string: value))) == .invalid)
         }
         #expect(AppRoute.profileURL(username: "friendly_cook") == good)
         #expect(AppRoute.profileURL(username: "../private") == nil)
+    }
+    @Test func sharedDestinationsRoundTripThroughHTTPSAndExplicitAppOpen() throws {
+        let id = UUID()
+        let cases: [(URL, AppRoute)] = [(AppRoute.postURL(id), .post(id)), (AppRoute.recipeURL(id), .recipe(id)), (AppRoute.sharedRecipeURL(postID: id), .sharedRecipe(id))]
+        for (url, route) in cases {
+            #expect(AppRoute(url: url) == route)
+            #expect(AppRoute(url: URL(string: "staygrubby://open" + url.path)!) == route)
+            #expect(!url.absoluteString.contains("token"))
+            #expect(AppRoute(url: URL(string: url.absoluteString + "?redirect=private")!) == .invalid)
+            #expect(AppRoute(url: URL(string: url.absoluteString + "/extra")!) == .invalid)
+        }
+        for path in ["/dish/", "/cook/", "/ranking/", "/signature-dishes/"] {
+            #expect(AppRoute(url: URL(string: "https://staygrubby.com" + path + id.uuidString)!) == .invalid)
+        }
+        #expect(AppRoute(url: URL(string: "staygrubby://evil/@friendly_cook")!) == .invalid)
+        let router = AppLinkRouter()
+        router.receive(AppRoute.sharedRecipeURL(postID: id))
+        #expect(router.pending == .sharedRecipe(id))
+        router.openOwnKitchen()
+        #expect(router.pending == nil && router.ownKitchenRequests == 1)
     }
     @Test func routerRetainsOnlyDestinationUntilAuthenticationReady() {
         let router = AppLinkRouter()

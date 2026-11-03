@@ -1,63 +1,44 @@
-# StayGrubby public website
+# StayGrubby public website and sharing links
 
-> Current privacy/release status: [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md) and [Master Roadmap](../STAYGRUBBY_MASTER_ROADMAP.md). The canonical bundled policy is now effective October 28 and includes Architecture V2/Paste Recipe disclosure. It is prepared/tested; publication is pending owner Cloudflare login. Older effective dates below are historical. [AGENTS.md](../AGENTS.md) governs verification and explicit publication authorization.
+The existing Cloudflare Worker `staygrubby` serves `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. Do not create another website, change DNS/email, or add a public Recipe/feed browser. The November 2 Next-Version cycle explicitly reopened the contained app-link dependency; the historical assets-only/profile-only restriction is superseded for this router.
 
-The production site is the existing **assets-only Cloudflare Worker `staygrubby`**, attached to `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. It is not a Pages project. Do not create a second site or replace its custom domain/DNS setup. The release-readiness review records deployment IDs and live verification.
+## Architecture
 
-The website is a minimal app-first landing, privacy/support pages, generic profile fallback and AASA. No web accounts, public recipe/feed/catalog, Supabase requests, JavaScript, analytics or cookies. Preserve all email MX/TXT records; deployment must not change DNS.
+`link-worker.mjs` is a small stateless request handler over the existing static assets. It fetches no Supabase/account/content data, renders no private metadata, sets no cookies, runs no browser JavaScript and accepts only GET/HEAD. Ordinary pages/assets remain static. `association.json` is the shared AASA source for the build and handler. The app ID is `5DSB36G7LZ.com.guyrettig.StayGrubby`.
 
-## Source and local verification
+| Generated HTTPS pointer | Native destination after authentication and authorization |
+| --- | --- |
+| `/@username` (also ordinary `%40` escaping) | Current discoverable Kitchen; own Kitchen selects the actual My Kitchen tab |
+| `/p/<post UUID>` | Current authorized cooking post |
+| `/r/<Recipe UUID>` | Current authorized Recipe |
+| `/p/<post UUID>/recipe` | The immutable Recipe revision deliberately attached to that post |
 
-`StayGrubby/Legal/PrivacyPolicy.md` is the canonical policy, bundled offline in the app and rendered completely for the public site. The current clarification is effective October 28, 2026 and describes independent Recipes, private Recipe photos/revisions, current deletion behavior and first-use external-AI Paste Recipe disclosure. Official artwork comes from the existing asset catalog. Never reconstruct the wordmark.
+These links confer no access. Invalid/deleted/private/blocked destinations show an unavailable state; the web deliberately gives the same generic fallback for every syntactically valid pointer, without checking object existence. No credentials, signatures, account identifiers, personal notes or content appear in URLs. Profile usernames retain the existing anti-recycling route rules; UUID pointers remain stable across content edits. No redirect parameters or arbitrary destinations are supported.
 
-From the repository root:
+Dish/cook and Signature Dishes native exports remain approved branded images, with no private cook/ranking URL. Published cooking posts can separately share their authorized post pointer. Export colors/layouts and unlock rules are unchanged.
+
+## Confirmed failure and correction
+
+The old `/@* → /kitchen.html` rewrite interacted with default HTML canonicalization: the live profile URL redirected to `/kitchen`, which redirected to itself. Privacy/Support suffered the same loop. It also discarded the intended profile. Native parsing rejected `%40` and supported no post/Recipe routes. Entitlements and profile AASA identity already existed; missing entitlements were not the proven cause.
+
+The handler now returns direct 200 fallbacks retaining the validated destination, and direct JSON AASA at both `/.well-known/apple-app-site-association` and `/apple-app-site-association`. `html_handling=none`, empty `_redirects` and explicit Worker-first paths prevent the loop. The fallback offers a user-initiated `staygrubby://open/...` button, registered by the native Info.plist. There is no automatic app-open loop.
+
+Without the app, the website explains beta access and privacy, and keeps Support/Privacy available. `distribution.json` intentionally has no beta/App Store URL; never invent one. iOS Universal Links depend on installation/provisioning, Apple association caching and the recipient's browser preference. Same-domain Safari navigation may stay in Safari; use the explicit Open button or long-press from Messages/Mail. Automatic installed-app behavior still requires two-iPhone physical acceptance.
+
+## Source, verification and deployment
+
+The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, currently effective November 2, 2026. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
 
 ```sh
 python3 Website/build.py
 python3 -m unittest discover -s Website -p 'test_*.py'
-```
-
-Publish **only `Website/public`**, an exact tested allowlist of HTML, CSS, the official logo, headers/redirects and extensionless AASA. Output, Python cache and CLI state are local artifacts and must not be committed. The builder refuses extra files in that directory. No credentials, app data or internal Markdown belongs in it.
-
-## Deployment with the owner's existing authorization
-
-`Website/wrangler.jsonc` targets the existing assets-only Worker and account, retains compatibility date `2026-10-19`, disables workers.dev/preview URLs, serves an intentional 404 and contains no routes/DNS/backend bindings. No paid features or new project are required.
-
-After the owner has their normal Cloudflare CLI session available, from the repository root:
-
-```sh
+node --test Website/test_links.mjs
 wrangler deploy --config Website/wrangler.jsonc --dry-run
 wrangler deploy --config Website/wrangler.jsonc
 ```
 
-Do not paste tokens into Codex or place credentials in configuration. If the existing authenticated connector supports the documented direct static-assets API, it can publish the same tested allowlist without changing credentials. The release review records whether publication actually succeeded; local output and dry run alone are not deployment evidence.
+Use only existing normal authentication; never paste tokens into Codex. Publish the tested Worker and exact `public` asset allowlist. Build output/cache/CLI state stay ignored. Config keeps the existing identity/domain, compatibility date, disabled workers.dev/previews, no backend bindings and no paid setup.
 
-Verify `/`, `/privacy`, `/support`, an unknown path returning 404, and a sample `/@username` reaching the generic `/kitchen` fallback. Profile URLs must retain the original `/@username` path with a direct 200 internal rewrite; HTML canonicalization is deliberately disabled so it cannot redirect away the destination. Explicit extensionless privacy/support/kitchen rewrites remain; **AASA must return 200 JSON directly without redirect/authentication** at `/.well-known/apple-app-site-association`. Check CSP, nosniff, referrer/permissions headers, no cookies/scripts and the complete current policy. Keep the existing custom domain and email records unchanged.
+The authenticated connector deployed tested bundle version **e392a755-ffe1-4261-b0f3-f4f39d2bbba4** during this cycle. A first `keep_assets` deployment retained old routing configuration; verification caught it. The routing correction reattached the byte-identical existing asset manifest using a short-lived completion capability internally, and applied the tested routing settings. No capability was printed, persisted or added to the repository; no static asset bytes changed. Source AASA is served by the handler ahead of the retained older asset copy. A normal future Wrangler deployment rebuilds/replaces that asset too. Final configuration verification also caught default workers.dev/preview exposure from the API upload and restored both to false, confirmed by read-back.
 
-## Universal Links and distribution
-
-Only `https://staygrubby.com/@username` is enabled. AASA names `5DSB36G7LZ.com.guyrettig.StayGrubby` and `/@*`; native parsing is stricter, requires authentication/account readiness, and the server rechecks discovery, friendship/block/account state. The public fallback never interpolates/fetches personal content. No public Recipe/post route is added.
-
-`Website/distribution.json` remains explicitly `{"url": null}`. The page honestly explains that external beta access is not open. Once the owner supplies the actual approved External TestFlight public URL, configure it, rebuild/test and publish. The builder only accepts genuine-format Apple HTTPS join/product URLs, rejects arbitrary hosts/credentials/query/fragment injection, and does not invent a destination. No public link, archive, upload or App Store Connect change is created by this workflow.
-
-Physical association testing remains necessary: confirm Associated Domains capability/provisioning for the existing Team/bundle; install a newly signed build and open shared links from Messages/Mail with cold/warm and signed-in/signed-out states. Same-domain Safari navigation and HTTP/AASA checks alone do not prove iPhone routing. Existing Apple association caches may delay updates.
-
-## Architecture V2 publication handoff — October 28
-
-**November 1 recovery:** seven local site/policy tests still pass, and the canonical policy SHA-256 is `0b8327f23f34e0243beeb4fa8e52f0b34df27ffd72604aed0ec2ae5d0b1ac127`. The connected API still lacks the upload-session Authorization-header option required by Cloudflare's direct-asset upload API. No normal/cached Wrangler executable is available in this recovery environment; the old temporary installation below is historical and is no longer present. Use the owner's normal Wrangler installation/login and the existing build/test/deploy commands above; never copy credentials into Codex. Publication was not attempted through an incomplete upload path. A bounded public `/privacy` fetch returned a same-path HTTP 307 loop, and the independent web fetch could not open it, so live policy contents are not verified. After publishing, confirm a direct working `/privacy` response containing the complete current policy; do not treat local tests or this handoff as publication evidence. No DNS, email, Universal Links or unrelated routing changes were made.
-
-Seven static-policy/routing/security tests pass. The existing connected Cloudflare API can inspect the Worker, but its request interface does not expose the upload-session Authorization header needed for new asset bytes. The official Wrangler CLI reports **not authenticated**. No temporary preview account, alternate credential, DNS/configuration or publication workaround was used.
-
-Owner action after normal Cloudflare login: rebuild/test and deploy with the existing commands above, retaining this Worker/domain/configuration. The task installed official Wrangler 4.154.0 only under `/private/tmp/staygrubby-v2-website-tools`, not as a repository dependency. If that temporary tool still exists, run these from the repository root:
-
-```sh
-/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js login
-python3 Website/build.py
-python3 -m unittest discover -s Website -p 'test_site.py'
-/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js deploy --config Website/wrangler.jsonc --dry-run
-/Users/guyrettig/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node /private/tmp/staygrubby-v2-website-tools/node_modules/wrangler/bin/wrangler.js deploy --config Website/wrangler.jsonc
-```
-
-Complete the browser login yourself; never paste credentials into Codex. If the temporary tool is gone, use a normally installed current Wrangler instead. Then perform the existing live URL/header checks above. A local static build is not publication evidence.
-
-**November 2 Recipe + Social integration:** the bundled policy is effective November 2 and clarifies intentional pinned Recipe/photo attachments, private-copy provenance and revocation/retention. Local generation/tests include the updated text. Publication remains a separate authorized release action; this cycle does not deploy the website or change routing/DNS.
+Verify direct responses for all pointer forms, both AASA paths, `/`, `/privacy`, `/support`, unknown/malformed paths and official assets. Check identity/security headers, destination retention, no redirect loops and no private-content fetch. Current hosted routing, all 14 public path responses and the exact hosted canonical policy were verified. Apple’s public association CDN also returned the same current JSON; this is not a claim of physical iOS acceptance.

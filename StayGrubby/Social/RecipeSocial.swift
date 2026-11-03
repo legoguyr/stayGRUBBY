@@ -115,24 +115,28 @@ struct SharedRecipeView: View {
                     if let creator = value.creator { Text("Recipe shared by \(creator.displayName)").font(.subheadline) }
                     if let cook = value.cook { Text("Cooked by \(cook.displayName)").font(.subheadline) }
                     Text("Shared revision \(value.revision). The current Recipe may have changed.").font(.footnote).foregroundStyle(.secondary)
-                    RecipeReadingBody(content: value.content, allowScaling: true)
-                    if let source = value.content.source { Text("Source · \(source)") }
-                    if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
                     Button("Save a Private Copy") { Task { await fork() } }.buttonStyle(SGButtonStyle()).disabled(busy).accessibilityIdentifier("shared-recipe-fork")
                     Text("A copy is yours to edit independently. The original stays with its creator. Private copies and completed cook snapshots remain yours if sharing later stops. Add your own photo to a copy.").font(.footnote).foregroundStyle(.secondary)
                     if !value.isAuthor { NavigationLink("Run It Back") { SharedCookingEntryView(postID: postID) }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("shared-recipe-recreate") }
+                    RecipeReadingBody(content: value.content, allowScaling: true)
+                    if let source = value.content.source { Text("Source · \(source)") }
+                    if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
+                    ShareLink(item: AppRoute.sharedRecipeURL(postID: postID)) { Label("Share Recipe Link", systemImage: "link") }.accessibilityIdentifier("shared-recipe-share-link")
+                    Text("This link opens this post’s shared revision for Sous Chefs who still have access.").font(.footnote).foregroundStyle(.secondary)
+
                 } else if !failed { ProgressView("Loading shared Recipe") }
                 if failed { Text("Recipe unavailable or sharing has changed. Your saved cooking is unchanged.").accessibilityIdentifier("shared-recipe-unavailable"); Button("Retry") { Task { await load() } } }
-            }.padding(20)
+            }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }.background(SGTheme.ColorToken.background).navigationTitle("Shared Recipe").navigationBarTitleDisplayMode(.inline)
             .task(id: postID) { await load() }.refreshable { await load() }
+            .onSocialRefresh { if !busy { await load() } }
             .navigationDestination(item: $copiedID) { RecipeDetailView(id: $0) }
             .onChange(of: phase) { _, next in generation = UUID(); value = nil; if next == .active { Task { await load() } } }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onDisappear { generation = UUID(); value = nil }
     }
     private func load() async {
-        guard let request else { failed = true; return }; let token = UUID(); generation = token; value = nil; failed = false
+        guard let request else { failed = true; return }; let token = UUID(); generation = token; failed = false
         do {
             let next = try JSONDecoder().decode(SharedRecipe.self, from: await request("recipes", "shared_post", .init(postID: postID)))
             guard !Task.isCancelled, token == generation else { return }; value = next

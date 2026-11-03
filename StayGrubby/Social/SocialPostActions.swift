@@ -25,6 +25,9 @@ struct SocialPostActions: View {
     @State private var failed = false
     var body: some View {
         Menu {
+            if post.published && post.moderationState == "active" {
+                ShareLink(item: AppRoute.postURL(post.id)) { Label("Share Post Link", systemImage: "link") }
+            }
             if post.isAuthor {
                 if post.published && post.moderationState == "active" {
                     Button("Edit Post", systemImage: "pencil") { editing = true }.accessibilityIdentifier("post-edit-\(post.id)")

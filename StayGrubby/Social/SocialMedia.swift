@@ -68,7 +68,7 @@ struct SocialPhoto: View {
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFill() }
-            else { ZStack { SGTheme.ColorToken.surface; Image(systemName: "fork.knife").font(.largeTitle).foregroundStyle(.secondary) } }
+            else { SGFoodPlaceholder() }
         }.clipped().accessibilityHidden(true)
             .task(id: path) {
                 image = nil

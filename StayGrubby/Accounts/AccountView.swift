@@ -41,7 +41,6 @@ struct AccountView: View {
                 ShareMyKitchen()
                 VStack(spacing: SGTheme.Space.small) {
                     SocialFriendsLink()
-                    NotificationsLink().frame(maxWidth: .infinity, alignment: .leading)
                 }
                 SocialProfilePosts(open: { socialRoute = .post($0) })
                 ProfileCookingContent(snapshot: snapshot, ranking: ranking)
@@ -67,6 +66,7 @@ struct AccountView: View {
             HStack {
                 Text("My Kitchen").font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
                 Spacer()
+                NotificationsLink().labelStyle(.iconOnly)
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
                     Image(systemName: "gearshape").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
                 }.accessibilityLabel("Settings").accessibilityIdentifier("settings-open")

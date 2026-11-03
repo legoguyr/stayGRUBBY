@@ -43,6 +43,7 @@ struct SocialProfilePosts: View {
                 if more { Button("More posts") { Task { await load(nextPage: true) } }.disabled(loading) }
             }.frame(maxWidth: .infinity, alignment: .leading)
                 .task(id: revision) { await load() }
+                .onSocialRefresh { await load() }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in posts = []; revision += 1 }
                 .onChange(of: phase) { _, next in generation = UUID(); posts = []; if next == .active { revision += 1 } }
                 .onDisappear { generation = UUID() }
@@ -51,12 +52,12 @@ struct SocialProfilePosts: View {
     private func load(nextPage: Bool = false) async {
         guard let request else { return }; let token = UUID(); generation = token
         let cursor = nextPage ? posts.last : nil
-        if !nextPage { posts = []; more = false }
+        if !nextPage { more = false }
         loading = true; failed = false; defer { if token == generation { loading = false } }
         do {
             let page = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "profile", .init(peerID: personID, beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, token == generation else { return }
-            let ids = Set(posts.map(\.id)); posts += page.posts.filter { !ids.contains($0.id) }; more = page.posts.count == 25
+            if nextPage { let ids = Set(posts.map(\.id)); posts += page.posts.filter { !ids.contains($0.id) } } else { posts = page.posts }; more = page.posts.count == 25
         } catch is CancellationError {} catch { if token == generation { posts = []; more = false; failed = true } }
     }
 }

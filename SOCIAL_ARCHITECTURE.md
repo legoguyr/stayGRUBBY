@@ -6,6 +6,12 @@ Profile-photo/sharing-default enhancements are implemented and deployed: 18 alig
 
 Private cooking history and the social graph are separate. Social APIs never return the CookingGraph, private media paths, Auth identities, email or sync metadata. Social engagement never changes comparisons, strengths, scores, personal ranks or score-unlock eligibility. Existing accounts may keep using private StayGrubby without social setup.
 
+## Current Next-Version integration — November 2, 2026
+
+The current contract in [architecture](STAYGRUBBY_ARCHITECTURE.md#next-version-presentation-links-and-online-state) supersedes older profile-only link and mount-only notification descriptions below. A foreground account-scoped coordinator polls existing authorized activity every 30 seconds (60 after failure), updates shared bells/tab badge, and refreshes visible read-only screens. Background/account changes cancel work; generation guards discard old responses. Read responses supply authoritative counts; stale polls cannot reverse read state. There is no APNs/background delivery claim. Request/invitation/join/Run It Back/Hands/comment generation, dedupe and privacy remain existing server behavior, now covered end-to-end with isolated multi-account tests.
+
+Profile/post/current-Recipe/pinned-post-Recipe HTTPS links and explicit app-open routes reauthorize on the server after the account gate. The web offers only a generic pointer fallback. Sharing never publishes Personal Notes, private cook IDs/ranks or independent source histories. Copies remain independent; pinned revisions remain immutable. See [website](Website/README.md) and [current review](NEXT_VERSION_INTEGRATION_REVIEW.md).
+
 ## Identity
 
 Reuse the permanent account and existing profiles table. Display names collapse whitespace, allow nicknames and have a 50-character limit. Usernames trim whitespace/one optional leading @, lowercase, and require 3–24 ASCII letters/numbers with single internal underscores. The existing case-insensitive unique index is authoritative. A small deterministic platform/system-name set is reserved, including underscore variants. The original temporary 30-day handle reservation remains, augmented by permanent profile-link anti-recycling reservations in the Recipe/Tickets cycle. The same account may reclaim its old handle. Account deletion cascades temporary reservations and nullifies permanent route owners; an old shared link cannot be reassigned. No username marketplace.

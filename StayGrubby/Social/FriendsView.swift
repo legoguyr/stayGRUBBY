@@ -76,6 +76,7 @@ struct FriendsView: View {
         }
         .navigationTitle(administrative?.title ?? "Sous Chefs").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .scrollDismissesKeyboard(.interactively).refreshable { await load() }
+        .onSocialRefresh { if !loading && section != .search { await load() } }
         .task(id: taskKey) {
             page = .init(people: []); error = nil
             if section == .search { do { try await Task.sleep(for: .milliseconds(300)) } catch { return } }
@@ -113,6 +114,8 @@ struct FriendsView: View {
 }
 
 struct FriendProfileView: View {
+    @Environment(\.scenePhase) private var phase
+    @State private var generation = UUID()
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
     @State var person: SocialPerson
@@ -152,6 +155,9 @@ struct FriendProfileView: View {
         .navigationTitle("Kitchen").navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
         .refreshable { await refresh() }.task { if person.relationship != .blocked { await refresh() } }
+        .onSocialRefresh { if !busy && person.relationship != .blocked { await refresh() } }
+        .onChange(of: phase) { _, next in generation = UUID(); unavailable = true; if next == .active { Task { await refresh() } } }
+        .onDisappear { generation = UUID() }
         .confirmationDialog(confirmation == "block" ? "Block this person?" : "Remove this friend?", isPresented: Binding(get: { confirmation != nil }, set: { if !$0 { confirmation = nil } }), titleVisibility: .visible) {
             Button(confirmation == "block" ? "Block Person" : "Remove Friendship", role: .destructive) {
                 let action = confirmation ?? "remove"; confirmation = nil; Task { await mutate(action) }
@@ -162,11 +168,12 @@ struct FriendProfileView: View {
         Button(title) { Task { await mutate(action) } }.accessibilityIdentifier("friend-action-\(action)")
     }
     private func refresh() async {
-        guard let request else { return }
+        guard let request else { return }; let token = UUID(); generation = token
         do {
             let page = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "profile", .init(peerID: person.id)))
-            guard !Task.isCancelled, let latest = page.people.first else { return }; person = latest; error = false; unavailable = false
-        } catch is CancellationError { } catch { unavailable = true; self.error = true; onChange() }
+            guard !Task.isCancelled, generation == token else { return }
+            guard let latest = page.people.first else { unavailable = true; return }; person = latest; error = false; unavailable = false
+        } catch is CancellationError { } catch { if generation == token { unavailable = true; self.error = true; onChange() } }
     }
     private func mutate(_ action: String) async {
         guard let request else { return }; busy = true; error = false

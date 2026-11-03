@@ -11,8 +11,8 @@ nonisolated struct SocialNotification: Codable, Identifiable, Hashable, Sendable
     var date: Date { Date(timeIntervalSince1970: createdAt) }
     var message: String {
         switch kind {
-        case "request": "sent you a friend request"
-        case "accepted": "accepted your friend request"
+        case "request": "sent you a Sous Chef request"
+        case "accepted": "accepted your Sous Chef request"
         case "invited": "tagged you in a shared cook"
         case "joined": "joined your shared cook"
         case "recreated": "ran back your cooking"
@@ -26,28 +26,22 @@ nonisolated struct SocialNotificationsPage: Codable, Sendable { let notification
 
 struct NotificationsLink: View {
     @Environment(\.socialRequest) private var request
-    @Environment(\.scenePhase) private var phase
-    @State private var unread = 0
-    @State private var revision = 0
+    @Environment(\.socialActivity) private var activity
     var body: some View {
         if request != nil {
+            let unread = activity?.unread ?? 0
             NavigationLink { SocialNotificationsView() } label: {
-                Label(unread > 0 ? "Order Up!, \(unread) unread" : "Order Up!", systemImage: unread > 0 ? "bell.badge" : "bell").frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-            }.accessibilityIdentifier("notifications-open")
-                .task(id: revision) { await load() }
-                .onChange(of: phase) { _, next in unread = 0; if next == .active { revision += 1 } }
-                .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in revision += 1 }
-                .onReceive(NotificationCenter.default.publisher(for: .socialNotificationsRead)) { _ in revision += 1 }
+                Label("Order Up!", systemImage: unread > 0 ? "bell.badge" : "bell")
+                    .frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+            }.accessibilityLabel(unread > 0 ? "Order Up!, \(unread) unread" : "Order Up!")
+                .accessibilityValue(activity?.failed == true ? "Refresh unavailable" : "\(unread) unread")
+                .accessibilityIdentifier("notifications-open")
         }
-    }
-    private func load() async {
-        guard let request else { return }
-        do { let page = try JSONDecoder().decode(SocialNotificationsPage.self, from: await request("social_notifications", "page", .init())); try Task.checkCancellation(); unread = page.unread }
-        catch is CancellationError { } catch { unread = 0 }
     }
 }
 
 struct SocialNotificationsView: View {
+    @Environment(\.socialActivity) private var activity
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @State private var notifications: [SocialNotification] = []
@@ -65,7 +59,7 @@ struct SocialNotificationsView: View {
                 Text("Notifications unavailable. Check your connection and retry.")
                 Button("Retry notifications") { Task { await load() } }
             } else if !busy && notifications.isEmpty {
-                ContentUnavailableView("You’re all caught up", systemImage: "bell", description: Text("Friend requests and shared cooking activity appear here."))
+                ContentUnavailableView("You’re all caught up", systemImage: "bell", description: Text("Sous Chef requests and cooking activity appear here."))
             }
             Text("\(unread) unread").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("notifications-unread")
             ForEach(notifications) { notice in
@@ -86,6 +80,7 @@ struct SocialNotificationsView: View {
         }.navigationTitle("Order Up!").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Mark All Read") { Task { await load(action: "readAll") } }.disabled(busy || unread == 0) } }
             .task { await load() }.refreshable { await load() }
+            .onSocialRefresh { if !busy { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); notifications = []; unread = 0; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .onChange(of: route) { _, next in if next == nil { Task { await load() } } }
@@ -95,19 +90,21 @@ struct SocialNotificationsView: View {
                 case "invited", "joined": SharedCookingEntryView(eventID: notice.targetID)
                 default:
                     if let postID = notice.postID { SocialPostDetailView(postID: postID, comments: notice.kind == "comment") }
+                    else { ContentUnavailableView("Activity unavailable", systemImage: "bell.slash", description: Text("The shared content is no longer available.")) }
                 }
             }
     }
     private func load(more: Bool = false, action: String = "page") async {
         guard let request else { return }; let token = UUID(); generation = token
         let cursor = more ? notifications.last : nil
-        if !more { notifications = []; unread = 0; hasMore = false }
+        if !more { hasMore = false }
         busy = true; failed = false
         defer { if generation == token { busy = false } }
         do {
             let next = try JSONDecoder().decode(SocialNotificationsPage.self, from: await request("social_notifications", action, .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, token == generation else { return }
-            let ids = Set(notifications.map(\.id)); notifications += next.notifications.filter { !ids.contains($0.id) }; unread = next.unread; hasMore = next.notifications.count == 25
+            if more { let ids = Set(notifications.map(\.id)); notifications += next.notifications.filter { !ids.contains($0.id) } } else { notifications = next.notifications }; unread = next.unread; hasMore = next.notifications.count == 25
+            activity?.acceptUnread(next.unread)
             NotificationCenter.default.post(name: .socialNotificationsRead, object: nil)
         } catch is CancellationError { } catch { if token == generation { notifications = []; unread = 0; hasMore = false; failed = true } }
     }
@@ -115,8 +112,9 @@ struct SocialNotificationsView: View {
         guard let request else { return }; busy = true
         defer { busy = false }
         do {
-            _ = try await request("social_notifications", "read", .init(targetID: notice.id)); try Task.checkCancellation()
-            route = notice; NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+            let next = try JSONDecoder().decode(SocialNotificationsPage.self, from: await request("social_notifications", "read", .init(targetID: notice.id))); try Task.checkCancellation()
+            unread = next.unread; activity?.acceptUnread(next.unread)
+            route = notice; NotificationCenter.default.post(name: .socialNotificationsRead, object: nil)
         } catch is CancellationError { } catch { notifications = []; unread = 0; failed = true }
     }
 }
@@ -143,15 +141,17 @@ struct SocialPostDetailView: View {
             .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
             .onChange(of: phase) { _, next in generation = UUID(); post = nil; if next == .active { Task { await load() } } }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
+            .onSocialRefresh { await load() }
+            .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in Task { await load() } }
             .onDisappear { generation = UUID() }
             .sheet(isPresented: $showingComments, onDismiss: { Task { await load() } }) { SocialCommentsView(postID: postID) }
             .sheet(item: $person, onDismiss: { Task { await load() } }) { person in NavigationStack { FriendProfileView(person: person) { Task { await load() } }.toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } } } }
             .confirmationDialog("Delete shared post?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete shared post", role: .destructive) { Task { await remove() } } }
     }
     private func load() async {
-        guard let request else { return }; let token = UUID(); generation = token; post = nil; failed = false
+        guard let request else { return }; let token = UUID(); generation = token; failed = false
         do { let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "post", .init(postID: postID))); guard !Task.isCancelled, generation == token else { return }; post = next.posts.first; failed = post == nil }
-        catch is CancellationError { } catch { if generation == token { failed = true } }
+        catch is CancellationError { } catch { if generation == token { post = nil; failed = true } }
     }
     private func remove() async {
         guard let request else { return }

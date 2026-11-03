@@ -54,7 +54,7 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
     @MainActor func testOwnProfileLinkDoesNotOfferSelfFriendship() {
         let app = XCUIApplication(); continueAfterFailure = false
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--review-profile-url", "https://staygrubby.com/@review_cook"]
-        app.launchWithReviewOptions(); XCTAssertTrue(app.staticTexts["Your Kitchen"].waitForExistence(timeout: 15)); XCTAssertFalse(app.buttons["friend-action-request"].exists)
+        app.launchWithReviewOptions(); XCTAssertTrue(app.buttons["settings-open"].waitForExistence(timeout: 15)); XCTAssertTrue(app.tabBars.buttons["My Kitchen"].isSelected); XCTAssertFalse(app.buttons["friend-action-request"].exists)
     }
     @MainActor func testKitchenShareAndSettingsSousChefsHierarchy() {
         let app = launch(["--test-light"]); profile(app)

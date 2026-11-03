@@ -114,6 +114,7 @@ struct RecipeDetailView: View {
         }.background(SGTheme.ColorToken.background).navigationTitle("Recipe").navigationBarTitleDisplayMode(.inline)
             .toolbar { if let recipe, recipe.isOwner { ToolbarItem(placement: .primaryAction) { Button("Edit Recipe", systemImage: "pencil") { editingRecipe = recipe }.accessibilityIdentifier("recipe-edit") } } }
             .task(id: id) { await load() }.refreshable { await load() }
+            .onSocialRefresh { if !busy && recipe?.isOwner != true { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); if recipe?.isOwner != true { recipe = nil }; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .navigationDestination(item: $copiedRecipeID) { RecipeDetailView(id: $0) }
@@ -138,7 +139,13 @@ struct RecipeDetailView: View {
                 Text([recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
                 if let introduction = recipe.content.description, !introduction.isEmpty { Text(introduction).font(.body).lineSpacing(6) }
             }
+            Button { Task { await begin() } } label: { Label(linkedDish == nil ? "Make This" : "Cook It Again", systemImage: "fork.knife").frame(maxWidth: .infinity) }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-make")
+            Text("Review your cook, then rank it. Your recipe stays just as you saved it.").font(.footnote).foregroundStyle(.secondary)
             RecipeReadingBody(content: recipe.content, allowScaling: true)
+            if recipe.visibility == "friends" {
+                ShareLink(item: AppRoute.recipeURL(recipe.id)) { Label("Share Recipe Link", systemImage: "link") }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("recipe-share-link")
+                Text("Only current Sous Chefs with access can open this link. It opens the current Recipe.").font(.footnote).foregroundStyle(.secondary)
+            }
             Divider()
             VStack(alignment: .leading, spacing: 10) {
                 if let creator = recipe.content.originalCreator, !creator.isEmpty { Text("Original creator · \(creator)") }
@@ -149,8 +156,6 @@ struct RecipeDetailView: View {
                 Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private recipe")").font(.caption).foregroundStyle(.secondary)
                 if let attempt = linkedDish?.cookbookRepresentativeCook { NavigationLink("View Dish & Versions") { AttemptDetailView(attempt: attempt) }.frame(minHeight: 44) }
             }.font(.subheadline)
-            Button { Task { await begin() } } label: { Label(linkedDish == nil ? "Make This" : "Cook It Again", systemImage: "fork.knife").frame(maxWidth: .infinity) }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-make")
-            Text("Review your cook, then rank it. Your recipe stays just as you saved it.").font(.footnote).foregroundStyle(.secondary)
             if recipe.isOwner {
                 Button("Version History") { showingHistory = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-history")
                 Button("Save as New Recipe") { newRecipeSource = recipe }.frame(minHeight: 44).accessibilityIdentifier("recipe-save-new")
