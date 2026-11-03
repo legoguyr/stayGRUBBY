@@ -88,3 +88,9 @@ The migration sets authenticator pgrst.db_schemas to retain public/graphql_publi
 Official Supabase Swift 2.55.3 is now an exact SPM dependency. Package.resolved pins the SDK and transitive revisions. Client-safe plist values remain centralized; SDK defaults use Keychain and no logger. The app's guest launch does not construct a client or contact Supabase. AccountSessionCoordinator prepares only an isolated, unresolved/unmounted account store after validated provisioning. See ../ACCOUNT_ARCHITECTURE.md. No Apple capability, Development Team, native login flow, adoption, cloud photos, social feature or production sync was added.
 
 Apple Developer enrollment is processing. Activation is needed for App ID/Sign in with Apple capability, paid-team provisioning and eventual real native login validation, but not this implementation. Do not generate or paste privileged credentials.
+
+## November 2 Recipe + Social integration
+
+Owner-approved `20261103024938_recipe_social_integration` is deployed. All 33 hosted/local migration hashes match; the CLI-created filename was aligned byte-identically to Supabase’s assigned timestamp. New post-revision attachments and independent-copy provenance remain closed/RLS, with existing Recipe/social APIs enforcing deliberate friends-only access. Existing data/Storage fingerprints and all 190 original development media hashes are unchanged. No Edge Function/secret/provider configuration changed. See [current contract](../STAYGRUBBY_ARCHITECTURE.md#recipe--social-integration--current-contract) and [focused verification / limitations](../RECIPE_SOCIAL_INTEGRATION_REVIEW.md).
+
+The owner-approved additive `20261103030054_recipe_owned_copy_share_options` follow-up fixes owned-copy eligibility after a foreign historical Recipe cook. Four new regression assertions pass, existing sharing/media checks pass, and no snapshots/data/ownership were rewritten. Both applied migration files retain their tested SQL bytes.
