@@ -91,7 +91,7 @@ struct SharedCookingEntryView: View {
                 }
                 if let post {
                     Text(post.title).font(.title2.bold()); Text("Run It Back from \(post.author.displayName)’s cooking")
-                    if let recipeID = post.recipeID { NavigationLink("View recipe") { RecipeDetailView(id: recipeID) } }
+                    if post.recipeID != nil { NavigationLink("View recipe") { SharedRecipeView(postID: post.id) } }
                 }
                 if let existing {
                     NavigationLink("View my saved cook") { AttemptDetailView(attempt: existing) }

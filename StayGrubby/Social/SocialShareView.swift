@@ -27,6 +27,7 @@ struct SocialPostComposer: View {
     @State private var editingIdentity = false
     @State private var includePhoto = false
     @State private var postDescription = ""
+    @State private var sharedRecipe: Recipe?
     @State private var postID = UUID()
     @State private var savedPost: SocialPost?
     @State private var busy = false
@@ -36,6 +37,10 @@ struct SocialPostComposer: View {
     private var model: ShareCardModel { .make(for: attempt) }
     private var preservedExistingDescription: Bool {
         didPublish && (savedPost?.postDescription ?? "") != postDescription.trimmingCharacters(in: CharacterSet(charactersIn: " \t\n\r"))
+    }
+    private var preservedExistingRecipe: Bool {
+        guard didPublish, let sharedRecipe else { return false }
+        return savedPost?.recipeID != sharedRecipe.id || savedPost?.recipeRevision != sharedRecipe.revision
     }
     private var ready: Bool {
         SocialPostPublisher.ready(context: context, sync: sync)
@@ -50,6 +55,9 @@ struct SocialPostComposer: View {
                         if preservedExistingDescription {
                             Text("This cook was already shared. Its description was kept. To change it, use Edit Post in the post’s menu in My Kitchen.").accessibilityIdentifier("social-existing-description-preserved")
                         }
+                        if preservedExistingRecipe {
+                            Text("This cook was already shared. Its Recipe attachment was kept. Use Recipe Sharing in the post’s menu to change it.").accessibilityIdentifier("social-existing-recipe-preserved")
+                        }
                         Button("Done", action: close).accessibilityIdentifier("social-share-done")
                     }
                 } else {
@@ -63,6 +71,7 @@ struct SocialPostComposer: View {
                     Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, comparisons and personal rank are not shared. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+                RecipeShareChoice(attemptID: attempt.id, selection: $sharedRecipe)
                 Section("Post Description · optional") {
                     TextField("Tell your Sous Chefs about this cook", text: $postDescription, axis: .vertical)
                         .lineLimit(3...8).accessibilityIdentifier("post-description-input")
@@ -106,7 +115,7 @@ struct SocialPostComposer: View {
             let revision = try SyncJournal.binding(context)?.acceptedRevision ?? 0
             let bytes = includePhoto ? attempt.primaryImage.flatMap { LocalPhotoStore.data(for: $0, thumbnail: false, rootURL: mediaRoot) } : nil
             _ = try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
-                includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, prepared: { post in
+                includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, prepared: { post in
                     savedPost = post; postID = post.id
                 })
             didPublish = true

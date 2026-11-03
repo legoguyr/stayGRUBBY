@@ -96,6 +96,8 @@ struct RecipeDetailView: View {
     @State private var showingHistory = false
     @State private var showingLinker = false
     @State private var newRecipeSource: Recipe?
+    @State private var copiedRecipeID: UUID?
+    @State private var copyReservation = UUID()
     @State private var reservation = UUID()
     @State private var generation = UUID()
     private var linkedDish: Dish? { dishes.first { $0.id == recipe?.linkedDishID } }
@@ -114,6 +116,7 @@ struct RecipeDetailView: View {
             .task(id: id) { await load() }.refreshable { await load() }
             .onChange(of: phase) { _, next in generation = UUID(); if recipe?.isOwner != true { recipe = nil }; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
+            .navigationDestination(item: $copiedRecipeID) { RecipeDetailView(id: $0) }
             .sheet(item: $editingRecipe, onDismiss: { Task { await load() } }) { snapshot in RecipeEditor(recipe: snapshot, dishID: dishID ?? snapshot.linkedDishID) { self.recipe = $0 } }
             .sheet(isPresented: $showingHistory) { if let recipe { RecipeHistoryView(recipe: recipe) { self.recipe = $0 } } }
             .sheet(isPresented: $showingLinker, onDismiss: { Task { await load() } }) { if let recipe { RecipeDishLinker(recipe: recipe) {} } }
@@ -142,6 +145,7 @@ struct RecipeDetailView: View {
                 if let source = recipe.content.source, !source.isEmpty { Text("Source · \(source)") }
                 if let url = recipe.content.externalURL.flatMap(URL.init(string:)) { Link("Original source", destination: url) }
                 if let creator = recipe.creator { Text("Added by \(creator.displayName)") }
+                if recipe.isOwner { RecipeForkAttribution(recipeID: recipe.id) }
                 Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private recipe")").font(.caption).foregroundStyle(.secondary)
                 if let attempt = linkedDish?.cookbookRepresentativeCook { NavigationLink("View Dish & Versions") { AttemptDetailView(attempt: attempt) }.frame(minHeight: 44) }
             }.font(.subheadline)
@@ -151,8 +155,9 @@ struct RecipeDetailView: View {
                 Button("Version History") { showingHistory = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-history")
                 Button("Save as New Recipe") { newRecipeSource = recipe }.frame(minHeight: 44).accessibilityIdentifier("recipe-save-new")
             }
-            if linkedDish == nil { Button("Link to Existing Dish") { showingLinker = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-link") }
+            if recipe.isOwner && linkedDish == nil { Button("Link to Existing Dish") { showingLinker = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-link") }
             if linkedDish != nil { Button("Remove Recipe from Dish", role: .destructive) { detaching = true }.frame(minHeight: 44).accessibilityIdentifier("recipe-detach") }
+            if !recipe.isOwner { Button("Save a Private Copy") { Task { await copyRecipe() } }.frame(minHeight: 44).disabled(busy).accessibilityIdentifier("recipe-fork") }
             if recipe.isOwner { Button("Delete Recipe", role: .destructive) { deleting = true }.frame(minHeight: 44).disabled(busy) }
         }
     }
@@ -175,6 +180,13 @@ struct RecipeDetailView: View {
     private func detach() async {
         guard let request, let linkedID = linkedDish?.id else { return }
         do { _ = try await request("recipes", "detach", .init(dishID: linkedID, recipeID: id)); try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss() } catch { failed = true }
+    }
+    private func copyRecipe() async {
+        guard let request else { return }; busy = true; defer { busy = false }
+        do {
+            let copy = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "fork", .init(targetID: copyReservation, confirmed: true, recipeID: id)))
+            try Task.checkCancellation(); copiedRecipeID = copy.id; NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+        } catch is CancellationError {} catch { failed = true }
     }
     private func delete() async {
         guard let request else { return }
@@ -212,6 +224,7 @@ struct RecipeSnapshotView: View {
     var body: some View {
         List {
             Text(cook.snapshot.title).font(.title2.bold())
+            if let description = cook.snapshot.description { Text(description) }
             if let source = cook.snapshot.source { Text("Source · \(source)") }
             RecipeReadingBody(content: cook.snapshot)
             if let id = cook.recipeID { NavigationLink("Current recipe") { RecipeDetailView(id: id) } }

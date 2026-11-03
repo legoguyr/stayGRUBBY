@@ -272,7 +272,7 @@ struct RecipeEditor: View {
                 Text("Recipe tips are shared only if you turn sharing on. Personal Notes on a cook always stay private.").font(.footnote).foregroundStyle(.secondary)
             }
             Toggle("Share recipe with Sous Chefs", isOn: $shared).accessibilityIdentifier("recipe-sharing")
-            Text("Off keeps this recipe private. Only recipe fields are shared when on; never your private cooking notes or photos.").font(.footnote).foregroundStyle(.secondary)
+            Text("Off keeps this Recipe private and revokes shared-post Recipe access. On shares Recipe content and its Recipe photo with current Sous Chefs; cooking notes and private cooking photos stay private. Earlier private copies and completed cook snapshots remain with their owners.").font(.footnote).foregroundStyle(.secondary)
         }
     }
     private func rowActions(_ part: RecipeComponent, rowID: UUID, ingredient: Bool) -> some View {

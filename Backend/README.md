@@ -58,3 +58,7 @@ deno check --config supabase/functions/delete-account/deno.json supabase/functio
 ```
 
 The tests use ephemeral in-memory synthetic signing keys and mocked Apple/Storage/Auth calls; no network permission is granted to test code. They reject inherited Apple credentials. The clean environment also lets the SDK's runtime detection inspect ordinary environment names without inheriting user secrets. The test files are not deployed. The production export always retains the authenticated `withSupabase` wrapper. These contract tests do not replace disposable physical Apple revocation/deletion validation.
+
+## Recipe + Social integration (November 2)
+
+The additive `recipe_social_integration` migration extends existing Recipe revisions/social APIs with explicit pinned post attachments and independent private-copy provenance. New tables stay closed/RLS; no cooking/Recipe data backfill. Run the focused `recipe-social`, `recipe-social-media` and `recipe-social-migration` tests in `Backend/tests`, with relevant provenance/Shared Cooking checks. See [current contract](../STAYGRUBBY_ARCHITECTURE.md#recipe--social-integration--current-contract) and [integration evidence](../RECIPE_SOCIAL_INTEGRATION_REVIEW.md). The reference schema remains first-install-only.

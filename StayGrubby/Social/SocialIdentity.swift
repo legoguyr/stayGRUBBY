@@ -66,4 +66,5 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var recipe: RecipeContent?
     var visibility: String?
     var postDescription: String?
+    var includeRecipe: Bool?
 }

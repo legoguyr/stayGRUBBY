@@ -19,6 +19,8 @@ import SwiftData
     var dishRecipes: [UUID: UUID] = [:]
     var ticketDates: [UUID: Double] = [:]
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
+    var sharedRecipeSnapshots: [UUID: SharedRecipe] = [:]
+    private var recipeFeedSeeded = false
     var sharedEvents: [UUID: SharedCookingEvent] = [:]
     var cookingClaims: [String: SocialCookingClaim] = [:]
     var notices: [SocialNotification] = []
@@ -34,7 +36,7 @@ import SwiftData
         if ProcessInfo.processInfo.arguments.contains("--recipes-review") {
             identity.discoverable = true
             let id = UUID(uuidString: "60000000-0000-0000-0000-000000000001")!
-            recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
+            recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", description: "A bright soup for a simple supper.", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
         }
         if ProcessInfo.processInfo.arguments.contains("--bible-v2-empty") || ProcessInfo.processInfo.arguments.contains("--bible-review") { recipes = [:] }
         if let url = recipeReviewURL, let data = try? Data(contentsOf: url) {
@@ -110,6 +112,28 @@ import SwiftData
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
         if endpoint == "recipes" {
+            if action == "share_options" {
+                let candidate = recipes.values.first { $0.isOwner }
+                return try JSONEncoder().encode(RecipeShareOption(recipe: candidate, fromCookSnapshot: false))
+            }
+            if action == "shared_post", let id = payload.postID, let value = sharedRecipeSnapshots[id],
+               posts.contains(where: { post in post.id == id && (post.isAuthor || people.contains(where: { $0.id == post.author.id && $0.relationship == .friends })) }) {
+                return try JSONEncoder().encode(value)
+            }
+            if action == "shared_post" { throw URLError(.resourceUnavailable) }
+            if action == "unshare_post", let id = payload.postID { sharedRecipeSnapshots[id] = nil; if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = nil; posts[i].recipeRevision = nil }; return Data("{}".utf8) }
+            if action == "share_post", let id = payload.postID, let rid = payload.recipeID, let r = recipes[rid], let post = posts.first(where: { $0.id == id }) {
+                sharedRecipeSnapshots[id] = .init(postID: id, recipeID: rid, revision: r.revision, content: r.content, creator: post.author, cook: post.author, isAuthor: post.isAuthor)
+                if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = r.revision }
+                return Data("{}".utf8)
+            }
+            if ["fork", "fork_post"].contains(action), let id = payload.targetID {
+                let source = action == "fork_post" ? payload.postID.flatMap { sharedRecipeSnapshots[$0]?.content } : payload.recipeID.flatMap { recipes[$0]?.content }
+                guard var content = source else { throw URLError(.resourceUnavailable) }; content.photoID = nil
+                if recipes[id] == nil { recipes[id] = Recipe(id: id, isOwner: true, content: content, visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false) }
+                return try JSONEncoder().encode(recipes[id])
+            }
+            if action == "fork_provenance" { return Data(#"{"provenance":null}"#.utf8) }
             if action == "save", recipeSaveFailures > 0 { recipeSaveFailures -= 1; throw URLError(.notConnectedToInternet) }
             if action == "get" { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
             if ["prepare_photo", "complete_photo", "photo"].contains(action), let id = payload.assetID {
@@ -230,7 +254,7 @@ import SwiftData
                 let key = post.id.uuidString
                 if cookingClaims[key] == nil {
                     var claim = SocialCookingClaim(id: UUID(), itemID: UUID(), kind: "recreated", completed: false, metadata: .init(title: post.title, course: "main"))
-                    if let id = post.recipeID, let recipe = recipes[id] { claim.recipeOriginID = claim.id; claim.recipeSnapshot = recipe.content; recipeClaims[claim.id] = claim }
+                    if let snapshot = sharedRecipeSnapshots[post.id] { claim.recipeOriginID = claim.id; claim.recipeSnapshot = snapshot.content; recipeClaims[claim.id] = claim }
                     cookingClaims[key] = claim
                 }
                 return try JSONEncoder().encode(cookingClaims[key])
@@ -271,7 +295,10 @@ import SwiftData
                 if let index = posts.firstIndex(where: { $0.id == seed.id }) { posts[index].commentCount = 1 }
                 comments[seed.id] = [SocialComment(id: UUID(uuidString: "30000000-0000-0000-0000-000000000001")!, author: people[0], body: "A friendly cooking comment", createdAt: Date().timeIntervalSince1970, canDelete: false, isAuthor: false)]
             }
-            if ProcessInfo.processInfo.arguments.contains("--recipes-review-feed"), let id = recipes.keys.first, let index = posts.firstIndex(where: { !$0.isAuthor }) { posts[index].recipeID = id }
+            if !recipeFeedSeeded, ProcessInfo.processInfo.arguments.contains("--recipes-review-feed"), let id = recipes.keys.first, let index = posts.firstIndex(where: { !$0.isAuthor }), let r = recipes[id] {
+                recipeFeedSeeded = true; posts[index].recipeID = id; posts[index].recipeRevision = r.revision
+                if sharedRecipeSnapshots[posts[index].id] == nil { sharedRecipeSnapshots[posts[index].id] = .init(postID: posts[index].id, recipeID: id, revision: r.revision, content: r.content, creator: posts[index].author, cook: posts[index].author, isAuthor: false) }
+            }
             let visible = posts.filter { post in post.isAuthor || people.contains(where: { $0.id == post.author.id && $0.relationship == .friends }) }.sorted { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
             if action == "profile" { return try JSONEncoder().encode(SocialPostsPage(posts: visible.filter { post in
                 if let peer = payload.peerID { return post.author.id == peer }
@@ -287,11 +314,15 @@ import SwiftData
                     let author = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: identity.displayName, username: identity.username ?? "review_cook", relationship: .none)
                     posts.append(SocialPost(id: id, author: author, title: "Review cooking post", versionTitle: nil, scoreText: nil, achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: payload.includePhoto == true ? author.id.uuidString.lowercased() + "/" + id.uuidString.lowercased() + ".jpg" : nil, published: payload.includePhoto != true, isAuthor: true, moderationState: "active", postDescription: payload.postDescription))
                 }
+                if payload.includeRecipe == true, let rid = payload.recipeID, let r = recipes[rid], let post = posts.first(where: { $0.id == id }), sharedRecipeSnapshots[id] == nil {
+                    sharedRecipeSnapshots[id] = .init(postID: id, recipeID: rid, revision: payload.sourceRevision ?? r.revision, content: r.content, creator: post.author, cook: post.author, isAuthor: true)
+                    if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = r.revision }
+                }
             } else if action == "editDescription", let index = posts.firstIndex(where: { $0.id == payload.postID && $0.isAuthor }) {
                 posts[index].postDescription = payload.postDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
             } else if action == "delete" { posts.removeAll { $0.id == payload.postID } }
             else if action == "publish", let index = posts.firstIndex(where: { $0.id == payload.postID }) {
-                let p = posts[index]; posts[index] = SocialPost(id: p.id, author: p.author, title: p.title, versionTitle: p.versionTitle, scoreText: p.scoreText, achievement: p.achievement, createdAt: p.createdAt, photoPath: p.photoPath, published: true, isAuthor: p.isAuthor, moderationState: p.moderationState, postDescription: p.postDescription, metadata: p.metadata)
+                let p = posts[index]; posts[index] = SocialPost(id: p.id, author: p.author, title: p.title, versionTitle: p.versionTitle, scoreText: p.scoreText, achievement: p.achievement, createdAt: p.createdAt, photoPath: p.photoPath, published: true, isAuthor: p.isAuthor, moderationState: p.moderationState, recipeID: p.recipeID, recipeRevision: p.recipeRevision, postDescription: p.postDescription, metadata: p.metadata)
             }
             return try JSONEncoder().encode(SocialPostsPage(posts: payload.postID == nil ? posts.filter(\.isAuthor) : posts.filter { $0.id == payload.postID }))
         }

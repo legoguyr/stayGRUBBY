@@ -139,7 +139,7 @@ struct SocialFeedCard: View {
             }
             if isDetail {
                 if let metadata = post.metadata { SocialPostMetadata(metadata: metadata) }
-                if let recipeID = post.recipeID { Button("View Recipe") { navigate(.recipe(recipeID)) }.accessibilityIdentifier("post-recipe") }
+                if post.recipeID != nil { Button("View Recipe") { navigate(.recipe(post.id)) }.accessibilityIdentifier("post-recipe") }
             }
             if let provenance = post.provenance {
                 if provenance.kind == "recreated", let creator = provenance.creator {

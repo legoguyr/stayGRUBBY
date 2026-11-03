@@ -299,3 +299,7 @@ The response imperfections belong to **Gemini content for user review**, not sil
 Canonical architecture, roadmap, AGENTS, README/index, Style Guide and developer workflow now state the permanent ownership boundary. This review and the older Creator audit mark lexical/recovery assumptions as superseded history. All live allowances are exhausted. Owner physical acceptance remains the final gate, using the latest native build; no additional automated inference is authorized here.
 
 **One owner physical test:** Run the latest build on iPhone. Food Bible → Add Recipe → Paste Recipe → unchanged canonical kale → Create once. Review the description/components/quantities and any AI choices, edit as desired, Save, then reopen and confirm those edits remain. Do not reset existing data or repeat unrelated ranking/photo/social checklists.
+
+## November 2 — owner acceptance closeout
+
+The owner’s Recipe + Social Integration request explicitly confirms acceptance of Gemini-first Recipe Creator v27, Food Bible Architecture V2, independent Dish/Recipe identities, Recipe revisions/photos, deterministic serving scaling and user review before explicit Save. This closes the earlier pending owner gates; the preceding dated evidence remains unchanged. These systems are frozen except for actual integration regressions. New Recipe + Social behavior has its own acceptance in [RECIPE_SOCIAL_INTEGRATION_REVIEW.md](RECIPE_SOCIAL_INTEGRATION_REVIEW.md); no additional live inference is authorized or used.

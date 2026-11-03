@@ -17,6 +17,8 @@ nonisolated struct SocialPost: Codable, Identifiable, Sendable {
     var liked: Bool? = nil
     var provenance: SocialProvenance? = nil
     var recipeID: UUID? = nil
+    var recipeRevision: Int? = nil
+    var recipeAttachmentPresent: Bool? = nil
     var postDescription: String? = nil
     var metadata: SharedCookingMetadata? = nil
     var date: Date { Date(timeIntervalSince1970: createdAt) }

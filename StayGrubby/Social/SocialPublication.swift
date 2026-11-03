@@ -11,10 +11,11 @@ import SwiftUI
         return sync?.status != .conflict && sync?.status != .needsReview && sync?.status != .signInRequired
     }
     static func publish(attemptID: UUID, postID: UUID, revision: Int, includePhoto: Bool, photo: Data?,
-                        request: SocialRequest, media: SocialMediaRequest?, postDescription: String? = nil,
+                        request: SocialRequest, media: SocialMediaRequest?, postDescription: String? = nil, sharedRecipe: Recipe? = nil,
                         prepared: (SocialPost) throws -> Void = { _ in }) async throws -> SocialPost {
-        let response = try await request("social_content", "prepare", .init(postID: postID, attemptID: attemptID,
-            expectedRevision: revision, confirmed: true, includePhoto: includePhoto, includeAttribution: true, postDescription: postDescription))
+        var payload = SocialPayload(postID: postID, attemptID: attemptID, expectedRevision: revision, confirmed: true, includePhoto: includePhoto, includeAttribution: true, postDescription: postDescription)
+        payload.includeRecipe = sharedRecipe != nil; payload.recipeID = sharedRecipe?.id; payload.sourceRevision = sharedRecipe?.revision
+        let response = try await request("social_content", "prepare", payload)
         guard let post = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { throw AccountFoundationError.invalidResolution }
         try Task.checkCancellation(); try prepared(post)
         if post.published { return post }

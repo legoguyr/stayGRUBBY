@@ -16,7 +16,7 @@ async function saved(n,ranking,claim){
  await db.query("insert into staygrubby.cooking_attempts(account_id,id,dish_id,ranked_item_id,course_code,sequence_number,created_at_ref,updated_at_ref,is_legacy_import) values($1,$2,$3,$4,'soup',1,2000,2000,false)",[users[n].id,attempt,dish,claim.itemID]);return attempt;
 }
 const attempt=await saved(0,a.ranking,origin);await actor(0);await rpc('recipes','complete',{originID:origin.id});
-const postID=randomUUID();await rpc('social_content','prepare',{postID,attemptID:attempt,expectedRevision:0,confirmed:true,includeAttribution:true});
+const postID=randomUUID();await rpc('social_content','prepare',{postID,attemptID:attempt,expectedRevision:0,confirmed:true,includeAttribution:true,includeRecipe:true,recipeID:rid,sourceRevision:1});
 await actor(1);const post=(await rpc('social_feed','post',{postID})).posts[0];check(post.recipeID===rid,'authorized post exposes recipe reference');
 const rerun=await rpc('social_cooking','recreate',{postID});check(rerun.recipeOriginID&&rerun.recipeSnapshot.source==='A cookbook','Run It Back keeps original recipe source');check(rerun.kind==='recreated'&&rerun.id!==origin.id,'social origin remains independent');
 check((await rpc('social_cooking','recreate',{postID})).recipeOriginID===rerun.recipeOriginID,'retry does not duplicate recipe origin');

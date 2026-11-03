@@ -19,7 +19,7 @@ Personal cooking/comparison ranking stays central. Saving, cooking, ranking and 
 | V1 product correction | Four tabs, cooking/Recipe separation, My Kitchen/Settings hierarchy and accepted score calibration implemented; ranking remains independent of social |
 | Food Bible foundation | Derived cooked-Dish cookbook, structured Recipe content, components, stable Recipe IDs, revision archive/link/provenance infrastructure and explicit manual Save implemented |
 | Food Bible UX 2.0 | Earlier cookbook/editor/reader/search foundation implemented; Architecture V2 now supplies independent Recipe membership |
-| Food Bible Architecture V2 | Independent Recipes/optional links, private Recipe photos, living revisions/history/restore/fork, exact associated-cook snapshots, deterministic serving projection and first-use Paste Recipe disclosure implemented; owner physical acceptance pending |
+| Food Bible Architecture V2 | Independent Recipes/optional links, private Recipe photos, living revisions/history/restore/fork, exact associated-cook snapshots, deterministic serving projection and first-use Paste Recipe disclosure implemented; OWNER ACCEPTED at the Recipe + Social Integration kickoff |
 | Natural/bulk ingredient entry | Deterministic offline ingredient parsing/paste, exact rational quantities and component-aware bulk entry implemented |
 | Recipe Creator V1 + refinement | **OWNER PHYSICALLY ACCEPTED**, confirmed in the October 28 workflow re-tool request; accepted content/metadata/allergen/native-ordering mechanics are stable |
 
@@ -29,22 +29,13 @@ Food Bible now includes linked and standalone Recipes exactly once. Existing Rec
 
 Physical Apple account-deletion/revocation verification is intentionally deferred, not a development blocker. Owner acceptance is never inferred from automated tests. Default work is single-agent/main/one Simulator lane, with risk-based verification under AGENTS.md.
 
-## CURRENT ACCEPTANCE GATE — Food Bible V2 / Gemini-first Creator
+## CURRENT — Recipe + Social Integration
 
-Food Bible V2 identities, independent Recipes/links, photos, revisions/history, snapshots and serving projection remain implemented. The November 2 owner directive deliberately replaces lexical source proof and reconstruction with **Gemini constructs → structural/compatibility validation → editable draft → user review → explicit Save**. This supersedes v19–v26 lexical acceptance assumptions, not historical test outcomes or protected cooking/Recipe architecture.
+Owner acceptance of Gemini-first v27 and Food Bible Architecture V2 (independent Dish/Recipe identities, revisions, photos, deterministic scaling and review-before-Save) was confirmed in the November 2 integration request. Those mechanics remain frozen; no more live AI calls are authorized under the exhausted grants.
 
-The correction is deployed as **recipe-import v27, JWT enabled**, contract 4 (short description and permissive optional metadata). Retained real French toast/Shakshuka/kale and all three freshly authorized live fixtures produce editable serializable drafts under the owner's “useful draft over error” standard. **GEMINI-FIRST RECIPE CREATOR PIPELINE VALIDATED — OWNER PHYSICAL ACCEPTANCE PENDING.** New live grant 3/3 used; old independent 6/6 and 3/3 grants remain exhausted/unchanged. Do not make further provider calls without new authorization. Minor AI content issues are for review/edit, not a new vocabulary validator.
+This cycle implements deliberate friends-visible Recipe attachments on existing cook posts, pinned historical reading, Recipe descriptions throughout sharing/history, independent private forks and Run It Back/Shared Cooking snapshot integration. Existing chronological Grub List/Hands/comments remain post-centered. Current architecture and [integration evidence](RECIPE_SOCIAL_INTEGRATION_REVIEW.md) specify privacy/revocation/ownership. Owner acceptance of this new integration remains pending until automated closeout and the concise checklist.
 
-[Current architecture](STAYGRUBBY_ARCHITECTURE.md), [content style guide](RECIPE_STYLE_GUIDE.md), [exact evidence/limitations/one owner test](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md#november-2--gemini-first-architecture-correction) govern this cycle. Older review failures remain dated historical evidence. No next product phase, broad UI overhaul, Universal Links or release/distribution work was begun. Existing public-policy/release follow-ups remain separately authorized work.
-
-## NEXT — Social Recipe Sharing + Description Improvements (PLANNED, after V2 acceptance)
-
-- Make short Dish/CookingAttempt public descriptions apparent; keep Personal Notes private.
-- Recipe short descriptions, Recipe-only posts, rank-only posts and combined linked ranking + Recipe posts.
-- Deliberate deduplication: no duplicate/spam posts; Recipe edits do not automatically publish. Optional update sharing is a later explicit choice.
-- Grub List filters such as **All / Grub Ranks / Recipes**; Recipe posts open the Recipe.
-- Preserve creator/source attribution, revision provenance and Run It Back integration without copying another person's ranking.
-- Broader Sous Chef/notification overhaul, including the observed **Tag a Sous Chef notification issue**. Existing in-app notifications are not a claim that this issue is resolved.
+Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters, automatic Recipe-update posts and broader Sous Chef/notification work are not implemented or implied. The known Tag a Sous Chef notification issue stays in the later social cycle.
 
 ## THEN — dedicated Food Bible / Recipe UI overhaul (PLANNED)
 

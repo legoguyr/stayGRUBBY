@@ -8,7 +8,7 @@ struct SocialPostDestination: View {
         switch route {
         case .post(let id): SocialPostDetailView(postID: id)
         case .recreate(let id): SharedCookingEntryView(postID: id)
-        case .recipe(let id): RecipeDetailView(id: id)
+        case .recipe(let id): SharedRecipeView(postID: id)
         }
     }
 }
@@ -19,6 +19,7 @@ struct SocialPostActions: View {
     var delete: () -> Void
     @Environment(\.socialRequest) private var request
     @State private var editing = false
+    @State private var sharingRecipe = false
     @State private var reporting = false
     @State private var blocking = false
     @State private var failed = false
@@ -27,6 +28,7 @@ struct SocialPostActions: View {
             if post.isAuthor {
                 if post.published && post.moderationState == "active" {
                     Button("Edit Post", systemImage: "pencil") { editing = true }.accessibilityIdentifier("post-edit-\(post.id)")
+                    Button("Recipe Sharing", systemImage: "book") { sharingRecipe = true }.accessibilityIdentifier("post-recipe-sharing")
                 }
                 Button("Delete Post", systemImage: "trash", role: .destructive, action: delete).accessibilityIdentifier("feed-delete-\(post.id)")
             } else {
@@ -37,6 +39,7 @@ struct SocialPostActions: View {
             Image(systemName: "ellipsis").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap).contentShape(Rectangle())
         }.accessibilityLabel("Post actions for \(post.title)").accessibilityIdentifier("post-actions-\(post.id)")
             .sheet(isPresented: $editing) { SocialPostDescriptionEditor(post: post) }
+            .sheet(isPresented: $sharingRecipe) { RecipePostSharingEditor(post: post) }
             .sheet(isPresented: $reporting) { SocialReportEditor(kind: "post", targetID: post.id, close: { reporting = false }) }
             .confirmationDialog("Block this account?", isPresented: $blocking, titleVisibility: .visible) {
                 Button("Block account", role: .destructive) { Task { await block() } }

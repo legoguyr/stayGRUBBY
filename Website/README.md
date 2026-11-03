@@ -59,3 +59,5 @@ python3 -m unittest discover -s Website -p 'test_site.py'
 ```
 
 Complete the browser login yourself; never paste credentials into Codex. If the temporary tool is gone, use a normally installed current Wrangler instead. Then perform the existing live URL/header checks above. A local static build is not publication evidence.
+
+**November 2 Recipe + Social integration:** the bundled policy is effective November 2 and clarifies intentional pinned Recipe/photo attachments, private-copy provenance and revocation/retention. Local generation/tests include the updated text. Publication remains a separate authorized release action; this cycle does not deploy the website or change routing/DNS.
