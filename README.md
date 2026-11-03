@@ -15,3 +15,5 @@ Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Current target is iPhone, upri
 Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini constructs content, the app validates structure, and the user reviews before Save. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.
 
 Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).
+
+Next release: [approved staged specification](NEXT_RELEASE_SPEC.md), [Stage 1 foundation evidence](NEXT_RELEASE_STAGE_1_REVIEW.md).

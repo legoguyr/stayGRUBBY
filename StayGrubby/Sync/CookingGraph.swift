@@ -31,6 +31,8 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
     var createdAt: Date
     var sourceID: UUID?
     var cuisine: Cuisine?
+    var publicDescription: String? = nil
+    var privateNotes: String? = nil
     @MainActor init(_ value: Dish) {
         self.id = value.id
         self.name = value.name
@@ -38,8 +40,9 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
         self.createdAt = value.createdAt
         self.sourceID = value.source?.id
         self.cuisine = value.cuisine
+        publicDescription = value.publicDescription; privateNotes = value.privateNotes
     }
-    private enum CodingKeys: String, CodingKey { case id, name, defaultCategoryCode, createdAt, sourceID, cuisine }
+    private enum CodingKeys: String, CodingKey { case id, name, defaultCategoryCode, createdAt, sourceID, cuisine, publicDescription, privateNotes }
     // Missing means an old client; explicit null means the user removed Cuisine.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -47,6 +50,8 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
         try c.encode(defaultCategoryCode, forKey: .defaultCategoryCode)
         try c.encode(createdAt, forKey: .createdAt); try c.encodeIfPresent(sourceID, forKey: .sourceID)
         try c.encode(cuisine, forKey: .cuisine)
+        try c.encode(publicDescription, forKey: .publicDescription)
+        try c.encode(privateNotes, forKey: .privateNotes)
     }
 
 }

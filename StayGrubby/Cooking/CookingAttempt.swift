@@ -30,12 +30,8 @@ final class CookingAttempt {
     var allergyTags: Set<AllergyTag> { Set(tags.filter { $0.kindCode == CookingTagKind.allergy.rawValue }.compactMap { AllergyTag(rawValue: $0.value) }) }
     var containedAllergens: Set<Allergen> { Set(tags.filter { $0.kindCode == CookingTagKind.contains.rawValue }.compactMap { Allergen(rawValue: $0.value) }) }
     var customTags: [String] { tags.filter { $0.kindCode == CookingTagKind.custom.rawValue }.map(\.label).sorted() }
-    var primaryImage: CookingMedia? {
-        media.filter { $0.kind == .image }.sorted {
-            if $0.sortOrder != $1.sortOrder { return $0.sortOrder < $1.sortOrder }
-            return $0.createdAt < $1.createdAt
-        }.first
-    }
+    var orderedImages: [CookingMedia] { CookingPhotoPolicy.ordered(media) }
+    var primaryImage: CookingMedia? { orderedImages.first }
 
     init(item: RankedItem, sequence: Int, category: DishCategory, cookedAt: Date?, legacy: Bool = false, id: UUID = UUID()) {
         self.id = id; rankedItemID = item.id; rankedItem = item

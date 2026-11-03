@@ -20,7 +20,7 @@ The four authenticated tabs are **Grub List / Grub Rank / Food Bible / My Kitche
 
 | Domain | Current implementation and ownership |
 | --- | --- |
-| Dish | Stable personal cooking identity/name, default Course, optional primary Cuisine and optional DishSource; no independent score |
+| Dish | Stable cooking identity/name, default Course/Cuisine/Source, optional Public Description and owner-private Dish notes; no independent score |
 | CookingAttempt | An actual cook/version of a Dish: date, optional version title, private notes, Course snapshot, tags and cook-owned media |
 | RankedItem | Unique ranking identity per attempt; holds estimated strength/uncertainty and display diagnostics |
 | Ranking evidence | One global cooking RankingList with individual immutable-ID Comparison observations; evidence is authoritative |
@@ -36,6 +36,14 @@ New Dish and New Version both create an independent attempt/item in the same glo
 Course uses the controlled existing options. Dietary, Contains, custom tags and legacy free-label compatibility remain distinct. Avoid is a presentation/filter selection over existing metadata, not a medical guarantee. Cuisine uses stable canonical IDs plus account-owned custom values; no inference/backfill into existing Dishes is implied. DishSource is optional manual inspiration/attribution with My Own, Cookbook, Online, Restaurant, Friend / Family and Other UI choices; legacy storage codes remain compatible. It is separate from Recipe creator/source attribution.
 
 All personal cooking mutations go through the existing cooking/ranking services so references, evidence cleanup and durable synchronization remain consistent. Do not directly delete domain rows as a shortcut.
+
+### Next-release Stage 1 — Dish text and photo collections
+
+[Next-release specification](NEXT_RELEASE_SPEC.md) separates implemented foundation from later screen redesigns. Dish now has optional Public Description (2,000 Unicode scalars) and owner-only Private Notes (8,000); existing per-cook notes, authored post descriptions and Recipe descriptions are unchanged. An owner editor under Dish Details supports save/cancel; the migration performs no content backfill. Only Public Description may prefill an explicitly reviewed post composer. New private fields travel through owner-only structured sync, not public/social/Recipe/link/card projections. Existing Dish RLS applies; missing keys from older clients preserve server values, explicit null clears them.
+
+Multi-photo foundation reuses existing cook-owned `CookingMedia[]`: six photos per actual cook/version, persisted stable order and first-image cover, deterministic timestamp/UUID ties, and Dish-level version grouping without moving/copying historical media. Domain append/cover/reorder/remove services use existing journal, UUID tombstones, immutable private manifests and file paths. The single-photo editor now changes only its cover. Duplicate/retired media IDs and preexisting files are protected. Older partial replace-all clients cannot erase an established gallery; whole-cook deletion remains supported. No bucket, byte protocol, ranking evidence or Recipe snapshot change. Full gallery/adoption/crop UI remains for the photography stage.
+
+Food Bible adopts a compact official brand toolbar title as the shared header proof; existing design primitives remain authoritative. [UI foundation and copy rules](UI_ARCHITECTURE.md) and [Stage 1 evidence](NEXT_RELEASE_STAGE_1_REVIEW.md).
 
 ### Ranking — accepted and frozen
 
@@ -127,7 +135,7 @@ Native local share images remain separate from social publishing: existing photo
 
 The canonical policy is [StayGrubby/Legal/PrivacyPolicy.md](StayGrubby/Legal/PrivacyPolicy.md), effective November 2, bundled offline and rendered on the existing site. The current hosted `/privacy` was verified after correcting its redirect loop; Support is also available. No credentials or DNS/email configuration changed. App Privacy answers for older releases still require review for current social/AI practices before wider distribution.
 
-Owner-confirmed **1.0 (1) Internal Only TestFlight upload succeeded historically**, before later features; it is not evidence that current HEAD was uploaded or externally approved. External TestFlight, release candidate/App Store 1.0, UGC operations, physical Universal Links verification and current privacy/reviewer metadata remain separate authorized release work. The contained link correction is implemented and hosted: direct privacy-safe profile/post/current-Recipe/pinned-Recipe fallbacks, matching AASA and native routes, plus explicit app-open scheme. The old redirect-loop cause is fixed; installed-app association/cache/browser behavior still needs two-iPhone acceptance. No new distribution is authorized by this document.
+Owner-confirmed **1.0 (1) Internal Only TestFlight upload succeeded historically**, before later features; it is not evidence that current HEAD was uploaded or externally approved. External TestFlight, release candidate/App Store 1.0, UGC operations, physical Universal Links verification and current privacy/reviewer metadata remain separate authorized release work. The contained link correction is implemented and hosted: direct privacy-safe profile/post/current-Recipe/pinned-Recipe fallbacks, matching AASA and native routes, plus explicit app-open scheme. Prior automated origin/CDN/native evidence is historical. The owner confirms physical profile sharing works, but Recipe sharing still resembles a browser file download and Ranking/Dish sharing is not useful in the tested flow. Those are mandatory later Social + Sharing defects; two-device social acceptance remains pending, nonblocking for Stage 1. No new distribution is authorized by this document.
 
 ## Task-specific source map
 

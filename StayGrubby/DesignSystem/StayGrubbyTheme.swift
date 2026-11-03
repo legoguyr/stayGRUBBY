@@ -132,7 +132,7 @@ struct SGButtonStyle: ButtonStyle {
             .font(SGTheme.TypeRole.headline)
             .padding(.horizontal, compact ? SGTheme.Space.xSmall : SGTheme.Space.medium)
             .frame(minHeight: SGTheme.Size.minimumTap)
-            .foregroundStyle(prominent ? SGTheme.ColorToken.onAccent : SGTheme.ColorToken.primaryText)
+            .foregroundStyle(prominent ? SGTheme.ColorToken.onAccent : configuration.role == .destructive ? SGTheme.ColorToken.destructive : SGTheme.ColorToken.primaryText)
             .background(prominent ? (prominentColor ?? SGTheme.ColorToken.buttonAccent) : SGTheme.ColorToken.elevatedSurface,
                         in: RoundedRectangle(cornerRadius: SGTheme.Radius.field))
             .opacity(enabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)

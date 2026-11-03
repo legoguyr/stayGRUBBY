@@ -5,8 +5,8 @@ nonisolated enum CookingMediaKind: String {
     case image
 }
 
-/// File-backed media owned by one cook. V1 writes one image, while the ordered
-/// relationship can grow to multiple images and video without changing attempts.
+/// File-backed images owned by one actual cook; bounded ordered collections
+/// reuse existing identities, private file variants and restoration.
 @Model
 final class CookingMedia {
     @Attribute(.unique) var id: UUID

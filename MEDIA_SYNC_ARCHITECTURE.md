@@ -1,3 +1,11 @@
+# Current multi-photo foundation — Stage 1, November 3, 2026
+
+Existing private cook-owned media/manifest/transfer/cleanup machinery below now supports up to six photos per actual cook/version. No legacy files/manifests are copied, moved or registered by schema migration. Stable order and cover are normal media metadata in the existing structured journal; photo bytes keep their UUID/hash paths. Current single-photo UI edits only the cover and preserves secondary images. Dish groups remain historical cook collections rather than a second photo-ownership store. Full gallery UI/cropping is deferred.
+
+Native append/reorder/set-cover/remove are atomic journal operations; cleanup happens only after commit. Reused/retired IDs and existing file paths cannot overwrite another immutable photo. The server enforces the bound under the existing account serialization and uses an active-attempt/order index. New deltas carry `photoCollectionVersion: 1`; old clients can still read/restore single/multiple metadata, but partial replace-all deletion of a multi-photo cook requires an updated client. Normal intentional whole-cook deletion remains valid. No new conflict merging or transport is introduced.
+
+[Limit/rationale and privacy](NEXT_RELEASE_SPEC.md#stage-1-data-contract); [Stage 1 evidence](NEXT_RELEASE_STAGE_1_REVIEW.md). The dated data-path acceptance below remains evidence for its original checkpoint, not a new physical multi-photo acceptance claim.
+
 # Recipe-owned photos — Architecture V2, October 28, 2026
 
 Recipe photography extends existing ImageIO preparation and account-generation-guarded SDK transport without changing cooking-photo files, metadata or sync. Recipe uses one optimized metadata-stripped JPEG, at most 2 MiB, with an immutable server-owned asset manifest/path/SHA-256 and a private `recipe-photos` bucket. The current Recipe content/revision holds an optional asset UUID. Ready bytes and ownership are checked before Save, and downloads validate bytes/hash. Existing cook photo variants still behave exactly as described below.

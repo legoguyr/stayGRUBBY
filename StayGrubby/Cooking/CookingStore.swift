@@ -76,6 +76,7 @@ enum CookingStore {
               Set(session.orderedIDs) == Set(global.items.map(\.id)),
               existingDish == nil || existingDish!.attempts.contains(where: { $0.rankedItem?.list?.id == global.id })
         else { throw RankingStore.EvidenceError.invalidComparison }
+        if let photo = draft.pendingPhoto { try requireNewPhoto(photo.id, context: context) }
         let baseline = try SyncJournal.begin(context)
         var writtenMedia: CookingMedia?
         do {
@@ -116,7 +117,10 @@ enum CookingStore {
         guard !draft.cleanDishName.isEmpty else { throw StoreError.invalidDraft }
         guard let dish = attempt.dish, attempt.rankedItem != nil else { throw StoreError.missingItem }
         let replacingPhoto = draft.pendingPhoto != nil || draft.removeExistingPhoto
-        let retiredFiles = replacingPhoto ? attempt.media.map { ($0.displayFilename, $0.thumbnailFilename) } : []
+        let oldCover = replacingPhoto ? attempt.primaryImage : nil
+        let oldCoverOrder = oldCover?.sortOrder ?? 0
+        let retiredFiles = oldCover.map { [($0.displayFilename, $0.thumbnailFilename)] } ?? []
+        if let photo = draft.pendingPhoto { try requireNewPhoto(photo.id, context: context) }
         let baseline = try SyncJournal.begin(context)
         var writtenMedia: CookingMedia?
         do {
@@ -127,10 +131,12 @@ enum CookingStore {
             apply(draft, to: attempt)
             attempt.tags = try tags(for: draft, context: context)
             if replacingPhoto {
-                for media in attempt.media { context.delete(media) }
-                attempt.media.removeAll()
+                if let oldCover {
+                    attempt.media.removeAll { $0.id == oldCover.id }; context.delete(oldCover)
+                }
                 if let photo = draft.pendingPhoto {
                     let media = try LocalPhotoStore.write(photo, rootURL: mediaDirectory)
+                    media.sortOrder = oldCoverOrder
                     writtenMedia = media
                     context.insert(media)
                     attempt.media.append(media)
@@ -190,6 +196,13 @@ enum CookingStore {
         guard evidence.allSatisfy({ $0.first == item.id || $0.second == item.id }) else { throw RankingStore.EvidenceError.invalidComparison }
         // The generic batch API appends and globally refits; no old evidence is removed.
         try RankingStore.record(evidence, in: list, context: context, completedReaction: reaction.map { (item, $0) })
+    }
+
+    static func requireNewPhoto(_ id: UUID, context: ModelContext) throws {
+        let identity = SyncReference(entity: .media, key: id.uuidString).identity
+        guard try context.fetchCount(FetchDescriptor<CookingMedia>(predicate: #Predicate { $0.id == id })) == 0,
+              try context.fetchCount(FetchDescriptor<SyncTombstone>(predicate: #Predicate { $0.key == identity })) == 0
+        else { throw LocalPhotoStore.PhotoError.identityAlreadyUsed }
     }
 
     private static func apply(_ draft: CookingDraft, to attempt: CookingAttempt) {

@@ -64,6 +64,7 @@ import SwiftData
                 value.name = row.name
                 value.defaultCategoryCode = row.defaultCategoryCode
                 value.cuisine = row.cuisine
+                value.publicDescription = row.publicDescription; value.privateNotes = row.privateNotes
                 value.createdAt = row.createdAt
             }
             for row in graph.items {

@@ -6,6 +6,9 @@ final class Dish {
     @Attribute(.unique) var id: UUID
     var name: String
     var defaultCategoryCode: String
+    /// Optional Dish-level text. Existing per-cook notes and post descriptions stay separate.
+    var publicDescription: String?
+    var privateNotes: String?
     var cuisineID: String?
     var cuisineLabel: String?
     var cuisine: Cuisine? {

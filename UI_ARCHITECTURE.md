@@ -1,3 +1,19 @@
+# Next-release Stage 1 UI foundation — November 3, 2026
+
+**Content first. Actions second. Explanation only when necessary.** [Canonical next-release scope](NEXT_RELEASE_SPEC.md) defers full screen redesign/adoption. Preserve safety/privacy/permission/uncertainty/recovery/destructive text; remove redundant slogans per screen, never by global string deletion.
+
+| Primitive/pattern | Existing implementation to reuse |
+| --- | --- |
+| Type, spacing, corners, colors | `SGTheme.TypeRole`, `Space`, `Radius`, `Size`, adaptive `ColorToken`; semantic `ScoreColor` stays separate from fixed export red |
+| Buttons | `SGButtonStyle` prominent/secondary and native destructive roles; destructive secondary labels use adaptive destructive text, prominent backgrounds retain contrast-safe button tokens; `SGIconButton` keeps 44-point targets/Reduce Motion |
+| Lists/profile rows/cards | `SGEditorialList`, `SGDestinationLabel`, `sgCard`, existing avatars and native navigation links |
+| Header | `SGPrimaryBrandTitle(page:)` places the cropped official wordmark in a native principal toolbar, with contextual accessibility/navigation title and no extra safe-area bar. Food Bible is the scoped first adoption; search/Add Recipe and secondary contextual titles remain native. Other tabs adopt in later stages. |
+| Filters, menus, sheets | Existing chips/search/checklists, native Menu/confirmationDialog, NavigationStack sheets; feature owns query/draft state |
+| Empty/loading/error | `SGEmptyState`, ProgressView and contextual recovery actions; explain actual recovery/privacy ambiguity, not obvious button behavior |
+| Images | Existing cook/Recipe/avatar pipelines and official-wordmark fallback, shared radius tokens; six-photo data support does not add a gallery/crop UI yet |
+
+Portrait, Dynamic Type, VoiceOver page/action labels, light/dark contrast and Reduce Motion remain required. Logo dimensions stay compact; text is not shrunk to simulate accessibility support. The new owner-only Dish text editor is a scoped data entry surface, not the New Dish redesign; existing private per-cook notes remain separate.
+
 # Next-Version integrated presentation — November 2, 2026
 
 Four tabs remain Grub List / Grub Rank (initial) / Food Bible / My Kitchen. The fixed My Kitchen header now keeps Order Up! beside Settings; the tab badge and Grub List bell use one foreground account-scoped unread state. Feed cards expose Recipe availability without requiring Post Detail. Recipe cook/copy/Run It Back actions precede long methods, with explicit private-copy/source/revision wording and common reader width. Social/cookbook no-photo states use a shared official-wordmark placeholder; existing photos, export layouts and score colors are unchanged.

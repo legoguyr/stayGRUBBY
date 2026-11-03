@@ -6,6 +6,12 @@ The dated validation/file inventories below describe historical checkpoints. The
 
 Phase 1 adds local cooking metadata around the existing generic ranking system. The Bradley–Terry fit, score mapping, insertion policy, confidence calculation, and original ranking tests are unchanged. See `RANKING_MODEL.md` for inference details.
 
+## Current Stage 1 Dish text/photo foundation
+
+Dish has nullable Public Description and owner-private Dish Notes. Existing cook-specific notes, Recipe descriptions and authored Post Descriptions retain their original scope/content. No legacy text is reclassified or copied. Missing sync keys from old clients preserve values; explicit null clears them. The owner-only Dish Details editor is scoped data entry; full New Dish redesign is later. See [current data contract](NEXT_RELEASE_SPEC.md#stage-1-data-contract).
+
+CookingMedia remains owned by one actual cook. Six images per version, persisted order/cover and timestamp/UUID tie breaks support later gallery UI. Dish groups retain version identity; old single-photo records need no backfill. Existing editor replacement/removal affects the cover only, preserving secondary images. Domain services and a serialized backend bound protect append/reorder/remove; duplicate/retired UUIDs are never reused. New envelope capability prevents legacy replace-all editors silently deleting multi-photo collections. Existing photo transport, tombstones, ownership and historical snapshots stay authoritative.
+
 ## Current Recipe/cook metadata boundary — Architecture V2
 
 Recipe is independent of Dish and owns its instructions, optional short description/photo, revisions, canonical yield/time and reviewed ingredient-derived Contains/Possible information. Dish keeps cooking identity/default Course/Cuisine/Source; actual cooks retain their own tags/substitutions and private notes. Existing Contains selections are preserved in cook-specific controls and existing Avoid/filter semantics. Food Bible prefers Recipe metadata with explicit linked-Dish fallback; Grub Rank still reads cooking metadata. No inference/backfill or religious/allergen safety certification is performed.

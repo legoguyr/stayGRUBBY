@@ -36,6 +36,7 @@ extension CookingGraph {
             try require(source.dishID.map(dishIDs.contains) == true && dishes.first(where: { $0.id == source.dishID })?.sourceID == source.id)
         }
         for dish in dishes {
+            try require(DishTextPolicy.valid(description: dish.publicDescription, notes: dish.privateNotes))
             if let cuisine = dish.cuisine {
                 try require(!cuisine.id.isEmpty && cuisine.id.unicodeScalars.count <= 160
                     && !cuisine.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -43,7 +44,10 @@ extension CookingGraph {
             }
             if let source = dish.sourceID { try require(sources.contains { $0.id == source && $0.dishID == dish.id }) }
         }
+        let photoCounts = Dictionary(grouping: media, by: \.attemptID)
+        try require(photoCounts.values.allSatisfy { $0.count <= CookingPhotoPolicy.maximumPerCook })
         for photo in media {
+            try require(photo.kindCode == "image" && photo.sortOrder >= 0)
             try require(photo.attemptID.map(attemptIDs.contains) == true && photo.pixelWidth > 0 && photo.pixelHeight > 0)
             for filename in [photo.displayFilename, photo.thumbnailFilename] {
                 try require(!filename.isEmpty && filename != "." && filename != ".." && !filename.contains("/") && !filename.contains("\\") && !filename.contains("\0"))

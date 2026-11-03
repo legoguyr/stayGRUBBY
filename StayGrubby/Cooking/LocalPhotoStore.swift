@@ -22,10 +22,11 @@ nonisolated struct PreparedCookingPhoto: Sendable {
 
 nonisolated enum LocalPhotoStore {
     enum PhotoError: LocalizedError {
-        case unreadableImage, encodingFailed
+        case unreadableImage, encodingFailed, identityAlreadyUsed
         var errorDescription: String? {
             switch self {
             case .unreadableImage: "That photo could not be read."
+            case .identityAlreadyUsed: "That photo is already saved. Choose a new photo selection and try again."
             case .encodingFailed: "That photo could not be prepared for StayGrubby."
             }
         }
@@ -54,6 +55,7 @@ nonisolated enum LocalPhotoStore {
         let thumbnail = "\(photo.id.uuidString)-thumbnail.jpg"
         let displayURL = directory.appendingPathComponent(display)
         let thumbnailURL = directory.appendingPathComponent(thumbnail)
+        guard !FileManager.default.fileExists(atPath: displayURL.path), !FileManager.default.fileExists(atPath: thumbnailURL.path) else { throw PhotoError.identityAlreadyUsed }
         do {
             try photo.displayData.write(to: displayURL, options: .atomic)
             try photo.thumbnailData.write(to: thumbnailURL, options: .atomic)

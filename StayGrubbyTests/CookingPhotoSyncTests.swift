@@ -20,14 +20,21 @@ import UIKit
     var failDownloadAt: Int?
     var removals = 0
     var registrations = 0
+    var accepted: [UUID: (SyncEnvelope, SyncReceipt)] = [:]
     init(_ graph: CookingGraph) { self.graph = graph }
     func apply(_ envelope: SyncEnvelope) throws -> SyncReceipt {
         guard envelope.accountID == graph.accountID else { throw CookingSyncError.rejected }
         guard !offline else { throw CookingSyncError.unavailable }
-        guard envelope.expectedRevision == revision else { throw CookingSyncError.conflict }
+        if let previous = accepted[envelope.operationID] {
+            guard previous.0 == envelope else { throw CookingSyncError.rejected }; return previous.1
+        }
+        let predecessor = envelope.predecessorID.flatMap { accepted[$0] }
+        let chained = predecessor.map { $0.0.storeID == envelope.storeID && $0.1.revision == revision && ($0.0.expectedRevision...$0.1.revision).contains(envelope.expectedRevision) } ?? false
+        guard envelope.expectedRevision == revision || chained else { throw CookingSyncError.conflict }
         graph = try JSONDecoder().decode(SyncChanges.self, from: envelope.payload).applying(to: graph)
         revision += 1
-        return SyncReceipt(operationID: envelope.operationID, revision: revision)
+        let receipt = SyncReceipt(operationID: envelope.operationID, revision: revision)
+        accepted[envelope.operationID] = (envelope, receipt); return receipt
     }
     func catalog(action: String, manifest: CookingPhotoManifest?) async throws -> CookingPhotoCatalog {
         guard !offline else { throw CookingPhotoError.unavailable }
@@ -297,4 +304,30 @@ import UIKit
         do {_ = try session.cookingPhotoTransport();Issue.record("Demo constructed real Storage transport")} catch AccountFoundationError.accountNotResolved { }
         #endif
     }
+    @Test func multiPhotoBackupRestoreAndCoverOrderingReuseExistingTransport() async throws {
+        let a = root(), b = root(); defer { try? FileManager.default.removeItem(at: a); try? FileManager.default.removeItem(at: b) }
+        let (store, cloud, account) = try setup(root: a), context = store.container.mainContext
+        let cook = try create(store)
+        for _ in 0..<5 { try CookingPhotoCollection.append(photo(.blue), to: cook, context: context, root: store.mediaRoot!) }
+        try CookingPhotoCollection.setCover(cook.orderedImages[4], in: cook, context: context)
+        var ordered = cook.orderedImages.map(\.id)
+        try CookingStore.editDishText(cook.dish!, publicDescription: "Public dish", privateNotes: "Private Dish notes", context: context)
+        try await flush(store, cloud); #expect(try await run(store, cloud, account)); #expect(cloud.objects.count == 12)
+        let backedUpUploads = cloud.uploads
+        try CookingPhotoCollection.setCover(cook.orderedImages[2], in: cook, context: context)
+        ordered = cook.orderedImages.map(\.id)
+        try await flush(store, cloud); #expect(try await run(store, cloud, account))
+        #expect(cloud.uploads == backedUpUploads && cloud.objects.count == 12)
+        let fresh = try LocalStoreStartup.openAccount(account.accountID, root: b)
+        try fresh.restore(cloud.graph, revision: cloud.revision); try SyncJournal.enable(fresh.container.mainContext)
+        let uploads = cloud.uploads; #expect(try await run(fresh, cloud, account)); #expect(cloud.uploads == uploads)
+        let restored = try #require(fresh.container.mainContext.fetch(FetchDescriptor<CookingAttempt>()).first)
+        #expect(restored.orderedImages.map(\.id) == ordered && restored.primaryImage?.id == ordered.first)
+        #expect(restored.dish?.privateNotes == "Private Dish notes" && restored.dish?.publicDescription == "Public dish")
+        for media in restored.orderedImages {
+            #expect(try CookingPhotoFiles.read(media: MediaTransfer(media), thumbnail: false, root: fresh.mediaRoot!) != nil)
+        }
+        #expect(try SyncJournal.pending(fresh.container.mainContext).isEmpty)
+    }
+
 }

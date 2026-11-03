@@ -27,6 +27,7 @@ struct SocialPostComposer: View {
     @State private var editingIdentity = false
     @State private var includePhoto = false
     @State private var postDescription = ""
+    @State private var descriptionInitialized = false
     @State private var sharedRecipe: Recipe?
     @State private var postID = UUID()
     @State private var savedPost: SocialPost?
@@ -104,6 +105,7 @@ struct SocialPostComposer: View {
         }
     }
     private func load() async {
+        if !descriptionInitialized { postDescription = attempt.dish?.publicDescription ?? ""; descriptionInitialized = true }
         guard let request else { return }
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }

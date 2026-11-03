@@ -7,6 +7,7 @@ struct AttemptDetailView: View {
     @Environment(\.cookingMediaRoot) private var mediaRoot
     let attempt: CookingAttempt
     @State private var editing = false
+    @State private var editingDishText = false
     @State private var reranking = false
     @State private var addingVersion = false
     @State private var versionFinalized = false
@@ -23,6 +24,15 @@ struct AttemptDetailView: View {
                 header
                 actionButtons
                 metadata
+                if let dish = attempt.dish {
+                    if let description = dish.publicDescription { Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description") }
+                    if let notes = dish.privateNotes {
+                        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                            SGSectionHeader(title: "Dish Notes · private")
+                            Text(notes).accessibilityIdentifier("dish-private-notes")
+                        }
+                    }
+                }
                 if let dish = attempt.dish { DishRecipeSection(dish: dish) }
                 CookingProvenanceView(itemID: attempt.rankedItemID)
                 SocialShareAction(attempt: attempt)
@@ -50,11 +60,13 @@ struct AttemptDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
                     Button("Delete Cook", systemImage: "trash", role: .destructive) { deleting = true }
                 } label: { Image(systemName: "ellipsis") }
                 .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
             }
         }
+        .sheet(isPresented: $editingDishText) { if let dish = attempt.dish { DishTextEditor(dish: dish) } }
         .sheet(isPresented: $editing) { EditCookingView(attempt: attempt) }
         .sheet(isPresented: $reranking) { ReRankView(attempt: attempt) }
         .sheet(isPresented: $addingVersion, onDismiss: {

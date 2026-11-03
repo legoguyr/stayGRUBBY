@@ -37,11 +37,13 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## THEN — dedicated Food Bible / Recipe UI overhaul (PLANNED)
+## CURRENT — Next Release, Stage 1: UI Foundation + Dish Data Architecture
 
-Design around the settled architecture: exceptionally functional, clean, fast, beautiful, photo-forward and distinctly StayGrubby.
+The owner considers `b9871df88930699f22ed80b2c586996e4775ebd8` sufficiently accepted to continue. The [canonical next-release specification](NEXT_RELEASE_SPEC.md) owns the staged UI/UX/product scope: shared branding/primitives/copy; New Dish/metadata/text/tagging; Kitchen/profiles/Signature Dishes/discovery; social/Comments/Order Up!/sharing; Food Bible/Recipe actions; multi-photo UI and secondary-screen/accessibility polish.
 
-Cover cookbook browsing, Recipe reader/create/edit, serving scaling, Recipe photos, revision/history, standalone/linking, metadata/allergens, keyboard response, reorder interaction, accessibility, restrained motion and light/dark appearance. Reuse accepted components and content mechanics. Do not redesign prematurely during the architecture task.
+Stage 1 implements only reusable UI/header infrastructure, additive Dish Public Description/Private Notes, and safe bounded multi-photo data/domain/backend support. Later screen adoption/New Dish/gallery redesigns require their scoped stages. Native context-menu/haptics and contained crop/reposition are optional evaluations, not Stage 1 deliverables. Existing future product phases stay deferred. Do not begin Stage 2 automatically.
+
+Owner findings carried forward as **mandatory Social + Sharing work**: profile sharing physically works; Recipe links behave like a download in the browser; Ranking/Dish copy/share is not useful in the tested flow. Two-device social acceptance is still pending and nonblocking. Earlier automated link evidence does not supersede those physical findings. Stage 1 does not repair these defects unless directly affected by its data changes.
 
 ## LATER — deferred product development
 
@@ -63,9 +65,13 @@ Stars and a public/private follower model remain future product work. Mutual fri
 
 Future Taste Intelligence may use permitted cooking/evidence, cuisines/ingredients/techniques, Recipes/sources, photos and explicit preferences to explain taste/discovery. Separate preference from execution, respect small-data uncertainty and never infer allergens/flavor with certainty from images. Recommendations, popularity, sponsorship and monetization never alter Bradley–Terry ranking. Personal ranking remains free; any future subscriptions must add genuine new value. **No new Taste Intelligence/AI infrastructure or paid service is authorized now.** Existing Recipe Creator is a separate accepted system.
 
-## Next-Version Integration — current cycle
+## Previous Next-Version Integration — accepted baseline
 
 Foreground social refresh/shared unread state, stable Comments/list refresh, direct Recipe availability, current/pinned Recipe links, actual own-Kitchen routing and contained hosted website correction are implemented. Focused checks plus one broader integration pass precede the checkpoint; owner two-account/device acceptance remains pending. [Review/checklist](NEXT_VERSION_INTEGRATION_REVIEW.md). This explicitly supersedes the earlier deferral of the small sharing-link dependency; public web browsing remains deferred.
+
+## Pre-App-Store Trust & Safety / Compliance — formal future gate
+
+After public-beta learning and before App Store release, separately verify objectionable-UGC filtering/moderation, complete reporting/review/resolution operations, block/privacy enforcement, account deletion/associated UGC cleanup, published support/contact, privacy/data flows/App Store disclosures, Community Guidelines/Terms, App Review access, Social Media/age-rating submission configuration. This is a planned gate, not implemented compliance or permission to distribute. See [scope and safeguards](NEXT_RELEASE_SPEC.md#formal-pre-app-store-trust--safety--compliance-gate).
 
 ## RELEASE — separate authorization and gates
 
