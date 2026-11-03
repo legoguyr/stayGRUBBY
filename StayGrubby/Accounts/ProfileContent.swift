@@ -22,8 +22,6 @@ struct ProfileCookingContent: View {
                 statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
                 statistic(snapshot.dishCount, title: "Dishes ranked", identifier: "profile-dish-count")
             }
-            Text("Each independently ranked version counts as an entry.")
-                .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
             if let date = snapshot.lastCookedAt {
                 Divider()
                 if textSize.isAccessibilitySize {
@@ -52,90 +50,62 @@ struct ProfileCookingContent: View {
 
     private var topFoods: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                Text("Signature Dishes").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
-                Text(snapshot.topFoods.isEmpty ? "Good food starts with your next cook." : "The dishes and versions leading your rankings.")
-                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-            }
-
-            if let first = snapshot.topFoods.first {
-                NavigationLink(value: first.attempt.id) { ProfileTopFood(food: first, featured: false) }.buttonStyle(.plain)
-                ForEach(snapshot.topFoods.dropFirst()) { food in
-                    NavigationLink(value: food.attempt.id) { ProfileTopFood(food: food, featured: false) }.buttonStyle(.plain)
+            Text("Signature Dishes").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
+            if !snapshot.topFoods.isEmpty {
+                if textSize.isAccessibilitySize {
+                    ScrollView(.horizontal) {
+                        HStack(alignment: .top, spacing: SGTheme.Space.small) {
+                            ForEach(snapshot.topFoods) { food in signature(food).frame(width: 220) }
+                        }
+                    }.accessibilityIdentifier("signature-dishes-row")
+                } else {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .topLeading), count: 3), alignment: .leading, spacing: SGTheme.Space.small) {
+                        ForEach(snapshot.topFoods) { food in signature(food) }
+                    }.accessibilityIdentifier("signature-dishes-row")
                 }
                 if snapshot.topFoods.count < 3 {
                     Text("Keep cooking to find your Signature Dishes.")
-                        .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         .accessibilityIdentifier("profile-building-top-three")
                 }
             } else {
-                VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                    Image(systemName: "fork.knife.circle").font(.largeTitle)
-                        .foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-                    Text("Make something worth remembering.").font(SGTheme.TypeRole.headline)
-                    Text("Add your first dish in Grub Rank. As you cook and compare, your favorites will take their place here.")
-                        .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                }.frame(maxWidth: .infinity, alignment: .leading).sgCard()
-                    .accessibilityIdentifier("profile-empty")
+                Text("Add your first dish in Grub Rank.")
+                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading).sgCard().accessibilityIdentifier("profile-empty")
             }
-
-            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                if snapshot.scores.isUnlocked {
-                    Text("A little taste of your best.").font(SGTheme.TypeRole.headline)
-                    Text("Share your current Top 3 as a single image.")
-                        .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                } else {
-                    ScoreUnlockProgressBanner(state: snapshot.scores)
-                }
-                // Keep the permanent action and all export/native-sheet gating intact.
-                TopThreeShareAction(list: ranking, title: "Share Signature Dishes")
-            }
+            if !snapshot.scores.isUnlocked { ScoreUnlockProgressBanner(state: snapshot.scores) }
+            TopThreeShareAction(list: ranking, title: "Share Signature Dishes")
         }
+    }
+    private func signature(_ food: ProfileSnapshot.Food) -> some View {
+        NavigationLink(value: food.attempt.id) { ProfileTopFood(food: food) }.buttonStyle(.plain)
+            .accessibilityElement(children: .ignore).accessibilityLabel(food.accessibilityLabel)
+            .accessibilityHint("Opens Dish Details").accessibilityIdentifier("profile-top-food-\(food.rank)")
     }
 }
 
 private struct ProfileTopFood: View {
     let food: ProfileSnapshot.Food
-    let featured: Bool
     @Environment(\.dynamicTypeSize) private var textSize
-
     var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            if featured {
-                SGHeroMedia(media: food.attempt.primaryImage, name: food.title).accessibilityHidden(true)
-            }
-            HStack(alignment: .top, spacing: SGTheme.Space.small) {
-                if !featured {
-                    DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title)
-                        .frame(width: SGTheme.Size.versionThumbnail, height: SGTheme.Size.versionThumbnail)
-                        .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.chip))
-                        .accessibilityHidden(true)
-                }
-                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                    Text(food.rank == 1 ? "#1 · Signature Dish" : "#\(food.rank)")
-                        .font(SGTheme.TypeRole.secondary.weight(.semibold))
-                        .foregroundStyle(featured ? SGTheme.ColorToken.accent : .secondary)
-                    Text(food.title).font(featured ? SGTheme.TypeRole.title : SGTheme.TypeRole.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(food.attempt.versionLabel).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                    Text(food.attempt.category.label).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                    if textSize.isAccessibilitySize { score }
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                if !textSize.isAccessibilitySize { score }
-            }
-        }.padding(.vertical, SGTheme.Space.small)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(food.accessibilityLabel)
-            .accessibilityIdentifier("profile-top-food-\(food.rank)")
-    }
-
-    @ViewBuilder private var score: some View {
-        if let text = food.scoreText {
-            Text(text).font(SGTheme.TypeRole.score)
-                .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: text))
-                .fixedSize().accessibilityIdentifier("profile-score-\(food.rank)")
-        } else {
-            LockedScoreIndicator()
-        }
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            Color.clear.aspectRatio(1, contentMode: .fit)
+                .overlay { DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title) }
+                .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+                .overlay(alignment: .topLeading) {
+                    Text("#\(food.rank)").font(.subheadline.bold()).monospacedDigit()
+                        .padding(SGTheme.Space.xSmall)
+                        .foregroundStyle(SGTheme.ColorToken.primaryText)
+                        .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.chip))
+                        .padding(SGTheme.Space.xSmall)
+                }.accessibilityHidden(true)
+            Text(food.title).font(SGTheme.TypeRole.secondary.weight(.semibold))
+                .lineLimit(textSize.isAccessibilitySize ? nil : 2).fixedSize(horizontal: false, vertical: true)
+            if let score = food.scoreText {
+                Text(score).font(.title3.weight(.bold)).monospacedDigit()
+                    .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score))
+                    .accessibilityIdentifier("profile-score-\(food.rank)")
+            } else { LockedScoreIndicator() }
+        }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
 }

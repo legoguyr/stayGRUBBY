@@ -45,6 +45,12 @@ Multi-photo foundation reuses existing cook-owned `CookingMedia[]`: six photos p
 
 Food Bible adopts a compact official brand toolbar title as the shared header proof; existing design primitives remain authoritative. [UI foundation and copy rules](UI_ARCHITECTURE.md) and [Stage 1 evidence](NEXT_RELEASE_STAGE_1_REVIEW.md).
 
+### Next-release Stage 2 — core UI adoption
+
+The official primary-screen wordmark now spans all four tabs. Cook entry/edit adopts Dish-level Public Description/Private Notes through the existing atomic cooking journal, separate from retained private per-cook notes; Recipe-origin cooking retains existing Dish text. Photo-first entry and collection awareness preserve cover-only edits and secondary media. Compact metadata, a horizontal Tag a Sous Chef row/searchable sheet and unchanged invitation/privacy rules replace the embedded friend list.
+
+Own/authorized other-user profiles share centered identity; the owner sees a truthful mutual-Sous-Chef page count (`+` for more pages), compact three-photo Signature Dishes and existing cooking/posts. Other profiles still expose only authorized social content, never private rankings/notes. Feed hierarchy is cook/title/4:3 food/description/actions, with existing unlocked semantic-colored scores in a compact circle. Header, spacing and copy changes do not alter ranking, publishing, sharing/export or social authorization. [UI contract](UI_ARCHITECTURE.md), [Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md). Later Comments/sharing/gallery work is not implemented here.
+
 ### Ranking — accepted and frozen
 
 Initial Liked / Fine / Didn't Like assessment, adaptive comparisons, Too Tough ties, Skip and Undo feed the established ranking workflow. Bradley–Terry uses retained individual evidence, including repeated observations; re-rank adds evidence to the same item. The engine uses Foundation/Accelerate independently of SwiftUI, SwiftData, Recipes and social services.

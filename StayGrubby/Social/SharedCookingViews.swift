@@ -10,34 +10,88 @@ struct CookedWithSelection: View {
     @State private var failed = false
     @State private var cursor: String?
     @State private var revision = 0
+    @State private var choosing = false
+    @State private var query = ""
+    @State private var searching = false
     var body: some View {
-        SGFormSection(title: "Tag a Sous Chef · optional") {
-            Text("Invite up to eight friends after saving and ranking. They choose whether to add their own cook. This does not share a Grub List post.")
-                .font(.footnote).foregroundStyle(.secondary)
-            Text("Invitations include the dish title, Course, Cuisine and public cookbook/restaurant/online attribution. Notes, allergens, private annotations and photos stay private.").font(.footnote).foregroundStyle(.secondary)
-            if loading { ProgressView("Loading friends") }
-            ForEach(people) { person in
-                Button {
-                    if selected.contains(person.id) { selected.remove(person.id) }
-                    else if selected.count < 8 { selected.insert(person.id) }
-                } label: {
-                    HStack {
-                        SocialAvatar(name: person.displayName, path: person.avatarPath, size: 32)
-                        VStack(alignment: .leading) { Text(person.displayName).font(.headline); Text(person.handle).font(.caption).foregroundStyle(.secondary) }.foregroundStyle(SGTheme.ColorToken.primaryText)
-                        Spacer()
-                        Image(systemName: selected.contains(person.id) ? "checkmark.circle.fill" : "circle")
-                    }.frame(minHeight: 44).contentShape(Rectangle())
-                }.buttonStyle(.borderless).accessibilityLabel("Cooked with \(person.displayName)")
-                    .accessibilityValue(selected.contains(person.id) ? "Selected" : "Not selected")
-                    .accessibilityIdentifier("cooked-with-\(person.id)")
+        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            Button { choosing = true } label: {
+                HStack {
+                    Label("Tag a Sous Chef", systemImage: "person.crop.circle.badge.plus")
+                    Spacer()
+                    if !selected.isEmpty { Text("\(selected.count)").monospacedDigit() }
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+            }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("cooked-with-open")
+            if !people.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(alignment: .top, spacing: SGTheme.Space.medium) {
+                        ForEach(people.prefix(8)) { person in
+                            Button { toggle(person) } label: {
+                                VStack(spacing: SGTheme.Space.xSmall) {
+                                    SocialAvatar(name: person.displayName, path: person.avatarPath, size: 48)
+                                        .overlay(alignment: .bottomTrailing) {
+                                            if selected.contains(person.id) {
+                                                Image(systemName: "checkmark.circle.fill").symbolRenderingMode(.palette)
+                                                    .foregroundStyle(SGTheme.ColorToken.onAccent, SGTheme.ColorToken.buttonAccent)
+                                            }
+                                        }
+                                    Text(person.displayName).font(SGTheme.TypeRole.secondary).lineLimit(1)
+                                }.frame(width: 76).padding(.vertical, SGTheme.Space.xSmall).contentShape(Rectangle())
+                            }.buttonStyle(.plain).accessibilityLabel("Cooked with \(person.displayName)")
+                                .accessibilityValue(selected.contains(person.id) ? "Selected" : "Not selected")
+                                .accessibilityIdentifier("cooked-with-\(person.id)")
+                        }
+                    }
+                }
             }
-            Text("\(selected.count) of 8 selected").font(.caption).foregroundStyle(.secondary)
-            if let cursor { Button("More friends") { Task { await load(after: cursor) } }.disabled(loading) }
-            if failed { Text("Friends unavailable. Your selection is not sent until your cook is saved.").font(.footnote); Button("Retry friends") { revision += 1 } }
-            else if !loading && people.isEmpty { Text("Current friends will appear here.").font(.footnote).foregroundStyle(.secondary) }
-        }.animation(reduceMotion ? nil : SGTheme.Motion.quick, value: selected)
-            .sensoryFeedback(.selection, trigger: selected)
-            .task(id: revision) { await load() }
+            if failed { Text("Sous Chefs unavailable. Open to retry.").font(.footnote).foregroundStyle(.secondary) }
+        }
+        .animation(reduceMotion ? nil : SGTheme.Motion.quick, value: selected)
+        .sensoryFeedback(.selection, trigger: selected)
+        .task(id: revision) { await load() }
+        .sheet(isPresented: $choosing) {
+            NavigationStack {
+                SGEditorialList {
+                    Section {
+                        Text("Invite up to eight Sous Chefs after ranking. They choose whether to add their own cook.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        DisclosureGroup("What invitations share") {
+                            Text("Dish title, Course, Cuisine and public source attribution. Private notes, allergens and photos stay private. Tagging does not publish a Grub List post.")
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }
+                    if loading { ProgressView("Loading Sous Chefs") }
+                    if failed { Button("Retry Sous Chefs") { revision += 1 } }
+                    ForEach(people.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) || $0.username.localizedCaseInsensitiveContains(query) }) { person in
+                        Button { toggle(person); searching = false } label: {
+                            HStack(spacing: SGTheme.Space.small) {
+                                SocialAvatar(name: person.displayName, path: person.avatarPath, size: 44)
+                                VStack(alignment: .leading) {
+                                    Text(person.displayName).font(.headline)
+                                    Text(person.handle).font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: selected.contains(person.id) ? "checkmark.circle.fill" : "circle")
+                                    .foregroundStyle(selected.contains(person.id) ? SGTheme.ColorToken.accent : .secondary)
+                            }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+                        }.buttonStyle(.plain).accessibilityLabel("Cooked with \(person.displayName)")
+                            .accessibilityValue(selected.contains(person.id) ? "Selected" : "Not selected")
+                            .accessibilityIdentifier("sous-chef-selection-\(person.id)")
+                    }
+                    if let cursor { Button("More Sous Chefs") { Task { await load(after: cursor) } }.disabled(loading) }
+                    if people.isEmpty && !loading && !failed { Text("Your current Sous Chefs will appear here.").foregroundStyle(.secondary) }
+                }
+                .searchable(text: $query, isPresented: $searching, prompt: "Search your Sous Chefs")
+                .navigationTitle("Tag a Sous Chef").navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { choosing = false }.accessibilityIdentifier("cooked-with-done") } }
+                .safeAreaInset(edge: .bottom) { Text("\(selected.count) of 8 selected").font(.footnote).foregroundStyle(.secondary).padding().frame(maxWidth: .infinity).background(SGTheme.ColorToken.background) }
+            }
+        }
+    }
+    private func toggle(_ person: SocialPerson) {
+        if selected.contains(person.id) { selected.remove(person.id) }
+        else if selected.count < 8 { selected.insert(person.id) }
     }
     private func load(after: String? = nil) async {
         guard let request else { return }; loading = true; failed = false

@@ -33,7 +33,10 @@ import Testing
         #expect(preparations[0]["postDescription"] as? String == explicit)
         #expect(preparations[1]["postDescription"] == nil) // Automatic publication has no note-to-caption path.
         for payload in preparations {
-            #expect(Set(payload.keys).isSubset(of: ["postID", "attemptID", "expectedRevision", "confirmed", "includePhoto", "includeAttribution", "postDescription"]))
+            // The accepted Recipe + Social publisher always sends explicit false without an attachment.
+            #expect(payload["includeRecipe"] as? Bool == false)
+            #expect(payload["recipeID"] == nil && payload["sourceRevision"] == nil)
+            #expect(Set(payload.keys).isSubset(of: ["postID", "attemptID", "expectedRevision", "confirmed", "includePhoto", "includeAttribution", "postDescription", "includeRecipe"]))
         }
     }
 }

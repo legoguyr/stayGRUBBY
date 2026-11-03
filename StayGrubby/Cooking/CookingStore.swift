@@ -66,7 +66,7 @@ enum CookingStore {
     @discardableResult
     static func create(draft: CookingDraft, existingDish: Dish? = nil, session: RankingEngine,
                        context: ModelContext, mediaDirectory: URL? = nil) throws -> CookingAttempt {
-        guard !draft.cleanDishName.isEmpty, draft.cookedAt != nil else { throw StoreError.invalidDraft }
+        guard !draft.cleanDishName.isEmpty, draft.cookedAt != nil, draft.validDishText else { throw StoreError.invalidDraft }
         guard session.isComplete else { throw StoreError.incompleteSession }
         let global = try globalRanking(context: context)
         let itemID = session.itemID
@@ -88,6 +88,8 @@ enum CookingStore {
                 context.insert(dish)
                 DishSourceStore.apply(draft.source, to: dish, context: context)
             }
+            dish.publicDescription = CookingDraft.optional(draft.publicDescription)
+            dish.privateNotes = CookingDraft.optional(draft.privateNotes)
             let number = (dish.attempts.map(\.sequenceNumber).max() ?? 0) + 1
             let label = "\(dish.name) — \(draft.cleanTitle ?? "Version \(number)")"
             let item = try RankingStore.stage(name: label, session: session, to: global, context: context)
@@ -114,7 +116,7 @@ enum CookingStore {
 
     static func edit(_ attempt: CookingAttempt, draft: CookingDraft, context: ModelContext,
                      mediaDirectory: URL? = nil) throws {
-        guard !draft.cleanDishName.isEmpty else { throw StoreError.invalidDraft }
+        guard !draft.cleanDishName.isEmpty, draft.validDishText else { throw StoreError.invalidDraft }
         guard let dish = attempt.dish, attempt.rankedItem != nil else { throw StoreError.missingItem }
         let replacingPhoto = draft.pendingPhoto != nil || draft.removeExistingPhoto
         let oldCover = replacingPhoto ? attempt.primaryImage : nil
@@ -127,6 +129,8 @@ enum CookingStore {
             let renamed = dish.name != draft.cleanDishName
             dish.name = draft.cleanDishName
             dish.cuisine = draft.cuisine
+            dish.publicDescription = CookingDraft.optional(draft.publicDescription)
+            dish.privateNotes = CookingDraft.optional(draft.privateNotes)
             DishSourceStore.apply(draft.source, to: dish, context: context)
             apply(draft, to: attempt)
             attempt.tags = try tags(for: draft, context: context)

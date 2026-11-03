@@ -28,7 +28,13 @@ struct AddCookingView: View {
 
     init(list: RankingList, dish: Dish? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
         self.list = list; self.dish = dish; self.origin = origin; self.onResultClose = onResultClose
-        _draft = State(initialValue: origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft())
+        var initial = origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft()
+        // A Recipe claim can prefill this cook, but it does not replace the linked Dish's own text.
+        if let dish {
+            initial.publicDescription = dish.publicDescription ?? ""
+            initial.privateNotes = dish.privateNotes ?? ""
+        }
+        _draft = State(initialValue: initial)
     }
     private var displayName: String {
         "\(draft.cleanDishName) — \(draft.cleanTitle ?? "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)")"
@@ -85,7 +91,7 @@ struct AddCookingView: View {
                     Button { sharingChoice = sharing.selected; choosingReaction = true } label: {
                         Text("Continue").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty)
+                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty || !draft.validDishText)
                     .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
                 }
             }

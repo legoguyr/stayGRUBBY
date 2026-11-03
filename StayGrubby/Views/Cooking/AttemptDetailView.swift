@@ -260,7 +260,7 @@ struct EditCookingView: View {
                         do { try CookingStore.edit(attempt, draft: draft, context: context, mediaDirectory: mediaRoot); dismiss() }
                         catch { self.error = error.localizedDescription }
                     } label: { Text("Save").frame(maxWidth: .infinity) }
-                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty)
+                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty || !draft.validDishText)
                     .accessibilityIdentifier("save-cook-metadata")
                     .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
                 }

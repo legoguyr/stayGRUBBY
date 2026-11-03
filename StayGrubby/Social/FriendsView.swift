@@ -129,30 +129,38 @@ struct FriendProfileView: View {
         SGEditorialList {
             if unavailable { ContentUnavailableView("Person unavailable", systemImage: "person.crop.circle.badge.xmark", description: Text("Their privacy or relationship may have changed.")) }
             else {
-                Section {
-                    SocialAvatar(name: person.displayName, path: person.avatarPath, size: 88)
-                    Text(person.displayName).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
-                    Text(person.handle).foregroundStyle(.secondary)
-                    Text(person.relationship.label)
-                }
+                KitchenIdentityPresentation(name: person.displayName, username: person.username, avatarPath: person.avatarPath)
+                    .listRowSeparator(.hidden)
                 Section {
                     switch person.relationship {
                     case .none: action("Add Sous Chef", "request")
                     case .incoming: action("Accept Request", "accept"); action("Decline Request", "decline")
                     case .outgoing: action("Cancel Request", "cancel")
-                    case .friends: Button("Remove Sous Chef", role: .destructive) { confirmation = "remove" }
+                    case .friends: Label("Sous Chef", systemImage: "person.2.fill").foregroundStyle(.secondary)
                     case .blocked: action("Unblock", "unblock")
                     }
-                    if person.relationship != .blocked { Button("Block", role: .destructive) { confirmation = "block" } }
                 }.disabled(busy)
                 if person.relationship != .blocked {
-                    Section { SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id(person.id) }
-                    Section { SocialReportButton(kind: "profile", targetID: person.id) }
+                    SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id(person.id)
+                        .listRowSeparator(.hidden)
+                    SocialReportButton(kind: "profile", targetID: person.id)
                 }
             }
             if error { Text("This action couldn’t complete. Refresh to check the latest relationship.").accessibilityIdentifier("friend-action-error"); Button("Refresh profile") { Task { await refresh() } } }
         }
         .navigationTitle("Kitchen").navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if person.relationship != .blocked && !unavailable {
+                Menu {
+                    if person.relationship == .friends { Button("Remove Sous Chef", role: .destructive) { confirmation = "remove" } }
+                    if person.relationship != .blocked { Button("Block", role: .destructive) { confirmation = "block" } }
+                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                    .accessibilityLabel("Profile actions").accessibilityIdentifier("friend-profile-actions")
+                    .disabled(busy)
+                }
+            }
+        }
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
         .refreshable { await refresh() }.task { if person.relationship != .blocked { await refresh() } }
         .onSocialRefresh { if !busy && person.relationship != .blocked { await refresh() } }
@@ -165,7 +173,7 @@ struct FriendProfileView: View {
         } message: { Text("This changes your social relationship only. Private cooking and rankings are unchanged.") }
     }
     private func action(_ title: String, _ action: String) -> some View {
-        Button(title) { Task { await mutate(action) } }.accessibilityIdentifier("friend-action-\(action)")
+        Button(title) { Task { await mutate(action) } }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("friend-action-\(action)")
     }
     private func refresh() async {
         guard let request else { return }; let token = UUID(); generation = token
@@ -190,13 +198,35 @@ struct FriendProfileView: View {
 
 struct SocialFriendsLink: View {
     @Environment(\.socialRequest) private var request
+    @Environment(\.scenePhase) private var phase
+    @State private var count: Int?
+    @State private var hasMore = false
+    @State private var generation = UUID()
     var body: some View {
         if request != nil {
             NavigationLink { FriendsView() } label: {
-                Label("Sous Chefs", systemImage: "person.2")
-                    .frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading)
-                    .contentShape(Rectangle())
+                HStack {
+                    Label("Sous Chefs", systemImage: "person.2")
+                    Spacer()
+                    if let count { Text("\(count)" + (hasMore ? "+" : "")).monospacedDigit() }
+                    Image(systemName: "chevron.right").font(.caption.weight(.semibold))
+                }.frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("friends-open")
+                .task { await load() }.onSocialRefresh { await load() }
+                .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
+                .onChange(of: phase) { _, next in
+                    generation = UUID(); count = nil
+                    if next == .active { Task { await load() } }
+                }
+                .onDisappear { generation = UUID() }
         }
+    }
+    private func load() async {
+        guard let request else { return }; let token = UUID(); generation = token
+        do {
+            let page = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init()))
+            guard !Task.isCancelled, generation == token else { return }
+            count = page.people.count; hasMore = page.nextCursor != nil
+        } catch { if generation == token { count = nil } }
     }
 }

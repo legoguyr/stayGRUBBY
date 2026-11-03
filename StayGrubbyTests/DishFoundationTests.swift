@@ -55,6 +55,7 @@ import UIKit
         var ids: [UUID] = []
         for _ in 0..<6 { ids.append(try CookingPhotoCollection.append(try photo(), to: cook, context: context, root: root).id) }
         #expect(cook.orderedImages.map(\.id) == ids && cook.primaryImage?.id == ids.first)
+        #expect(CookingDraft(attempt: cook).existingPhotoCount == 6)
         #expect(throws: CookingPhotoCollection.PhotoError.limit) { try CookingPhotoCollection.append(prepared, to: cook, context: context, root: root) }
         let last = try #require(cook.orderedImages.last)
         try CookingPhotoCollection.setCover(last, in: cook, context: context)

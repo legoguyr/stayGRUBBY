@@ -14,6 +14,7 @@ final class SocialFeedUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["feed-error"].waitForExistence(timeout: 8), app.debugDescription); app.buttons["feed-retry"].tap()
         XCTAssertTrue(app.staticTexts["Harissa Chicken with Roasted Peppers"].waitForExistence(timeout: 8))
         app.buttons["View Friendly Cook’s profile"].tap()
+        app.buttons["friend-profile-actions"].tap()
         XCTAssertTrue(app.buttons["Block"].waitForExistence(timeout: 5)); app.buttons["Block"].tap(); app.buttons["Block Person"].tap()
         XCTAssertTrue(app.buttons["feed-find-friends"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.staticTexts["Harissa Chicken with Roasted Peppers"].exists)

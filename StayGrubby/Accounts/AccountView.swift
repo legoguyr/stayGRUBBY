@@ -36,14 +36,12 @@ struct AccountView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 KitchenIdentityHeader()
+                SocialFriendsLink()
+                ShareMyKitchen()
+                ProfileCookingContent(snapshot: snapshot, ranking: ranking)
                 SocialPendingShares()
                 SharedCookingPending()
-                ShareMyKitchen()
-                VStack(spacing: SGTheme.Space.small) {
-                    SocialFriendsLink()
-                }
                 SocialProfilePosts(open: { socialRoute = .post($0) })
-                ProfileCookingContent(snapshot: snapshot, ranking: ranking)
                 #if DEBUG
                 if let endDevelopmentReview {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
@@ -61,16 +59,15 @@ struct AccountView: View {
             .frame(maxWidth: .infinity, alignment: .center)
         }
         .background(SGTheme.ColorToken.background)
-        .navigationTitle("My Kitchen").toolbar(.hidden, for: .navigationBar)
-        .safeAreaInset(edge: .top) {
-            HStack {
-                Text("My Kitchen").font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
-                Spacer()
-                NotificationsLink().labelStyle(.iconOnly)
+        .navigationTitle("My Kitchen").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "My Kitchen") }
+            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }
+            ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
                     Image(systemName: "gearshape").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
                 }.accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
-            }.padding(.horizontal, SGTheme.Space.medium).background(SGTheme.ColorToken.background)
+            }
         }
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
         .navigationDestination(for: UUID.self) { id in if let cook = sharingCooks.first(where: { $0.id == id }) { AttemptDetailView(attempt: cook) } }

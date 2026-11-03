@@ -13,12 +13,17 @@ struct CookingPhotoEditor: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             DishPhoto(media: draft.removeExistingPhoto ? nil : draft.existingPhoto,
                       prepared: draft.pendingPhoto, name: draft.cleanDishName.isEmpty ? "dish" : draft.cleanDishName)
-                .frame(maxWidth: .infinity).frame(height: hasPhoto ? SGTheme.Size.editorPhotoHeight : SGTheme.Size.placeholderHeight)
+                .frame(maxWidth: .infinity).aspectRatio(4 / 3, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous)
                         .stroke(SGTheme.ColorToken.border)
                 }
+            if draft.existingPhotoCount > 1 {
+                Label("Cover photo · \(draft.existingPhotoCount) photos in this version", systemImage: "square.stack")
+                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("cook-photo-collection")
+            }
             HStack {
                 PhotosPicker(selection: $selection, matching: .images) {
                     Label(hasPhoto ? "Replace Photo" : "Choose Photo",

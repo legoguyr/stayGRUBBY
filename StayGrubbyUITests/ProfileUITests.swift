@@ -122,6 +122,8 @@ final class ProfileUITests: StayGrubbyUITestCase {
         for rank in 1...3 {
             let row = element("profile-top-food-\(rank)", in: app)
             XCTAssertTrue(row.exists && row.label.contains("score locked"))
+            let strip = app.scrollViews["signature-dishes-row"]
+            for _ in 0..<3 { if row.isHittable { break }; strip.swipeLeft() }
             reach(row, in: app)
             capture("Profile dark accessibility rank \(rank)", app: app)
         }

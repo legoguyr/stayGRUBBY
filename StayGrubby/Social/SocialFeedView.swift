@@ -20,7 +20,6 @@ struct SocialFeedView: View {
     @State private var route: SocialPostRoute?
     var body: some View {
         SGEditorialList {
-            SGPageIntro(title: "Grub List", subtitle: "What’s cooking in your circle. Give Hands 🙌 to show you like a cook.", eyebrow: "From your Sous Chefs", showsTitle: false).listRowSeparator(.hidden)
             if request == nil {
                 ContentUnavailableView("Grub List", systemImage: "person.2", description: Text("Sign in to connect with friends. Your development cooking library remains private."))
             } else if let identity, !identity.isConfigured {
@@ -47,6 +46,7 @@ struct SocialFeedView: View {
         .listStyle(.plain).background(SGTheme.ColorToken.background)
         .navigationTitle("Grub List").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Grub List") }
             ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }
             ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { Label("Sous Chefs", systemImage: "person.2") }.labelStyle(.iconOnly) }
         }
@@ -116,23 +116,20 @@ struct SocialFeedCard: View {
     var navigate: (SocialPostRoute) -> Void = { _ in }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            HStack(alignment: .top, spacing: 12) {
-            SocialAvatar(name: post.author.displayName, path: post.author.avatarPath)
-            if post.isAuthor {
-                Text("You · \(post.author.handle)").font(.headline)
-            } else {
-                Button(action: profile) {
-                    VStack(alignment: .leading) { Text(post.author.displayName).font(.headline); Text(post.author.handle).font(.subheadline).foregroundStyle(.secondary) }
-                }.buttonStyle(.plain).accessibilityLabel("View \(post.author.displayName)’s profile")
+            HStack(alignment: .center, spacing: SGTheme.Space.small) {
+                if post.isAuthor { authorIdentity }
+                else {
+                    Button(action: profile) { authorIdentity }.buttonStyle(.plain)
+                        .accessibilityLabel("View \(post.author.displayName)’s profile")
+                }
+                Spacer(minLength: 4)
+                SocialPostActions(post: post, delete: delete)
             }
-            Spacer(minLength: 4)
-            SocialPostActions(post: post, delete: delete)
-            }
-            Text(post.date, style: .relative).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
             if isDetail { foodIdentity }
             else {
                 Button { navigate(.post(post.id)) } label: { foodIdentity }
                     .buttonStyle(.plain).accessibilityLabel("Open post: \(post.title)")
+                    .accessibilityValue(post.scoreText.map { "Score \($0)" } ?? "Score locked")
                     .accessibilityIdentifier("post-open-\(post.id)")
             }
             if let description = post.postDescription, !description.isEmpty {
@@ -153,9 +150,7 @@ struct SocialFeedCard: View {
                     Text("Cooked with " + people.map(\.displayName).joined(separator: ", ")).font(.subheadline).fixedSize(horizontal: false, vertical: true)
                 }
             }
-            if let score = post.scoreText {
-                Text("\(score) / 10").font(SGTheme.TypeRole.title).foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score))
-            } else { Label("Score locked", systemImage: "lock").font(.subheadline).foregroundStyle(.secondary) }
+            if post.scoreText == nil { Label("Score locked", systemImage: "lock").font(.subheadline).foregroundStyle(.secondary) }
             if let achievement = post.achievement { Text(achievement).font(.subheadline) }
             if !post.published { Text("Unpublished photo draft").foregroundStyle(.secondary) }
             if post.moderationState != "active" { Text("Hidden by moderation").foregroundStyle(.secondary) }
@@ -170,15 +165,43 @@ struct SocialFeedCard: View {
         .buttonStyle(.borderless)
         .accessibilityElement(children: .contain).accessibilityIdentifier("feed-post-\(post.id)")
     }
+    private var authorIdentity: some View {
+        HStack(spacing: SGTheme.Space.small) {
+            SocialAvatar(name: post.author.displayName, path: post.author.avatarPath, size: 40)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(post.isAuthor ? "You" : post.author.displayName).font(SGTheme.TypeRole.headline)
+                    .foregroundStyle(SGTheme.ColorToken.primaryText)
+                Text(post.date, style: .relative).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            }
+        }.frame(minHeight: SGTheme.Size.minimumTap)
+    }
     private var foodIdentity: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SocialPhoto(path: post.photoPath).frame(maxWidth: .infinity).frame(height: post.photoPath == nil ? 100 : 320).clipped().clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero))
-            HStack(alignment: .firstTextBaseline) {
-                Text(post.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
-                if !isDetail { Spacer(minLength: 4); Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary).accessibilityHidden(true) }
+            HStack(alignment: .top, spacing: SGTheme.Space.small) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    Text(post.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
+                    if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
+                }.frame(maxWidth: .infinity, alignment: .leading)
+                if let score = post.scoreText { SocialScoreMedallion(text: score) }
             }
-            if let version = post.versionTitle { Text(version).foregroundStyle(.secondary) }
+            Color.clear.aspectRatio(4 / 3, contentMode: .fit)
+                .overlay { SocialPhoto(path: post.photoPath) }.clipped()
+                .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero))
+                .accessibilityHidden(true)
         }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
+}
 
+/// A presentation of an already-authorized/unlocked server snapshot. No new score policy.
+struct SocialScoreMedallion: View {
+    let text: String
+    @ScaledMetric(relativeTo: .headline) private var diameter = 52.0
+    var body: some View {
+        Text(text).font(.headline.weight(.bold)).monospacedDigit()
+            .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: text))
+            .frame(width: diameter, height: diameter)
+            .background(SGTheme.ColorToken.surface, in: Circle())
+            .overlay { Circle().stroke(SGTheme.ScoreColor.color(forDisplayedScore: text).opacity(0.6), lineWidth: 1.5) }
+            .accessibilityLabel("Score \(text)").accessibilityIdentifier("social-score")
+    }
 }

@@ -102,7 +102,7 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         let accept = app.buttons["friend-action-accept"]
         if !accept.waitForExistence(timeout: 3), row.isHittable { row.tap() }
         XCTAssertTrue(accept.waitForExistence(timeout: 8)); accept.tap()
-        XCTAssertTrue(app.buttons["Remove Sous Chef"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Sous Chef"].waitForExistence(timeout: 8))
     }
     @MainActor func testCommentNotificationRoutesAndBlockHidesInaccessibleActivity() throws {
         let app = launch(["--test-dark", "--social-review-comment"]); notifications(app)
@@ -114,6 +114,7 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         app.navigationBars["Comments"].buttons["Done"].tap()
         let profile = app.buttons["View Friendly Cook’s profile"]
         XCTAssertTrue(profile.waitForExistence(timeout: 8)); profile.tap()
+        app.buttons["friend-profile-actions"].tap()
         XCTAssertTrue(app.buttons["Block"].waitForExistence(timeout: 5)); app.buttons["Block"].tap(); app.buttons["Block Person"].tap()
         XCTAssertTrue(app.staticTexts["Post unavailable"].waitForExistence(timeout: 8), app.debugDescription)
         app.navigationBars.buttons.element(boundBy: 0).tap()

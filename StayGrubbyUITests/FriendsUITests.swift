@@ -4,7 +4,7 @@ final class FriendsUITests: StayGrubbyUITestCase {
     @MainActor private func launch(_ extra: [String] = []) -> XCUIApplication {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready"] + extra
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-trace"] + extra
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["My Kitchen"].tap()
         let friends = app.buttons["friends-open"]
@@ -29,14 +29,15 @@ final class FriendsUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["@friend_cook"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Signature Dishes"].exists)
         XCTAssertFalse(app.buttons["Edit Cook"].exists)
-        app.buttons["Remove Sous Chef"].tap(); app.buttons["Remove Friendship"].tap()
+        app.buttons["friend-profile-actions"].tap(); app.buttons["Remove Sous Chef"].tap(); app.buttons["Remove Friendship"].tap()
         XCTAssertTrue(app.navigationBars["Sous Chefs"].waitForExistence(timeout: 5))
         XCTAssertFalse(friend.exists)
         section("Requests", in: app)
         let incoming = app.buttons["friend-person-incoming_cook"]
         XCTAssertTrue(incoming.waitForExistence(timeout: 5)); incoming.tap()
         app.buttons["friend-action-accept"].tap()
-        XCTAssertTrue(app.buttons["Remove Sous Chef"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sous Chef"].waitForExistence(timeout: 5))
+        app.buttons["friend-profile-actions"].tap()
         app.buttons["Block"].tap(); app.buttons["Block Person"].tap()
         XCTAssertTrue(app.navigationBars["Sous Chefs"].waitForExistence(timeout: 5))
         section("Blocked Accounts", in: app)
@@ -60,7 +61,7 @@ final class FriendsUITests: StayGrubbyUITestCase {
         field.typeText("new_cook\n")
         let person = app.buttons["friend-person-new_cook"]
         XCTAssertTrue(person.waitForExistence(timeout: 5)); person.tap()
-        XCTAssertTrue(app.buttons["friend-action-request"].waitForExistence(timeout: 5)); app.buttons["friend-action-request"].tap()
+        XCTAssertTrue(app.buttons["friend-action-request"].waitForExistence(timeout: 5)); app.buttons["friend-action-request"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["friend-action-cancel"].waitForExistence(timeout: 5))
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "Friends light accessibility size"; shot.lifetime = .keepAlways; add(shot)
     }

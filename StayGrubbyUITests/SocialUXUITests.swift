@@ -76,7 +76,8 @@ final class SocialUXUITests: StayGrubbyUITestCase {
         app.buttons["ranking-result-close"].tap(); selectFeed(app)
         app.tabBars.buttons["My Kitchen"].tap()
         let post = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'profile-post-'")).firstMatch
-        XCTAssertTrue(post.waitForExistence(timeout: 8)); post.tap()
+        for _ in 0..<10 { if post.exists && post.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(post.waitForExistence(timeout: 8)); XCTAssertTrue(post.isHittable); post.tap()
         XCTAssertTrue(app.staticTexts["Score locked"].waitForExistence(timeout: 8))
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "Dark shared cook with locked score and avatar"; shot.lifetime = .keepAlways; add(shot)
     }
@@ -93,7 +94,9 @@ final class SocialUXUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "automatic-share-success").firstMatch.exists)
         app.buttons["ranking-result-close"].tap(); selectFeed(app)
         app.tabBars.buttons["My Kitchen"].tap()
-        XCTAssertTrue(app.staticTexts["profile-posts-empty"].waitForExistence(timeout: 8))
+        let empty = app.staticTexts["profile-posts-empty"]
+        for _ in 0..<10 { if empty.exists { break }; app.swipeUp() }
+        XCTAssertTrue(empty.waitForExistence(timeout: 8))
         app.tabBars.buttons["Grub Rank"].tap(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 5))
         app.revealCreation(); app.buttons["new-version"].tap()
         let dish = app.buttons["choose-dish-Version Soup"]
@@ -144,8 +147,10 @@ final class SocialUXUITests: StayGrubbyUITestCase {
             let focus = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasKeyboardFocus == true"), object: field)
             if XCTWaiter.wait(for: [focus], timeout: 3) == .completed {
                 field.typeText(value)
-                let key = XCUIApplication().keyboards.buttons["return"]
-                if key.exists { key.tap() }
+                let app = XCUIApplication(), done = XCUIApplication().buttons["cook-keyboard-done"]
+                if done.exists { done.tap() }
+                else if app.keyboards.buttons["return"].exists { app.keyboards.buttons["return"].tap() }
+                XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
                 return
             }
         }

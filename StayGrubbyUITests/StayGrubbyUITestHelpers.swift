@@ -76,3 +76,21 @@ extension XCUIApplication {
         XCTAssertTrue(textFields["social-display-name"].waitForExistence(timeout: 8), debugDescription)
     }
 }
+
+extension XCUIApplication {
+    /// XCTest can mark a partly clipped form control hittable while its center is
+    /// behind the fixed Continue/Save action. Scroll until the entire control is visible.
+    @MainActor func cookingFieldIsVisible(_ element: XCUIElement) -> Bool {
+        guard element.exists && element.isHittable else { return false }
+        let top = navigationBars.firstMatch.frame.maxY
+        let action = buttons["Continue"].exists ? buttons["Continue"] : buttons["save-cook-metadata"]
+        var bottom = action.exists ? action.frame.minY : frame.maxY
+        if keyboards.firstMatch.exists { bottom = min(bottom, keyboards.firstMatch.frame.minY) }
+        return element.frame.minY >= top && element.frame.maxY <= bottom
+    }
+    @MainActor func scrollCookingFormToward(_ element: XCUIElement) {
+        let form = scrollViews["cooking-form"]
+        if element.exists && element.frame.minY < navigationBars.firstMatch.frame.maxY { form.swipeDown() }
+        else { form.swipeUp() }
+    }
+}

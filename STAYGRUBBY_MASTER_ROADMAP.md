@@ -37,11 +37,11 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — Next Release, Stage 1: UI Foundation + Dish Data Architecture
+## CURRENT — Next Release: Stage 1 foundation + Stage 2 core UI
 
 The owner considers `b9871df88930699f22ed80b2c586996e4775ebd8` sufficiently accepted to continue. The [canonical next-release specification](NEXT_RELEASE_SPEC.md) owns the staged UI/UX/product scope: shared branding/primitives/copy; New Dish/metadata/text/tagging; Kitchen/profiles/Signature Dishes/discovery; social/Comments/Order Up!/sharing; Food Bible/Recipe actions; multi-photo UI and secondary-screen/accessibility polish.
 
-Stage 1 implements only reusable UI/header infrastructure, additive Dish Public Description/Private Notes, and safe bounded multi-photo data/domain/backend support. Later screen adoption/New Dish/gallery redesigns require their scoped stages. Native context-menu/haptics and contained crop/reposition are optional evaluations, not Stage 1 deliverables. Existing future product phases stay deferred. Do not begin Stage 2 automatically.
+Stage 1 completed reusable UI/header infrastructure, additive Dish Public Description/Private Notes and safe bounded multi-photo support. Stage 2 adopts those foundations in New Dish/edit, compact metadata/tagging, My Kitchen/authorized profiles, photographic Signature Dishes, Grub List and Grub Rank surrounding presentation. Existing native overflow remains preferable to duplicating long-press inventories. Stage 3 retains Comments/discovery/Order Up!/sharing corrections; later stages retain Food Bible/Recipe controls, full gallery/crop and the final system-wide pass. See [Stage 2 evidence](NEXT_RELEASE_STAGE_2_REVIEW.md). Do not begin Stage 3 automatically.
 
 Owner findings carried forward as **mandatory Social + Sharing work**: profile sharing physically works; Recipe links behave like a download in the browser; Ranking/Dish copy/share is not useful in the tested flow. Two-device social acceptance is still pending and nonblocking. Earlier automated link evidence does not supersede those physical findings. Stage 1 does not repair these defects unless directly affected by its data changes.
 

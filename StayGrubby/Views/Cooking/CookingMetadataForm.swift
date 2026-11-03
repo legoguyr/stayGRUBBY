@@ -12,55 +12,62 @@ struct CookingMetadataForm: View {
     @State private var selection: CookingMetadataSelection?
     @State private var sourceEditor = false
     @State private var cuisinePicker = false
-    @FocusState private var titleFocused: Bool
+    @FocusState private var focusedField: EntryField?
+    private enum EntryField: Hashable { case name, description, dishNotes, version, cookNotes, tag }
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             CookingPhotoEditor(draft: $draft)
-            SGFormSection(title: "Dish") {
+            VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 if existingDish && !editing {
-                    Text(draft.dishName).font(SGTheme.TypeRole.headline)
+                    Text(draft.dishName).font(SGTheme.TypeRole.title)
                         .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityIdentifier("inherited-dish-name")
                 } else {
-                    TextField("Dish name", text: $draft.dishName).font(SGTheme.TypeRole.headline)
+                    TextField("Dish name", text: $draft.dishName).font(SGTheme.TypeRole.title)
+                        .focused($focusedField, equals: .name).submitLabel(.done).onSubmit { focusedField = nil }
                         .accessibilityIdentifier("dish-name").sgField()
                 }
-                if editing {
-                    Text("The dish name, Cuisine and Source are shared by all versions.")
-                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    Text("Public Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
+                    TextField("A few words for your Sous Chefs", text: $draft.publicDescription, axis: .vertical)
+                        .focused($focusedField, equals: .description).lineLimit(2...5).accessibilityIdentifier("cook-dish-description").sgField()
                 }
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    Label("Private Notes", systemImage: "lock").font(SGTheme.TypeRole.secondary.weight(.semibold))
+                    TextField("For your kitchen only", text: $draft.privateNotes, axis: .vertical)
+                        .focused($focusedField, equals: .dishNotes).lineLimit(2...5).accessibilityIdentifier("cook-dish-private-notes").sgField()
+                }
+                if existingDish || editing {
+                    Text(editing ? "Name, description, Dish notes, Cuisine and Source apply to all versions." : "Description and Dish notes apply to all versions.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                }
+                if !draft.validDishText {
+                    Text("Keep the description within 2,000 characters and private notes within 8,000.")
+                        .font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
+                }
+            }
+            SGFormSection(title: "Details") {
+                if textSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                        Text(CookingProductOptions.courseTitle); coursePicker
+                    }.sgField()
+                } else { HStack { Text(CookingProductOptions.courseTitle); Spacer(); coursePicker }.sgField() }
                 if existingDish && !editing {
                     Label(draft.cuisine?.label ?? "No cuisine", systemImage: "globe")
-                        .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                         .accessibilityIdentifier("inherited-dish-cuisine")
+                    Label(draft.source?.summary ?? "No source", systemImage: "text.book.closed")
                 } else {
                     selector("Cuisine", value: draft.cuisine?.label ?? "Optional", symbol: "globe") { cuisinePicker = true }
                         .accessibilityIdentifier("dish-cuisine")
-                }
-                if existingDish && !editing {
-                    Label(draft.source?.summary ?? "No source", systemImage: "text.book.closed")
-                        .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                    Text("Source is inherited from this dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                } else {
                     selector("Source", value: draft.source?.summary ?? "Optional", symbol: "text.book.closed") { sourceEditor = true }
                         .accessibilityIdentifier("dish-source-type")
                 }
             }
-            if let sharingSelection { CookingSharingChoice(selection: sharingSelection) }
             if let cookedWith { CookedWithSelection(selected: cookedWith) }
+            if let sharingSelection { CookingSharingChoice(selection: sharingSelection) }
             SGFormSection(title: "This cook / version") {
-                if textSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                        Text(CookingProductOptions.courseTitle).font(SGTheme.TypeRole.body)
-                        coursePicker
-                    }.sgField()
-                } else {
-                    HStack { Text(CookingProductOptions.courseTitle).font(SGTheme.TypeRole.body); Spacer(); coursePicker }.sgField()
-                }
                 TextField("Version title (optional)", text: $draft.versionTitle).accessibilityIdentifier("version-title")
-                    .focused($titleFocused).submitLabel(.done).onSubmit { titleFocused = false }.sgField()
+                    .focused($focusedField, equals: .version).submitLabel(.done).onSubmit { focusedField = nil }.sgField()
                 if editing {
                     Toggle("Cooked date known", isOn: Binding(get: { draft.cookedAt != nil }, set: { draft.cookedAt = $0 ? .now : nil }))
                 }
@@ -74,7 +81,7 @@ struct CookingMetadataForm: View {
                 }
                 selector("Dietary", value: draft.dietary.isEmpty ? "Optional" : "\(draft.dietary.count) selected", symbol: "leaf") { selection = .dietary }
                 DisclosureGroup("Cook-specific ingredients") {
-                    Text("Recipe Contains/Possible records ingredient-derived allergens. Keep changes or substitutions specific to this cook here; existing selections remain saved.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Cook-specific changes; Recipe allergens stay separate.").font(.footnote).foregroundStyle(.secondary)
                     selector("Contains", value: draft.contains.isEmpty ? "Optional" : "\(draft.contains.count) selected", symbol: "checklist") { selection = .contains }
                         .accessibilityIdentifier("cook-contains")
                 }
@@ -99,13 +106,21 @@ struct CookingMetadataForm: View {
                         }
                     }
                     HStack {
-                        TextField("Custom tag", text: $newTag).onSubmit(addTag).submitLabel(.done).sgField()
+                        TextField("Custom tag", text: $newTag).focused($focusedField, equals: .tag).onSubmit(addTag).submitLabel(.done).sgField()
                         Button("Add tag", action: addTag).disabled(TagNormalization.display(newTag).isEmpty)
                             .buttonStyle(SGButtonStyle())
                     }
                 }.font(SGTheme.TypeRole.body)
                 TextField("Personal Notes · private (optional)", text: $draft.notes, axis: .vertical)
-                    .lineLimit(2...6).accessibilityIdentifier("cook-notes").sgField()
+                    .focused($focusedField, equals: .cookNotes).lineLimit(2...6).accessibilityIdentifier("cook-notes").sgField()
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if focusedField != nil {
+                    Spacer()
+                    Button("Done") { focusedField = nil }.accessibilityIdentifier("cook-keyboard-done")
+                }
             }
         }
         .sheet(isPresented: $cuisinePicker) { CuisinePicker(selection: $draft.cuisine) }

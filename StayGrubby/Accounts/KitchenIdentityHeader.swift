@@ -1,17 +1,26 @@
 import SwiftUI
 
+/// Same identity composition for the owner and authorized other-user profiles.
+struct KitchenIdentityPresentation: View {
+    let name: String
+    let username: String?
+    let avatarPath: String?
+    var body: some View {
+        VStack(spacing: SGTheme.Space.small) {
+            SocialAvatar(name: name, path: avatarPath, size: 88)
+            Text(name).font(SGTheme.TypeRole.title).multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true).accessibilityAddTraits(.isHeader)
+            if let username { Text("@" + username).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
+        }.frame(maxWidth: .infinity).padding(.vertical, SGTheme.Space.small)
+    }
+}
+
 struct KitchenIdentityHeader: View {
     @Environment(\.socialRequest) private var request
     @State private var identity: SocialIdentity?
-    @Environment(\.dynamicTypeSize) private var typeSize
     var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SocialAvatar(name: identity?.displayName ?? "", path: identity?.avatarPath, size: 88)
-            Text(identity?.displayName ?? "Your Kitchen").font(SGTheme.TypeRole.hero).tracking(-0.6)
-                .fixedSize(horizontal: false, vertical: true)
-            if let username = identity?.username { Text("@" + username).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
-            Text("Good food. Your signature.").font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, SGTheme.Space.small).accessibilityIdentifier("profile-identity")
+        KitchenIdentityPresentation(name: identity?.displayName ?? "Your Kitchen", username: identity?.username, avatarPath: identity?.avatarPath)
+            .accessibilityIdentifier("profile-identity")
             .task { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
     }

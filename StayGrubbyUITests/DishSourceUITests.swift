@@ -12,17 +12,28 @@ final class DishSourceUITests: StayGrubbyUITestCase {
 
         func tapWhenVisible(_ element: XCUIElement) {
             for _ in 0..<6 {
-                if element.exists && element.isHittable { element.tap(); return }
-                app.swipeUp()
+                let isRootField = ["dish-source-type", "dish-name"].contains(element.identifier)
+                if isRootField ? app.cookingFieldIsVisible(element) : (element.exists && element.isHittable) { element.press(forDuration: 0.2); return }
+                if isRootField { app.scrollCookingFormToward(element) } else { app.swipeUp() }
             }
             XCTFail("Could not reach \(element)")
         }
         func fill(_ field: XCUIElement, _ value: String) {
             tapWhenVisible(field)
             field.typeText(value)
+            let done = app.buttons["cook-keyboard-done"]
+            if done.exists { done.press(forDuration: 0.2) }
+            else if app.keyboards.buttons["return"].exists { app.keyboards.buttons["return"].tap() }
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         }
         func chooseSource(_ name: String) {
-            tapWhenVisible(app.buttons["dish-source-type"])
+            let source = app.buttons["dish-source-type"]
+            tapWhenVisible(source)
+            let destination = app.navigationBars["Source"]
+            if !destination.waitForExistence(timeout: 3), app.cookingFieldIsVisible(source) {
+                source.press(forDuration: 0.2)
+            }
+            XCTAssertTrue(destination.waitForExistence(timeout: 5), app.debugDescription)
             let option = app.buttons[name]
             XCTAssertTrue(option.waitForExistence(timeout: 5), "Missing source option \(name): \(app.debugDescription)")
             option.tap()

@@ -33,7 +33,10 @@ import UIKit
                 UIColor.systemBlue.setFill(); context.fill(CGRect(x: 0, y: 0, width: 360, height: 240))
             }
             draft.pendingPhoto = try LocalPhotoStore.prepare(data: bytes)
-            _ = try add(draft, dish: dish)
+            let cook = try add(draft, dish: dish)
+            if ProcessInfo.processInfo.arguments.contains("--multi-photo-review") {
+                _ = try CookingPhotoCollection.append(LocalPhotoStore.prepare(data: bytes), to: cook, context: context, root: mediaRoot)
+            }
         }
         if ProcessInfo.processInfo.arguments.contains("--score-calibration-review") {
             for (index, item) in list.orderedItems.enumerated() {

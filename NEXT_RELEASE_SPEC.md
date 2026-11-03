@@ -21,7 +21,7 @@ Prefer concise native menus/sheets and an identifiable compact primary-screen br
 
 Evaluate native context menus/long-press and suitable haptics only where they remove clutter. Basic native crop/reposition may be evaluated in the photography stage; it is optional and not Stage 1. Do not add bespoke gestures or an image-editing subsystem without need.
 
-Stage 1 establishes the reusable UI/header and Dish-text/photo data foundations; its contained migration is deployed and its automated acceptance is recorded in [the Stage 1 review](NEXT_RELEASE_STAGE_1_REVIEW.md). Later owner-scoped stages adopt those foundations screen by screen, including the dedicated Social + Sharing and photography work. **Do not start Stage 2 automatically.**
+Stage 1 establishes the reusable UI/header and Dish-text/photo data foundations; its contained migration is deployed and its automated acceptance is recorded in [the Stage 1 review](NEXT_RELEASE_STAGE_1_REVIEW.md). Stage 2 adopts them across primary identity, cooking entry/metadata/tagging, Kitchen/profiles/Signature Dishes, Grub List and Grub Rank surrounding UI; see [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md). Dedicated Social + Sharing, Food Bible and photography work remain later stages. **Do not start Stage 3 automatically.**
 
 ## Owner findings carried into Social + Sharing — mandatory
 

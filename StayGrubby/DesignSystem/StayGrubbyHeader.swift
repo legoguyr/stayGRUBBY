@@ -8,6 +8,7 @@ struct StayGrubbyHeader: View {
     @Binding var searchText: String
     @Binding var searching: Bool
     @FocusState private var searchFocused: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.sgReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -36,11 +37,12 @@ struct StayGrubbyHeader: View {
                 .transition(.opacity)
             } else {
                 HStack(alignment: .center, spacing: SGTheme.Space.small) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        SGEyebrow(text: page == "Rankings" ? "Your personal taste" : "Made by you")
-                        Text(page == "Rankings" ? "Grub Rank" : page == "Profile" ? "My Kitchen" : page)
-                            .font(SGTheme.TypeRole.page).tracking(-0.8).fixedSize(horizontal: false, vertical: true)
-                    }.accessibilityElement(children: .combine)
+                    Group {
+                        if typeSize.isAccessibilitySize {
+                            VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { brandIdentity }
+                        } else { HStack(spacing: SGTheme.Space.small) { brandIdentity } }
+                    }.accessibilityElement(children: .ignore)
+                        .accessibilityLabel("#stayGRUBBY, Grub Rank").accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("staygrubby-header-\(page.lowercased())")
                     Spacer(minLength: 0)
                     if let onSearch {
@@ -58,6 +60,10 @@ struct StayGrubbyHeader: View {
         }
         .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.xSmall)
         .background(SGTheme.ColorToken.background)
+    }
+    @ViewBuilder private var brandIdentity: some View {
+        SGPrimaryBrandTitle(page: "Grub Rank")
+        Text("Grub Rank").font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
     }
     private func animate(_ action: () -> Void) {
         withAnimation(reduceMotion ? nil : SGTheme.Motion.quick, action)

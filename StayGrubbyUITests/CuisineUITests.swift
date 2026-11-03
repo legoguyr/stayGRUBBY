@@ -5,8 +5,9 @@ final class CuisineUITests: StayGrubbyUITestCase {
 
     @MainActor private func reach(_ element: XCUIElement, in app: XCUIApplication) {
         for _ in 0..<7 {
-            if element.exists && element.isHittable { return }
-            app.swipeUp()
+            let isRootField = ["dish-cuisine", "dish-source-type", "dish-name"].contains(element.identifier)
+            if isRootField ? app.cookingFieldIsVisible(element) : (element.exists && element.isHittable) { return }
+            if isRootField { app.scrollCookingFormToward(element) } else { app.swipeUp() }
         }
         XCTFail("Cuisine control could not be reached: \(element)")
     }
@@ -34,7 +35,7 @@ final class CuisineUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         app.revealCreation(); app.buttons["new-dish"].tap()
         let name = app.textFields["dish-name"]
-        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Cuisine Soup")
+        XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Cuisine Soup\n")
         tap(app.buttons["dish-cuisine"], in: app)
         select(" italian ", id: "cuisine-option-italian", in: app)
         XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("Italian"))
