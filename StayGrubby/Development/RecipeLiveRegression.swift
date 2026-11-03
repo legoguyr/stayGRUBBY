@@ -75,7 +75,7 @@ struct RecipeLiveRegressionView: View {
                 message = "Approved call \(index+1) of at most 6 · \(item.id)"
                 let began = Date()
                 var entry = Entry(id: item.id, duration: 0)
-                struct Input: Encodable { var text: String; let cloudConsent = true; let contractVersion = 3; var diagnosticReview: Bool? }
+                struct Input: Encodable { var text: String; let cloudConsent = true; let contractVersion = 4; var diagnosticReview: Bool? }
                 do {
                     let wire: Wire = try await backend.client.functions.invoke("recipe-import", options: FunctionInvokeOptions(body: Input(text: item.raw, diagnosticReview: diagnosticReview ? true : nil)), decode: { data, response in
                         Wire(data: data, status: response.statusCode, requestID: response.value(forHTTPHeaderField: "x-recipe-request-id"), stage: response.value(forHTTPHeaderField: "x-recipe-stage"))

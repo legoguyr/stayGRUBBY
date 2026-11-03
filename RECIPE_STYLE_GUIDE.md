@@ -1,6 +1,6 @@
 # StayGrubby Recipe Style Guide
 
-Write for a competent home cook. Preserve the food; edit the document. The source is evidence, not final prose. These conventions guide Creator contract 3, deterministic normalization and acceptance tests. They do not authorize recipe development or replace the creator's review.
+Write for a competent home cook. **Gemini constructs Recipe content; StayGrubby validates structure/compatibility; the user reviews before explicit Save.** Source text is context, not a lexical whitelist. These are instructions for the model and content reviewer, not source-word/phrase acceptance gates. They do not authorize a second semantic judge or mechanical rewriting of valid model prose. Contract 4 includes an optional short description and permissive metadata; absent fields may remain unknown. Historical v19–v26 source-proof/recovery criteria are superseded by the explicit November 2 Gemini-first decision.
 
 ## Operational rules
 
@@ -14,8 +14,9 @@ Write for a competent home cook. Preserve the food; edit the document. The sourc
 - Fill useful yield and active prep/cooking/elapsed metadata when the workflow supports a reasonable estimate. Prefer provided, then derived, then estimated, then unknown. Record estimates honestly; an estimate is not an exact quotation. Elapsed total accounts for parallel/inactive work and need not equal prep plus cook. Missing procedural facts remain missing even when overall metadata is estimated.
 - Reuse canonical cuisine and allergen taxonomies. Recipe allergens come from ingredient evidence, remain editable/informational, and never establish absence, cross-contact safety or religious certification. Do not silently project Recipe selections onto an actual cook.
 - Copy-edit the whole result: names match methods; ingredients and uses agree; order is executable; repeated entries are intentional; measured facts and options survive; all four yield/time fields have been considered. Review and explicit Save remain mandatory.
-- Source validation must allow ingredient preparation to move from prose into a comma annotation only when the unchanged ingredient/measure and its preparation remain bound to the source. References may name an existing source-validated component; a component label cannot authorize a new ingredient or technique. A parenthetical ingredient preference adds an alternative supported name without erasing the valid generic name.
-- Numeric method fragments are not ingredient lists: seconds, temperatures and counts of sides must not become ingredients. Deterministic recovery refines already identified ingredients only. Preserve supplied displaced descriptors and handling cautions. A dish name suggesting cuisine is an estimate, not an explicitly provided Cuisine field.
+- Validate usable JSON/types, bounded core components/rows/text, compatible quantities and explicit dependency integrity. Technical corruption remains a hard failure; professional phrasing, natural prepared-component references, unquantified ingredients or missing optional metadata do not.
+- Preserve valid Gemini content through mapping. Never recover ingredient rows from methods, replace edited prose with raw fragments, deduplicate allocations or rebuild a source-fidelity engine. Metadata estimates do not require quotations. Keep user-review guidance visible; imperfections can be edited before Save.
+
 
 ## Evidence and deliberate adaptations
 

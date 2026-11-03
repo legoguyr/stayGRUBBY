@@ -19,15 +19,15 @@ import Testing
         #expect(entry.bulkOriginals[cream.id]=="• 1/2 cup cream");#expect(entry.text(for:cream)=="1/2 cup cream")
         entry.begin(cream);entry.set("3/4 cup cream",for:cream);#expect(entry.prepared(c).components![1].ingredients[0].quantity=="3/4")
     }
-    @Test func sourceValidationPreservesUnknownsAndNoInventedFacts() throws {
-        let result=try RecipeImportValidation.review(extraction,raw:simple,dishTitle:"Existing Dish",provider:"Mock")
-        #expect(result.draft.components!.count==1 && result.draft.components![0].title==nil)
-        #expect(result.draft.yield==nil && result.draft.prepMinutes==nil && result.draft.cookMinutes==nil)
-        #expect(result.draft.components![0].ingredients[1].quantity=="")
-        #expect(result.draft.steps==["Cook until it looks right."] && result.warnings.count==2)
-        var invented=extraction;invented.components[0].steps=["Cook at 375°F for 22 minutes."]
-        #expect(throws:RecipeImportFailure.invalid){try RecipeImportValidation.review(invented,raw:simple,dishTitle:"Dish",provider:"Mock")}
-        invented=extraction;invented.yield="4";#expect(throws:RecipeImportFailure.invalid){try RecipeImportValidation.review(invented,raw:simple,dishTitle:"Dish",provider:"Mock")}
+    @Test func structuralReviewPreservesProviderWordsAndUnknowns() throws {
+        let result = try RecipeImportValidation.review(extraction, raw: simple, dishTitle: "Dish", provider: "Mock")
+        #expect(result.draft.yield == nil && result.draft.prepMinutes == nil)
+        var edited = extraction; edited.components[0].title = "Professional preparation"
+        edited.components[0].steps = ["Cook until golden brown, then fold the mixture gently."]
+        edited.yield = "4 servings"
+        let draft = try RecipeImportValidation.review(edited, raw: simple, dishTitle: "Dish", provider: "Mock").draft
+        #expect(draft.steps == edited.components[0].steps && draft.yield == "4 servings")
+        #expect(draft.components?[0].title == "Professional preparation")
     }
     @Test func representativeMultiComponentMessyAndAmbiguousFixtures() throws {
         let raw="Cod with Red Pesto and Gnocchi & Brussels\nRed Pesto\n1 cup peppers\nBlend peppers.\nCod\n2 cod fillets\nPat cod dry.\nGnocchi & Brussels\n1 lb gnocchi\nCook gnocchi."
@@ -126,15 +126,11 @@ import Testing
         #expect(parts[0].ingredients.contains { $0.name.contains("clabbering") })
         #expect(result.draft.yield == nil && result.draft.cookMinutes == nil && result.draft.prepMinutes == nil)
         #expect(result.draft.steps.contains { $0.contains("five minutes") })
-        #expect(RecipeSourceEvidence.ingredientLine("a quarter cup olive oil") == "1/4 cup olive oil")
+        #expect(RecipeCreatorValidation.ingredientLine("a quarter cup olive oil") == "1/4 cup olive oil")
     }
-    @Test func normalizationMatchesServerContractAndRejectsNewCulinaryFacts() throws {
-        let f = try fixture()
-        for c in f.cases {
-            let kind: RecipeSourceEvidence.Kind
-            switch c.kind { case "ingredient": kind = .ingredient; case "step": kind = .step; case "title": kind = .title; default: kind = .metadata }
-            #expect(RecipeSourceEvidence.grounded(c.text, raw: c.raw, kind: kind) == c.valid)
-        }
+    @Test func invalidTechnicalQuantitiesRemainRejected() {
+        for line in ["-1 cup salt", "1/0 cup flour", "1e999 cups water"] { #expect(RecipeCreatorValidation.invalidQuantity(line)) }
+        for line in ["salt to taste", "pasta", "1/2 cup flour", "2 cups kale per person"] { #expect(!RecipeCreatorValidation.invalidQuantity(line)) }
     }
     @Test func safeServerErrorMappingHasDistinctUserMessages() {
         let pairs: [(Int,String,RecipeImportFailure)] = [(503,"not_configured",.configuration),(401,"authentication_required",.session),(429,"provider_quota",.quota),(429,"formatting_limit",.rateLimited),(422,"invalid_recipe",.invalid),(504,"formatting_timeout",.timeout),(503,"provider_unavailable",.unavailable)]

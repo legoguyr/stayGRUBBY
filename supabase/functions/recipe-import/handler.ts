@@ -1,8 +1,5 @@
-import { polish, STYLE_INSTRUCTIONS, FIDELITY_INSTRUCTIONS } from './style.ts';
-import { construct, effectiveSource, cuisines, allergens } from "./creator.ts";
-import { MODEL, INSTRUCTIONS, LEGACY_INSTRUCTIONS, schema, creatorSchema, cookbookSchema, validationReport } from "./contract.ts";
-import { preserveEditorialFacts } from "./editorial.ts";
-import { reconcile } from "./reconcile.ts";
+import { construct, cuisines, allergens } from "./creator.ts";
+import { MODEL, INSTRUCTIONS, schema, creatorSchema, geminiSchema, validationReport } from "./contract.ts";
 export type Dependencies = {
   authenticate: (token:string)=>Promise<{user:string;session:string}|null>;
   reserve: (user:string,session:string)=>Promise<boolean>;
@@ -73,11 +70,10 @@ export function handler(d:Dependencies) {
    if(!req.headers.get("content-type")?.startsWith("application/json"))return fail(400,"invalid_request");
    let body;
    try {body=JSON.parse(await boundedText(req,40_000));}catch{return fail(413,"invalid_or_oversized_input");}
-   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion","diagnosticReview"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&![2,3].includes(body.contractVersion)) || (body.diagnosticReview!==undefined&&typeof body.diagnosticReview!=="boolean") || !body.text.trim())return fail(400,"invalid_request");
+   if(!body || typeof body!=="object" || Array.isArray(body) || Object.keys(body).some(k=>!["text","cloudConsent","contractVersion","diagnosticReview"].includes(k)) || typeof body.text!=="string" || body.cloudConsent!==true || (body.contractVersion!==undefined&&![2,3,4].includes(body.contractVersion)) || (body.diagnosticReview!==undefined&&typeof body.diagnosticReview!=="boolean") || !body.text.trim())return fail(400,"invalid_request");
    diagnosticReview=body.diagnosticReview===true;
    if([...body.text].length>12_000 || new TextEncoder().encode(body.text).length>32_000)return fail(413,"input_too_long");
-   const creator=body.contractVersion===2||body.contractVersion===3, polished=body.contractVersion===3;
-   const source=creator?effectiveSource(body.text):body.text;
+   const version=body.contractVersion??1, creator=version>=2;
    // Owner confirmed the dedicated project has no billing. No recurring timestamp gate.
    stage="configuration";
    if(!d.key)return fail(503,"not_configured");
@@ -88,7 +84,7 @@ export function handler(d:Dependencies) {
    try {
     stage="provider";const upstream=await d.fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,{
      method:"POST",signal:controller.signal,headers:{"content-type":"application/json","x-goog-api-key":d.key},
-     body:JSON.stringify({systemInstruction:{parts:[{text:creator?(polished?STYLE_INSTRUCTIONS+"\n"+FIDELITY_INSTRUCTIONS:INSTRUCTIONS)+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", "):LEGACY_INSTRUCTIONS}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:creator?(polished?cookbookSchema:creatorSchema):schema}}}}),
+     body:JSON.stringify({systemInstruction:{parts:[{text:INSTRUCTIONS+"\nCanonical cuisines: "+cuisines.join(", ")+". Allergen codes: "+allergens.join(", ")}]},contents:[{role:"user",parts:[{text:body.text}]}],generationConfig:{temperature:0,maxOutputTokens:8000,responseFormat:{text:{mimeType:"APPLICATION_JSON",schema:version>=4?geminiSchema:creator?creatorSchema:schema}}}}),
     });
     if(!upstream.ok){
      let error:unknown;try{error=JSON.parse(await boundedText(upstream,16_000));}catch{/* Never return/log raw upstream bytes. */}
@@ -106,32 +102,17 @@ export function handler(d:Dependencies) {
     if(diagnosticReview)reviewCandidate=structuredClone(extraction);
     const metadataState=(v:any)=>Object.fromEntries(['yield','prepMinutes','cookMinutes','totalMinutes','cuisine'].map(k=>{const p=v?.metadata?.[k];return[k,{present:p?.value!=null,origin:['provided','derived','estimated','unknown'].includes(p?.origin)?p.origin:'absent'}];}));
     const metadataBefore=creator?metadataState(extraction):undefined;
-    // Never let presentation cleanup erase hard schema/numeric failures.
-    const initial=validationReport(extraction,source,polished);
-    if(Object.hasOwn(extraction??{},'editorialVersion')||(!initial.valid&&!initial.reconcilable))return fail(422,"invalid_recipe",200,initial.issues[0]?.rule??'object_fields',{validationIssues:initial.issues,structure:initial.structure});
-    if(polished)extraction=polish(extraction,source);
-    const validation=validationReport(extraction,source,polished);
-    let recoveredFields:string[]=[],recoveredCount=0;
-    if(!validation.valid){
-     const restored=reconcile(extraction,source,polished);
-     if(!restored)return fail(422,"invalid_recipe",200,validation.issues[0]?.rule,{validationIssues:validation.issues,structure:validation.structure});
-     extraction=restored.extraction;recoveredFields=restored.fields;recoveredCount=restored.count;
-    }
-    if(creator){
-     if(!extraction.metadata)return fail(422,"invalid_recipe",200,"creator_metadata");
-     const built=construct(extraction,source,polished);if(!built)return fail(422,"invalid_recipe",200,"recipe_construction");
-     extraction=built;
-    }
-    if(polished)extraction=polish(extraction,source);
-    const locked=preserveEditorialFacts(extraction,source,polished);
-    if(!locked||!validationReport(locked,source,polished).valid||new TextEncoder().encode(JSON.stringify(locked)).length>96_000)return fail(422,"invalid_recipe",200,"fact_lock");
-    extraction=locked;
-    if(polished)extraction.editorialVersion=3;
-    stage="complete";report({contractVersion:creator?(polished?3:2):1,...(creator?{metadataBefore,metadataAfter:metadataState(extraction),componentCount:extraction.components.length,unnamedComponents:extraction.components.filter((p:any)=>!p.title?.trim()).length}:{}),result:"success",httpStatus:200,providerStatus:upstream.status,...(recoveredCount?{sourceRecoveredFields:recoveredFields,sourceRecoveredCount:recoveredCount}:{})});
+    const initial=validationReport(extraction);
+    if(Object.hasOwn(extraction??{},'editorialVersion')||!initial.valid)return fail(422,"invalid_recipe",200,initial.issues[0]?.rule??'object_fields',{validationIssues:initial.issues,structure:initial.structure});
+    extraction=construct(extraction);
+    if(version<4)delete extraction.description;
+    extraction.editorialVersion=version;
+    if(new TextEncoder().encode(JSON.stringify(extraction)).length>96_000)return fail(422,"invalid_recipe",200,"output_size");
+    stage="complete";report({contractVersion:version,...(creator?{metadataBefore,metadataAfter:metadataState(extraction),componentCount:extraction.components.length}:{}),result:"success",httpStatus:200,providerStatus:upstream.status});
     // Explicit development tooling can inspect the original successful
     // candidate too: HTTP 200 alone does not establish construction quality.
     const capture=diagnosticReview&&req.headers.get('x-staygrubby-development-review')==='candidate';
-    return Response.json(capture?{extraction,review:{candidate:reviewCandidate,recoveredFields}}:extraction,{headers:headers()});
+    return Response.json(capture?{extraction,review:{candidate:reviewCandidate}}:extraction,{headers:headers()});
    } catch {
     if(controller.signal.aborted)return fail(504,"formatting_timeout");
     return stage==="provider" ? fail(503,"provider_connection") : fail(422,"invalid_recipe");

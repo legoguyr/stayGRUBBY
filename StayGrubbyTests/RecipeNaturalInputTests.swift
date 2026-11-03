@@ -4,153 +4,83 @@ import Testing
 
 @MainActor struct RecipeNaturalInputTests {
     private final class ResourceAnchor: NSObject {}
-    private struct Pair: Decodable { var text: String; var kind: String; var valid: Bool }
-    private struct Case: Decodable { var raw: String; var extraction: RecipeExtraction }
-    private struct LiveCase: Decodable { var id: String; var raw: String; var extraction: RecipeExtraction?; var provider: RecipeExtraction; var expectedStatus: Int }
-    private struct LiveCases: Decodable { var cases: [LiveCase] }
-    private struct Fixture: Decodable {
-        var raw: String
-        var extraction: RecipeExtraction
-        var pairs: [Pair]
-        var otherCases: [Case]?
+    private struct Case: Decodable { var id: String; var raw: String; var provider: RecipeExtraction; var extraction: RecipeExtraction? }
+    private struct Cases: Decodable { var cases: [Case] }
+    private func data(_ name: String) throws -> Data {
+        let b=Bundle(for:ResourceAnchor.self)
+        return try Data(contentsOf:#require(b.url(forResource:name,withExtension:"json",subdirectory:"Fixtures") ?? b.url(forResource:name,withExtension:"json")))
     }
-    private func fixture(_ name: String = "RecipeFrenchToastAcceptance") throws -> Fixture {
-        let bundle = Bundle(for: ResourceAnchor.self)
-        let url = bundle.url(forResource: name, withExtension: "json", subdirectory: "Fixtures") ?? bundle.url(forResource: name, withExtension: "json")
-        return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: #require(url)))
-    }
-    @Test func exactOwnerSourceAndSafeUnsafePhraseParity() throws {
-        let f = try fixture()
-        #expect(f.raw.hasPrefix("French toast recipe. Use day or so old challah"))
-        #expect(f.raw.contains("Wisk 4 egg yolks"))
-        #expect(f.raw.contains("out.\\\nHeat heavy 1 cup cream"))
-        for p in f.pairs {
-            #expect(RecipeSourceEvidence.grounded(p.text, raw: f.raw, kind: p.kind == "ingredient" ? .ingredient : .step, polished: true) == p.valid, "\(p.text)")
-        }
-    }
-    @Test func actualHandlerOutputsDecodeAndReachEditableDraftWithoutChangingSource() throws {
-        let f = try fixture(), original = f.raw
-        for prefix in ["", "Challah French Toast\nServes 4\n"] {
-            let decoded = try RecipeImportValidation.decode(JSONEncoder().encode(f.extraction))
-            let result = try RecipeImportValidation.review(decoded, raw: prefix + f.raw, dishTitle: "", provider: "Gemini synthetic fixture")
+    @Test func retainedRealFrenchToastShakshukaAndKaleReachEditorWithoutContentReconstruction() throws {
+        for c in try JSONDecoder().decode(Cases.self,from:data("RecipeV25FinalVerification")).cases {
+            let result=try RecipeImportValidation.review(c.provider,raw:c.raw,dishTitle:"",provider:"Retained real Gemini; offline")
             #expect(result.draft.isValidDraft)
-            #expect(result.draft.yield == (prefix.isEmpty ? nil : "4"))
-            let ingredients = result.draft.orderedComponents.flatMap(\.ingredients)
-            #expect(ingredients.contains { $0.quantity == "1" && $0.unit == "cup" && $0.name == "heavy cream" })
-            #expect(ingredients.contains { $0.quantity == "2" && $0.unit == "cup" && $0.name == "whole milk" })
-            #expect(ingredients.contains { $0.name == "butter" && $0.quantity.isEmpty })
-            #expect(result.draft.steps.contains { $0.contains("15 seconds per side") })
-            #expect(!result.draft.steps.joined().contains("°F"))
-            #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
-        }
-        #expect(f.raw == original)
-    }
-    @Test func otherNaturalRecipesPassTheSameClientGuard() throws {
-        for c in try fixture().otherCases ?? [] {
-            let result = try RecipeImportValidation.review(c.extraction, raw: c.raw, dishTitle: "", provider: "Synthetic contract")
-            #expect(result.draft.isValidDraft)
+            #expect(result.draft.orderedComponents.map(\.title)==c.provider.components.map(\.title))
+            #expect(result.draft.steps==c.provider.components.flatMap(\.steps))
+            #expect(result.draft.orderedComponents.map{ $0.ingredients.count }==c.provider.components.map{ $0.ingredients.count })
+            #expect(try JSONDecoder().decode(RecipeContent.self,from:JSONEncoder().encode(result.draft))==result.draft)
+            // We intentionally preserve the model's reviewable wording, not a
+            // mechanical reconstruction of source facts or method ingredients.
+            if c.id=="french" { #expect(result.draft.steps.contains{$0.contains("at first")}) }
+            if c.id=="kale" { #expect(result.draft.steps.contains{$0.contains("separate pot")}) }
         }
     }
-    @Test func independentShakshukaHandlerOutputRetainsServingsQuantitiesAndProceduralTimes() throws {
-        let f = try fixture("RecipeShakshukaAcceptance")
-        for p in f.pairs { #expect(RecipeSourceEvidence.grounded(p.text, raw: f.raw, kind: p.kind == "ingredient" ? .ingredient : .step, polished: true) == p.valid, "\(p.text)") }
-        let decoded = try RecipeImportValidation.decode(JSONEncoder().encode(f.extraction))
-        let result = try RecipeImportValidation.review(decoded, raw: f.raw, dishTitle: "", provider: "Synthetic Shakshuka contract")
-        #expect(result.draft.yield == "4" && result.draft.metadataOrigins?["yield"] == "provided")
-        let rows = result.draft.orderedComponents.flatMap(\.ingredients)
-        #expect(rows.contains { $0.quantity == "8" && $0.name == "eggs" })
-        #expect(rows.contains { $0.quantity == "1" && $0.unit == "tsp" && $0.name == "paprika" })
-        #expect(rows.contains { $0.name == "olive oil" && $0.quantity.isEmpty })
-        let method = result.draft.steps.joined(separator: " ")
-        #expect(method.contains("5 to 10 minutes") && method.contains("about 3 minutes") && method.contains("Alternatively, turn on the broiler"))
-        #expect(result.draft.isValidDraft)
+    @Test func optionalDescriptionAndEstimatedMetadataNeedNoSourceQuotation() throws {
+        let json=#"{"title":"Golden kale pasta","description":"A velvety sauce with crisp toppings.","components":[{"title":"Sauce","ingredients":["pasta","a quarter cup olive oil","two cloves garlic","chiles or pepper flakes, optional"],"steps":["Blend the kale mixture until smooth, then toss with pasta."]}],"metadata":{"yield":{"value":"4 servings","origin":"estimated"},"cookMinutes":{"value":15,"origin":"estimated"},"cuisine":{"value":"Italian","origin":"estimated"}}}"#
+        let result=try RecipeImportValidation.review(RecipeImportValidation.decode(Data(json.utf8)),raw:"blend all that",dishTitle:"",provider:"Synthetic").draft
+        #expect(result.description=="A velvety sauce with crisp toppings.")
+        #expect(result.yield=="4 servings" && result.cookMinutes==15 && result.prepMinutes==nil)
+        #expect(result.components![0].ingredients[0].quantity.isEmpty)
+        #expect(result.components![0].ingredients[1].quantity=="1/4")
+        #expect(result.components![0].ingredients[2].quantity=="2")
+        #expect(result.components![0].ingredients[3].displayText.contains("or pepper flakes"))
     }
-    @Test func singularMeasuresAndContextualBroilerDoNotLicenseNewFacts() throws {
-        let f = try fixture("RecipeShakshukaAcceptance")
-        for (raw,text,kind) in [
-            ("Crack an egg into a cup.","1 cup egg",RecipeSourceEvidence.Kind.ingredient),
-            ("Boil the eggs.","Broil the eggs.",.step),
-            ("Turn on the boiler to heat water.","Turn on the broiler.",.step),
-            (f.raw,"Cook the eggs under the broiler.",.step)
-        ] { #expect(!RecipeSourceEvidence.grounded(text, raw: raw, kind: kind, polished: true)) }
-        #expect(RecipeCreatorValidation.explicit("Rice for four. Cook rice.", key: "yield") == 4)
-        for raw in ["Cook for 4 minutes.","Simmer sauce for 4.","Soup for 4 minutes."] { #expect(RecipeCreatorValidation.explicit(raw, key: "yield") == nil) }
-    }
-    @Test func quantitiesCannotCrossClausesOrBorrowAnotherIngredientDescriptor() {
-        for (raw,line,valid) in [
-            ("Use dry 1/2 cup white wine.","1/2 cup dry white wine",true),
-            ("Use chopped 2 cups carrots.","2 cups chopped carrots",true),
-            ("Use egg 4 yolks.","4 egg yolks",true),
-            ("Use cream and 1 cup milk.","1 cup cream milk",false),
-            ("Use cream with 1 cup milk.","1 cup cream milk",false),
-            ("Use cream. Add 1 cup milk.","1 cup cream milk",false),
-            ("Use heavy 1 cup cream and 2 cups whole milk.","2 cups heavy cream",false),
-            ("Use fresh parsley and 2 cups carrots.","2 cups fresh carrots",false)
-        ] { #expect(RecipeSourceEvidence.grounded(line, raw: raw, kind: .ingredient, polished: true) == valid) }
-    }
-    @Test func approximateAgeIsNotAnIngredientChoiceButRealAlternativesRemainRequired() {
-        func value(_ steps: [String]) -> RecipeExtraction { .init(editorialVersion: 3, components: [.init(ingredients: ["bread"], steps: steps)]) }
-        #expect(RecipeEditorialEvidence.preserve(value(["Use bread that is a day or so old."]), raw: "Use day or so old bread.") != nil)
-        #expect(RecipeEditorialEvidence.preserve(value(["Use bread."]), raw: "Use bread or rice.") == nil)
-        #expect(RecipeEditorialEvidence.preserve(value(["Use day-old bread."]), raw: "Use bread a day or so old, or rice.") == nil)
-    }
-    @Test func measuredRecoveryDoesNotTurnTimeOrTemperatureIntoIngredients() throws {
-        let raw = "Use bread and butter. Dunk bread for 15 seconds per side. Heat to 135 on low. Add 1 tbsp butter."
-        let value = RecipeExtraction(components: [.init(ingredients: ["bread","butter"], steps: ["Dunk bread for 15 seconds per side.","Heat to 135 on low.","Add 1 tbsp butter."])])
-        let made = try #require(RecipeCreatorValidation.construct(value, raw: raw))
-        #expect(made.components[0].ingredients == ["bread","1 tbsp butter"])
-        #expect(RecipeSourceEvidence.grounded("Custard Base", raw: "Mix to form a custard.", kind: .title, polished: true))
-    }
-    @Test func capturedLiveFrenchToastReplayedThroughFinalServerReachesSerializableNativeDraft() throws {
-        let f = try fixture("RecipeLiveFrenchToastAccepted")
-        let decoded = try RecipeImportValidation.decode(JSONEncoder().encode(f.extraction))
-        let result = try RecipeImportValidation.review(decoded, raw: f.raw, dishTitle: "", provider: "Captured Gemini; offline final-handler replay")
-        #expect(result.draft.isValidDraft)
-        let rows = result.draft.orderedComponents.flatMap(\.ingredients)
-        #expect(rows.contains { $0.name == "heavy cream" && $0.quantity == "1" && $0.unit == "cup" })
-        #expect(!rows.contains { $0.displayText.contains("seconds") || $0.displayText.contains("till") })
-        #expect(result.draft.steps.contains { $0.contains("avoid cooking the eggs") })
-        #expect(result.draft.steps.contains { $0.contains("fall apart") })
-        #expect(result.draft.metadataOrigins?["cuisine"] == "estimated")
-        #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
-    }
-    @Test func capturedShakshukaOfflineCorrectionReachesDraftWithoutNewFacts() throws {
-        let f = try fixture("RecipeLiveShakshukaReplay")
-        let result = try RecipeImportValidation.review(f.extraction, raw: f.raw, dishTitle: "", provider: "Captured failed Gemini; offline correction replay")
-        #expect(result.draft.isValidDraft && result.draft.yield == "4")
-        #expect(result.draft.steps.contains { $0.contains("5 to 10 minutes") })
-        #expect(result.draft.steps.contains { $0.contains("about 3 minutes") && $0.contains("alternatively") && $0.contains("broiler") })
-        #expect(result.draft.cuisine == nil)
-        #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
-        for (raw,line) in [("Dice carrots. Slice onions.","onions, diced"),("2 yellow onions. Dice red onions.","2 yellow onions, diced"),("3 cloves garlic, chopped.","4 cloves garlic, chopped")] {
-            #expect(!RecipeSourceEvidence.grounded(line, raw: raw, kind: .ingredient, polished: true))
+    @Test func absentOrMalformedOptionalMetadataDoesNotRejectCoreRecipe() throws {
+        for metadata in ["",#", "metadata":null"#,#", "metadata":{"yield":42,"prepMinutes":{"value":-20},"cuisine":{"value":"unsupported"}}"#] {
+            let json=#"{"components":[{"ingredients":["rice"],"steps":["Cook the rice until tender."]}]"#+metadata+"}"
+            let draft=try RecipeImportValidation.review(RecipeImportValidation.decode(Data(json.utf8)),raw:"rice",dishTitle:"",provider:"Synthetic").draft
+            #expect(draft.isValidDraft && draft.title=="Recipe Draft" && draft.prepMinutes==nil)
         }
     }
-    @Test func freshV25LiveResponsesRemainHonestAfterFocusedCorrection() throws {
-        let bundle = Bundle(for: ResourceAnchor.self)
-        let url = bundle.url(forResource: "RecipeV25FinalVerification", withExtension: "json", subdirectory: "Fixtures") ?? bundle.url(forResource: "RecipeV25FinalVerification", withExtension: "json")
-        let f = try JSONDecoder().decode(LiveCases.self, from: Data(contentsOf: #require(url)))
-        for c in f.cases {
-            if c.expectedStatus == 200 {
-                let value = try #require(c.extraction)
-                let result = try RecipeImportValidation.review(RecipeImportValidation.decode(JSONEncoder().encode(value)), raw: c.raw, dishTitle: "", provider: "Fresh v25 capture; offline native check")
-                #expect(result.draft.isValidDraft)
-                #expect(try JSONDecoder().decode(RecipeContent.self, from: JSONEncoder().encode(result.draft)) == result.draft)
-                if c.id == "french" {
-                    #expect(result.draft.orderedComponents.flatMap(\.ingredients).contains { $0.name == "Custard Base" && $0.quantity.isEmpty })
-                    #expect(result.draft.steps.contains { $0.contains("at first") })
-                }
-            } else {
-                var rejected = c.provider; rejected.editorialVersion = 3
-                #expect(throws: (any Error).self) { try RecipeImportValidation.review(rejected, raw: c.raw, dishTitle: "", provider: "Rejected real capture") }
+    @Test func methodTextCannotBecomeAnIngredientAndDuplicateAllocationsSurvive() throws {
+        let value=RecipeExtraction(title:"Toast",components:[.init(title:"First allocation",ingredients:["butter","1 tbsp butter","1 tbsp butter"],steps:["Cook for 15 seconds per side. Heat to 135."])])
+        let draft=try RecipeImportValidation.review(value,raw:"toast",dishTitle:"",provider:"Synthetic").draft
+        #expect(draft.components![0].ingredients.count==3)
+        #expect(!draft.ingredients.contains{$0.contains("seconds")||$0.contains("135")})
+        #expect(draft.steps==value.components[0].steps)
+    }
+    @Test func structuralCorruptionBoundsAndImpossibleDependenciesStillFail() {
+        for value in [
+            RecipeExtraction(title:"Bad",components:[]),
+            .init(title:"Bad",components:[.init(ingredients:[],steps:[])]),
+            .init(title:"Bad",components:[.init(ingredients:["-1 cup salt"],steps:[])]),
+            .init(title:"Bad",components:[.init(ingredients:["1/0 cup flour"],steps:[])]),
+            .init(title:"Bad",components:[.init(ingredients:["rice"],steps:[],after:[1])]),
+            .init(title:"Bad",components:[.init(ingredients:["rice"],steps:[],after:[1]),.init(ingredients:["oil"],steps:[],after:[0])]),
+            .init(title:"Bad",components:[.init(ingredients:["rice"],steps:[String(repeating:"x",count:2001)])])
+        ] { #expect(throws:RecipeImportFailure.invalid){try RecipeImportValidation.review(value,raw:"anything",dishTitle:"",provider:"Synthetic")} }
+    }
+    @Test func explicitDependenciesOrderComponentsWithoutRewritingThem() throws {
+        let value=RecipeExtraction(title:"Dinner",components:[.init(title:"Assembly",ingredients:["Prepared sauce"],steps:["Fold pasta into the prepared sauce."],after:[1]),.init(title:"Sauce",ingredients:["tomatoes"],steps:["Blend until velvety."])])
+        let draft=try RecipeImportValidation.review(value,raw:"tomatoes pasta",dishTitle:"",provider:"Synthetic").draft
+        #expect(draft.components!.map(\.title)==["Sauce","Assembly"])
+        #expect(draft.steps==["Blend until velvety.","Fold pasta into the prepared sauce."])
+    }
+    @Test func freshV27ResponsesMapToEditableSerializableDraftsWithDescriptions() throws {
+        for c in try JSONDecoder().decode(Cases.self,from:data("RecipeGeminiFirstLive")).cases {
+            let output=try #require(c.extraction)
+            let decoded=try RecipeImportValidation.decode(JSONEncoder().encode(output))
+            var draft=try RecipeImportValidation.review(decoded,raw:c.raw,dishTitle:"",provider:"Fresh real Gemini v27; native mapping check").draft
+            #expect(draft.isValidDraft && draft.description==c.provider.description)
+            #expect(draft.steps==output.components.flatMap(\.steps))
+            #expect(draft.components!.map{$0.ingredients.count}==output.components.map{$0.ingredients.count})
+            if c.id=="kale" {
+                let rows=draft.components!.flatMap(\.ingredients)
+                #expect(rows.contains{$0.quantity=="2" && $0.name.contains("per person")})
+                #expect(rows.filter{$0.quantity=="1/4"}.count==2)
+                #expect(rows.contains{$0.quantity=="1" && $0.unit=="tbsp" && $0.name.contains("butter")})
             }
-        }
-    }
-    @Test func ingredientComponentReferencesCannotAddAmountsOrUnknownIngredients() {
-        let raw = "Use bread and cream. Form a custard. Cook bread in custard."
-        for line in ["1 cup Custard Base","Custard Base and bacon","Saffron Custard"] {
-            let value = RecipeExtraction(editorialVersion: 3, components: [.init(title: "Custard Base", ingredients: ["cream"], steps: ["Form a custard."]),.init(title: "Cooking", ingredients: [line], steps: ["Cook bread in custard."])])
-            #expect(throws: (any Error).self) { try RecipeImportValidation.review(value, raw: raw, dishTitle: "", provider: "Synthetic unsafe reference") }
+            draft.description="An owner-reviewed description."
+            #expect(try JSONDecoder().decode(RecipeContent.self,from:JSONEncoder().encode(draft))==draft)
         }
     }
 }

@@ -1,3 +1,5 @@
+> **Historical audit:** source-validation/recovery assumptions below are superseded by the November 2 Gemini-first decision. See [current architecture](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4) and [Style Guide](RECIPE_STYLE_GUIDE.md). Keep ownership evidence; do not restore lexical policing from this review.
+
 # StayGrubby Recipe Creator
 
 > Historical Creator checkpoint, followed by the cookbook/content/allergen/reorder refinement. **Recipe Creator V1 + refinement is OWNER PHYSICALLY ACCEPTED**, confirmed in the October 28 workflow re-tool request. [Current architecture](STAYGRUBBY_ARCHITECTURE.md) and [accepted refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md) supersede pending gates and contract-2 details below; the ownership audit remains useful. Preserve this checkpoint’s original test/procedure evidence as history.

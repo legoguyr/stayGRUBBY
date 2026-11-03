@@ -38,51 +38,43 @@ nonisolated enum RecipeImportValidation {
     static func normalized(_ value: String) -> String { value.lowercased().split(whereSeparator: { $0.isWhitespace }).joined(separator: " ") }
     static func decode(_ data: Data) throws -> RecipeExtraction {
         guard data.count <= 96_000, let object = try? JSONSerialization.jsonObject(with: data) as? [String:Any],
-              Set(object.keys).isSubset(of: ["title","yield","source","components","metadata","editorialVersion"]),
+              Set(object.keys).isSubset(of: ["title","yield","source","components","metadata","editorialVersion","description"]),
               let parts = object["components"] as? [[String:Any]], parts.allSatisfy({ Set($0.keys).isSubset(of: ["title","ingredients","steps","after"]) }) else { throw RecipeImportFailure.invalid }
         do { return try JSONDecoder().decode(RecipeExtraction.self, from: data) } catch { throw RecipeImportFailure.invalid }
     }
-    /// Bounded lexical/quantity evidence permits organization and safe voice-text cleanup.
-    /// User review remains mandatory; this cannot prove semantic completeness or assignments.
+    /// Structural review only; prose and editorial judgements belong to Gemini/user.
     static func review(_ value: RecipeExtraction, raw: String, dishTitle: String, provider: String) throws -> RecipeImportResult {
         try input(raw)
-        let polished = value.editorialVersion == 3
-        let source = value.metadata == nil ? raw : RecipeCreatorValidation.effectiveSource(raw)
-        let built = value.metadata == nil ? value : RecipeCreatorValidation.construct(value, raw: source)
-        guard let built, let value = RecipeEditorialEvidence.preserve(built, raw: source) else { throw RecipeImportFailure.invalid }
-        let references = source + "\n" + value.components.compactMap(\.title).filter { $0.count <= 120 && RecipeSourceEvidence.grounded($0, raw: source, kind: .title, polished: true) }.joined(separator: "\n")
-        func excerpt(_ text: String, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata, componentReference: Bool = false) throws -> String {
+        guard value.editorialVersion.map({ (1...4).contains($0) }) ?? true,
+              let value = RecipeCreatorValidation.construct(value) else { throw RecipeImportFailure.invalid }
+        func excerpt(_ text: String, limit: Int, kind: String = "") throws -> String {
             let clean = IngredientParser.trim(text)
-            let evidenceSource: String
-            if polished, case .step = kind { evidenceSource = references } else { evidenceSource = source }
-            guard !clean.isEmpty, clean.count <= limit, componentReference || RecipeSourceEvidence.grounded(clean, raw: evidenceSource, kind: kind, polished: polished) else { throw RecipeImportFailure.invalid }
+            guard !clean.isEmpty, clean.count <= limit,
+                  clean.range(of: #"[\x00-\x08\x0B\x0C\x0E-\x1F]"#, options: .regularExpression) == nil else { throw RecipeImportFailure.invalid }
             return clean
         }
-        func optional(_ text: String?, limit: Int, kind: RecipeSourceEvidence.Kind = .metadata) throws -> String? {
-            guard let text, !IngredientParser.trim(text).isEmpty else { return nil }; return try excerpt(text, limit: limit, kind: kind)
+        func optional(_ text: String?, limit: Int, kind: String = "") throws -> String? {
+            guard let text, !IngredientParser.trim(text).isEmpty else { return nil }; return try excerpt(text, limit: limit)
         }
         guard (1...20).contains(value.components.count) else { throw RecipeImportFailure.invalid }
         var count = 0
         let parts = try value.components.enumerated().map { i, part in
             guard part.ingredients.count <= 100, part.steps.count <= 100, !part.ingredients.isEmpty || !part.steps.isEmpty else { throw RecipeImportFailure.invalid }
             let ingredients = try part.ingredients.enumerated().map { n, text in
-                let unmeasured = !RecipeSourceEvidence.tokens(text).contains { $0.hasPrefix("n") && $0.dropFirst().first?.isNumber == true }
-                let reference = polished && unmeasured && value.components.prefix(i).compactMap(\.title).contains { title in
-                    title.count <= 120 && normalized(title) == normalized(text) && RecipeSourceEvidence.grounded(title, raw: source, kind: .title, polished: true)
-                }
-                return IngredientParser.parse(RecipeSourceEvidence.ingredientLine(try excerpt(text, limit: 500, kind: .ingredient, componentReference: reference))).ingredient(id: UUID(), order: n)
+                guard !RecipeCreatorValidation.invalidQuantity(text) else { throw RecipeImportFailure.invalid }
+                return IngredientParser.parse(RecipeCreatorValidation.ingredientLine(try excerpt(text, limit: 500))).ingredient(id: UUID(), order: n)
             }
-            let steps = try part.steps.enumerated().map { n, text in RecipeStep(order: n, instruction: try excerpt(text, limit: 2000, kind: .step)) }
+            let steps = try part.steps.enumerated().map { n, text in RecipeStep(order: n, instruction: try excerpt(text, limit: 2000, kind: "step")) }
             count += ingredients.count + steps.count
-            return RecipeComponent(title: try optional(part.title, limit: 120, kind: .title), order: i, ingredients: ingredients, steps: steps)
+            return RecipeComponent(title: try optional(part.title, limit: 120, kind: "title"), order: i, ingredients: ingredients, steps: steps)
         }
         guard count > 0, count <= 200, parts.flatMap(\.ingredients).count <= 100, parts.flatMap(\.steps).count <= 100 else { throw RecipeImportFailure.invalid }
         let metadata = value.metadata
         let origins: [String:String]? = metadata.map { m in ["yield":m.yield.origin.rawValue,"prepMinutes":m.prepMinutes.origin.rawValue,"cookMinutes":m.cookMinutes.origin.rawValue,"totalMinutes":m.totalMinutes.origin.rawValue,"cuisine":m.cuisine.origin.rawValue] }
         let assessment = metadata.map { RecipeAllergenAssessment.derive(parts.flatMap(\.ingredients).map(\.displayText), hints: $0.allergenHints) }
-        let draft = RecipeContent(title: try optional(value.title, limit: 120, kind: .title) ?? dishTitle, cuisine: metadata?.cuisine.value, source: try optional(value.source, limit: 500), components: parts, yield: try metadata?.yield.value ?? optional(value.yield, limit: 100), prepMinutes: metadata?.prepMinutes.value, cookMinutes: metadata?.cookMinutes.value, elapsedMinutes: metadata?.totalMinutes.value, metadataOrigins: origins, allergens: assessment).preparedForSave()
+        let draft = RecipeContent(title: try optional(value.title, limit: 120) ?? (dishTitle.isEmpty ? "Recipe Draft" : dishTitle), description: value.description, cuisine: metadata?.cuisine.value, source: try optional(value.source, limit: 500), components: parts, yield: try metadata?.yield.value ?? optional(value.yield, limit: 100), prepMinutes: metadata?.prepMinutes.value, cookMinutes: metadata?.cookMinutes.value, elapsedMinutes: metadata?.totalMinutes.value, metadataOrigins: origins, allergens: assessment).preparedForSave()
         guard (try? JSONEncoder().encode(draft).count).map({ $0 <= 40_000 }) == true, draft.isValidDraft else { throw RecipeImportFailure.invalid }
-        var warnings = ["Review the ingredients, section assignments and method against your original text before saving. Formatting can miss information."]
+        var warnings = ["Review the ingredients, section assignments and method against your original text before saving. AI drafts can miss or change information; review quantities, methods and allergens before Save."]
         if metadata != nil { warnings.append("Servings, times and cuisine may include suggestions or estimates. Review and edit before saving. Allergen information requires checking ingredient labels.") }
         if parts.flatMap(\.ingredients).contains(where: { $0.quantity.isEmpty }) { warnings.append("Some ingredients have no definite quantity. The original wording is preserved.") }
         if parts.flatMap(\.steps).isEmpty { warnings.append("No method was identified. Add the instructions you want to keep.") }

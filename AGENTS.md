@@ -70,6 +70,10 @@ Fixtures must use isolated UUID stores/media roots, never normal guest/account/d
 - No paid billing, paid-provider setup or new external AI provider without explicit approval. Preserve working protected keys. Provider quota failure must degrade gracefully to manual/deterministic entry and later retry, without retry loops.
 - Gemini-backed Paste Recipe/Recipe Creator is the accepted standard intelligent path. Apple Foundation Models did not meet complex-Recipe quality requirements; infrastructure may remain dormant for reevaluation. Do not reroute normal complex creation to Apple because it is on-device/free or expose unnecessary provider/model complexity. No StayGrubby daily allowance or date/30-day expiration; retain justified burst/security protections and friendly provider cooldown.
 
+## Recipe Creator ownership boundary
+
+The explicit November 2 Gemini-first architecture supersedes historical lexical/source-proof rules: Gemini interprets and constructs content; StayGrubby validates structure and model compatibility; the user reviews/edits before explicit Save. Source is context, never a word/phrase whitelist. Do not restore token-overlap checks, source reconstruction, method-to-ingredient recovery, a second AI judge or brittle culinary fact-checking heuristics. Keep technical/security/bounds/dependency/corrupt-quantity protections and existing ingredient parsing/serving math. Missing optional metadata may be unknown; useful imperfect drafts should reach the editor. Read the current Recipe section and Style Guide rather than reviving older review criteria.
+
 ## Git, deployment and documentation
 
 Create coherent verified checkpoints, not knowingly broken intermediate commits unless explicitly necessary/documented. Review the complete staged inventory/diff; include intended new sources/assets/tests/docs/migrations, exclude unrelated changes and machine-local artifacts. Leave main clean after a completed cycle while preserving unrelated owner work; report any resulting dirty state honestly.

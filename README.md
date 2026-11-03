@@ -11,3 +11,5 @@ Start with these three sources:
 The architecture overview indexes task-specific domain documents. Dated review files retain implementation/test/deployment evidence; they are not a competing current roadmap or instruction system. Future prompts need only name the cycle, unique requirements and acceptance criteria, referencing the three sources above.
 
 Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Current target is iPhone, upright portrait only. Do not reset data to build or review the app. See the architecture overview for account/development isolation and existing verification tools.
+
+Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini constructs content, the app validates structure, and the user reviews before Save. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.

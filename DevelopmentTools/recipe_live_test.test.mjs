@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {reserve,approval,finalV25} from './recipe_live_test.mjs';
+import {reserve,approval,finalV25,geminiFirst} from './recipe_live_test.mjs';
 test('the prior owner call cannot disappear and six remains the hard maximum',()=>{
  assert.throws(()=>reserve({approval,attempts:[]},'french','hash'));
  let b={approval,attempts:[{id:'owner'}]};for(let i=1;i<6;i++)b=reserve(b,'fixture','hash');
@@ -14,4 +14,11 @@ test('new explicit three-call grant is separate and each canonical fixture is al
  assert.equal(b.attempts.length,3);assert.throws(()=>reserve(b,'fourth','hash',finalV25));
  assert.throws(()=>reserve({approval,attempts:Array(6).fill({})},'french','hash',finalV25));
  assert.throws(()=>reserve({approval:finalV25.approval,attempts:[]},'other','hash',finalV25));
+});
+test('Gemini-first grant is isolated, contract 4, and cannot retry or spend either prior grant',()=>{
+ let b={approval:geminiFirst.approval,attempts:[]};
+ for(const id of ['french','shakshuka','kale'])b=reserve(b,id,'hash',geminiFirst);
+ assert.equal(geminiFirst.contractVersion,4);assert.equal(b.attempts.length,3);
+ assert.throws(()=>reserve(b,'french','hash',geminiFirst));
+ assert.throws(()=>reserve({approval:finalV25.approval,attempts:[]},'french','hash',geminiFirst));
 });

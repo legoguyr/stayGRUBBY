@@ -2,7 +2,7 @@ import { handler, type Dependencies } from './handler.ts';
 function assert(v:unknown):asserts v { if(!v)throw new Error('Assertion failed'); }
 const raw='Soup\n2 carrots\nstock\ncook chicken until done';
 const value={title:'Soup',yield:null,source:null,components:[{title:null,ingredients:['2 carrots','stock'],steps:['cook chicken until done']}]};
-const rejected={...value,title:'private-diagnostic-marker',components:[{...value.components[0],ingredients:['3 carrots','stock']}]};
+const rejected={...value,title:'private-diagnostic-marker',components:[{...value.components[0],ingredients:['-3 carrots','stock']}]};
 function setup(change:Partial<Dependencies>={}, candidate:unknown=rejected) {
  let calls=0; const logs:Record<string,unknown>[]=[];
  const run=handler({authenticate:async()=>({user:'synthetic-user',session:'synthetic-session'}),reserve:async()=>true,key:'synthetic-test-only',log:e=>logs.push(e),fetch:async()=>{calls++;return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(candidate)}]}}]});},...change});
@@ -15,12 +15,12 @@ Deno.test('ordinary validation errors never return the rejected candidate',async
 Deno.test('opt-in review returns only the callers bounded candidate while rejection and logs remain unchanged',async()=>{
  const f=setup();const r=await f.run(request({diagnosticReview:true}));const body=await r.json();
  assert(r.status===422&&body.stage==='validation'&&body.providerStatus===200&&f.calls()===1);
- assert(JSON.stringify(body.review.candidate)===JSON.stringify(rejected)&&body.review.validationIssues.some((i:any)=>i.rule==='source_number'));
+ assert(JSON.stringify(body.review.candidate)===JSON.stringify(rejected)&&body.review.validationIssues.some((i:any)=>i.rule==='invalid_quantity'));
  assert(r.headers.get('cache-control')==='no-store'&&!JSON.stringify(f.logs).includes('private-diagnostic-marker')&&!JSON.stringify(f.logs).includes(raw)&&!JSON.stringify(body).includes('synthetic-test-only'));
 });
 Deno.test('review opt-in does not change successful responses or the provider request contract',async()=>{
  let payload:unknown;const f=setup({fetch:async(_url,init)=>{payload=JSON.parse(init!.body as string);return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(value)}]}}]});}},value);
- const r=await f.run(request({diagnosticReview:true}));assert(r.status===200&&JSON.stringify(await r.json())===JSON.stringify(value));
+ const r=await f.run(request({diagnosticReview:true}));assert(r.status===200&&JSON.stringify((await r.json()).components[0].ingredients)===JSON.stringify(value.components[0].ingredients));
  assert(!JSON.stringify(payload).includes('diagnosticReview')&&(payload as any).contents[0].parts[0].text===raw);
 });
 Deno.test('missing or invalid authentication cannot reach diagnostic generation',async()=>{
@@ -42,6 +42,6 @@ Deno.test('malformed and oversized provider output is never reflected as private
 });
 Deno.test('explicit development capture privately returns successful original candidate without changing normal responses',async()=>{
  const f=setup({},value),req=request({diagnosticReview:true});req.headers.set('x-staygrubby-development-review','candidate');
- const r=await f.run(req),b=await r.json();assert(r.status===200&&JSON.stringify(b.extraction)===JSON.stringify(value)&&JSON.stringify(b.review.candidate)===JSON.stringify(value));
+ const r=await f.run(req),b=await r.json();assert(r.status===200&&JSON.stringify(b.extraction.components[0].steps)===JSON.stringify(value.components[0].steps)&&JSON.stringify(b.review.candidate)===JSON.stringify(value));
  const normal=request();normal.headers.set('x-staygrubby-development-review','candidate');assert(!Object.hasOwn(await (await f.run(normal)).json(),'review'));
 });

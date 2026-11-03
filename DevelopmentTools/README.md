@@ -8,6 +8,8 @@
 
 The separately owner-authorized **v25 final-verification** campaign is also exhausted: **3/3**, French toast/Shakshuka/kale once each. `STAYGRUBBY_RECIPE_CAMPAIGN=v25-final-live-20261102` selects its independent `v25-final-budget.json` and prefixed artifacts; it cannot reset or spend the old grant, repeat a fixture or exceed three calls. Missing state fails closed. Neither exhausted campaign authorizes another call.
 
+The **Gemini-first architecture** cycle separately authorized `gemini-first-20261102`: contract 4, one each French toast/Shakshuka/kale, fixed maximum three, independent `gemini-first-budget.json` and `gemini-first-` artifacts. **3/3 used; all grants are exhausted.** The old two ledger hashes are unchanged. No automatic initialization/reset exists. Offline replay is `DevelopmentTools/recipe_engine_acceptance.ts`; it now checks structural acceptance of retained model values, not historical lexical/golden reconstructions. Normal fresh testing must use the corrected contract; never reroute a new campaign through a spent older allowance.
+
 Future authorized workflow:
 
 1. Inspect the task/deployment and existing private budget. **The present `77dd8c13-six-approved-calls` budget is exhausted: 6/6. Never reset it or make a seventh call.** A new campaign needs explicit live-call authorization; do not silently create another allowance.
