@@ -22,7 +22,7 @@ final class ProductStructureUITests: StayGrubbyUITestCase {
         shot("Kitchen identity and own post grid Light", app)
         let friends = app.buttons["friends-open"]
         XCTAssertTrue(friends.waitForExistence(timeout: 8))
-        XCTAssertGreaterThan(friends.frame.width, 280); XCTAssertGreaterThanOrEqual(friends.frame.height, 44)
+        XCTAssertLessThan(friends.frame.width, 280); XCTAssertGreaterThanOrEqual(friends.frame.width, 44); XCTAssertGreaterThanOrEqual(friends.frame.height, 44)
         // Tap the padded right edge, away from the text. The whole visible row must navigate.
         friends.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
         XCTAssertTrue(app.segmentedControls.buttons["Find Sous Chefs"].waitForExistence(timeout: 8))

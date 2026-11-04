@@ -35,9 +35,8 @@ struct AccountView: View {
         let snapshot = ProfileSnapshot(context: context, list: ranking)
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-                KitchenIdentityHeader()
-                SocialFriendsLink()
-                ShareMyKitchen()
+                VStack(spacing: 0) { KitchenIdentityHeader(); SocialFriendsLink() }
+                    .frame(maxWidth: .infinity)
                 ProfileCookingContent(snapshot: snapshot, ranking: ranking)
                 SocialPendingShares()
                 SharedCookingPending()
@@ -58,17 +57,20 @@ struct AccountView: View {
             .padding(SGTheme.Space.medium).padding(.bottom, SGTheme.Space.large)
             .frame(maxWidth: .infinity, alignment: .center)
         }
+        .accessibilityIdentifier("kitchen-scroll")
         .background(SGTheme.ColorToken.background)
         .navigationTitle("My Kitchen").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "My Kitchen") }
-            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }
+            ToolbarItem(placement: .topBarLeading) { ShareMyKitchen(compact: true) }.sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
                     Image(systemName: "gearshape").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
                 }.accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
-            }
+            }.sharedBackgroundVisibility(.hidden)
         }
+        .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
         .navigationDestination(for: UUID.self) { id in if let cook = sharingCooks.first(where: { $0.id == id }) { AttemptDetailView(attempt: cook) } }
     }

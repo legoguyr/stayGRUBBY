@@ -40,7 +40,7 @@ enum CookingDiscovery {
         if !attempt.containedAllergens.isDisjoint(with: filters.avoidedAllergens) { return false }
         guard !search.isEmpty else { return true }
         let fields = [attempt.dish?.name ?? attempt.rankedItem?.name ?? "", attempt.versionLabel,
-                      attempt.category.label] + attempt.customTags + dietary.map(\.label) + allergies.map(\.label) + attempt.containedAllergens.map { "Contains \($0.label)" }
+                      attempt.category.label] + dietary.map(\.label) + allergies.map(\.label) + attempt.containedAllergens.map { "Contains \($0.label)" }
         return fields.contains { TagNormalization.key($0).contains(search) }
     }
 }

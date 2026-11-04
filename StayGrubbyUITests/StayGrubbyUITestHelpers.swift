@@ -94,3 +94,21 @@ extension XCUIApplication {
         else { form.swipeUp() }
     }
 }
+
+
+extension XCUIApplication {
+    @MainActor func openCookingDetails() {
+        if buttons["cook-details-done"].exists { return }
+        let entry = buttons["cook-details"]
+        for _ in 0..<8 {
+            if cookingFieldIsVisible(entry) { break }
+            scrollCookingFormToward(entry)
+        }
+        XCTAssertTrue(entry.isHittable); entry.press(forDuration: 0.2)
+        XCTAssertTrue(buttons["cook-details-done"].waitForExistence(timeout: 5))
+    }
+    @MainActor func closeCookingDetails() {
+        let done = buttons["cook-details-done"]
+        if done.exists { done.press(forDuration: 0.2); XCTAssertTrue(done.waitForNonExistence(timeout: 5)) }
+    }
+}

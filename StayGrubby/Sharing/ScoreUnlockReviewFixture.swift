@@ -25,6 +25,7 @@ import UIKit
             var draft = CookingDraft()
             draft.dishName = index < names.count ? names[index] : "Roasted vegetable variation \(index + 1)"
             draft.category = .main
+            if ProcessInfo.processInfo.arguments.contains("--compact-layout-review"), index == 7 { draft.dishName = "Soup" }
             last = try add(draft)
         }
         if count > 1, let last, let dish = last.dish {

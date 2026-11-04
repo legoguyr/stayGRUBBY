@@ -205,13 +205,12 @@ struct SocialFriendsLink: View {
     var body: some View {
         if request != nil {
             NavigationLink { FriendsView() } label: {
-                HStack {
-                    Label("Sous Chefs", systemImage: "person.2")
-                    Spacer()
-                    if let count { Text("\(count)" + (hasMore ? "+" : "")).monospacedDigit() }
+                HStack(spacing: SGTheme.Space.xSmall) {
+                    if let count { Text("\(count)" + (hasMore ? "+" : "")).fontWeight(.semibold).monospacedDigit() }
+                    Text("Sous Chefs")
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold))
-                }.frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
-            }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("friends-open")
+                }.font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityIdentifier("friends-open")
                 .task { await load() }.onSocialRefresh { await load() }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
                 .onChange(of: phase) { _, next in

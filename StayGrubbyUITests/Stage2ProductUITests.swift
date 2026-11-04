@@ -17,6 +17,8 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
         XCTFail("Tab did not select: \(title)")
     }
     @MainActor private func reach(_ element: XCUIElement, _ app: XCUIApplication) {
+        if ["dish-cuisine", "dish-source-type"].contains(element.identifier) { app.openCookingDetails(); return }
+        app.closeCookingDetails()
         for _ in 0..<10 {
             if app.cookingFieldIsVisible(element) { return }
             app.scrollCookingFormToward(element)

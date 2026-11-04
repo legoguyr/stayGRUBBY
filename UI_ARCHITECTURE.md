@@ -1,4 +1,20 @@
-# Next-release Stage 2 — core product presentation, November 3, 2026
+# Stage 2 owner-correction contract — November 3, 2026
+
+**Content first. Actions second. Explanation only when necessary. Prefer compact native controls over full-width UI when full-width emphasis is unnecessary.** This section supersedes the initial Stage 2 presentation below; evidence and owner recheck are recorded in [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md).
+
+Cook entry order is cover/photo placeholder → Dish Name → Version Title → Public Description → native Date Cooked → owner-private Dish Notes → Details → Tag a Sous Chef → compact Share with Sous Chefs toggle → retained private notes for this cook. Details is a native sheet with a quick native Course selection page and existing Cuisine, Source, Dietary and Contains selectors. New Version retains inherited Dish Cuisine/Source behavior. The outer value draft still controls save/cancel; Dish text and cook notes never merge. Existing safety/permission/recovery and legacy free-label explanations remain where required. Tagging keeps the accepted avatar row, search sheet and Done.
+
+Custom Tags are hidden throughout normal entry/detail/discovery, including search; the data model, old values, IDs, sync and backend compatibility remain intact. Halal is absent from selectable Dietary options; its stable code and historical values still round-trip through ordinary edits. These are scoped product decisions, not destructive migrations.
+
+My Kitchen keeps a centered compact identity and truthful mutual Sous Chefs count/control, with contextual Kitchen sharing in the toolbar. No Following/Followers values or model are invented. Signature Dishes keep three square photos at standard sizes; shared intrinsic title height aligns scores for one/two-line names. Accessibility sizes use wider horizontal cards and unrestricted titles. A compact share icon beside the heading invokes the unchanged gated export. Ranked-entry/Dish counts remain; Last Cooked is removed from presentation only.
+
+Grub List retains its accepted card/actions, with centered title/score alignment and authorized Course • Cuisine (omit missing values). Post age is Just now below one minute, whole minutes below an hour, hours below a day, days below seven days, then a localized calendar date (year when different). There is no second-by-second timer; ages change during normal view refreshes. Private metadata is never fetched to fill a missing label.
+
+Grub Rank's native Sort menu is read-only: Grub Rank (default), Score, Recently Cooked, Oldest, Alphabetical. Sorting follows existing search/filter/Top Version projection and retains true global ranks. Score uses the existing displayed decimal and is unavailable while locked; relocking resets Score sort to Grub Rank. Ties retain global order; unknown dates sort last in either date direction. No score/evidence/manual-order writes. Food Bible adopts the shared compact browse-control styling only; its existing search/filter/sort semantics remain.
+
+The four-tab native TabView stays authoritative. Explicit native tab-background visibility and bottom safe-area margins keep final content reachable; no custom tab-bar replacement/fixed height. Primary toolbar icons suppress shared capsule backgrounds with the supported ToolbarContent API. Maintain normally 44-point targets, upright portrait, light/dark readability, native keyboard Done, Dynamic Type, VoiceOver and Reduce Motion. Empty states provide concise recovery/next actions. Later secondary-screen and gallery work is not included.
+
+# Initial Stage 2 presentation — historical before owner corrections, November 3, 2026
 
 The four primary tabs reuse the compact official `SGPrimaryBrandTitle`. Grub List, Food Bible and My Kitchen use the native principal toolbar; Grub Rank retains its existing search/creation inset with the same wordmark and a contextual title. At accessibility sizes that identity stacks instead of compressing text. Secondary screens keep contextual native titles/back navigation.
 

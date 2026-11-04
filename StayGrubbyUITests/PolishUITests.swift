@@ -3,6 +3,8 @@ import XCTest
 final class PolishUITests: StayGrubbyUITestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
     @MainActor private func tap(_ element: XCUIElement, app: XCUIApplication) {
+        if element.identifier == "cook-contains" { app.openCookingDetails(); element.press(forDuration: 0.2); return }
+        if element.identifier == "save-cook-metadata" || element.label == "Continue" || element.label == "Cancel" { app.closeCookingDetails() }
         XCTAssertTrue(element.waitForExistence(timeout: 10))
         for _ in 0..<12 {
             // XCTest can report a scrolled-off form row as hittable even when

@@ -1,6 +1,43 @@
+# Stage 2 owner-acceptance corrections — November 3, 2026
+
+**STAYGRUBBY STAGE 2 OWNER-CORRECTION AUTOMATED ACCEPTANCE PASSED — OWNER VISUAL RECHECK PENDING**
+
+Baseline: clean `main` at Stage 2 `39c4dc19430102d9f24933bcecc50530043dd75d`, aligned with origin/main. The owner identified the corrections below during physical review; the initial Stage 2 evidence is retained in the dated section below. This correction cycle uses the existing checkout, one primary agent and one iPhone 17e / iOS 26.5 Simulator lane. No Stage 3 work is included.
+
+## Owner corrections
+
+- Cook hierarchy: compact photo/placeholder → Dish Name → Version Title → Public Description → native Date Cooked → owner-private Dish Notes → Details → accepted Tag a Sous Chef row/sheet → compact Share with Sous Chefs toggle → retained private per-cook notes disclosure. Keyboard Done/save/cancel and Dish/cook ownership remain unchanged. Photo editing remains cover-only and preserves secondary media.
+- Details consolidates Course, Cuisine, Source, Dietary and Contains in a native sheet, showing current values. Course is a quick native selection page within Details; existing selectors and inherited New Version Cuisine/Source behavior remain. Necessary safety/legacy information is retained. The outer draft controls persistence.
+- Custom Tags are hidden from entry/detail/search throughout normal UI, while old values/IDs/memberships/schema/sync remain. Halal is removed from selectable Dietary options while historical values safely round-trip. Focused persistence tests verify both decisions.
+- My Kitchen uses a smaller centered identity and compact truthful mutual Sous Chefs control. Kitchen sharing is a contextual toolbar icon invoking the same authorized URL/ShareLink. Following/Followers remain a future product decision because no asymmetric follow model exists.
+- Signature Dishes retain three square photographic cards, ranks and gated semantic scores. Measured shared title regions align scores for short/multiline names; larger text uses wider horizontal cards with unrestricted titles. Sharing is a compact heading action through the unchanged export renderer/gate. Compact ranked-entry/Dish counts replace the larger statistics; Last Cooked is presentation-hidden only.
+- Grub List keeps existing food/description/Hands/Comments/Recipe/Run It Back/refresh behavior. Title/score align centrally; authorized Course • Cuisine appears only when supplied. Stable ages use minutes/hours/days, then a localized calendar date after seven days, without a second-by-second timer.
+- Grub Rank adds native read-only Grub Rank (default), Score, Recently Cooked, Oldest and Alphabetical sorting after the accepted filtered/version projection. True global rank labels and all evidence remain unchanged. Score sorting is unavailable when locked/reset on relock; date sorts place unknown dates last; ties retain global order. Food Bible reuses browse-control styling without changing filtering semantics or implementing Stage 4.
+- Four native tabs remain. Explicit native background visibility, bottom safe-area margins and compact independent primary toolbar icons reduce interference; no custom tab-bar replacement or fixed height. Concise empty states, normally 44-point actions, light/dark, small-screen, Dynamic Type, native keyboard and Reduce Motion remain required.
+
+## Correction verification
+
+The scoped native integration passed **28 tests /6 suites**; the Dish foundation backend check passed **23 assertions**, including owner-private fields and preservation. All **four distinct correction UI tests have passing final executions**, with zero unresolved failures, unexpected failures or skips. They cover the complete ordered entry/metadata/tagging/save/relaunch/edit flow; light/dark browse/Kitchen/feed/Comments/Food Bible and bottom clearance; empty account/keyboard/Details at accessibility size; and multiline/short Signature alignment with horizontal access to the third card at accessibility size. Debug app and test targets compile/link/launch successfully. No Release/full-suite rerun was warranted for this scoped correction. Tests assert identities/global ranks/evidence unchanged, hidden metadata retention, score-sort lock, temporal/metadata boundaries and the unchanged private-safe profile URL.
+
+The isolated UI fixtures use UUID stores/media roots and Debug mock social/Recipe services. They exercise multiline/short Signature titles, metadata, real native menus, empty libraries and accessibility; no hosted account or provider requests. Early UI stops exposed test query/tap targeting issues (link vs button types, multiple feed-card metadata labels and native taps). Interactive isolated inspection also reproduced an unresponsive Course menu inside the new native Form while Cuisine opened normally; an explicit Menu in that nested sheet also failed. Course now uses the supported native navigation-link Picker within Details, with the same draft binding/options and a selected-value check. The captured native Course page confirms option rows expose button roles; the test uses that actual hierarchy rather than a static-text query. The native selection returns automatically and exposes the selection as its accessibility value, which is checked before save and after relaunch. Fifteen UI executions across incremental integration/focused follow-ups produced five passing executions and ten earlier failures; the latter were resolved by the Course presentation correction and accurate native queries/transition/visible-target handling. Only affected flows were rerun. Product assertions are retained; no meaningful assertion was removed to make a run green. The old custom-tag search assertions were updated solely for the explicitly requested hidden-feature policy, retaining stored-data checks.
+
+Final evidence: `/private/tmp/sg-correction-integration.xcresult` (28 native tests), `sg-correction-ui-menu.xcresult` (light/dark composition), `sg-correction-details-final.xcresult` (empty/large-text/keyboard) and `sg-correction-final-acceptance.xcresult` (persistence and accessibility Signatures). Final captures were visually reviewed for compact entry/Details/sharing, title/score alignment, light/dark controls, native tab clearance and readable larger text. The final two-test execution passed with zero failures/unexpected failures; earlier passing affected flows remain valid. Secret/local-artifact scan: **512 text files, zero findings**. Six updated documents' local links and Git whitespace checks pass. Only intended sources/Debug fixtures/tests/documents belong to this checkpoint; local backups, media/test stores, dependencies, builds and signing/secrets remain excluded.
+
+## Data/security and scope
+
+Final read-only copied-store audit matches all **14 original domain tables**, including **1 ranking /12 Dishes /15 attempts/items /356 comparisons /10 Sources /21 tags /48 memberships**, and all **190 original media hashes** in both saved development copies. The audit opens only temporary SQLite/WAL copies. All **40 hosted application-row/Storage count+hash projections** exactly match the fresh cycle baseline. No hosted writes, schema/migrations/deployments, Storage mutation, auth/credential change, provider request, ranking/calibration/unlock/Recipe/sync change, distribution or version/build increment occurred. Existing Stage 1 owner-only text protection remains; private notes are not used in social metadata.
+
+## Owner visual recheck / deferred scope
+
+With existing data, without resetting: (1) review New Dish ordering/keyboard, Details selections and compact tagging/sharing; cancel once, then optionally save/reopen a harmless cook to check public/private/cook-note separation; (2) review My Kitchen identity/counts, compact share icons and multiline Signature alignment; (3) review Grub List metadata/age/score, Grub Rank sort/filter and Food Bible controls, scrolling final content above the tab bar; repeat relevant screens in dark/large text.
+
+Stage 3 still owns Recipe browser/download-like sharing, unhelpful Ranking/Dish sharing, Comments, Find/Send-to-Friend, Order Up! and broader social/context-menu polish. Full Food Bible/Recipe redesign, gallery/crop, Settings/secondary screens and Trust & Safety/App Store gates remain later. Working My Kitchen link architecture was not changed. No Stage 3 implementation or distribution was performed.
+
+---
+
 # Next Release Stage 2 — Core Product UI Overhaul
 
-November 3, 2026. **AUTOMATED ACCEPTANCE PASSED — OWNER VISUAL ACCEPTANCE PENDING.**
+November 3, 2026. Initial Stage 2 automated evidence; superseded for current owner-correction status by the section above.
 
 ## Baseline and scope
 

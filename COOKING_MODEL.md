@@ -6,6 +6,12 @@ The dated validation/file inventories below describe historical checkpoints. The
 
 Phase 1 adds local cooking metadata around the existing generic ranking system. The Bradley–Terry fit, score mapping, insertion policy, confidence calculation, and original ranking tests are unchanged. See `RANKING_MODEL.md` for inference details.
 
+## Current Stage 2 owner-correction presentation
+
+Cook entry consolidates Course, Cuisine, Source, Dietary and Contains in a native Details sheet. Version Title follows Dish Name; Date Cooked sits between Public Description and Private Notes. Dish-level public/private text and existing per-cook notes retain distinct ownership. The outer draft/save transaction is unchanged.
+
+Custom Tags are hidden from normal entry/detail/search; their stored values, stable IDs/memberships and sync/backend compatibility survive ordinary edits. Halal is hidden from Dietary selection without removing its enum code or historical values. Grub Rank offers read-only Grub Rank/Score/Recently Cooked/Oldest/Alphabetical order after the existing filter/version projection; global rank labels and evidence remain authoritative. Score order obeys the unlock gate; unknown dates sort last. No persistence schema or ranking changes.
+
 ## Current Stage 1 Dish text/photo foundation
 
 Dish has nullable Public Description and owner-private Dish Notes. Existing cook-specific notes, Recipe descriptions and authored Post Descriptions retain their original scope/content. No legacy text is reclassified or copied. Missing sync keys from old clients preserve values; explicit null clears them. The owner-only Dish Details editor is scoped data entry; full New Dish redesign is later. See [current data contract](NEXT_RELEASE_SPEC.md#stage-1-data-contract).
@@ -34,13 +40,13 @@ SwiftData references are optional to support nullification and additive migratio
 
 `DishCategory` is the controlled Course list (the persisted category property/code is retained): Main, Appetizer, Side, Soup, Salad, Pasta/Noodles, Sandwich, Breakfast/Brunch, Snack, Dessert, Baked Good, Sauce/Condiment, Drink, Other. Persisted raw codes are stable and separate from labels. The dish default initializes each new version; changing a cook's category changes only its snapshot. Phase 1 does not expose a separate default-category editor.
 
-Dietary: Kosher, Vegetarian, Vegan, Dairy-Free, Gluten-Free, Halal.
+Selectable Dietary: Kosher, Vegetarian, Vegan, Dairy-Free, Gluten-Free. Historical Halal values remain storage-compatible and are not removed by ordinary editing.
 
 Legacy Free labels (compatibility only): Peanut-Free, Tree-Nut-Free, Sesame-Free, Milk-Free, Egg-Free, Wheat-Free, Soy-Free, Fish-Free, Shellfish-Free. These are user-entered labels, never a safety certification.
 
 Custom labels trim/collapse whitespace; identity also folds case and character width. The first saved display spelling is retained. Blank labels are ignored. Standard tags and identically named custom tags remain distinct kinds. Tags are separate records, not a hashtag string or comma-delimited database field.
 
-The original Phase 2B discovery read ranked CookingAttempts without introducing persistence entities or altering ranking evidence. The Phase 2C polish replaces the earlier Allergy matching group with Avoid exclusion; see Contains and Avoid below. Course stays single-select and Dietary matches any selected dietary value. Custom tags are searchable text, not a structured filter taxonomy. Each matching version stays independently discoverable in global ranking order with its original global rank and score. Search reuses the same custom-tag normalization. See `UI_ARCHITECTURE.md` for exact searchable fields, state ownership, and empty states.
+The original Phase 2B discovery read ranked CookingAttempts without introducing persistence entities or altering ranking evidence. The Phase 2C polish replaces the earlier Allergy matching group with Avoid exclusion; see Contains and Avoid below. Course stays single-select and Dietary matches any selected dietary value. Custom tags were historically searchable text; the Stage 2 owner correction hides that capability without deleting values. Each matching version stays independently discoverable with its original global rank and score. Search retains existing text normalization for the remaining supported fields. See `UI_ARCHITECTURE.md` for exact searchable fields, state ownership, and empty states.
 
 ## Source attribution
 

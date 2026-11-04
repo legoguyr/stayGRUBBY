@@ -59,10 +59,11 @@ struct CookingDiscoveryTests {
         #expect(f.results(query).map(\.id) == [f.sunday.id, f.chicken.id])
     }
 
-    @Test func searchesVersionsAndEachTagKindWithoutIndexingSourceOrNotes() throws {
+    @Test func searchesVersionsAndVisibleMetadataWithoutIndexingCustomTagsSourceOrNotes() throws {
         let f = try fixture()
         #expect(f.results("smoky").map(\.id) == [f.sunday.id])
-        #expect(f.results("date  NIGHT").map(\.id) == [f.chicken.id])
+        #expect(f.results("date  NIGHT").isEmpty)
+        #expect(f.chicken.customTags == ["Date Night"])
         #expect(f.results("kosher").map(\.id) == [f.chicken.id])
         #expect(f.results("sesame-free").map(\.id) == [f.chicken.id, f.pasta.id])
         #expect(f.results("contains peanuts").map(\.id) == [f.sunday.id])
@@ -171,7 +172,8 @@ struct CookingDiscoveryTests {
         try CookingStore.edit(f.chicken, draft: edit, context: f.context)
         #expect(f.results("chicken").isEmpty)
         #expect(f.results("lamb").map(\.id) == [f.sunday.id, f.chicken.id])
-        for query in ["crispy", "picnic", "vegetarian", "egg-free"] { #expect(f.results(query).contains { $0.id == f.chicken.id }) }
+        for query in ["crispy", "vegetarian", "egg-free"] { #expect(f.results(query).contains { $0.id == f.chicken.id }) }
+        #expect(f.results("picnic").isEmpty && f.chicken.customTags == ["Picnic"])
         #expect(f.results("date night").isEmpty && f.results("kosher").isEmpty)
         #expect(f.results("", CookingFilters(category: .side, dietary: [.vegetarian], avoidedAllergens: [.milk])).map(\.id) == [f.chicken.id])
         #expect(items == f.list.orderedItems.map(RankingSnapshot.init))

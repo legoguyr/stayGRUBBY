@@ -11,6 +11,8 @@ final class DishSourceUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
 
         func tapWhenVisible(_ element: XCUIElement) {
+            if element.identifier == "dish-source-type" { app.openCookingDetails(); element.press(forDuration: 0.2); return }
+            if element.identifier == "save-cook-metadata" || element.label == "Continue" { app.closeCookingDetails() }
             for _ in 0..<6 {
                 let isRootField = ["dish-source-type", "dish-name"].contains(element.identifier)
                 if isRootField ? app.cookingFieldIsVisible(element) : (element.exists && element.isHittable) { element.press(forDuration: 0.2); return }

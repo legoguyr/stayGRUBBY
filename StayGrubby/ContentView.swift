@@ -9,18 +9,18 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selection) {
-            NavigationStack { SocialFeedView(isSelected: selection == .feed) }
+            NavigationStack { SocialFeedView(isSelected: selection == .feed).modifier(SGPrimaryTabChrome()) }
                 .tabItem { Label("Grub List", systemImage: "house") }.tag(StayGrubbyTab.feed)
 
-            HomeView()
+            HomeView().modifier(SGPrimaryTabChrome())
                 .tabItem { Label("Grub Rank", systemImage: "chart.bar.fill") }
                 .tag(StayGrubbyTab.rankings)
 
-            NavigationStack { FoodBibleView() }
+            NavigationStack { FoodBibleView().modifier(SGPrimaryTabChrome()) }
                 .tabItem { Label("Food Bible", systemImage: "book.closed") }.tag(StayGrubbyTab.bible)
 
             NavigationStack {
-                AccountView()
+                AccountView().modifier(SGPrimaryTabChrome())
             }
             .tabItem { Label("My Kitchen", systemImage: "person") }.badge(activity.unread).tag(StayGrubbyTab.profile)
         }

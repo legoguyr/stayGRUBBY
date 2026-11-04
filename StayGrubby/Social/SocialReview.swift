@@ -32,6 +32,7 @@ import SwiftData
         SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000005")!, displayName: "A cook with a long friendly display name", username: "new_cook", relationship: .none)
     ]
     init() {
+        if ProcessInfo.processInfo.arguments.contains("--social-review-no-friends") { people = [] }
         if ProcessInfo.processInfo.arguments.contains("--social-review-ready") { identity = .init(displayName: "Review Cook", username: "review_cook", discoverable: false, automaticallyShareNewDishes: ProcessInfo.processInfo.arguments.contains("--social-review-share-default")) }
         if ProcessInfo.processInfo.arguments.contains("--recipes-review") {
             identity.discoverable = true
@@ -54,7 +55,7 @@ import SwiftData
                 posts.append(SocialPost(id: id, author: own, title: title, versionTitle: "Sunday version", scoreText: n == 0 ? "8.4" : nil, achievement: nil, createdAt: Date().timeIntervalSince1970 - 3600 * Double(n + 1), photoPath: path, published: true, isAuthor: true, moderationState: "active", postDescription: n == 0 ? "Made this slowly on Sunday. Worth the wait!" : nil, metadata: .init(course: "soup")))
             }
         }
-        if ProcessInfo.processInfo.arguments.contains("--shared-review") {
+        if ProcessInfo.processInfo.arguments.contains("--shared-review"), !people.isEmpty {
             let eventID = UUID(uuidString: "40000000-0000-0000-0000-000000000001")!
             let own = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: "Review Cook", username: "review_cook", relationship: .none)
             sharedEvents[eventID] = .init(id: eventID, owner: people[0], metadata: .init(title: "Lemon Chicken Together", course: "main"), isOwner: false, participants: [.init(person: own, state: "pending")])
@@ -290,6 +291,9 @@ import SwiftData
             if !feedSeeded && ProcessInfo.processInfo.arguments.contains("--social-review-feed") {
                 feedSeeded = true
                 posts.append(SocialPost(id: UUID(uuidString: "20000000-0000-0000-0000-000000000001")!, author: people[0], title: "Harissa Chicken with Roasted Peppers", versionTitle: "Grilled with lemon", scoreText: "8.6", achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: nil, published: true, isAuthor: false, moderationState: "active"))
+                if ProcessInfo.processInfo.arguments.contains("--compact-layout-review") {
+                    posts[posts.count - 1].metadata = .init(course: "main", cuisine: CuisineCatalog.resolve("Italian"))
+                }
             }
             if ProcessInfo.processInfo.arguments.contains("--social-review-comment"), let seed = posts.first, comments[seed.id] == nil {
                 if let index = posts.firstIndex(where: { $0.id == seed.id }) { posts[index].commentCount = 1 }

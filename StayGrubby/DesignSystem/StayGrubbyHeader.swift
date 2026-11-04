@@ -17,7 +17,7 @@ struct StayGrubbyHeader: View {
                 HStack(spacing: SGTheme.Space.xSmall) {
                     HStack(spacing: SGTheme.Space.xSmall) {
                         Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                        TextField("Search dishes, versions, tags", text: $searchText)
+                        TextField("Search dishes and versions", text: $searchText)
                             .font(SGTheme.TypeRole.body)
                             .focused($searchFocused).submitLabel(.search)
                             .onSubmit { searchFocused = false }

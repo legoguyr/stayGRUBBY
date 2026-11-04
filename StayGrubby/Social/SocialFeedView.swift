@@ -33,8 +33,8 @@ struct SocialFeedView: View {
                     Text("Couldn’t load posts. Check your connection and retry.").accessibilityIdentifier("feed-error")
                     Button("Retry") { revision += 1 }.accessibilityIdentifier("feed-retry")
                 } else if !loading && posts.isEmpty {
-                    ContentUnavailableView(friendCount == 0 ? "Cook, rank, connect" : "Your friends haven’t shared yet", systemImage: "fork.knife",
-                        description: Text("Only you and current friends can see the cooking posts you choose to share."))
+                    ContentUnavailableView("No shared cooks yet", systemImage: "fork.knife",
+                        description: Text(friendCount == 0 ? "Find a Sous Chef to see shared cooks." : "Shared cooks from your Sous Chefs will appear here."))
                     NavigationLink("Find Sous Chefs") { FriendsView() }.accessibilityIdentifier("feed-find-friends")
                 }
                 ForEach(posts) { post in
@@ -43,13 +43,15 @@ struct SocialFeedView: View {
                 if hasMore { Button("Load more posts") { Task { await load(more: true) } }.disabled(loading).accessibilityIdentifier("feed-more") }
             }
         }
+        .accessibilityIdentifier("grub-list")
         .listStyle(.plain).background(SGTheme.ColorToken.background)
         .navigationTitle("Grub List").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Grub List") }
-            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { Label("Sous Chefs", systemImage: "person.2") }.labelStyle(.iconOnly) }
+            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { Label("Sous Chefs", systemImage: "person.2") }.labelStyle(.iconOnly) }.sharedBackgroundVisibility(.hidden)
         }
+        .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
         .refreshable { await load() }
         .onSocialRefresh { if isSelected { await load() } }
@@ -171,15 +173,19 @@ struct SocialFeedCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(post.isAuthor ? "You" : post.author.displayName).font(SGTheme.TypeRole.headline)
                     .foregroundStyle(SGTheme.ColorToken.primaryText)
-                Text(post.date, style: .relative).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                Text(SocialPostPresentation.timestamp(post.date)).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
             }
         }.frame(minHeight: SGTheme.Size.minimumTap)
     }
     private var foodIdentity: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            HStack(alignment: .top, spacing: SGTheme.Space.small) {
+            HStack(alignment: .center, spacing: SGTheme.Space.small) {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     Text(post.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
+                    if let metadata = SocialPostPresentation.metadata(post.metadata) {
+                        Text(metadata).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("post-course-cuisine")
+                    }
                     if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 if let score = post.scoreText { SocialScoreMedallion(text: score) }

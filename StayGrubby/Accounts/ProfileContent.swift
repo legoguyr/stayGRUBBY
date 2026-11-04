@@ -5,6 +5,7 @@ struct ProfileCookingContent: View {
     let snapshot: ProfileSnapshot
     let ranking: RankingList?
     @Environment(\.dynamicTypeSize) private var textSize
+    @State private var titleHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.large) {
@@ -14,34 +15,18 @@ struct ProfileCookingContent: View {
     }
 
     private var cookingSnapshot: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            Text("In your kitchen").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
-            let columns = textSize.isAccessibilitySize ? 1 : 2
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), alignment: .leading), count: columns),
-                      alignment: .leading, spacing: SGTheme.Space.medium) {
-                statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
-                statistic(snapshot.dishCount, title: "Dishes ranked", identifier: "profile-dish-count")
-            }
-            if let date = snapshot.lastCookedAt {
-                Divider()
-                if textSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                        Text("Last cooked")
-                        Text(date, format: .dateTime.month(.abbreviated).day().year()).foregroundStyle(.secondary)
-                    }.font(SGTheme.TypeRole.body)
-                } else {
-                    LabeledContent("Last cooked") {
-                        Text(date, format: .dateTime.month(.abbreviated).day().year())
-                    }.font(SGTheme.TypeRole.body)
-                }
-            }
-        }.padding(.vertical, SGTheme.Space.medium)
+        HStack(alignment: .top, spacing: SGTheme.Space.medium) {
+            statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
+                .frame(maxWidth: .infinity)
+            statistic(snapshot.dishCount, title: "Dishes ranked", identifier: "profile-dish-count")
+                .frame(maxWidth: .infinity)
+        }.padding(.vertical, SGTheme.Space.xSmall)
     }
 
     private func statistic(_ count: Int, title: String, identifier: String) -> some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-            Text(count, format: .number).font(.system(.largeTitle, design: .rounded, weight: .bold)).monospacedDigit()
-            Text(title).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+            Text(count, format: .number).font(SGTheme.TypeRole.title).monospacedDigit()
+            Text(title).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(count) \(title.lowercased())")
@@ -50,7 +35,11 @@ struct ProfileCookingContent: View {
 
     private var topFoods: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            Text("Signature Dishes").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
+            HStack {
+                Text("Signature Dishes").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
+                Spacer()
+                TopThreeShareAction(list: ranking, title: "Share Signature Dishes", compact: true)
+            }
             if !snapshot.topFoods.isEmpty {
                 if textSize.isAccessibilitySize {
                     ScrollView(.horizontal) {
@@ -74,11 +63,10 @@ struct ProfileCookingContent: View {
                     .frame(maxWidth: .infinity, alignment: .leading).sgCard().accessibilityIdentifier("profile-empty")
             }
             if !snapshot.scores.isUnlocked { ScoreUnlockProgressBanner(state: snapshot.scores) }
-            TopThreeShareAction(list: ranking, title: "Share Signature Dishes")
-        }
+        }.onPreferenceChange(SignatureTitleHeightKey.self) { titleHeight = $0 }
     }
     private func signature(_ food: ProfileSnapshot.Food) -> some View {
-        NavigationLink(value: food.attempt.id) { ProfileTopFood(food: food) }.buttonStyle(.plain)
+        NavigationLink(value: food.attempt.id) { ProfileTopFood(food: food, titleHeight: titleHeight) }.buttonStyle(.plain)
             .accessibilityElement(children: .ignore).accessibilityLabel(food.accessibilityLabel)
             .accessibilityHint("Opens Dish Details").accessibilityIdentifier("profile-top-food-\(food.rank)")
     }
@@ -86,6 +74,7 @@ struct ProfileCookingContent: View {
 
 private struct ProfileTopFood: View {
     let food: ProfileSnapshot.Food
+    let titleHeight: CGFloat
     @Environment(\.dynamicTypeSize) private var textSize
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
@@ -101,6 +90,8 @@ private struct ProfileTopFood: View {
                 }.accessibilityHidden(true)
             Text(food.title).font(SGTheme.TypeRole.secondary.weight(.semibold))
                 .lineLimit(textSize.isAccessibilitySize ? nil : 2).fixedSize(horizontal: false, vertical: true)
+                .background { GeometryReader { geometry in Color.clear.preference(key: SignatureTitleHeightKey.self, value: geometry.size.height) } }
+                .frame(height: titleHeight > 0 ? titleHeight : nil, alignment: .top)
             if let score = food.scoreText {
                 Text(score).font(.title3.weight(.bold)).monospacedDigit()
                     .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score))
@@ -108,4 +99,9 @@ private struct ProfileTopFood: View {
             } else { LockedScoreIndicator() }
         }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
+}
+
+private struct SignatureTitleHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }

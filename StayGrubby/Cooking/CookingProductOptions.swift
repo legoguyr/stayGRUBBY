@@ -4,7 +4,7 @@ import Foundation
 nonisolated enum CookingProductOptions {
     static let courseTitle = "Course"
     static let courses = DishCategory.allCases
-    static let dietary = DietaryTag.allCases
+    static let dietary = DietaryTag.allCases.filter { $0 != .halal }
     static let allergens = Allergen.allCases
     static let allergenSafetyText = "Based on the allergens you’ve marked. Not marked contains does not mean allergen-free. Always verify ingredients for allergy safety."
     static let sources = SourceChoice.allCases

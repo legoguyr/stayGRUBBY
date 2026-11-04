@@ -143,7 +143,7 @@ struct AttemptDetailView: View {
     }
 
     private var allTags: [String] {
-        attempt.dietaryTags.map(\.label).sorted() + attempt.customTags
+        attempt.dietaryTags.map(\.label).sorted()
     }
 
     private var versions: some View {

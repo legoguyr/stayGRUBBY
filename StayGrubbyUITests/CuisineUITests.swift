@@ -12,6 +12,8 @@ final class CuisineUITests: StayGrubbyUITestCase {
         XCTFail("Cuisine control could not be reached: \(element)")
     }
     @MainActor private func tap(_ element: XCUIElement, in app: XCUIApplication) {
+        if element.identifier == "dish-cuisine" { app.openCookingDetails(); element.press(forDuration: 0.2); return }
+        if element.identifier == "save-cook-metadata" || element.label == "Continue" { app.closeCookingDetails() }
         reach(element, in: app); element.tap()
     }
     @MainActor private func select(_ text: String, id: String, in app: XCUIApplication) {
@@ -74,7 +76,7 @@ final class CuisineUITests: StayGrubbyUITestCase {
         app.buttons["cuisine-clear"].tap()
         saveEdit(in: app)
         tap(app.buttons["Edit Cook"], in: app)
-        XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("Optional"))
+        XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("None"))
         app.buttons["Cancel"].tap()
     }
 
@@ -91,8 +93,8 @@ final class CuisineUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("Mediterranean"))
         tap(app.buttons["dish-cuisine"], in: app)
         app.buttons["cuisine-clear"].tap()
-        XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("Optional"))
+        XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("None"))
         app.buttons["Cancel"].tap()
-        XCTAssertTrue(app.staticTexts["Your taste. Your Grub Rank."].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["ranking-empty-title"].waitForExistence(timeout: 5))
     }
 }

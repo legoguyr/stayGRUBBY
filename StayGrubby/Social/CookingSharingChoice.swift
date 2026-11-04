@@ -16,19 +16,17 @@ nonisolated struct CookingSharingSelection: Equatable, Sendable {
 struct CookingSharingChoice: View {
     @Binding var selection: CookingSharingSelection
     var body: some View {
-        SGFormSection(title: "Sharing") {
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             Toggle("Share with Sous Chefs", isOn: Binding(get: { selection.selected }, set: { selection.override = $0 }))
                 .foregroundStyle(SGTheme.ColorToken.primaryText)
                 .disabled(selection.loading || selection.configured == false).accessibilityIdentifier("cook-share-with-friends")
-            if selection.loading { ProgressView("Loading sharing default") }
+            if selection.loading { ProgressView("Loading sharing default").font(.footnote) }
             else if selection.configured == false {
-                Text("Set up your profile in Settings → Profile to share. This cook will stay private.")
+                Text("Set up Profile in Settings to share.").font(.footnote).foregroundStyle(.secondary)
             } else if selection.loadFailed {
-                Text("Default unavailable, so this starts private. You can choose to share; publication will wait for your social profile and connection.")
+                Text("Sharing default unavailable; this starts private.").font(.footnote).foregroundStyle(.secondary)
             }
-            if !selection.loading && selection.configured != false {
-                Text("Shares this completed cook, its food photo, unlocked score, Course, Cuisine and public source attribution. Private notes and ranking history stay yours. You can change this choice for each new cook.")
-            }
-        }.font(.footnote).foregroundStyle(.secondary)
+        }.font(SGTheme.TypeRole.body)
+            .frame(minHeight: SGTheme.Size.minimumTap)
     }
 }

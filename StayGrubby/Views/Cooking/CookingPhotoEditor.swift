@@ -13,7 +13,7 @@ struct CookingPhotoEditor: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             DishPhoto(media: draft.removeExistingPhoto ? nil : draft.existingPhoto,
                       prepared: draft.pendingPhoto, name: draft.cleanDishName.isEmpty ? "dish" : draft.cleanDishName)
-                .frame(maxWidth: .infinity).aspectRatio(4 / 3, contentMode: .fit)
+                .frame(maxWidth: .infinity).frame(height: hasPhoto ? SGTheme.Size.editorPhotoHeight : SGTheme.Size.placeholderHeight)
                 .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous))
                 .overlay {
                     RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous)

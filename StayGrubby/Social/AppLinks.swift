@@ -100,6 +100,7 @@ struct ProfileLinkDestination: View {
     }
 }
 struct ShareMyKitchen: View {
+    var compact = false
     @Environment(\.socialRequest) private var request
     @State private var identity: SocialIdentity?
     @State private var failed = false
@@ -107,10 +108,23 @@ struct ShareMyKitchen: View {
         if request != nil {
             VStack(alignment: .leading, spacing: 8) {
                 if let identity, identity.discoverable, let username = identity.username, let url = AppRoute.profileURL(username: username) {
-                    ShareLink(item: url) { Label("Share My Kitchen", systemImage: "square.and.arrow.up") }
-                        .buttonStyle(SGButtonStyle()).accessibilityIdentifier("share-my-kitchen")
+                    if compact {
+                        ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44) }
+                            .accessibilityLabel("Share My Kitchen").accessibilityIdentifier("share-my-kitchen")
+                    } else {
+                        ShareLink(item: url) { Label("Share My Kitchen", systemImage: "square.and.arrow.up") }
+                            .buttonStyle(SGButtonStyle()).accessibilityIdentifier("share-my-kitchen")
+                    }
+                } else if compact && !failed {
+                    Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44).foregroundStyle(.secondary)
+                        .accessibilityLabel("Kitchen sharing unavailable").accessibilityHint("Enable discovery in Settings, Profile to share your Kitchen")
                 } else if identity != nil { Text("To share your Kitchen, enable discovery in Settings → Profile.").font(.footnote).foregroundStyle(.secondary) }
-                if failed { Button("Retry Kitchen sharing") { Task { await load() } } }
+                if failed {
+                    Button { Task { await load() } } label: {
+                        if compact { Image(systemName: "arrow.clockwise").frame(minWidth: 44, minHeight: 44) }
+                        else { Text("Retry Kitchen sharing") }
+                    }.accessibilityLabel("Retry Kitchen sharing")
+                }
             }.task { await load() }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
         }

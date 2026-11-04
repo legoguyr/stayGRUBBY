@@ -32,8 +32,8 @@ struct FoodBibleView: View {
                 if !loading && !failed && visible.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {
                         Image(systemName: "book.closed").font(.system(size: 44, weight: .light)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-                        Text(entries.isEmpty ? "Your recipes.\nAll in one place." : "Nothing on this page. Yet.").font(SGTheme.TypeRole.hero)
-                        Text(entries.isEmpty ? "Keep recipes you love and ideas you want to try. Link a Dish whenever you’re ready." : "Try another ingredient, dish or cuisine, or clear your filters.").foregroundStyle(.secondary)
+                        Text(entries.isEmpty ? "No recipes yet" : "No matching recipes").font(SGTheme.TypeRole.hero)
+                        Text(entries.isEmpty ? "Add a recipe to your Food Bible." : "Try another search or clear your filters.").foregroundStyle(.secondary)
                         Button(entries.isEmpty ? "Add Recipe" : "Clear search & filters") {
                             if entries.isEmpty { choosing = true } else { query = ""; course = ""; cuisine = "" }
                         }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("bible-empty-add")
@@ -46,12 +46,13 @@ struct FoodBibleView: View {
                         }.buttonStyle(.plain).accessibilityIdentifier("bible-entry-\(entry.recipeID)")
                     }
                 }
-                if !entries.isEmpty { Text("\(entries.count) recipes, made yours.").font(.footnote).foregroundStyle(.secondary) }
+                if !entries.isEmpty { Text("\(entries.count) recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
             }.padding(16).frame(maxWidth: 680).frame(maxWidth: .infinity)
-        }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively)
+        }.accessibilityIdentifier("bible-scroll").background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively)
+            .safeAreaPadding(.bottom, SGTheme.Space.medium)
             .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
             .navigationTitle("Food Bible").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Food Bible") }; ToolbarItem(placement: .primaryAction) { Button("Add Recipe", systemImage: "plus") { choosing = true }.accessibilityIdentifier("bible-add") } }
+            .toolbar { ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Food Bible") }; ToolbarItem(placement: .primaryAction) { Button("Add Recipe", systemImage: "plus") { choosing = true }.accessibilityIdentifier("bible-add") }.sharedBackgroundVisibility(.hidden) }
             .task { await load() }.refreshable { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
@@ -64,14 +65,14 @@ struct FoodBibleView: View {
                 Image(systemName: "magnifyingglass").accessibilityHidden(true)
                 TextField("Dish, ingredient, cuisine…", text: $query).accessibilityLabel("Search your cookbook").accessibilityIdentifier("bible-search").focused($searching).submitLabel(.search).onSubmit { searching = false }
                 if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("bible-search-clear") }
-            }.padding(.horizontal, 14).frame(minHeight: 48).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 14))
+            }.sgField()
             HStack {
                 Menu {
                     Picker("Course", selection: $course) { Text("All courses").tag(""); ForEach(DishCategory.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) } }
                     Picker("Cuisine", selection: $cuisine) { Text("All cuisines").tag(""); ForEach(Array(Set(entries.compactMap(\.cuisine))).sorted(), id: \.self) { Text($0).tag($0) } }
-                } label: { Label(course.isEmpty && cuisine.isEmpty ? "All recipes" : "Filtered recipes", systemImage: "line.3.horizontal.decrease").frame(minHeight: 44) }.accessibilityIdentifier("bible-filters")
+                } label: { SGBrowseControlLabel(title: "Filters", symbol: "line.3.horizontal.decrease", active: !course.isEmpty || !cuisine.isEmpty) }.accessibilityIdentifier("bible-filters")
                 Spacer()
-                Menu { Picker("Sort recipes", selection: $alphabetical) { Text("Recently updated").tag(false); Text("A–Z").tag(true) } } label: { Label(alphabetical ? "A–Z" : "Recent", systemImage: "arrow.up.arrow.down").frame(minHeight: 44) }.accessibilityIdentifier("bible-sort")
+                Menu { Picker("Sort recipes", selection: $alphabetical) { Text("Recently updated").tag(false); Text("A–Z").tag(true) } } label: { SGBrowseControlLabel(title: alphabetical ? "A–Z" : "Sort", symbol: "arrow.up.arrow.down", active: alphabetical) }.accessibilityIdentifier("bible-sort")
             }.font(.subheadline).frame(minHeight: 44)
         }.padding(.horizontal, 16).padding(.top, 8).background(SGTheme.ColorToken.background)
     }
