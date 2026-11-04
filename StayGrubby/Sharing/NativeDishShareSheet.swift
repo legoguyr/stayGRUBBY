@@ -20,8 +20,8 @@ nonisolated enum NativeShareOutcome: Equatable {
     }
 }
 
-/// Both entry points share precisely one rendered local image. No screen capture,
-/// account metadata, link, or cloud service is included in the activity items.
+/// Accepted rendered image plus a copyable caption made only from export-safe facts.
+/// No private cook URL, account metadata, notes, history or cloud operation.
 struct NativeDishShareSheet: UIViewControllerRepresentable {
     let card: RenderedDishShareCard
     var onCompletion: (NativeShareOutcome) -> Void = { _ in }
@@ -40,5 +40,17 @@ struct NativeDishShareSheet: UIViewControllerRepresentable {
         }
         return controller
     }
-    static func activityItems(for card: RenderedDishShareCard) -> [Any] { [card.image] }
+    static func activityItems(for card: RenderedDishShareCard) -> [Any] {
+        guard let caption = caption(for: card) else { return [] }
+        return [card.image, caption]
+    }
+    static func caption(for card: RenderedDishShareCard) -> String? {
+        if let model = card.model, let score = model.scoreText {
+            return ["#stayGRUBBY", model.title, model.versionSubtitle, "\(score) / 10"].compactMap { $0 }.joined(separator: "\n")
+        }
+        if let model = card.topThreeModel, model.rows.count == 3, model.rows.allSatisfy({ $0.dish.scoreText != nil }) {
+            return (["#stayGRUBBY", "Signature Dishes"] + model.rows.map { "\($0.dish.title) · \($0.dish.scoreText!) / 10" }).joined(separator: "\n")
+        }
+        return nil
+    }
 }

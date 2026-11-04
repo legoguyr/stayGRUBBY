@@ -4,6 +4,12 @@ import SwiftUI
 struct CookingDetailsSheet: View {
     @Binding var draft: CookingDraft
     var inherited = false
+    @State private var hasExistingCookNotes: Bool
+    @FocusState private var notesFocused: Bool
+    init(draft: Binding<CookingDraft>, inherited: Bool = false) {
+        _draft = draft; self.inherited = inherited
+        _hasExistingCookNotes = State(initialValue: !draft.wrappedValue.notes.isEmpty)
+    }
     @Environment(\.dismiss) private var dismiss
     @State private var cuisine = false
     @State private var source = false
@@ -28,6 +34,13 @@ struct CookingDetailsSheet: View {
                     row("Dietary", value: draft.dietary.intersection(CookingProductOptions.dietary).map(\.label).sorted().joined(separator: ", ")) { dietary = true }.accessibilityIdentifier("cook-dietary")
                     row("Contains", value: draft.contains.map(\.label).sorted().joined(separator: ", ")) { contains = true }.accessibilityIdentifier("cook-contains")
                 }
+                if hasExistingCookNotes {
+                    Section("Existing notes for this cook") {
+                        TextField("Cook-specific notes", text: $draft.notes, axis: .vertical)
+                            .lineLimit(1...6).focused($notesFocused).accessibilityIdentifier("cook-notes")
+                        Text("Only this version. Separate from Dish Private Notes.").font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
                 if !draft.allergy.isEmpty {
                     Section("Legacy free-of labels") {
                         Text(draft.allergy.map(\.label).sorted().joined(separator: ", "))
@@ -37,7 +50,10 @@ struct CookingDetailsSheet: View {
                 }
             }.scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
                 .navigationTitle("Details").navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("cook-details-done") } }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("cook-details-done") }
+                    ToolbarItemGroup(placement: .keyboard) { if notesFocused { Spacer(); Button("Done") { notesFocused = false } } }
+                }
                 .sheet(isPresented: $cuisine) { CuisinePicker(selection: $draft.cuisine) }
                 .sheet(isPresented: $source) { DishSourceEditor(source: $draft.source) }
                 .sheet(isPresented: $dietary) {
@@ -53,10 +69,10 @@ struct CookingDetailsSheet: View {
     }
     private func metadataLabel(_ title: String, value: String) -> some View {
         HStack {
-            Text(title).foregroundStyle(SGTheme.ColorToken.primaryText)
+            Text(title).foregroundStyle(SGTheme.ColorToken.accent)
             Spacer()
             Text(value.isEmpty ? "None" : value).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent)
         }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
     }
 }

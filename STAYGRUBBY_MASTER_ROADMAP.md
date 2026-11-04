@@ -37,13 +37,11 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — Next Release: Stage 1 foundation + Stage 2 core UI
+## CURRENT — Next Release: Stage 3 social + sharing
 
-The owner considers `b9871df88930699f22ed80b2c586996e4775ebd8` sufficiently accepted to continue. The [canonical next-release specification](NEXT_RELEASE_SPEC.md) owns the staged UI/UX/product scope: shared branding/primitives/copy; New Dish/metadata/text/tagging; Kitchen/profiles/Signature Dishes/discovery; social/Comments/Order Up!/sharing; Food Bible/Recipe actions; multi-photo UI and secondary-screen/accessibility polish.
+Stage 1 foundations and Stage 2 owner corrections (`ef0a60b`) are OWNER ACCEPTED. Stage 3 implements compact private-notes/Details corrections, integrated Comments, consistent Sous Chef discovery/person selection, directed Send to Sous Chef via existing Order Up!, restrained notification rows, useful native image+caption exports and a real hosted Recipe-link repair. Automated acceptance evidence and physical limitations are recorded in [Stage 3 review](NEXT_RELEASE_STAGE_3_REVIEW.md). Only symmetric Sous Chefs exist; no follower counts/model is introduced.
 
-Stage 1 completed reusable UI/header infrastructure, additive Dish Public Description/Private Notes and safe bounded multi-photo support. Stage 2 adopts those foundations in New Dish/edit, compact metadata/tagging, My Kitchen/authorized profiles, photographic Signature Dishes, Grub List and Grub Rank surrounding presentation. The focused Stage 2 owner-correction pass compacts entry/Details/sharing/profile controls, aligns Signature scores, stabilizes feed metadata/ages, adds read-only Grub Rank browsing sorts and improves native tab clearance. Owner visual recheck is pending. Custom Tags/Halal selection are hidden with stored compatibility preserved. Following/Followers remain a future social-product decision: only mutual Sous Chefs exist today. Existing native overflow remains preferable to duplicating long-press inventories. Stage 3 retains Comments/discovery/Order Up!/sharing corrections; later stages retain Food Bible/Recipe controls, full gallery/crop and the final system-wide pass. See [Stage 2 evidence](NEXT_RELEASE_STAGE_2_REVIEW.md). Do not begin Stage 3 automatically.
-
-Owner findings carried forward as **mandatory Social + Sharing work**: profile sharing physically works; Recipe links behave like a download in the browser; Ranking/Dish copy/share is not useful in the tested flow. Two-device social acceptance is still pending and nonblocking. Earlier automated link evidence does not supersede those physical findings. Stage 1 does not repair these defects unless directly affected by its data changes.
+Mandatory **Stage 4**: Recipe association must support a specific Dish/cook/version/ranked entry through the canonical Dish/version selector; Food Bible filtering must use the accepted Grub Rank filter language with Recipe-relevant metadata. Recipe Detail action-menu/full UI cleanup remains there. Later photography retains gallery management/reordering and crop/reposition. APNs and formal compliance/distribution remain separate. Do not begin Stage 4 automatically.
 
 ## LATER — deferred product development
 
@@ -54,8 +52,8 @@ This preserves the established broader progression after the nearer Recipe cycle
 | Social/notification hardening | Reliable Sous Chef and in-app notification behavior; timing depends on actual social changes/release risk |
 | Personal History + Stats | Private history/activity/statistics from actual cooking/evidence; no ranking retuning |
 | Recipe Engine / Food Library / Tickets expansion | Resume Want to Cook/Tickets as appropriate; saving never creates cooked/ranked history; source/creator attribution and eligible save/made counters |
-| Public Web Sharing | Explicit native deep links to authorized destinations; minimal app-first fallback, not a public browsable Recipe catalog/feed or native-app replacement |
-| Social + Recipe Expansion / Send to Friend | Friend-directed Recipe/dish sharing, notifications, save/cook/rank/dismiss; no full chat platform without demonstrated need |
+| Public Web Sharing expansion | Authorized native pointers/minimal private-safe fallback are implemented; any broader public web content requires explicit future scope, never an implicit browsable Recipe catalog/feed |
+| Social + Recipe Expansion | Stage 3 delivers existing-access Recipe/post pointers through Order Up!; broader save/cook/rank/dismiss and Tickets integrations remain future work, without chat |
 | Social Polish / Push | APNs, preferences and privacy/tagging polish after reliable in-app behavior; no engagement spam |
 | Challenges / Bigger Social / Community Discovery | Only after dependable personal/social/safety foundations; sponsorship cannot change personal scores |
 | Creator / Commerce / broader discovery | Possible following/public-private follower migration, creator profiles/collections, partnerships and affiliate commerce; no conventional native display ads |

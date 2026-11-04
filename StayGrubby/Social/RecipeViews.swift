@@ -85,6 +85,7 @@ struct RecipeDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var phase
+    @State private var sending: SocialSendContent?
     @State private var recipe: Recipe?
     @State private var claim: SocialCookingClaim?
     @State private var list: RankingList?
@@ -118,6 +119,7 @@ struct RecipeDetailView: View {
             .onChange(of: phase) { _, next in generation = UUID(); if recipe?.isOwner != true { recipe = nil }; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .navigationDestination(item: $copiedRecipeID) { RecipeDetailView(id: $0) }
+            .sheet(item: $sending) { SocialSendSheet(content: $0) }
             .sheet(item: $editingRecipe, onDismiss: { Task { await load() } }) { snapshot in RecipeEditor(recipe: snapshot, dishID: dishID ?? snapshot.linkedDishID) { self.recipe = $0 } }
             .sheet(isPresented: $showingHistory) { if let recipe { RecipeHistoryView(recipe: recipe) { self.recipe = $0 } } }
             .sheet(isPresented: $showingLinker, onDismiss: { Task { await load() } }) { if let recipe { RecipeDishLinker(recipe: recipe) {} } }
@@ -143,7 +145,12 @@ struct RecipeDetailView: View {
             Text("Review your cook, then rank it. Your recipe stays just as you saved it.").font(.footnote).foregroundStyle(.secondary)
             RecipeReadingBody(content: recipe.content, allowScaling: true)
             if recipe.visibility == "friends" {
-                ShareLink(item: AppRoute.recipeURL(recipe.id)) { Label("Share Recipe Link", systemImage: "link") }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("recipe-share-link")
+                HStack {
+                    SocialLinkShareAction(url: AppRoute.recipeURL(recipe.id), title: "Share Recipe Link").accessibilityIdentifier("recipe-share-link")
+                    Spacer()
+                    Button { sending = .recipe(recipe.id) } label: { Image(systemName: "person.crop.circle.badge.checkmark").frame(width: 44, height: 44) }
+                        .accessibilityLabel("Send to Sous Chef").accessibilityIdentifier("recipe-send-friend")
+                }
                 Text("Only current Sous Chefs with access can open this link. It opens the current Recipe.").font(.footnote).foregroundStyle(.secondary)
             }
             Divider()

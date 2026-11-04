@@ -28,10 +28,6 @@ struct FriendsView: View {
     private var taskKey: String { section.rawValue + ":" + query + ":\(revision)" }
     var body: some View {
         SGEditorialList {
-            if administrative == nil {
-                SGPageIntro(title: "Sous Chefs", subtitle: "Good food is better with good company.", showsTitle: false).listRowSeparator(.hidden)
-                ShareMyKitchen()
-            }
             if let identity, !identity.isConfigured {
                 Section {
                     Text("Your cooking stays private. Set up your profile when you’re ready to connect.")
@@ -56,25 +52,23 @@ struct FriendsView: View {
                     Button("Retry") { revision += 1 }
                 }
                 if !loading && error == nil && page.people.isEmpty {
-                    ContentUnavailableView(section == .search ? "Find your cooking friends" : "No \(section.title.lowercased()) yet", systemImage: "person.2",
-                        description: Text(section == .search ? "Enter at least two username characters." : "Friendships are mutual. Your private cooking library stays yours."))
+                    ContentUnavailableView(section == .search ? "Find Sous Chefs" : "No \(section.title.lowercased()) yet", systemImage: "person.2",
+                        description: Text(section == .search ? "Enter at least two username characters." : "Requests appear here when you connect."))
                     if section == .friends { Button("Find Sous Chefs") { section = .search }.accessibilityIdentifier("friends-find") }
                 }
                 ForEach(page.people) { person in
                     Button { selectedPerson = person } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                        SocialAvatar(name: person.displayName, path: person.avatarPath, size: 54)
-                        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                            Text(person.displayName).font(SGTheme.TypeRole.dish)
-                            Text(person.handle).foregroundStyle(.secondary)
-                            Text(person.relationship.label).font(SGTheme.TypeRole.secondary)
-                        } }.padding(.vertical, SGTheme.Space.xSmall).fixedSize(horizontal: false, vertical: true)
+                        HStack {
+                            SocialPersonLabel(person: person, detail: person.relationship.label)
+                            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        }.padding(.vertical, SGTheme.Space.xSmall)
                     }.accessibilityIdentifier("friend-person-\(person.username)")
                 }
                 if page.nextCursor != nil { Button("Load more people") { Task { await load(more: true) } }.disabled(loading) }
             }
         }
         .navigationTitle(administrative?.title ?? "Sous Chefs").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+        .toolbar { if administrative == nil { ToolbarItem(placement: .topBarTrailing) { ShareMyKitchen(compact: true) }.sharedBackgroundVisibility(.hidden) } }
         .scrollDismissesKeyboard(.interactively).refreshable { await load() }
         .onSocialRefresh { if !loading && section != .search { await load() } }
         .task(id: taskKey) {
@@ -93,7 +87,7 @@ struct FriendsView: View {
         }
     }
     private func load(more: Bool = false) async {
-        guard let request else { error = "Connect your account to use Friends."; return }
+        guard let request else { error = "Connect your account to use Sous Chefs."; return }
         let token = UUID(); requestGeneration = token; loading = true; error = nil
         defer { if requestGeneration == token { loading = false } }
         do {
@@ -108,7 +102,7 @@ struct FriendsView: View {
             } else { page = next }
         } catch is CancellationError { } catch {
             guard requestGeneration == token else { return }
-            page = .init(people: []); self.error = "Couldn’t load Friends. Check your connection and retry."
+            page = .init(people: []); self.error = "Couldn’t load Sous Chefs. Check your connection and retry."
         }
     }
 }
@@ -176,7 +170,7 @@ struct FriendProfileView: View {
         Button(title) { Task { await mutate(action) } }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("friend-action-\(action)")
     }
     private func refresh() async {
-        guard let request else { return }; let token = UUID(); generation = token
+        guard let request else { unavailable = true; return }; let token = UUID(); generation = token
         do {
             let page = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "profile", .init(peerID: person.id)))
             guard !Task.isCancelled, generation == token else { return }

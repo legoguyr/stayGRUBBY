@@ -18,6 +18,7 @@ struct SocialPostActions: View {
     let post: SocialPost
     var delete: () -> Void
     @Environment(\.socialRequest) private var request
+    @State private var sending: SocialSendContent?
     @State private var editing = false
     @State private var sharingRecipe = false
     @State private var reporting = false
@@ -26,7 +27,8 @@ struct SocialPostActions: View {
     var body: some View {
         Menu {
             if post.published && post.moderationState == "active" {
-                ShareLink(item: AppRoute.postURL(post.id)) { Label("Share Post Link", systemImage: "link") }
+                SocialLinkShareAction(url: AppRoute.postURL(post.id), title: "Share Post Link")
+                Button("Send to Sous Chef", systemImage: "person.crop.circle.badge.checkmark") { sending = .post(post.id) }.accessibilityIdentifier("post-send-friend")
             }
             if post.isAuthor {
                 if post.published && post.moderationState == "active" {
@@ -41,6 +43,7 @@ struct SocialPostActions: View {
         } label: {
             Image(systemName: "ellipsis").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap).contentShape(Rectangle())
         }.accessibilityLabel("Post actions for \(post.title)").accessibilityIdentifier("post-actions-\(post.id)")
+            .sheet(item: $sending) { SocialSendSheet(content: $0) }
             .sheet(isPresented: $editing) { SocialPostDescriptionEditor(post: post) }
             .sheet(isPresented: $sharingRecipe) { RecipePostSharingEditor(post: post) }
             .sheet(isPresented: $reporting) { SocialReportEditor(kind: "post", targetID: post.id, close: { reporting = false }) }

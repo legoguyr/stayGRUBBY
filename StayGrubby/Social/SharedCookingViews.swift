@@ -64,19 +64,8 @@ struct CookedWithSelection: View {
                     if loading { ProgressView("Loading Sous Chefs") }
                     if failed { Button("Retry Sous Chefs") { revision += 1 } }
                     ForEach(people.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) || $0.username.localizedCaseInsensitiveContains(query) }) { person in
-                        Button { toggle(person); searching = false } label: {
-                            HStack(spacing: SGTheme.Space.small) {
-                                SocialAvatar(name: person.displayName, path: person.avatarPath, size: 44)
-                                VStack(alignment: .leading) {
-                                    Text(person.displayName).font(.headline)
-                                    Text(person.handle).font(.subheadline).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: selected.contains(person.id) ? "checkmark.circle.fill" : "circle")
-                                    .foregroundStyle(selected.contains(person.id) ? SGTheme.ColorToken.accent : .secondary)
-                            }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-                        }.buttonStyle(.plain).accessibilityLabel("Cooked with \(person.displayName)")
-                            .accessibilityValue(selected.contains(person.id) ? "Selected" : "Not selected")
+                        SocialPersonSelectionRow(person: person, selected: selected.contains(person.id)) { toggle(person); searching = false }
+                            .accessibilityLabel("Cooked with \(person.displayName)")
                             .accessibilityIdentifier("sous-chef-selection-\(person.id)")
                     }
                     if let cursor { Button("More Sous Chefs") { Task { await load(after: cursor) } }.disabled(loading) }

@@ -12,16 +12,20 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
         XCTAssertTrue(app.buttons["share-with-friends"].waitForExistence(timeout: 15)); app.buttons["share-with-friends"].tap()
         XCTAssertTrue(app.staticTexts["social-share-score-locked"].waitForExistence(timeout: 5))
-        app.buttons["social-share-publish"].tap()
+        let publish = app.buttons["social-share-publish"]
+        for _ in 0..<7 { if publish.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(publish.isHittable); publish.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "social-share-success").firstMatch.waitForExistence(timeout: 8)); app.buttons["social-share-done"].tap()
         XCTAssertTrue(app.navigationBars["Share with Sous Chefs"].waitForNonExistence(timeout: 8), app.debugDescription)
         app.buttons["ranking-result-close"].tap()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 8))
         app.tabBars.buttons["My Kitchen"].tap()
         let post = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'profile-post-'")).firstMatch
-        XCTAssertTrue(post.waitForExistence(timeout: 8)); post.tap()
+        let kitchen = app.scrollViews["kitchen-scroll"]
+        for _ in 0..<7 { if post.isHittable { break }; kitchen.swipeUp() }
+        XCTAssertTrue(post.waitForExistence(timeout: 8)); XCTAssertTrue(post.isHittable); post.tap()
         let actions = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'post-actions-'")).firstMatch
-        XCTAssertTrue(actions.waitForExistence(timeout: 8)); actions.tap()
+        XCTAssertTrue(actions.waitForExistence(timeout: 8)); actions.press(forDuration: 0.2)
         let deletion = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'feed-delete-'")).firstMatch
         for _ in 0..<3 { if deletion.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(deletion.waitForExistence(timeout: 5)); deletion.tap()

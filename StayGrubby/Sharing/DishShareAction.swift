@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Both entry points export the same card and pass only its image to iOS.
+/// Both entry points share the same card and export-safe copyable caption.
 struct DishShareAction: View {
     let model: ShareCardModel
     var prominent = false
@@ -30,7 +30,7 @@ struct DishShareAction: View {
                 .buttonStyle(SGButtonStyle(prominent: prominent, compact: compact, prominentColor: SGTheme.ColorToken.buttonAccent))
                 .accessibilityIdentifier(identifier)
                 .accessibilityLabel("Share Dish")
-                .accessibilityHint("Opens image sharing. Choose Save Image to save your card to Photos.")
+                .accessibilityHint("Shares a branded image and copyable dish summary. Choose Save Image to save the card to Photos.")
             }
         }
         .shareCardSheet(card: $card, notice: $notice)

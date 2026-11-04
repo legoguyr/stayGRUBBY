@@ -1,3 +1,5 @@
+> November 4, 2026 — Stage 3 supersedes the historical image-only transport wording below. The exact accepted image/card remains unchanged; the native activity sheet also receives a copyable caption made only from ShareCardModel/TopThreeShareCardModel title, optional version and unlocked score. No private rank/history/notes/account metadata or private cook URL is added. Locked models produce no export payload. [Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md).
+
 # Current sharing integration — November 3, 2026
 
 The accepted image models/renderers/layouts, score colors/unlock and native image-sheet behavior below remain frozen. Dish/cook and Signature Dishes exports are still images with no private-ranking URL. Separately, the current social app uses native URL share actions for authorized profile, published post, current friends-visible Recipe and pinned post-Recipe destinations. These are pointers requiring account readiness and fresh server authorization, never public Recipe/post content or access tokens.

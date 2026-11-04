@@ -18,6 +18,8 @@ nonisolated struct SocialNotification: Codable, Identifiable, Hashable, Sendable
         case "recreated": "ran back your cooking"
         case "like": "gave your cooking Hands 🙌"
         case "comment": "commented on your cooking"
+        case "recipe_shared": "sent you a Recipe"
+        case "post_shared": "sent you a shared cook"
         default: "shared cooking activity"
         }
     }
@@ -53,7 +55,6 @@ struct SocialNotificationsView: View {
     @State private var generation = UUID()
     var body: some View {
         SGEditorialList {
-            SGPageIntro(title: "Order Up!", subtitle: "Your circle, caught up.", eyebrow: "Cooking together", showsTitle: false).listRowSeparator(.hidden)
             if busy && notifications.isEmpty { ProgressView("Loading notifications") }
             if failed {
                 Text("Notifications unavailable. Check your connection and retry.")
@@ -65,29 +66,28 @@ struct SocialNotificationsView: View {
             ForEach(notifications) { notice in
                 Button { Task { await open(notice) } } label: {
                     HStack(alignment: .top, spacing: 12) {
-                        SocialAvatar(name: notice.actor.displayName, path: notice.actor.avatarPath, size: 36)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(notice.actor.displayName).font(.headline)
-                            Text(notice.message).font(.body)
-                            Text(notice.date, style: .relative).font(.caption).foregroundStyle(SGTheme.ColorToken.subdued)
-                        }.foregroundStyle(SGTheme.ColorToken.primaryText).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
-                        if !notice.read { Image(systemName: "circle.fill").font(.caption2).foregroundStyle(SGTheme.ColorToken.accent).accessibilityLabel("Unread") }
-                    }.padding(.vertical, SGTheme.Space.small).padding(.horizontal, SGTheme.Space.xSmall).background(notice.read ? Color.clear : SGTheme.ColorToken.selected, in: RoundedRectangle(cornerRadius: SGTheme.Radius.field)).contentShape(Rectangle())
-                }.buttonStyle(.borderless).disabled(busy).accessibilityIdentifier("notification-\(notice.id)")
+                        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                            SocialPersonLabel(person: notice.actor, detail: notice.message, size: 36)
+                            Text(SocialPostPresentation.timestamp(notice.date)).font(.caption).foregroundStyle(.secondary)
+                        }
+                        if !notice.read { Image(systemName: "circle.fill").font(.system(size: 6)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true) }
+                    }.padding(.vertical, SGTheme.Space.small).padding(.horizontal, SGTheme.Space.xSmall).contentShape(Rectangle())
+                }.buttonStyle(.borderless).disabled(busy).accessibilityValue(notice.read ? "Read" : "Unread").accessibilityIdentifier("notification-\(notice.id)")
             }
             if hasMore { Button("Load more notifications") { Task { await load(more: true) } }.disabled(busy) }
         }.navigationTitle("Order Up!").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Mark All Read") { Task { await load(action: "readAll") } }.disabled(busy || unread == 0) } }
             .task { await load() }.refreshable { await load() }
             .onSocialRefresh { if !busy { await load() } }
-            .onChange(of: phase) { _, next in generation = UUID(); notifications = []; unread = 0; if next == .active { Task { await load() } } }
+            .onChange(of: phase) { _, next in generation = UUID(); notifications = []; unread = 0; busy = false; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
             .onChange(of: route) { _, next in if next == nil { Task { await load() } } }
             .navigationDestination(item: $route) { notice in
                 switch notice.kind {
                 case "request", "accepted": FriendProfileView(person: notice.actor) { Task { await load() } }
                 case "invited", "joined": SharedCookingEntryView(eventID: notice.targetID)
+                case "recipe_shared": RecipeDetailView(id: notice.targetID)
+                case "post_shared": SocialPostDetailView(postID: notice.targetID)
                 default:
                     if let postID = notice.postID { SocialPostDetailView(postID: postID, comments: notice.kind == "comment") }
                     else { ContentUnavailableView("Activity unavailable", systemImage: "bell.slash", description: Text("The shared content is no longer available.")) }
@@ -95,7 +95,7 @@ struct SocialNotificationsView: View {
             }
     }
     private func load(more: Bool = false, action: String = "page") async {
-        guard let request else { return }; let token = UUID(); generation = token
+        guard let request else { failed = true; return }; let token = UUID(); generation = token
         let cursor = more ? notifications.last : nil
         if !more { hasMore = false }
         busy = true; failed = false
@@ -109,13 +109,14 @@ struct SocialNotificationsView: View {
         } catch is CancellationError { } catch { if token == generation { notifications = []; unread = 0; hasMore = false; failed = true } }
     }
     private func open(_ notice: SocialNotification) async {
-        guard let request else { return }; busy = true
-        defer { busy = false }
+        guard let request else { return }; let token = generation; busy = true
+        defer { if token == generation { busy = false } }
         do {
             let next = try JSONDecoder().decode(SocialNotificationsPage.self, from: await request("social_notifications", "read", .init(targetID: notice.id))); try Task.checkCancellation()
+            guard token == generation else { return }
             unread = next.unread; activity?.acceptUnread(next.unread)
             route = notice; NotificationCenter.default.post(name: .socialNotificationsRead, object: nil)
-        } catch is CancellationError { } catch { notifications = []; unread = 0; failed = true }
+        } catch is CancellationError { } catch { if token == generation { notifications = []; unread = 0; failed = true } }
     }
 }
 extension Notification.Name { static let socialNotificationsRead = Notification.Name("StayGrubby.socialNotificationsRead") }
@@ -149,7 +150,7 @@ struct SocialPostDetailView: View {
             .confirmationDialog("Delete shared post?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete shared post", role: .destructive) { Task { await remove() } } }
     }
     private func load() async {
-        guard let request else { return }; let token = UUID(); generation = token; failed = false
+        guard let request else { failed = true; return }; let token = UUID(); generation = token; failed = false
         do { let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "post", .init(postID: postID))); guard !Task.isCancelled, generation == token else { return }; post = next.posts.first; failed = post == nil }
         catch is CancellationError { } catch { if generation == token { post = nil; failed = true } }
     }

@@ -4,7 +4,7 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
     @MainActor func testLikeUnlikeAndCommentCreationDeletion() throws {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-trace", "--social-review-feed", "--test-dark"]
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-trace", "--social-review-feed", "--stage3-comment-failure", "--test-dark"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["Grub List"].tap()
         let like = app.buttons["social-like-20000000-0000-0000-0000-000000000001"]
         for _ in 0..<3 { if like.isHittable { break }; app.swipeUp() }
@@ -21,6 +21,8 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         let send = app.buttons["comment-send"]
         let deletion = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'comment-delete-'")).firstMatch
         if !send.isHittable { app.swipeUp() }; send.tap()
+        XCTAssertTrue(app.staticTexts["comment-send-error"].waitForExistence(timeout: 5))
+        XCTAssertEqual(body.value as? String, "Looks delicious!"); send.tap()
         XCTAssertTrue(deletion.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(app.staticTexts["Looks delicious!"].exists)
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))

@@ -40,7 +40,8 @@ import UIKit
         let blue = stride(from: 0, to: pixels.count, by: 4).filter { pixels[$0 + 2] > 190 && pixels[$0] < 50 && pixels[$0 + 1] < 50 }.count
         #expect(blue > 30_000)
         let items = NativeDishShareSheet.activityItems(for: result)
-        #expect(items.count == 1 && (items[0] as? UIImage) === result.image)
+        #expect(items.count == 2 && (items[0] as? UIImage) === result.image)
+        #expect((items[1] as? String)?.contains("Signature Dishes") == true)
         try export(result.image, name: "top-three-mixed-photo")
         try FileManager.default.removeItem(at: root.appendingPathComponent("StayGrubbyMedia").appendingPathComponent(media.displayFilename))
         let missing = try ShareCardRenderer.render(topThree: model, mediaRoot: root)

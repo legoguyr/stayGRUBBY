@@ -1,0 +1,62 @@
+import {fixture} from './social-harness.mjs';
+import {randomUUID} from 'node:crypto';
+const {db,users,actor,rpc,cooking,check,rejects,finish}=await fixture();
+try {
+ for(let n=0;n<4;n++){await actor(n);await rpc('social_identity','save',{displayName:'Share Cook '+n,username:'share_cook_'+n,discoverable:true});}
+ async function connect(a,b){await actor(a);await rpc('social_people','request',{peerID:users[b].id});await actor(b);await rpc('social_people','accept',{peerID:users[a].id});}
+ await connect(0,1);await connect(0,2);
+ const recipeID=randomUUID(),postID=randomUUID();
+ await actor(0);await rpc('recipes','save',{recipeID,visibility:'friends',recipe:{title:'Source soup',ingredients:['1 tomato'],steps:['Cook the tomato']}});
+ const cook=await cooking(0);await actor(0);
+ await rpc('social_content','prepare',{postID,attemptID:cook.attempts[0],expectedRevision:0,confirmed:true,includePhoto:false});
+ const recipe={targetType:'recipe',targetID:recipeID},post={targetType:'post',targetID:postID};
+ const core=async()=>{await db.exec('reset role');return (await db.query("select jsonb_build_object('recipes',(select jsonb_agg(to_jsonb(t)) from staygrubby.recipes t),'revisions',(select jsonb_agg(to_jsonb(t)) from staygrubby.recipe_revisions t),'dishes',(select jsonb_agg(to_jsonb(t)) from staygrubby.dishes t),'cooks',(select jsonb_agg(to_jsonb(t)) from staygrubby.cooking_attempts t),'items',(select jsonb_agg(to_jsonb(t)) from staygrubby.ranked_items t),'evidence',(select jsonb_agg(to_jsonb(t)) from staygrubby.comparisons t),'storage',(select jsonb_agg(to_jsonb(t)) from storage.objects t)) value")).rows[0].value;};
+ const before=await core();await actor(0);
+ let page=await rpc('social_send','recipients',recipe);
+ check(page.people.length===2,'Only current authorized Sous Chefs eligible');
+ check(page.people.every(p=>Object.keys(p).sort().join(',')==='avatarPath,displayName,id,relationship,username'),'Minimal identity DTO');
+ check((await rpc('social_send','recipients',{...recipe,query:'Cook 1'})).people[0].id===users[1].id,'Search display identity');
+ check((await rpc('social_send','recipients',{...recipe,query:'share_cook_2'})).people[0].id===users[2].id,'Search username');
+ check((await rpc('social_send','recipients',{...recipe,afterUsername:'share_cook_1'})).people.length===1,'Cursor excludes prior page');
+ await rejects(()=>rpc('social_send','recipients',{...recipe,query:'x'.repeat(51)}),'22023');
+ await rejects(()=>rpc('social_send','send',{...recipe,peerID:users[3].id,originID:randomUUID()}),'42501');
+ await rejects(()=>rpc('social_send','send',{...recipe,peerID:users[0].id,originID:randomUUID()}),'22023');
+ const originID=randomUUID(),payload={...recipe,peerID:users[1].id,originID,ownerID:users[3].id};
+ check((await rpc('social_send','send',payload)).sent,'Send succeeds');
+ check((await rpc('social_send','send',payload)).sent,'Retry succeeds idempotently');
+ await rejects(()=>rpc('social_send','send',{...payload,peerID:users[2].id}),'40001');
+ await actor(1);let inbox=await rpc('social_notifications','page');
+ const notice=inbox.notifications.find(n=>n.kind==='recipe_shared');
+ check(notice?.targetID===recipeID&&notice.actor.id===users[0].id,'Authorized actor/Recipe pointer reaches intended recipient');
+ check(inbox.notifications.filter(n=>n.kind==='recipe_shared').length===1,'No duplicate notice from retry');
+ check(!JSON.stringify(notice).includes('ingredients'),'Notification contains no Recipe body');
+ await rpc('social_notifications','read',{targetID:notice.id});
+ check((await rpc('social_notifications','page')).notifications.find(n=>n.id===notice.id).read,'Existing read-state works');
+ await rejects(()=>rpc('social_send','send',{...recipe,peerID:users[2].id,originID:randomUUID()}),'42501');
+ await actor(2);check(!(await rpc('social_notifications','page')).notifications.some(n=>n.kind==='recipe_shared'),'Different account sees no sent pointer');
+ await actor(3);await rejects(()=>rpc('social_send','recipients',recipe),'42501');
+ await actor(0);await rpc('social_send','send',{...post,peerID:users[1].id,originID:randomUUID()});
+ await actor(1);check((await rpc('social_notifications','page')).notifications.some(n=>n.kind==='post_shared'&&n.targetID===postID),'Cook pointer routes through existing post');
+ check(JSON.stringify(await core())===JSON.stringify(before),'Sending does not mutate Recipes/revisions/cooking/ranking/Storage');
+ // Burst protection must not turn ordinary retry into another delivery or allowance.
+ await actor(0);
+ await db.exec('reset role');
+ await db.query("insert into staygrubby.social_notifications(recipient_id,actor_id,kind,target_id,dedupe_key) select $1,$2,'recipe_shared',$3,'fixture-burst:'||g from generate_series(1,98) g",[users[1].id,users[0].id,recipeID]);
+ await actor(0);
+ await rejects(()=>rpc('social_send','send',{...recipe,peerID:users[1].id,originID:randomUUID()}),'54000');
+ check((await rpc('social_send','send',payload)).sent,'Idempotent retry is available even at burst bound');
+ await db.exec('reset role');await db.query("delete from staygrubby.social_notifications where dedupe_key like 'fixture-burst:%'");await actor(0);
+ await actor(0);await rpc('recipes','save',{recipeID,expectedRevision:1,visibility:'private',recipe:{title:'Source soup',ingredients:['1 tomato'],steps:['Cook the tomato']}});
+ check((await rpc('social_send','recipients',recipe)).people.length===0,'Private Recipe never grants access by sending');
+ await actor(1);check(!(await rpc('social_notifications','page')).notifications.some(n=>n.kind==='recipe_shared'),'Revoked Recipe hides stale notification');
+ await actor(0);await rpc('social_people','block',{peerID:users[1].id});
+ await actor(1);check(!(await rpc('social_notifications','page')).notifications.some(n=>['recipe_shared','post_shared'].includes(n.kind)),'Block suppresses both directed destinations');
+ await actor(0);await rejects(()=>rpc('social_send','send',{...post,peerID:users[1].id,originID:randomUUID()}),'42501');
+ await rpc('social_send','send',{...post,peerID:users[2].id,originID:randomUUID()});
+ await rpc('social_content','delete',{postID});await actor(2);
+ check(!(await rpc('social_notifications','page')).notifications.some(n=>n.kind==='post_shared'),'Deleted post cannot resurrect through a stale notice');
+ await rejects(()=>db.query('insert into staygrubby.social_notifications(recipient_id,actor_id,kind,target_id,dedupe_key) values($1,$2,$3,$4,$5)',[users[2].id,users[0].id,'post_shared',postID,randomUUID()]));
+ await db.exec('reset role;set role anon');await rejects(()=>rpc('social_send','recipients',recipe));
+ await db.exec('reset role');await db.query('delete from auth.sessions where id=$1',[users[0].session]);await actor(0);
+ await rejects(()=>rpc('social_send','recipients',recipe));
+} finally { await finish(); }

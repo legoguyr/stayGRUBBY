@@ -1,3 +1,11 @@
+# Next-release Stage 3 social interaction contract — November 4, 2026
+
+Stage 2 is OWNER ACCEPTED. Reuse `SocialPersonLabel` for avatar/display name/handle/status and `SocialPersonSelectionRow` for actual recipient/tag selection; keep the compact inline Tag avatars specialized. Search, native Done, selected accessibility state, 44-point controls and existing avatar transport remain canonical. Discovery is symmetric Sous Chefs/Requests, with no invented follower counts.
+
+Comments presents a native medium/large sheet (large at accessibility sizes), readable rows/stable timestamps, native overflow delete/report and a keyboard-aware bottom composer that leaves the list visible. Errors retain unsent text and expose manual recovery. Order Up! shares identity/age/unread language while preserving the existing account-scoped activity coordinator. Send to Sous Chef uses eligible existing-access recipients and explicit Send/success/retry, not chat.
+
+`SocialLinkShareAction` standardizes actual link actions using native ShareLink and square.and.arrow.up; native Kitchen anchoring remains intentional. Image exports use the existing native activity controller with the unchanged branded image plus an export-safe caption. Neither pointer sharing nor exports expose private notes/history. Existing overflow menus keep actions discoverable; duplicate long-press inventories/custom haptics add no clear benefit here. Upright portrait, light/dark, Dynamic Type and Reduce Motion remain required. [Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md).
+
 # Stage 2 owner-correction contract — November 3, 2026
 
 **Content first. Actions second. Explanation only when necessary. Prefer compact native controls over full-width UI when full-width emphasis is unnecessary.** This section supersedes the initial Stage 2 presentation below; evidence and owner recheck are recorded in [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md).

@@ -75,6 +75,9 @@ struct SocialCommentsView: View {
     @State private var deleting: SocialComment?
     @State private var confirmingDelete = false
     @State private var deletionRequest: SocialComment?
+    @State private var reporting: SocialComment?
+    @State private var deliveryFailed = false
+    @Environment(\.dynamicTypeSize) private var textSize
     var body: some View {
         NavigationStack {
             SGEditorialList {
@@ -85,33 +88,32 @@ struct SocialCommentsView: View {
                     Button("Retry") { Task { await load() } }.accessibilityIdentifier("comments-retry")
                 } else if !loading && comments.isEmpty { Text("No comments yet. Start a conversation.") }
                 ForEach(comments) { comment in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .top, spacing: 10) {
-                        SocialAvatar(name: comment.author.displayName, path: comment.author.avatarPath, size: 36)
-                        if comment.isAuthor { Text("You · \(comment.author.handle)").font(.headline) }
-                        else {
-                            Button { person = comment.author } label: { Text("\(comment.author.displayName) · \(comment.author.handle)").font(.headline) }
+                    VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                        HStack(alignment: .top) {
+                            if comment.isAuthor { SocialPersonLabel(person: comment.author, size: 36) }
+                            else { Button { person = comment.author } label: { SocialPersonLabel(person: comment.author, size: 36) }.buttonStyle(.plain) }
+                            if comment.canDelete {
+                                Button { deleting = comment; confirmingDelete = true } label: {
+                                    Image(systemName: "trash").frame(width: 44, height: 44)
+                                }.accessibilityLabel("Delete comment").accessibilityIdentifier("comment-delete-\(comment.id)")
+                            }
+                            if !comment.isAuthor {
+                                Button { reporting = comment } label: {
+                                    Image(systemName: "flag").frame(width: 44, height: 44)
+                                }.accessibilityLabel("Report comment").accessibilityIdentifier("social-report-comment")
+                            }
                         }
-                        }
-                        Text(comment.date, style: .relative).font(.caption).foregroundStyle(.secondary)
-                        Text(comment.body).fixedSize(horizontal: false, vertical: true)
-                        if comment.canDelete { Button("Delete comment", role: .destructive) { deleting = comment; confirmingDelete = true }.accessibilityIdentifier("comment-delete-\(comment.id)") }
-                        if !comment.isAuthor { SocialReportButton(kind: "comment", targetID: comment.id) }
-                    }.buttonStyle(.borderless).padding(.vertical, 6).accessibilityElement(children: .contain).accessibilityIdentifier("social-comment-\(comment.id)")
+                        Text(comment.body).font(SGTheme.TypeRole.body).fixedSize(horizontal: false, vertical: true)
+                        Text(SocialPostPresentation.timestamp(comment.date)).font(.caption).foregroundStyle(.secondary)
+                    }.buttonStyle(.borderless).padding(.vertical, SGTheme.Space.small)
+                        .accessibilityElement(children: .contain).accessibilityIdentifier("social-comment-\(comment.id)")
                 }
                 if hasMore { Button("Load more comments") { Task { await load(more: true) } }.disabled(loading || busy) }
-                if post != nil && !failed {
-                    Section("Add a comment") {
-                        TextField("Write a comment", text: $text, axis: .vertical).lineLimit(2...6).focused($writingComment).accessibilityIdentifier("comment-body")
-                            .onChange(of: text) { _, _ in if !busy { commentID = UUID() } }
-                        Text("\(text.unicodeScalars.count) / 1000").font(.caption).foregroundStyle(.secondary)
-                        Button(busy ? "Sending…" : "Send comment") { Task { await send() } }
-                            .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.unicodeScalars.count > 1000)
-                            .accessibilityIdentifier("comment-send")
-                    }.disabled(busy)
-                }
             }.navigationTitle("Comments").navigationBarTitleDisplayMode(.inline)
                 .scrollDismissesKeyboard(.interactively)
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if post != nil && !failed { composer }
+                }
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                     ToolbarItemGroup(placement: .keyboard) {
@@ -127,6 +129,9 @@ struct SocialCommentsView: View {
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
                 .onDisappear { generation = UUID() }
+                .sheet(item: $reporting) { comment in
+                    SocialReportEditor(kind: "comment", targetID: comment.id) { reporting = nil }
+                }
                 .sheet(item: $person, onDismiss: { Task { await load() } }) { person in
                     NavigationStack {
                         FriendProfileView(person: person) { Task { await load() } }
@@ -139,6 +144,9 @@ struct SocialCommentsView: View {
                     }
                 }
         }
+        .presentationDetents(textSize.isAccessibilitySize ? [.large] : [.medium, .large])
+        .presentationDragIndicator(.visible).presentationContentInteraction(.scrolls)
+        .interactiveDismissDisabled(busy)
         // Keep async deletion on the mounted screen, rather than the dismissing dialog's captured view.
         .task(id: deletionRequest?.id) {
             guard let comment = deletionRequest else { return }
@@ -146,28 +154,48 @@ struct SocialCommentsView: View {
             deletionRequest = nil
         }
     }
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            if deliveryFailed { Text("Couldn’t send. Your comment is still here.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("comment-send-error") }
+            HStack(alignment: .bottom, spacing: SGTheme.Space.small) {
+                TextField("Write a comment", text: $text, axis: .vertical).lineLimit(1...4)
+                    .focused($writingComment).accessibilityIdentifier("comment-body").sgField()
+                    .onChange(of: text) { _, _ in if !busy { commentID = UUID(); deliveryFailed = false } }
+                Button { Task { await send() } } label: {
+                    if busy { ProgressView().frame(width: 44, height: 44) }
+                    else { Image(systemName: "arrow.up.circle.fill").font(.title2).frame(width: 44, height: 44) }
+                }.accessibilityLabel("Send comment").accessibilityIdentifier("comment-send")
+                    .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.unicodeScalars.count > 1000)
+            }.disabled(busy)
+            if text.unicodeScalars.count > 900 { Text("\(text.unicodeScalars.count) / 1000").font(.caption).foregroundStyle(.secondary) }
+        }.padding(SGTheme.Space.small).background(SGTheme.ColorToken.background)
+    }
     private func load(more: Bool = false) async {
-        guard let request else { return }
+        guard let request else { failed = true; return }
         let token = UUID(); generation = token; let cursor = more ? comments.last : nil
         loading = true; failed = false
-        if !more { comments = []; post = nil; hasMore = false }
+        if !more { hasMore = false }
         defer { if generation == token { loading = false } }
         do {
             let snapshot = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "post", .init(postID: postID)))
             let page = try JSONDecoder().decode(SocialCommentsPage.self, from: await request("social_interactions", "comments", .init(postID: postID, beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
-            guard !Task.isCancelled, generation == token, let latest = snapshot.posts.first else { return }
-            post = latest; let ids = Set(comments.map(\.id)); comments += page.comments.filter { !ids.contains($0.id) }; hasMore = page.comments.count == 25
+            guard !Task.isCancelled, generation == token else { return }
+            guard let latest = snapshot.posts.first else { post = nil; comments = []; failed = true; return }
+            post = latest
+            if more { let ids = Set(comments.map(\.id)); comments += page.comments.filter { !ids.contains($0.id) } }
+            else { comments = page.comments }
+            hasMore = page.comments.count == 25
         } catch is CancellationError { } catch {
             guard generation == token else { return }; post = nil; comments = []; failed = true
         }
     }
     private func send() async {
-        guard let request else { return }; busy = true
+        guard let request else { return }; let token = generation; busy = true; deliveryFailed = false
         defer { busy = false }
         do {
             _ = try await request("social_interactions", "comment", .init(postID: postID, commentID: commentID, body: text))
-            guard !Task.isCancelled else { return }; writingComment = false; text = ""; commentID = UUID(); await load(); NotificationCenter.default.post(name: .socialEngagementChanged, object: nil)
-        } catch is CancellationError { } catch { failed = true }
+            guard !Task.isCancelled, generation == token else { return }; writingComment = false; text = ""; commentID = UUID(); await load(); NotificationCenter.default.post(name: .socialEngagementChanged, object: nil)
+        } catch is CancellationError { } catch { if generation == token { deliveryFailed = true } }
     }
     private func remove(_ comment: SocialComment) async {
         guard let request else { return }; busy = true

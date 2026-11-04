@@ -21,16 +21,13 @@ Prefer compact native controls over full-width UI when full-width emphasis is un
 
 Evaluate native context menus/long-press and suitable haptics only where they remove clutter. Basic native crop/reposition may be evaluated in the photography stage; it is optional and not Stage 1. Do not add bespoke gestures or an image-editing subsystem without need.
 
-Stage 1 establishes the reusable UI/header and Dish-text/photo data foundations; its contained migration is deployed and its automated acceptance is recorded in [the Stage 1 review](NEXT_RELEASE_STAGE_1_REVIEW.md). Stage 2 adopts them across primary identity, cooking entry/metadata/tagging, Kitchen/profiles/Signature Dishes, Grub List and Grub Rank surrounding UI; see [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md). The Stage 2 owner-correction follow-up consolidates Details, compacts entry/Kitchen/share controls, aligns Signature scores, adds authorized feed metadata/stable ages and read-only Grub Rank sorting, and verifies native tab clearance. Custom Tags are hidden from normal UI/search and Halal from selection; historical data/backend compatibility remain. Following/Followers require a future product/model decision, not invented counts. Dedicated Social + Sharing, full Food Bible and photography work remain later stages. **Do not start Stage 3 automatically.**
+Stage 1 establishes the reusable UI/header and Dish-text/photo data foundations; its contained migration is deployed and its automated acceptance is recorded in [the Stage 1 review](NEXT_RELEASE_STAGE_1_REVIEW.md). Stage 2 adopts them across primary identity, cooking entry/metadata/tagging, Kitchen/profiles/Signature Dishes, Grub List and Grub Rank surrounding UI; see [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md). The Stage 2 owner-correction follow-up consolidates Details, compacts entry/Kitchen/share controls, aligns Signature scores, adds authorized feed metadata/stable ages and read-only Grub Rank sorting, and verifies native tab clearance. Custom Tags are hidden from normal UI/search and Halal from selection; historical data/backend compatibility remain. Following/Followers require a future product/model decision, not invented counts. Stage 3 handles Social + Sharing; full Food Bible and photography work remain later stages. Stage 2 is now OWNER ACCEPTED (November 4). The explicitly authorized Stage 3 social/sharing implementation and its remaining physical gate are recorded in [Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md). Do not begin Stage 4 automatically.
 
-## Owner findings carried into Social + Sharing — mandatory
+## Stage 3 social + sharing follow-through
 
-- My Kitchen/profile sharing physically works.
-- Recipe sharing is still broken: the owner observes browser behavior resembling a file download instead of a useful destination/fallback.
-- Ranking/Dish sharing does not produce a useful copy/share result in the observed flow.
-- Two-device social acceptance remains pending, but does not block this cycle.
+Stage 2 was physically accepted; its duplicate notes/Details affordance corrections are contained in Stage 3. The Recipe-browser failure was traced to actual hosted assets-only drift, repaired and checked with real HTTP; local URL tests alone are insufficient. Dish/Signature exports now add useful copyable text alongside the accepted image, without private URLs or score-lock changes. Native person identity/selection, Comments composition, Sous Chef discovery, directed delivery and Order Up! remain one mutual-friend product. See [Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md) for exact deployment/test/data results and physical limitations.
 
-These findings supersede any implication that prior origin/Simulator checks establish complete physical sharing acceptance. Stage 1 preserves the reports; it does not investigate/fix them unless its own data change causes a direct integration regression. The Social + Sharing stage must trace actual generated payloads/URLs/native sheets, browser MIME/disposition behavior and recipient app/web destinations, and retest on physical devices.
+Stage 4 **must** address Recipe → specific Dish/cook/version/ranked-entry association through the same canonical selector, plus Food Bible filters consistent with Grub Rank using Recipe metadata. Stage 3 does not implement those, full Recipe controls, gallery/crop, followers, APNs, Stars/Discover, Creator changes or distribution.
 
 ## Stage 1 data contract
 
@@ -46,7 +43,7 @@ Domain operations append, reorder/set cover and remove one photo through existin
 
 ## Frozen systems and deferred features
 
-Keep Bradley–Terry, accepted calibration/unlock/evidence, Dish/cook/item semantics, independent Recipes/revision history/cook snapshots, Run It Back ownership, Gemini-first Creator, Apple auth, relationships and Hands/Comments unchanged. No new provider calls/billing, secrets, resets, destructive real-account operations or distribution.
+Keep Bradley–Terry, accepted calibration/unlock/evidence, Dish/cook/item semantics, independent Recipes/revision history/cook snapshots, Run It Back ownership, Gemini-first Creator, Apple auth, relationships and Hands/Comments semantics unchanged. No new provider calls/billing, secrets, resets, destructive real-account operations or distribution.
 
 Run It Back community averages, Apple Intelligence creation, advanced Recipe variations, broader discovery/statistics/creator tooling/monetization, Stars and existing future-roadmap features remain deferred unless separately approved.
 

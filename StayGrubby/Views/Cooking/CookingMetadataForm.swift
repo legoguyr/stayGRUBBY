@@ -10,7 +10,7 @@ struct CookingMetadataForm: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var details = false
     @FocusState private var focusedField: EntryField?
-    private enum EntryField: Hashable { case name, description, dishNotes, version, cookNotes }
+    private enum EntryField: Hashable { case name, description, dishNotes, version }
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
@@ -57,13 +57,10 @@ struct CookingMetadataForm: View {
                         .foregroundStyle(.secondary).multilineTextAlignment(.trailing)
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold))
                 }.font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-            }.buttonStyle(.plain).accessibilityIdentifier("cook-details")
+            }.buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("cook-details")
             if let cookedWith { CookedWithSelection(selected: cookedWith) }
             if let sharingSelection { CookingSharingChoice(selection: sharingSelection) }
-            DisclosureGroup("Notes for this cook · private") {
-                TextField("Personal Notes · private (optional)", text: $draft.notes, axis: .vertical)
-                    .focused($focusedField, equals: .cookNotes).lineLimit(1...6).accessibilityIdentifier("cook-notes").sgField()
-            }.font(SGTheme.TypeRole.body)
+
 
         }
         .toolbar {

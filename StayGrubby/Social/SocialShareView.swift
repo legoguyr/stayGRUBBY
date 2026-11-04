@@ -59,7 +59,7 @@ struct SocialPostComposer: View {
                         if preservedExistingRecipe {
                             Text("This cook was already shared. Its Recipe attachment was kept. Use Recipe Sharing in the post’s menu to change it.").accessibilityIdentifier("social-existing-recipe-preserved")
                         }
-                        if let savedPost { ShareLink(item: AppRoute.postURL(savedPost.id)) { Label("Share Post Link", systemImage: "link") } }
+                        if let savedPost { SocialLinkShareAction(url: AppRoute.postURL(savedPost.id), title: "Share Post Link") }
                         Button("Done", action: close).accessibilityIdentifier("social-share-done")
                     }
                 } else {

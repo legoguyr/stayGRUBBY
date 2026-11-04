@@ -40,7 +40,9 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.staticTexts["Custom tags"].exists); shot("Owner corrections compact entry light", app)
         fill("dish-name", "Lemon Soup", app); fill("version-title", "Sunday", app)
         fill("cook-dish-description", "Bright soup", app); fill("cook-dish-private-notes", "Only my technique", app)
+        XCTAssertFalse(app.textFields["cook-notes"].exists, "New Dish must not duplicate Private Notes")
         app.openCookingDetails()
+        XCTAssertFalse(app.textFields["cook-notes"].exists, "Fresh cook has no legacy per-cook notes")
         let course = app.descendants(matching: .any).matching(identifier: "cook-course").firstMatch
         course.press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["Soup"].waitForExistence(timeout: 5)); app.buttons["Soup"].press(forDuration: 0.2)

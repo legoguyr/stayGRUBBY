@@ -136,11 +136,12 @@ struct ShareCardRendererTests {
         #expect(actual.image.pngData() == renderer.uiImage?.pngData())
     }
 
-    @Test func nativeActivityContainsOnlyTheRenderedImage() throws {
+    @Test func nativeActivityContainsRenderedImageAndExportSafeCaption() throws {
         let root = try temporaryRoot(); defer { try? FileManager.default.removeItem(at: root) }
         let rendered = try ShareCardRenderer.render(model: model(), mediaRoot: root)
         let items = NativeDishShareSheet.activityItems(for: rendered)
-        #expect(items.count == 1)
+        #expect(items.count == 2)
+        #expect((items[1] as? String)?.contains("#stayGRUBBY") == true)
         #expect((items[0] as? UIImage) === rendered.image)
         #expect(!(items[0] is URL) && !(items[0] is String))
     }

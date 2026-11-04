@@ -1,3 +1,11 @@
+## November 4, 2026 — Stage 3 interaction and directed sharing
+
+Stage 2 is OWNER ACCEPTED. Comments now uses native detents/keyboard-aware bottom input and compact Delete/Report controls. Discovery, expanded tagging, Send and Order Up! share compact identity/selection/timestamp language, with existing avatar transport and symmetric Sous Chefs. Activity infrastructure and account isolation are retained.
+
+The new `api.social_send` RPC lists bounded/searchable eligible current Sous Chefs and sends a Recipe/post pointer as `recipe_shared`/`post_shared` through existing notifications. Both sender and recipient must already have access. It never changes visibility, grants access, copies Recipe/cooking/snapshot/media data or accepts chat text. Actor comes from the live session. Relationship locks and fresh access checks protect sends; stable origin IDs make ambiguous retries idempotent; 100/hour is a security burst bound, not a normal product daily allowance. Notification visibility rechecks source/sender/recipient authorization; private/deleted/blocked content cannot remain readable through stale pointers. Existing RPC-only/RLS tables stay closed to raw client writes. Migration `20261104055100_stage3_directed_social_sharing.sql` is deployed, no backfill or record changes.
+
+Sharing URLs remain privacy-safe pointers, not access tokens or public Recipe pages. Stage 3 restored actual hosted router/ASSETS drift and added real GET/HEAD verification; installed-app HTTPS association and real two-device delivery remain physical acceptance. Dish/Signature cards stay images with an export-safe copyable caption, never private ranking URLs. [Current Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md). Historical sections below retain their dated scope.
+
 # StayGrubby social architecture
 
 > Current product/release boundaries are reconciled in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) and the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md). Counts/function versions and review gates below belong to their dated checkpoints; they are not live catalog claims. Permanent verification rules are in [AGENTS.md](AGENTS.md).

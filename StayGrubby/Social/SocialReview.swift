@@ -37,7 +37,7 @@ import SwiftData
         if ProcessInfo.processInfo.arguments.contains("--recipes-review") {
             identity.discoverable = true
             let id = UUID(uuidString: "60000000-0000-0000-0000-000000000001")!
-            recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", description: "A bright soup for a simple supper.", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
+            recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", description: "A bright soup for a simple supper.", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: ProcessInfo.processInfo.arguments.contains("--stage3-review-sharing") ? "friends" : "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
         }
         if ProcessInfo.processInfo.arguments.contains("--bible-v2-empty") || ProcessInfo.processInfo.arguments.contains("--bible-review") { recipes = [:] }
         if let url = recipeReviewURL, let data = try? Data(contentsOf: url) {
@@ -63,6 +63,12 @@ import SwiftData
                 let actor = kind == "request" ? people[1] : people[0]
                 let target = kind == "invited" ? eventID : kind == "request" || kind == "accepted" ? actor.id : UUID(uuidString: "20000000-0000-0000-0000-000000000001")!
                 notices.append(.init(id: UUID(uuidString: "50000000-0000-0000-0000-00000000000\(index + 1)")!, kind: kind, actor: actor, targetID: target, postID: ["like", "comment", "recreated"].contains(kind) ? target : nil, createdAt: Date().timeIntervalSince1970 - Double(index), read: false))
+            }
+        }
+        if ProcessInfo.processInfo.arguments.contains("--stage3-review-sharing"), let friend = people.first {
+            for (index, kind) in ["recipe_shared", "post_shared"].enumerated() {
+                notices.append(.init(id: UUID(uuidString: "50000000-0000-0000-0000-00000000000\(index + 7)")!, kind: kind, actor: friend,
+                    targetID: UUID(uuidString: index == 0 ? "60000000-0000-0000-0000-000000000001" : "20000000-0000-0000-0000-000000000001")!, postID: nil, createdAt: 100 + Double(index), read: false))
             }
         }
     }
@@ -96,6 +102,8 @@ import SwiftData
         }
         try context.save()
     }
+    private var commentSendFailures = ProcessInfo.processInfo.arguments.contains("--stage3-comment-failure") ? 1 : 0
+    private var directedSendFailures = ProcessInfo.processInfo.arguments.contains("--stage3-send-failure") ? 1 : 0
     private var feedFailures = ProcessInfo.processInfo.arguments.contains("--social-review-feed-error") ? 1 : 0
     private var feedSeeded = false
     private var recipeSaveFailures = ProcessInfo.processInfo.arguments.contains("--recipe-save-failure") ? 1 : 0
@@ -209,6 +217,17 @@ import SwiftData
             }
             return try JSONEncoder().encode(recipe)
         }
+        if endpoint == "social_send" {
+            guard (payload.targetType == "recipe" && payload.targetID.flatMap { recipes[$0] }?.visibility == "friends") || (payload.targetType == "post" && posts.contains { $0.id == payload.targetID }) else { throw URLError(.resourceUnavailable) }
+            let eligible = people.filter { $0.relationship == .friends }
+            if action == "recipients" {
+                let query = payload.query ?? ""
+                return try JSONEncoder().encode(SocialPeoplePage(people: eligible.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) || $0.username.localizedCaseInsensitiveContains(query) }))
+            }
+            guard action == "send", eligible.contains(where: { $0.id == payload.peerID }), payload.originID != nil else { throw URLError(.noPermissionsToReadFile) }
+            if directedSendFailures > 0 { directedSendFailures -= 1; throw URLError(.notConnectedToInternet) }
+            return Data(#"{"sent":true}"#.utf8)
+        }
         if endpoint == "social_notifications" {
             if action == "read" || action == "readAll" {
                 notices = notices.map { n in SocialNotification(id: n.id, kind: n.kind, actor: n.actor, targetID: n.targetID, postID: n.postID, createdAt: n.createdAt, read: n.read || action == "readAll" || n.id == payload.targetID) }
@@ -275,6 +294,7 @@ import SwiftData
             return try JSONEncoder().encode(identity)
         }
         if endpoint == "social_interactions", let pid = payload.postID, let index = posts.firstIndex(where: { $0.id == pid }) {
+            if action == "comment", commentSendFailures > 0 { commentSendFailures -= 1; throw URLError(.notConnectedToInternet) }
             if action == "comments" { return try JSONEncoder().encode(SocialCommentsPage(comments: comments[pid] ?? [])) }
             if action == "like" { posts[index].liked = true; posts[index].likeCount = 1 }
             if action == "unlike" { posts[index].liked = false; posts[index].likeCount = 0 }

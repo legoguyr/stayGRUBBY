@@ -109,8 +109,7 @@ struct ShareMyKitchen: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let identity, identity.discoverable, let username = identity.username, let url = AppRoute.profileURL(username: username) {
                     if compact {
-                        ShareLink(item: url) { Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44) }
-                            .accessibilityLabel("Share My Kitchen").accessibilityIdentifier("share-my-kitchen")
+                        SocialLinkShareAction(url: url, title: "Share My Kitchen", compact: true).accessibilityIdentifier("share-my-kitchen")
                     } else {
                         ShareLink(item: url) { Label("Share My Kitchen", systemImage: "square.and.arrow.up") }
                             .buttonStyle(SGButtonStyle()).accessibilityIdentifier("share-my-kitchen")

@@ -121,7 +121,7 @@ struct SharedRecipeView: View {
                     RecipeReadingBody(content: value.content, allowScaling: true)
                     if let source = value.content.source { Text("Source · \(source)") }
                     if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
-                    ShareLink(item: AppRoute.sharedRecipeURL(postID: postID)) { Label("Share Recipe Link", systemImage: "link") }.accessibilityIdentifier("shared-recipe-share-link")
+                    SocialLinkShareAction(url: AppRoute.sharedRecipeURL(postID: postID), title: "Share Recipe Link").accessibilityIdentifier("shared-recipe-share-link")
                     Text("This link opens this post’s shared revision for Sous Chefs who still have access.").font(.footnote).foregroundStyle(.secondary)
 
                 } else if !failed { ProgressView("Loading shared Recipe") }
