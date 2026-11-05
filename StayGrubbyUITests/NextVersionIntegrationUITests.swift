@@ -23,7 +23,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
         post.terminate()
         let current = launch(["--review-profile-url", "staygrubby://open/r/60000000-0000-0000-0000-000000000001"])
         XCTAssertTrue(current.staticTexts["recipe-title"].waitForExistence(timeout: 12))
-        XCTAssertTrue(current.buttons["recipe-edit"].exists)
+        current.revealRecipeActions(); XCTAssertTrue(current.buttons["recipe-edit"].exists)
         current.terminate()
         let missing = launch(["--review-profile-url", "https://staygrubby.com/p/ffffffff-ffff-ffff-ffff-ffffffffffff"])
         XCTAssertTrue(missing.staticTexts["Post unavailable"].waitForExistence(timeout: 12))

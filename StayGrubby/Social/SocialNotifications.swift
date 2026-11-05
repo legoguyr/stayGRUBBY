@@ -15,7 +15,7 @@ nonisolated struct SocialNotification: Codable, Identifiable, Hashable, Sendable
         case "accepted": "accepted your Sous Chef request"
         case "invited": "tagged you in a shared cook"
         case "joined": "joined your shared cook"
-        case "recreated": "ran back your cooking"
+        case "recreated": "was inspired by your cooking"
         case "like": "gave your cooking Hands 🙌"
         case "comment": "commented on your cooking"
         case "recipe_shared": "sent you a Recipe"

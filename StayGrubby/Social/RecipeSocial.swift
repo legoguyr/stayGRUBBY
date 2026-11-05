@@ -40,7 +40,7 @@ struct RecipeShareChoice: View {
                 Text("Including it shares this revision and its Recipe photo with current Sous Chefs. The Recipe becomes friends-visible. Later edits won’t rewrite this attachment. Personal Notes and private cooking photos are never included.").font(.footnote).foregroundStyle(.secondary)
             } else if loading { ProgressView("Checking Recipe availability") }
             else if failed { Text("Recipe unavailable. You can still publish without it."); Button("Retry Recipe") { retry += 1 } }
-            else { Text("No owned Recipe is associated with this cook. You can share the post without one, or link your Recipe to the Dish first.").font(.footnote) }
+            else { Text("No owned Recipe is associated with this cook. You can share the post without one, or link your Recipe to this cook first.").font(.footnote) }
         }.task(id: retry) {
             guard let request else { loading = false; return }; loading = true
             do {
@@ -69,7 +69,7 @@ struct RecipePostSharingEditor: View {
                         if post.recipeID != nil { NavigationLink("Read Shared Recipe") { SharedRecipeView(postID: post.id) } }
                         else { Text("Recipe access is currently off. You can still remove this saved attachment.") }
                         Button("Remove Recipe from Post", role: .destructive) { confirmingRemoval = true }.accessibilityIdentifier("post-unshare-recipe")
-                        Text("The post stays available. This removes its Recipe reader and future Run It Back attachment. Turn Recipe sharing off in Edit Recipe to revoke all friends’ Recipe access.").font(.footnote)
+                        Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke all friends’ Recipe access.").font(.footnote)
                     }
                 } else {
                     RecipeShareChoice(postID: post.id, selection: $selection)
@@ -117,7 +117,6 @@ struct SharedRecipeView: View {
                     Text("Shared revision \(value.revision). The current Recipe may have changed.").font(.footnote).foregroundStyle(.secondary)
                     Button("Save a Private Copy") { Task { await fork() } }.buttonStyle(SGButtonStyle()).disabled(busy).accessibilityIdentifier("shared-recipe-fork")
                     Text("A copy is yours to edit independently. The original stays with its creator. Private copies and completed cook snapshots remain yours if sharing later stops. Add your own photo to a copy.").font(.footnote).foregroundStyle(.secondary)
-                    if !value.isAuthor { NavigationLink("Run It Back") { SharedCookingEntryView(postID: postID) }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("shared-recipe-recreate") }
                     RecipeReadingBody(content: value.content, allowScaling: true)
                     if let source = value.content.source { Text("Source · \(source)") }
                     if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }

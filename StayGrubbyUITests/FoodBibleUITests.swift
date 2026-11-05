@@ -49,13 +49,15 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.staticTexts["recipe-save-error"].waitForExistence(timeout:8));XCTAssertTrue(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'recipe-ingredient-row-' AND label CONTAINS 'stock'")).firstMatch.exists)
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1);entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.staticTexts["stock"].exists)
-        reach(app.buttons["recipe-link"],app:app);app.buttons["recipe-link"].tap();XCTAssertTrue(app.buttons["Matzo Ball Soup"].waitForExistence(timeout:8));app.buttons["Matzo Ball Soup"].tap()
-        reach(app.buttons["recipe-detach"],app:app);app.buttons["recipe-detach"].tap();app.sheets.buttons["Remove Recipe from Dish"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1)
+        app.openRecipeAction("recipe-link");let dish=app.buttons["choose-dish-Matzo Ball Soup"];XCTAssertTrue(dish.waitForExistence(timeout:8));dish.tap()
+        let cook=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-cook-'")).firstMatch;XCTAssertTrue(cook.waitForExistence(timeout:8));cook.tap();XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout:8))
+        app.openRecipeAction("recipe-detach");app.buttons["Unlink"].tap();XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForNonExistence(timeout:8))
+        app.navigationBars.buttons["Food Bible"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1)
         app.tabBars.buttons["Grub Rank"].tap();XCTAssertTrue(app.staticTexts["Matzo Ball Soup"].waitForExistence(timeout:8))
     }
     @MainActor func testDraftBackgroundDiscardConfirmationAndOfflineOwnedReader() {
         let app=launch(["--test-light","--bible-review","--score-unlock-fixture","10","--recipe-offline-after-open"])
-        let search=app.textFields["bible-search"];search.tap();search.typeText("Lemon");entries(app).firstMatch.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap()
+        let search=app.textFields["bible-search"];search.tap();search.typeText("Lemon");entries(app).firstMatch.tap();app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8));app.openRecipeAction("recipe-edit")
         let title=app.textFields["recipe-edit-title"];title.tap();title.typeText(" unsaved draft");let edited = title.value as? String;XCTAssertTrue(edited?.contains("unsaved draft") == true);XCTAssertTrue(edited?.contains("Lemon Soup") == true);XCUIDevice.shared.press(.home);app.activate();XCTAssertTrue(title.waitForExistence(timeout:10));XCTAssertEqual(title.value as? String,edited)
         app.buttons["Cancel"].tap();XCTAssertTrue(app.buttons["Keep Editing"].waitForExistence(timeout:5));app.buttons["Keep Editing"].tap();XCTAssertEqual(title.value as? String,edited);shot(app,"Preserved draft after background")
         app.buttons["Cancel"].tap();app.buttons["Discard Changes"].tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertEqual(app.staticTexts["recipe-title"].label,"Lemon Soup");XCTAssertTrue(app.staticTexts["recipe-error"].waitForExistence(timeout:8));shot(app,"Owned recipe remains readable offline")
@@ -63,14 +65,14 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
     @MainActor func testLargeTypeReaderSectionsAndReorderMoveControls() {
         let app=launch(["--test-light","--test-large-type","--test-reduce-motion","--bible-review","--bible-long-review","--score-unlock-fixture","10"])
         let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");app.keyboards.buttons["search"].tap();let card=entries(app).firstMatch;reach(card,app:app);card.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));shot(app,"Large type recipe reader")
-        app.buttons["recipe-edit"].tap();let names=app.textFields.matching(identifier:"recipe-section-name");XCTAssertTrue(names.firstMatch.waitForExistence(timeout:8))
+        app.openRecipeAction("recipe-edit");let names=app.textFields.matching(identifier:"recipe-section-name");XCTAssertTrue(names.firstMatch.waitForExistence(timeout:8))
         let action=app.buttons.matching(NSPredicate(format:"label BEGINSWITH 'Ingredient actions'")).firstMatch;reach(action,app:app);action.tap();app.buttons["Move to…"].tap();app.buttons["Polenta"].tap();shot(app,"Section move with independent handle")
         let add=app.buttons["recipe-add-component"];reach(add,app:app);add.tap();let name=names.element(boundBy:names.count-1);reach(name,app:app);name.tap();name.typeText("Garnish");app.buttons["recipe-keyboard-done"].tap();shot(app,"Large type section editor")
         app.buttons["Cancel"].tap();app.buttons["Discard Changes"].tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertFalse(app.staticTexts["Garnish"].exists)
     }
     @MainActor func testReorderMoveAndDeleteRowsAndSections() {
         let app=launch(["--test-dark","--bible-review","--score-unlock-fixture","10"])
-        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");app.keyboards.buttons["search"].tap();entries(app).firstMatch.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap()
+        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");app.keyboards.buttons["search"].tap();entries(app).firstMatch.tap();app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8));app.openRecipeAction("recipe-edit")
         let names=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'recipe-ingredient-row-'"))
         let addIngredient=app.buttons.matching(identifier:"recipe-add-ingredient").firstMatch;reach(addIngredient,app:app);addIngredient.tap()
         let newName=app.textFields["recipe-ingredient-line"];XCTAssertTrue(newName.waitForExistence(timeout:5));newName.typeText("salt");app.buttons["recipe-keyboard-done"].tap()
@@ -123,7 +125,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         app.textFields["ingredient-detail-note"].tap();app.textFields["ingredient-detail-note"].typeText("plus more for garnish");shot(app,"Structured correction is secondary")
         app.buttons["ingredient-details-done"].tap();app.buttons["recipe-save"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.staticTexts["¼ cup"].exists);shot(app,"Reader natural quantity formatting")
-        app.buttons["recipe-edit"].tap();XCTAssertEqual(ingredientRows(app).count,10)
+        app.openRecipeAction("recipe-edit");XCTAssertEqual(ingredientRows(app).count,10)
         let restored=ingredientRows(app).matching(NSPredicate(format:"label CONTAINS 'garlic'")).firstMatch;reach(restored,app:app);XCTAssertTrue(restored.label.contains("3 clove"));XCTAssertTrue(restored.label.contains("plus more for garnish"))
     }
     @MainActor func testPartialNaturalLineSurvivesBackgroundAndCancel() {
@@ -140,7 +142,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
     }
     @MainActor func testNaturalIngredientSectionsAndLargeText() {
         let app=launch(["--test-light","--test-large-type","--test-reduce-motion","--bible-review","--score-unlock-fixture","10"])
-        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");app.keyboards.buttons["search"].tap();entries(app).firstMatch.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap()
+        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");app.keyboards.buttons["search"].tap();entries(app).firstMatch.tap();app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8));app.openRecipeAction("recipe-edit")
         let add=app.buttons.matching(identifier:"recipe-add-ingredient").element(boundBy:1);reach(add,app:app);add.tap();let line=app.textFields["recipe-ingredient-line"];XCTAssertTrue(line.waitForExistence(timeout:5));line.typeText("½ bunch parsley, finely chopped\n")
         line.typeText("a very long handful of fresh herbs from the garden for the final garnish");app.buttons["recipe-keyboard-done"].tap();shot(app,"Large type natural ingredients in Polenta section")
         let action=app.buttons["Ingredient actions, parsley"];reach(action,app:app);action.tap();app.buttons["Move to…"].tap();app.buttons["Short rib"].tap()
@@ -151,7 +153,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
     @MainActor func testPasteIngredientLinesStaysInSelectedSection() {
         let app=launch(["--test-dark","--bible-review","--score-unlock-fixture","10"])
         let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");entries(app).firstMatch.tap()
-        app.buttons["recipe-edit"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
+        app.openRecipeAction("recipe-edit");XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
         let paste=app.buttons.matching(identifier:"recipe-paste-ingredients").element(boundBy:1);reach(paste,app:app);paste.tap()
         let input=app.textViews["bulk-ingredient-text"];XCTAssertTrue(input.waitForExistence(timeout:5));input.tap();input.typeText("• 2 tbsp olive oil\n1. 3 cloves garlic minced\n\n- 28 oz crushed tomatoes\n2) salt to taste")
         shot(app,"Bulk ingredient entry dark");app.buttons["bulk-ingredient-format"].tap()
@@ -164,7 +166,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
 
     @MainActor func testBulkIngredientsLargeTextAndCancelProtection() {
         let app=launch(["--test-light","--test-large-type","--test-reduce-motion","--bible-review","--score-unlock-fixture","10"])
-        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");entries(app).firstMatch.tap();app.buttons["recipe-edit"].tap()
+        let search=app.textFields["bible-search"];search.tap();search.typeText("Braised");entries(app).firstMatch.tap();app.openRecipeAction("recipe-edit")
         XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
         let paste=app.buttons.matching(identifier:"recipe-paste-ingredients").firstMatch;reach(paste,app:app);paste.tap()
         let input=app.textViews["bulk-ingredient-text"];XCTAssertTrue(input.waitForExistence(timeout:5));input.tap();input.typeText("1/2 cup cream\nsalt to taste")

@@ -7,9 +7,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--stage3-review-sharing", "--stage3-send-failure", "--test-dark", "--review-profile-url", "https://staygrubby.com/r/60000000-0000-0000-0000-000000000001"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 15), app.debugDescription)
-        let send = app.buttons["recipe-send-friend"]
-        for _ in 0..<5 { if send.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(send.waitForExistence(timeout: 5)); send.tap()
+        app.openRecipeAction("recipe-send-friend")
         XCTAssertTrue(app.navigationBars["Send to Sous Chef"].waitForExistence(timeout: 5))
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("friend_cook")

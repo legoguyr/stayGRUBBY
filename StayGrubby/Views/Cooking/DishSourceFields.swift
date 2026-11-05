@@ -22,7 +22,7 @@ struct DishSourceFields: View {
         case .friendFamily:
             TextField("Person / source name (optional)", text: $source.friendName).sgField()
         case .other:
-            TextField("Source", text: $source.otherName).sgField()
+            ManualSourceFields(name: $source.otherName)
         }
     }
 }
@@ -54,5 +54,20 @@ struct DishSourceEditor: View {
             .navigationTitle("Source").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.accessibilityIdentifier("source-done") } }
         }.presentationDetents([.large]).presentationDragIndicator(.visible)
+    }
+}
+
+/// Shared manual attribution fields; storage/ownership remains domain-specific.
+struct ManualSourceFields: View {
+    var name: Binding<String>? = nil
+    var url: Binding<String>? = nil
+    var nameTitle = "Source name"
+    var identifierPrefix = "source"
+    var body: some View {
+        if let name { TextField(nameTitle, text: name).sgField().accessibilityIdentifier("\(identifierPrefix)-name") }
+        if let url {
+            TextField("Source URL", text: url).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                .sgField().accessibilityIdentifier("\(identifierPrefix)-url")
+        }
     }
 }

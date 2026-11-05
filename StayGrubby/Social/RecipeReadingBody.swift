@@ -5,15 +5,16 @@ struct RecipeReadingBody: View {
     let content: RecipeContent
     var allowScaling = false
     @State private var servings: Int?
-    private var displayed: RecipeContent { allowScaling ? RecipeScaling.content(content, servings: servings) : content }
+    @State private var units = RecipeUnitMode.original
+    private var displayed: RecipeContent { RecipeUnits.content(content, mode: units, servings: allowScaling ? servings : nil) }
     @Environment(\.dynamicTypeSize) private var size
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
-            if allowScaling, let base = RecipeScaling.canonicalServings(content.yield) {
-                Stepper(value: Binding(get: { servings ?? base }, set: { servings = $0 }), in: 1...100) { Text("Servings: \(servings ?? base)") }.accessibilityIdentifier("recipe-servings")
-                Text("Quantities adjust for this view only. Unmeasured, ambiguous and per-person amounts stay as written; check the method for original quantities.").font(.footnote).foregroundStyle(.secondary)
-                if servings != nil && servings != base { Button("Reset to \(base) servings") { servings = nil } }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SGTheme.Space.medium) { servingControl; unitControl }
+                VStack(alignment: .leading, spacing: SGTheme.Space.small) { servingControl; unitControl }
             }
+            if units != .original { Text("Converted amounts are approximate. The method stays as written.").font(.footnote).foregroundStyle(.secondary) }
             RecipeSummaryMetrics(content: displayed)
             if content.metadataOrigins?.values.contains("estimated") == true { Text("Servings and times may include estimates. Adjust for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
             if let allergens = content.allergens {
@@ -56,6 +57,17 @@ struct RecipeReadingBody: View {
                 }
             }
         }.textSelection(.enabled)
+    }
+    @ViewBuilder private var servingControl: some View {
+        if allowScaling, let base = RecipeScaling.canonicalServings(content.yield) {
+            Stepper(value: Binding(get: { servings ?? base }, set: { servings = $0 }), in: 1...100) { Text("Servings: \(servings ?? base)") }.accessibilityIdentifier("recipe-servings")
+            if let servings, servings != base { Button("Reset Servings") { self.servings = nil } }
+        }
+    }
+    private var unitControl: some View {
+        Menu { Picker("Units", selection: $units) { ForEach(RecipeUnitMode.allCases) { Text($0.rawValue).tag($0) } } }
+            label: { SGBrowseControlLabel(title: units == .original ? "Units" : units.rawValue, symbol: "arrow.left.arrow.right", active: units != .original) }
+            .accessibilityLabel("Units, \(units.rawValue)").accessibilityIdentifier("recipe-units")
     }
     @ViewBuilder private func sectionTitle(_ part: RecipeComponent) -> some View {
         if content.orderedComponents.count > 1 { Text(part.title?.isEmpty == false ? part.title! : "Untitled section").font(.title3.bold()).accessibilityAddTraits(.isHeader).padding(.top, 4) }

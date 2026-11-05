@@ -40,15 +40,16 @@ import Testing
         #expect(Dictionary(uniqueKeysWithValues: sorted.map { ($0.id, $0.globalRank) }) == Dictionary(uniqueKeysWithValues: entries.map { ($0.id, $0.globalRank) }))
         if order == .grubRank { #expect(sorted.map(\.id) == entries.map(\.id)) }
         if order == .alphabetical { #expect(sorted.map(\.id) == f.cooks.map(\.id)) }
-        if order == .score {
+        if order == .reverseAlphabetical { #expect(sorted.map(\.id) == f.cooks.reversed().map(\.id)) }
+        if order.needsScores {
             let visible = sorted.compactMap { $0.attempt.rankedItem.flatMap { scores.scoreText($0.score) }.flatMap(Double.init) }
-            #expect(visible == visible.sorted(by: >))
+            #expect(visible == (order == .score ? visible.sorted(by: >) : visible.sorted(by: <)))
         }
         if order == .recentlyCooked || order == .oldest { #expect(sorted.last?.attempt.cookedAt == nil) }
         if order == .recentlyCooked { #expect(sorted.first?.attempt.id == f.cooks.last?.id) }
         if order == .oldest { #expect(sorted.first?.attempt.id == f.cooks.first?.id) }
         #expect(try CookingGraphExport.snapshot(context: f.context) == before && !f.context.hasChanges)
-        let locked = CookingBrowseOrder.entries(entries, order: .score, scores: .locked)
+        let locked = CookingBrowseOrder.entries(entries, order: order.needsScores ? order : .score, scores: .locked)
         #expect(locked.map(\.id) == entries.map(\.id))
     }
     @Test func versionProjectionAndFilteringPrecedeSorting() throws {

@@ -38,7 +38,13 @@ Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Rep
 
 Ranking is frozen unless explicitly reopened: Liked/Fine/Didn't Like initial reaction, adaptive pairwise comparisons, Too Tough tie, Skip, Undo, Bradley–Terry evidence/order, uncertainty/refinement, repeated evidence, no manual order, score unlocking and current displayed-score calibration. Recipes/social must not alter any of these. See [RANKING_MODEL.md](RANKING_MODEL.md) and its current calibration reference; do not conflate displayed score with ranking order.
 
-Before inventing a control/system, inspect accepted equivalents: allergen checklist, photo infrastructure, RecipeDraft, exact rational parser, design tokens/components, authentication/session boundaries, RLS patterns and share/post renderers. Reuse when semantics match; justify parallel implementations.
+### Reuse Before Reinvention
+
+Before creating a selector, picker, sheet, popover, menu, confirmation, search/filter/sort control, metadata editor, identity/Dish/Recipe row, action family, card, toolbar or empty/loading/error state, inspect accepted StayGrubby equivalents first. Prefer **direct reuse → generalize an existing component → shared reusable component → unique implementation only for genuinely different behavior**. Apply the same language, spacing, navigation and interaction conventions across screens; location alone does not justify a different control. Avoid abstraction for its own sake. Accepted equivalents include allergen checklists, photo infrastructure, RecipeDraft/exact quantity math, design tokens, account/session boundaries, RLS and share/post renderers; justify parallel implementations.
+
+### Living Documentation
+
+Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release.
 
 ## Verification and owner acceptance
 

@@ -80,8 +80,8 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         for appearance in ["--test-light", "--test-dark"] {
             let app = launch([appearance,"--score-unlock-fixture","10","--compact-layout-review","--recipes-review","--social-review-feed","--product-review-grid"])
             app.buttons["ranking-sort"].press(forDuration: 0.2)
-            XCTAssertTrue(app.buttons["Alphabetical"].waitForExistence(timeout: 5)); app.buttons["Alphabetical"].tap()
-            XCTAssertTrue(app.buttons["ranking-sort"].label.contains("Alphabetical"))
+            XCTAssertTrue(app.buttons["A–Z"].waitForExistence(timeout: 5)); app.buttons["A–Z"].tap()
+            XCTAssertTrue(app.buttons["ranking-sort"].label.contains("A–Z"))
             app.buttons["ranking-filter-course"].tap(); XCTAssertTrue(app.buttons["filter-course-main"].waitForExistence(timeout: 5)); app.buttons["filter-course-main"].tap(); app.buttons["filters-done"].tap()
             app.buttons["clear-filters"].tap(); shot("Owner corrections browse controls \(appearance)", app)
             tab("My Kitchen", app)
@@ -107,7 +107,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             for _ in 0..<4 { if comments.isHittable && comments.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
             XCTAssertTrue(comments.isHittable); comments.press(forDuration: 0.2); XCTAssertTrue(app.navigationBars["Comments"].waitForExistence(timeout: 5)); app.buttons["Done"].tap()
             tab("Food Bible", app)
-            XCTAssertTrue(app.buttons["bible-filters"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
+            XCTAssertTrue(app.buttons["bible-filter-course"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
             let count = app.staticTexts["bible-count"]
             for _ in 0..<5 { if count.isHittable && count.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.scrollViews["bible-scroll"].swipeUp() }
             XCTAssertTrue(count.isHittable); XCTAssertLessThanOrEqual(count.frame.maxY, app.tabBars.firstMatch.frame.minY)

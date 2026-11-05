@@ -54,16 +54,13 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         app.revealCreation(); app.buttons["new-version"].tap()
         XCTAssertFalse(app.buttons["choose-dish-Lemon Chicken Together"].exists)
     }
-    @MainActor func testRecreateSafePrefillCanBeAbandonedThenRankedPrivately() throws {
+    @MainActor func testRunItBackEntryIsHiddenWithoutRemovingSharedCooking() throws {
         let app = launch(["--test-light"]); app.tabBars.buttons["Grub List"].tap()
-        let make = app.buttons["recreate-20000000-0000-0000-0000-000000000001"]
-        for _ in 0..<5 { if make.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(make.waitForExistence(timeout: 8)); make.tap(); XCTAssertTrue(app.buttons["shared-begin"].waitForExistence(timeout: 8)); app.buttons["shared-begin"].tap()
-        XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8)); XCTAssertEqual(app.textFields["dish-name"].value as? String, "Harissa Chicken with Roasted Peppers")
-        app.buttons["Cancel"].tap(); XCTAssertTrue(app.buttons["shared-begin"].waitForExistence(timeout: 8)); app.buttons["shared-begin"].tap()
-        XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8)); finish(app, title: "Harissa Chicken with Roasted Peppers")
-        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "automatic-share-success").firstMatch.exists)
-        app.buttons["ranking-result-close"].tap()
+        XCTAssertTrue(app.buttons["post-open-20000000-0000-0000-0000-000000000001"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["recreate-20000000-0000-0000-0000-000000000001"].exists)
+        XCTAssertFalse(app.buttons["Run It Back"].exists)
+        notifications(app)
+        XCTAssertTrue(app.buttons["notification-50000000-0000-0000-0000-000000000001"].waitForExistence(timeout: 8))
     }
     @MainActor func testNotificationReadAllAtLightAccessibilitySize() throws {
         let app = launch(["--test-light", "--test-large-type"]); notifications(app)

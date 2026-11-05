@@ -1,3 +1,15 @@
+# Next-release Stage 4 Food Bible / Recipe contract — November 4, 2026
+
+Reuse before reinvention follows AGENTS.md: accepted controls first, generalize/shared components when semantics match, unique UI only for different behavior. Living documentation records permanent decisions here; dated reviews record executions.
+
+Food Bible and Grub Rank share `SGBrowseSortMenu`, browse tokens and native `SGSelectionSheet` chrome. Grub Rank keeps global rank plus Highest/Lowest Score, Newest/Oldest Cooked and A–Z/Z–A; both score directions respect the existing unlock gate. Recipe sorting uses actual Added timestamps/name and retains Recently Updated. Food Bible filters Course/Cuisine/Contains/Avoid/manual Source/Recipe-photo, with active counts, reset and local search composition. No Custom Tags, inferred Dietary or allergen-free promises.
+
+Recipe linking generalizes `DishSelectionView` into Dish → `CookVersionSelectionView`, reusing `CookVersionIdentity` with Detail version rows. Food photos/title/version/date and current selection remain compact and accessible. Reader distinguishes a current linked cook, retained legacy family and immutable Recipe-used snapshot. Recipe-owned photo wins; exact cook fallback never guesses another version. Recipe photo actions leave cook photos alone.
+
+Cook Recipe stays primary. Compact native Recipe actions holds secondary management; sharing keeps accepted compact native behavior. Servings and As Written / US / Metric sit together, stacking naturally at accessibility sizes. Conversion is approximate, deterministic and read-only; method stays written. Shared manual Source fields/Cuisine picker avoid a second metadata interaction while preserving distinct ownership. Removed obvious helper paragraphs; privacy, provenance, ownership, approximation and destructive warnings stay.
+
+Run It Back entry points are hidden; Shared Cooking and underlying history remain. Upright portrait/light/dark, smaller iPhone, Dynamic Type, native keyboard/sheet behavior and 44-point action targets remain required. This contract supersedes historical Dish-only cookbook/no-conversion descriptions below; those retain dated evidence. [Stage 4 evidence](NEXT_RELEASE_STAGE_4_REVIEW.md).
+
 # Next-release Stage 3 social interaction contract — November 4, 2026
 
 Stage 2 is OWNER ACCEPTED. Reuse `SocialPersonLabel` for avatar/display name/handle/status and `SocialPersonSelectionRow` for actual recipient/tag selection; keep the compact inline Tag avatars specialized. Search, native Done, selected accessibility state, 44-point controls and existing avatar transport remain canonical. Discovery is symmetric Sous Chefs/Requests, with no invented follower counts.

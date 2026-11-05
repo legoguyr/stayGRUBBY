@@ -112,3 +112,18 @@ extension XCUIApplication {
         if done.exists { done.press(forDuration: 0.2); XCTAssertTrue(done.waitForNonExistence(timeout: 5)) }
     }
 }
+
+// Canonical Recipe actions are native toolbar menu entries, not standalone page buttons.
+extension XCUIApplication {
+    @MainActor func revealRecipeActions(file: StaticString = #filePath, line: UInt = #line) {
+        let menu = buttons["recipe-actions"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 8), "Recipe actions unavailable", file: file, line: line)
+        menu.tap()
+    }
+    @MainActor func openRecipeAction(_ id: String, file: StaticString = #filePath, line: UInt = #line) {
+        let action = buttons[id]
+        if !action.isHittable { revealRecipeActions(file: file, line: line) }
+        XCTAssertTrue(action.waitForExistence(timeout: 5), "Recipe action unavailable: \(id)", file: file, line: line)
+        action.press(forDuration: 0.2)
+    }
+}

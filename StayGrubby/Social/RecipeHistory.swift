@@ -99,23 +99,21 @@ struct RecipeDishLinker: View {
     @Query(sort: \Dish.name) private var dishes: [Dish]
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
-    @State private var query = ""
     @State private var busy = false
     @State private var failed = false
     var body: some View {
-        NavigationStack {
-            List {
-                Text("Link an existing Dish without changing either record or its cooking history. A Dish can have one linked Recipe.").font(.subheadline)
-                ForEach(dishes.filter { !$0.attempts.isEmpty && CookbookSearch.matches($0.name, query: query) }) { dish in
-                    Button(dish.name) { Task { await attach(dish) } }.disabled(busy).accessibilityIdentifier("recipe-link-dish-\(dish.id)")
-                }
-                if failed { Text("Couldn’t link. Check cooking sync; if the Dish already has a Recipe, remove that link first.") }
-            }.searchable(text: $query).navigationTitle("Link to Dish")
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        }
+        DishSelectionView(dishes: dishes.filter { !$0.attempts.isEmpty }, onSelect: { _ in }, onCancel: { dismiss() },
+                          selectedCookID: recipe.linkedAttemptID, disabled: busy, onSelectCook: { cook in Task { await attach(cook) } })
+            .safeAreaInset(edge: .bottom) {
+                if failed { Text("Couldn’t link. Refresh the Recipe and check cooking sync. A cook linked to another Recipe must be unlinked first.").font(.footnote).padding().background(SGTheme.ColorToken.background).accessibilityIdentifier("recipe-link-error") }
+            }.interactiveDismissDisabled(busy)
     }
-    private func attach(_ dish: Dish) async {
-        guard let request else { return }; busy = true; defer { busy = false }
-        do { _ = try await request("recipes", "attach", .init(dishID: dish.id, recipeID: recipe.id)); try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); linked(); dismiss() } catch is CancellationError {} catch { failed = true }
+    private func attach(_ cook: CookingAttempt) async {
+        guard let request else { failed = true; return }; busy = true; defer { busy = false }
+        do {
+            var payload = SocialPayload(); payload.recipeID = recipe.id; payload.attemptID = cook.id; payload.previousAttemptID = recipe.linkedAttemptID
+            _ = try await request("recipes", "link_cook", payload); try Task.checkCancellation()
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil); linked(); dismiss()
+        } catch is CancellationError {} catch { failed = true }
     }
 }

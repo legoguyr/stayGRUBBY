@@ -29,32 +29,48 @@ nonisolated struct RecipePhotoDescriptor: Codable, Sendable {
         return bytes
     }
 }
+@MainActor enum RecipePhotoPolicy {
+    static func fallbackCook(ownedPhoto: UUID?, cook: CookingAttempt?, dish: Dish?, exactLink: Bool) -> CookingAttempt? {
+        guard ownedPhoto == nil else { return nil }
+        return cook ?? (exactLink ? nil : dish?.cookbookRepresentativeCook)
+    }
+}
 /// Recipe bytes take precedence; linked cook photography remains a read-only fallback.
 struct RecipePhoto: View {
     let id: UUID?
     var dish: Dish? = nil
     var name: String
+    var cook: CookingAttempt? = nil
+    var exactCookLink = false
     var preview: Data? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @State private var loaded: Data?
     @State private var loadedID: UUID?
+    @State private var unavailable = false
+    private var fallbackCook: CookingAttempt? { RecipePhotoPolicy.fallbackCook(ownedPhoto: id, cook: cook, dish: dish, exactLink: exactCookLink) }
     var body: some View {
         Group {
             if let image = (preview ?? (loadedID == id ? loaded : nil)).flatMap(UIImage.init(data:)) { Image(uiImage: image).resizable().scaledToFill() }
-            else { CookbookPhoto(dish: dish, name: name) }
+            else if id != nil {
+                SGFoodPlaceholder().overlay { if !unavailable { ProgressView() } }
+            } else { CookbookPhoto(name: name, cook: fallbackCook) }
         }.clipped().accessibilityElement(children: .ignore).accessibilityLabel("Photo for \(name)")
-            .accessibilityValue(preview != nil || (loadedID == id && loaded != nil) ? "Recipe photo" : dish?.cookbookRepresentativeCook?.primaryImage != nil ? "Linked Dish photo" : "StayGrubby placeholder")
+            .accessibilityValue(preview != nil || (loadedID == id && loaded != nil) ? "Recipe photo" : id != nil ? "Recipe photo unavailable" : fallbackCook?.primaryImage != nil ? (exactCookLink || cook != nil ? "Linked cook photo" : "Dish family photo") : "StayGrubby placeholder")
             .task(id: id) {
-                loaded = nil; loadedID = nil
-                guard let id, let request, let media else { return }
-                do { let bytes = try await RecipePhotoService.download(id, request: request, media: media); try Task.checkCancellation(); loaded = bytes; loadedID = id } catch { }
+                loaded = nil; loadedID = nil; unavailable = false
+                guard let id else { return }
+                guard let request, let media else { unavailable = true; return }
+                do { let bytes = try await RecipePhotoService.download(id, request: request, media: media); try Task.checkCancellation(); loaded = bytes; loadedID = id }
+                catch is CancellationError {} catch { unavailable = true }
             }
     }
 }
 struct RecipePhotoEditor: View {
     let id: UUID?
     var dish: Dish?
+    var cook: CookingAttempt? = nil
+    var exactCookLink = false
     let name: String
     @Binding var bytes: Data?
     @Binding var removed: Bool
@@ -64,7 +80,7 @@ struct RecipePhotoEditor: View {
     @State private var failed = false
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            RecipePhoto(id: removed ? nil : id, dish: dish, name: name, preview: bytes).frame(height: 200).clipShape(RoundedRectangle(cornerRadius: 16))
+            RecipePhoto(id: removed ? nil : id, dish: dish, name: name, cook: cook, exactCookLink: exactCookLink, preview: bytes).frame(height: 200).clipShape(RoundedRectangle(cornerRadius: 16))
             #if DEBUG
             if DebugReviewConfiguration.current.storeID != nil && ProcessInfo.processInfo.arguments.contains("--recipe-photo-review") {
                 Button("Use Test Recipe Photo") { bytes = SocialReview.avatarFixture; assetID = UUID(); removed = false }.accessibilityIdentifier("recipe-photo-fixture")
@@ -74,7 +90,7 @@ struct RecipePhotoEditor: View {
             if bytes != nil || (!removed && id != nil) { Button("Remove Recipe Photo", role: .destructive) { bytes = nil; removed = true; selection = nil }.accessibilityIdentifier("recipe-photo-remove") }
             if loading { ProgressView("Preparing photo") }
             if failed { Text("Couldn’t prepare this photo. Try another image.").font(.footnote) }
-            Text("Optional. A linked Dish photo is used when this Recipe has no photo.").font(.footnote).foregroundStyle(.secondary)
+            Text("Recipe photos stay separate from your cook’s photos.").font(.footnote).foregroundStyle(.secondary)
         }.task(id: selection) {
             guard let selection else { return }
             loading = true; failed = false; defer { loading = false }

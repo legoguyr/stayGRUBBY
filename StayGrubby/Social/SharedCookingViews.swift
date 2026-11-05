@@ -206,6 +206,7 @@ struct SharedCookingEntryView: View {
 
 struct CookingProvenanceView: View {
     let itemID: UUID
+    var includesRecipe = true
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @State private var page: CookingProvenancePage?
@@ -216,13 +217,13 @@ struct CookingProvenanceView: View {
             VStack(alignment: .leading, spacing: 8) {
                 if let page {
                     ForEach(page.origins) { origin in
-                        Text(origin.kind == "recreated" ? origin.creator.map { "Ran It Back from \($0.displayName)" } ?? "Run It Back · original activity unavailable" : origin.creator.map { "Cooked with \($0.displayName)" } ?? "Cooked Together · original activity unavailable")
+                        Text(origin.kind == "recreated" ? origin.creator.map { "Inspired by \($0.displayName)" } ?? "Original cooking activity unavailable" : origin.creator.map { "Cooked with \($0.displayName)" } ?? "Cooked Together · original activity unavailable")
                             .font(.subheadline)
                     }
                     ForEach(page.events) { event in NavigationLink("Cooked Together · participants") { SharedCookingEntryView(eventID: event.id) } }
                 }
                 if failed { Button("Retry cooking provenance") { Task { await load() } }.font(.footnote) }
-                RecipeCookingProvenance(itemID: itemID)
+                if includesRecipe { RecipeCookingProvenance(itemID: itemID) }
                 SharedCookingPending(itemID: itemID)
             }.task(id: itemID) { await load() }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }

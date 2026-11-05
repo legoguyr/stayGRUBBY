@@ -43,7 +43,7 @@ struct SGDestinationLabel: View {
             Image(systemName: symbol).font(.title3).foregroundStyle(SGTheme.ColorToken.accent).frame(width: 28).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
-                Text(subtitle).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                if !subtitle.isEmpty { Text(subtitle).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
             }
             Spacer(minLength: 0)
             if showsChevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary).accessibilityHidden(true) }

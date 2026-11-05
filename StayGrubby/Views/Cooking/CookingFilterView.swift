@@ -19,9 +19,7 @@ struct CookingFilterView: View {
     let group: CookingFilterGroup
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: SGTheme.Space.xSmall) {
+        SGSelectionSheet(title: group.title) {
                     switch group {
                     case .cuisine: EmptyView() // Presented by the shared searchable Cuisine picker.
                     case .course:
@@ -52,16 +50,6 @@ struct CookingFilterView: View {
                         Text(CookingProductOptions.allergenSafetyText).accessibilityIdentifier("allergen-safety")
                             .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     }
-                }.padding(SGTheme.Space.medium)
-            }
-            .background(SGTheme.ColorToken.background)
-            .navigationTitle(group.title).navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.accessibilityIdentifier("filters-done")
-                }
-            }
         }
-        .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
     }
 }

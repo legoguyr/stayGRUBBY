@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Derived from existing cooked Dishes and authorized Recipes; no separate library membership.
+/// Independent authorized Recipes; optional cooking links never define Recipe identity.
 struct FoodBibleView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
@@ -9,16 +9,16 @@ struct FoodBibleView: View {
     @Query private var dishes: [Dish]
     @State private var entries: [CookbookEntry] = []
     @State private var query = ""
-    @State private var course = ""
-    @State private var cuisine = ""
-    @State private var alphabetical = false
+    @State private var filters = RecipeFilters()
+    @State private var sort = RecipeBrowseSort.updated
+    @State private var filterGroup: RecipeFilterGroup?
     @State private var loading = true
     @State private var failed = false
     @State private var generation = UUID()
     @State private var choosing = false
     @State private var selected: CookbookRoute?
     @FocusState private var searching: Bool
-    private var visible: [CookbookEntry] { CookbookSearch.entries(entries, query: query, course: course, cuisine: cuisine, alphabetical: alphabetical) }
+    private var visible: [CookbookEntry] { filters.entries(entries, query: query, sort: sort) }
     private var dishLookup: [UUID: Dish] { Dictionary(uniqueKeysWithValues: dishes.map { ($0.id,$0) }) }
     var body: some View {
         let lookup = dishLookup
@@ -35,7 +35,7 @@ struct FoodBibleView: View {
                         Text(entries.isEmpty ? "No recipes yet" : "No matching recipes").font(SGTheme.TypeRole.hero)
                         Text(entries.isEmpty ? "Add a recipe to your Food Bible." : "Try another search or clear your filters.").foregroundStyle(.secondary)
                         Button(entries.isEmpty ? "Add Recipe" : "Clear search & filters") {
-                            if entries.isEmpty { choosing = true } else { query = ""; course = ""; cuisine = "" }
+                            if entries.isEmpty { choosing = true } else { query = ""; filters = RecipeFilters() }
                         }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("bible-empty-add")
                     }.padding(.vertical, 32)
                 }
@@ -56,6 +56,7 @@ struct FoodBibleView: View {
             .task { await load() }.refreshable { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
+            .sheet(item: $filterGroup) { RecipeFilterView(filters: $filters, group: $0, entries: entries) }
             .sheet(isPresented: $choosing) { RecipeCreationChoice(entries: entries) }
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
@@ -66,14 +67,21 @@ struct FoodBibleView: View {
                 TextField("Dish, ingredient, cuisine…", text: $query).accessibilityLabel("Search your cookbook").accessibilityIdentifier("bible-search").focused($searching).submitLabel(.search).onSubmit { searching = false }
                 if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("bible-search-clear") }
             }.sgField()
-            HStack {
-                Menu {
-                    Picker("Course", selection: $course) { Text("All courses").tag(""); ForEach(DishCategory.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) } }
-                    Picker("Cuisine", selection: $cuisine) { Text("All cuisines").tag(""); ForEach(Array(Set(entries.compactMap(\.cuisine))).sorted(), id: \.self) { Text($0).tag($0) } }
-                } label: { SGBrowseControlLabel(title: "Filters", symbol: "line.3.horizontal.decrease", active: !course.isEmpty || !cuisine.isEmpty) }.accessibilityIdentifier("bible-filters")
-                Spacer()
-                Menu { Picker("Sort recipes", selection: $alphabetical) { Text("Recently updated").tag(false); Text("A–Z").tag(true) } } label: { SGBrowseControlLabel(title: alphabetical ? "A–Z" : "Sort", symbol: "arrow.up.arrow.down", active: alphabetical) }.accessibilityIdentifier("bible-sort")
-            }.font(.subheadline).frame(minHeight: 44)
+            HStack(spacing: SGTheme.Space.xSmall) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: SGTheme.Space.xSmall) {
+                        ForEach(RecipeFilterGroup.allCases) { group in
+                            let count = filters.count(group)
+                            Button { searching = false; filterGroup = group } label: {
+                                SGBrowseControlLabel(title: group.rawValue + (count > 0 ? " \(count)" : ""), symbol: "chevron.down", active: count > 0)
+                            }.buttonStyle(.plain).accessibilityLabel("\(group.rawValue), \(count) active selections").accessibilityIdentifier("bible-filter-\(group.rawValue.lowercased())")
+                        }
+                    }
+                }.accessibilityIdentifier("bible-filters")
+                SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue }, active: sort != .updated, identifier: "bible-sort")
+                if filters.isActive { SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = RecipeFilters() }.accessibilityIdentifier("bible-clear-filters") }
+            }
+
         }.padding(.horizontal, 16).padding(.top, 8).background(SGTheme.ColorToken.background)
     }
     private func load() async {
@@ -90,8 +98,9 @@ struct CookbookPhoto: View {
     var dish: Dish?
     var name: String
     var compact = false
+    var cook: CookingAttempt? = nil
     var body: some View {
-        if let media = dish?.cookbookRepresentativeCook?.primaryImage {
+        if let media = (cook ?? dish?.cookbookRepresentativeCook)?.primaryImage {
             DishPhoto(media: media, thumbnail: true, name: name)
         } else {
             SGFoodPlaceholder().accessibilityLabel("No photo for \(name)")
@@ -103,7 +112,7 @@ private struct CookbookCard: View {
     var dish: Dish?
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
+            RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
             Text(entry.recipeTitle).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
             Text([entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
@@ -115,59 +124,10 @@ struct CookedDishPicker: View {
     var onComplete: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Dish.name) private var dishes: [Dish]
-    @State private var query = ""
-    @State private var selected: Dish?
-    private var eligible: [Dish] { dishes.filter { !$0.attempts.isEmpty && CookbookSearch.matches([$0.name,$0.cuisineLabel ?? "",$0.defaultCategory.label].joined(separator: " "), query: query) } }
+    @State private var selected: CookingAttempt?
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                Text("A recipe for something you’ve made.").font(.subheadline).foregroundStyle(.secondary).padding(.vertical, 12)
-                ForEach(eligible) { dish in
-                    Button { selected = dish } label: {
-                        HStack(spacing: 14) {
-                            CookbookPhoto(dish: dish, name: dish.name, compact: true).frame(width: 70, height: 78).clipShape(RoundedRectangle(cornerRadius: 10)).accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(dish.name).font(.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
-                                Text([dish.cuisineLabel, dish.defaultCategory.label].compactMap { $0 }.joined(separator: " · ")).font(.subheadline).foregroundStyle(.secondary)
-                                Text(entries.contains { $0.dishID == dish.id } ? "View existing recipe" : "Add recipe").font(.caption).foregroundStyle(SGTheme.ColorToken.accent)
-                            }.frame(maxWidth: .infinity, alignment: .leading)
-                            Image(systemName: "chevron.right").font(.caption).foregroundStyle(.secondary)
-                        }.padding(.vertical, 12).contentShape(Rectangle())
-                    }.buttonStyle(.plain).accessibilityIdentifier("choose-dish-\(dish.id)").accessibilityLabel(dish.name)
-                    Divider()
-                }
-                if eligible.isEmpty { Text(query.isEmpty ? "Cook and rank a dish first, then keep its recipe here." : "No dishes match. Try a title, cuisine or course.").padding(.vertical, 24) }
-            }.padding(.horizontal, 16)
-        }.background(SGTheme.ColorToken.background).navigationTitle("Choose a Dish").navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .top) {
-                HStack { Image(systemName: "magnifyingglass"); TextField("Search dishes, cuisine, course", text: $query).accessibilityIdentifier("choose-dish-search"); if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44) } }.padding(14).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12)).padding(16).background(SGTheme.ColorToken.background)
-            }
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
-            .sheet(item: $selected) { dish in DishRecipeComposer(dish: dish, mode: mode) { if let onComplete { onComplete() } else { dismiss() } } }
-    }
-}
-/// Resolve the authoritative current link once before creating; an existing Recipe opens directly.
-private struct DishRecipeComposer: View {
-    let dish: Dish
-    var mode: RecipeCreationMode = .manual
-    var done: () -> Void
-    @Environment(\.socialRequest) private var request
-    @State private var loaded = false
-    @State private var recipe: Recipe?
-    @State private var failed = false
-    var body: some View {
-        Group {
-            if loaded {
-                if let recipe { NavigationStack { RecipeDetailView(id: recipe.id, dishID: dish.id) } }
-                else if mode == .imported { RecipeImportView(dish: dish, done: done) }
-                else { RecipeEditor(dishID: dish.id, title: dish.name, course: dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { _ in done() } }
-            } else { VStack(spacing: 20) { if failed { Text("Couldn’t check this dish’s recipe."); Button("Retry") { Task { await load() } } } else { ProgressView("Opening recipe") } }.padding() }
-        }.task { await load() }
-    }
-    private func load() async {
-        guard let request else { failed = true; return }
-        do { let response = try JSONDecoder().decode(DishRecipeResponse.self, from: await request("recipes", "dish", .init(dishID: dish.id))); try Task.checkCancellation(); recipe = response.recipe; loaded = true }
-        catch is CancellationError {} catch { failed = true }
+        DishSelectionView(dishes: dishes.filter { !$0.attempts.isEmpty }, onSelect: { _ in }, onCancel: { dismiss() }, onSelectCook: { selected = $0 })
+            .sheet(item: $selected) { cook in NavigationStack { if let dish = cook.dish { DishRecipeSection(dish: dish, attempt: cook).padding() } } }
     }
 }
 struct DishRecipeDestination: View {
@@ -182,8 +142,16 @@ struct DishRecipeDestination: View {
     }
 }
 
+private struct CookRecipeResponse: Decodable {
+    var recipe: Recipe?
+    var legacyFamilyLink: Bool?
+    var linkedRecipeID: UUID?
+    var exactCookLink: Bool?
+    var usedRecipe: RecipeCookSnapshot?
+}
 struct DishRecipeSection: View {
     let dish: Dish
+    var attempt: CookingAttempt? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @State private var recipe: Recipe?
@@ -191,39 +159,66 @@ struct DishRecipeSection: View {
     @State private var failed = false
     @State private var creating = false
     @State private var selecting = false
+    @State private var legacy = false
+    @State private var linkedID: UUID?
+    @State private var exactLink = false
+    @State private var usedRecipe: RecipeCookSnapshot?
     @State private var generation = UUID()
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SGSectionHeader(title: "Recipe")
+            if let usedRecipe {
+                SGSectionHeader(title: "Recipe used")
+                NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: { Label(usedRecipe.snapshot.title, systemImage: "clock") }.accessibilityIdentifier("cook-recipe-snapshot")
+                Text("Recipe revision \(usedRecipe.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
+            }
+            SGSectionHeader(title: legacy ? "Dish family Recipe" : exactLink ? "Linked Recipe" : "Current Recipe")
             if let recipe {
-                NavigationLink { RecipeDetailView(id: recipe.id, dishID: dish.id) } label: { Label("View Recipe", systemImage: "book") }.accessibilityIdentifier("dish-view-recipe")
-                Text(recipe.content.title).font(.subheadline).foregroundStyle(.secondary)
+                NavigationLink { RecipeDetailView(id: recipe.id) } label: { Label(recipe.content.title, systemImage: "book") }.accessibilityIdentifier("dish-view-recipe")
+                if legacy { Text("Legacy link: no specific version recorded.").font(.footnote).foregroundStyle(.secondary) }
             } else if loaded {
-                Button("Add Recipe", systemImage: "plus") { creating = true }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("dish-add-recipe")
-                Button("Use a Saved Recipe") { selecting = true }.frame(minHeight: 44)
-                Text("Saving a recipe adds this dish to Food Bible automatically.").font(.footnote).foregroundStyle(.secondary)
+                if linkedID != nil && (exactLink || legacy) {
+                    Text("Linked Recipe unavailable").foregroundStyle(.secondary)
+                    Button("Unlink Recipe") { Task { await unlink() } }
+                } else if attempt != nil {
+                    if usedRecipe == nil { Button("Add Recipe", systemImage: "plus") { creating = true }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("dish-add-recipe") }
+                    Button("Link an Existing Recipe") { selecting = true }.frame(minHeight: 44).accessibilityIdentifier("dish-link-recipe")
+                } else { Text("Choose a version to link a Recipe.").foregroundStyle(.secondary) }
             }
             if failed { Button("Retry Recipe") { Task { await load() } }; Text("Recipe access needs a connection and completed cooking sync.").font(.footnote) }
-        }.task(id: dish.id) { await load() }
+        }.task(id: attempt?.id ?? dish.id) { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
-            .onChange(of: phase) { _, next in generation = UUID(); recipe = nil; loaded = false; if next == .active { Task { await load() } } }
+            .onChange(of: phase) { _, next in generation = UUID(); recipe = nil; usedRecipe = nil; linkedID = nil; exactLink = false; legacy = false; loaded = false; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
-            .sheet(isPresented: $creating, onDismiss: { Task { await load() } }) { RecipeEditor(dishID: dish.id, title: dish.name, course: dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { recipe = $0; loaded = true } }
-            .sheet(isPresented: $selecting, onDismiss: { Task { await load() } }) { NavigationStack { RecipeLibraryView(dishID: dish.id) } }
+            .sheet(isPresented: $creating, onDismiss: { Task { await load() } }) {
+                RecipeEditor(attemptID: attempt?.id, title: dish.name, course: attempt?.categoryCode ?? dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { recipe = $0; loaded = true }
+            }
+            .sheet(isPresented: $selecting, onDismiss: { Task { await load() } }) { NavigationStack { RecipeLibraryView(attemptID: attempt?.id) } }
     }
     private func load() async {
-        guard let request else { return }; let token = UUID(); generation = token
+        guard let request else { failed = true; return }; let token = UUID(); generation = token
         do {
-            let page = try JSONDecoder().decode(DishRecipeResponse.self, from: await request("recipes", "dish", .init(dishID: dish.id)))
-            guard !Task.isCancelled, token == generation else { return }; recipe = page.recipe; loaded = true; failed = false
-        } catch is CancellationError {} catch { if token == generation { recipe = nil; loaded = false; failed = true } }
+            var payload = SocialPayload(); payload.dishID = dish.id; payload.attemptID = attempt?.id
+            let data = try await request("recipes", attempt == nil ? "dish" : "cook", payload)
+            let page = try JSONDecoder().decode(CookRecipeResponse.self, from: data)
+            guard !Task.isCancelled, generation == token else { return }
+            recipe = page.recipe; usedRecipe = page.usedRecipe; exactLink = page.exactCookLink ?? false; linkedID = page.linkedRecipeID; legacy = page.legacyFamilyLink ?? (attempt == nil); loaded = true; failed = false
+        } catch is CancellationError {} catch { if generation == token { recipe = nil; usedRecipe = nil; linkedID = nil; exactLink = false; legacy = false; loaded = false; failed = true } }
+    }
+    private func unlink() async {
+        guard let request, let linkedID else { return }
+        do {
+            var payload = SocialPayload(); payload.recipeID = linkedID
+            if legacy { payload.dishID = dish.id; _ = try await request("recipes", "detach", payload) }
+            else { payload.previousAttemptID = attempt?.id; _ = try await request("recipes", "unlink_cook", payload) }
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil); await load()
+        } catch { failed = true }
     }
 }
 
 // Presentation-only selection, reusing existing media without copying files or relationships.
 extension Dish {
     var cookbookRepresentativeCook: CookingAttempt? {
-        let ordered = attempts.sorted { $0.createdAt > $1.createdAt }
+        let ordered = attempts.sorted { $0.createdAt != $1.createdAt ? $0.createdAt > $1.createdAt : $0.sequenceNumber != $1.sequenceNumber ? $0.sequenceNumber > $1.sequenceNumber : $0.id.uuidString < $1.id.uuidString }
         return ordered.first { $0.primaryImage != nil } ?? ordered.first
     }
 }

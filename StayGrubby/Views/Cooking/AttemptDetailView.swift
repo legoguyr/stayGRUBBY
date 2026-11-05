@@ -33,8 +33,8 @@ struct AttemptDetailView: View {
                         }
                     }
                 }
-                if let dish = attempt.dish { DishRecipeSection(dish: dish) }
-                CookingProvenanceView(itemID: attempt.rankedItemID)
+                if let dish = attempt.dish { DishRecipeSection(dish: dish, attempt: attempt) }
+                CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
                 SocialShareAction(attempt: attempt)
                 if let source = attempt.dish?.source {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
@@ -204,13 +204,7 @@ struct AttemptDetailView: View {
         .accessibilityIdentifier("version-row-\(cook.id)")
         .accessibilityHint(current ? "Current version" : "Opens this version")
     }
-    private func versionIdentity(_ cook: CookingAttempt) -> some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-            Text(cook.versionLabel).font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
-            Text(cook.cookedAt?.formatted(date: .abbreviated, time: .omitted) ?? "Date unknown")
-                .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-        }.frame(maxWidth: .infinity, alignment: .leading)
-    }
+    private func versionIdentity(_ cook: CookingAttempt) -> some View { CookVersionIdentity(cook: cook) }
     private var actionButtons: some View {
         Group {
             if textSize.isAccessibilitySize {

@@ -1,6 +1,6 @@
 # StayGrubby Master Roadmap
 
-**Canonical roadmap — reconciled November 3, 2026.** This is the existing Master Roadmap, consolidated rather than duplicated as PRODUCT_ROADMAP.md. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes actual current implementation. Planned items are not implementation or deployment authorization.
+**Canonical roadmap — reconciled November 4, 2026.** This is the existing Master Roadmap, consolidated rather than duplicated as PRODUCT_ROADMAP.md. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes actual current implementation. Planned items are not implementation or deployment authorization.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE**
 
@@ -15,7 +15,7 @@ Personal cooking/comparison ranking stays central. Saving, cooking, ranking and 
 | Accounts/cloud/privacy | Required Apple/Supabase permanent account; isolated offline working cooking store, structured/photo sync, restore, tombstones and coordinated account deletion implemented |
 | Release foundation | Static public website/policy foundation and prior App Privacy entries exist; historical 1.0 (1) Internal Only TestFlight upload succeeded; current release gates are separate below |
 | Post-TestFlight Cuisine | Optional primary Dish Cuisine/custom values, selection/search/filter and hosted migration complete |
-| Social foundation | Optional identity/avatar, mutual Sous Chefs/requests, explicit friends-only chronological Grub List, Hands/comments, blocks/reports, sharing preferences, Shared Cooking/Run It Back and in-app Order Up! implemented |
+| Social foundation | Optional identity/avatar, mutual Sous Chefs/requests, explicit friends-only chronological Grub List, Hands/comments, blocks/reports, sharing preferences, Shared Cooking and in-app Order Up! implemented; Run It Back capability retained but its entry points hidden in Stage 4 |
 | V1 product correction | Four tabs, cooking/Recipe separation, My Kitchen/Settings hierarchy and accepted score calibration implemented; ranking remains independent of social |
 | Food Bible foundation | Derived cooked-Dish cookbook, structured Recipe content, components, stable Recipe IDs, revision archive/link/provenance infrastructure and explicit manual Save implemented |
 | Food Bible UX 2.0 | Earlier cookbook/editor/reader/search foundation implemented; Architecture V2 now supplies independent Recipe membership |
@@ -37,11 +37,24 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — Next Release: Stage 3 social + sharing
+## CURRENT — Next Release: Stage 4 Food Bible + Recipe Experience
 
-Stage 1 foundations and Stage 2 owner corrections (`ef0a60b`) are OWNER ACCEPTED. Stage 3 implements compact private-notes/Details corrections, integrated Comments, consistent Sous Chef discovery/person selection, directed Send to Sous Chef via existing Order Up!, restrained notification rows, useful native image+caption exports and a real hosted Recipe-link repair. Automated acceptance evidence and physical limitations are recorded in [Stage 3 review](NEXT_RELEASE_STAGE_3_REVIEW.md). Only symmetric Sous Chefs exist; no follower counts/model is introduced.
+Stage 3 automated acceptance passed at `d733eff`; device-specific sharing/two-account acceptance remains pending and does not block Stage 4 absent a demonstrated regression. Stage 4 implements Recipe browsing/filter/sort, explicit specific-cook association/photo fallback, deterministic reader units and Recipe actions/source language; Run It Back entry points are hidden with data/capability preserved. The additive association migration is deployed; automated/physical evidence is recorded in the [Stage 4 review](NEXT_RELEASE_STAGE_4_REVIEW.md). [Stage 4 scope](NEXT_RELEASE_SPEC.md) governs this cycle; Stage 5 must not start automatically.
 
-Mandatory **Stage 4**: Recipe association must support a specific Dish/cook/version/ranked entry through the canonical Dish/version selector; Food Bible filtering must use the accepted Grub Rank filter language with Recipe-relevant metadata. Recipe Detail action-menu/full UI cleanup remains there. Later photography retains gallery management/reordering and crop/reposition. APNs and formal compliance/distribution remain separate. Do not begin Stage 4 automatically.
+## Required first App Store release milestone
+
+**Stage 4 Food Bible + Recipes → Stage 5 Photography → Stage 6 whole-app polish/release acceptance → controlled/public beta as appropriate → Pre-App-Store Privacy + Trust & Safety + Compliance Gate → Release Candidate → APP STORE V1 → continued roadmap development.** Privacy/moderation/security dependencies may move earlier. No submission/distribution is authorized by a development checkpoint.
+
+App Store V1 is a concrete required milestone, not a horizon optional ideas may repeatedly postpone. When proposing work classify it as **required before V1**, **desirable but deferrable**, or **post-V1**. Require before V1 only what product coherence, safety/privacy/platform compliance, data integrity and a credible first public version need; strongly prefer deferring optional expansion. Adjust dependencies dynamically without casually moving release farther away.
+
+## Confirmed future directions — not Stage 4 implementation
+
+- **Privacy + Ownership:** account maximum audience Public / Sous Chefs Only / Private, with per-item Private / Sous Chefs / Public bounded by that maximum. New cooks/Recipes private by default; Private Notes always owner-only. Full hybrid privacy, privacy-aware sharing and revocation require their own deliberate phase; minimum release-critical safety may precede V1.
+- **My Recipes / Saved Recipes:** eventually distinguish owned/imported Recipes from bookmarks to another creator's original. Bookmarks preserve ownership/attribution, access revocation/deletion/unavailability and removal. Save as New is an independent owned copy with provenance, not bookmarking; cooking is separate from ownership. Naming remains open; “Recipe Box” is not confirmed. Full saved collections are post-V1 unless a concrete release dependency emerges.
+- **Moderation + Administration:** secure roles, report review/resolution, moderation/suspension/ban/restoration, audit trail and tester management; entitlements separate from roles. Required safety/compliance operations belong before release, broader dashboards/admin growth after V1. No dashboard is implemented in Stage 4.
+- **Invitations / premium exploration:** later explicit phases; no current Recipe-sharing paywall. Monetization requires explicit owner approval.
+- **Source taxonomy direction:** My Own, Online, Cookbook, Restaurant, Friend / Family, Sous Chef, Other. Manual entry remains. Later URL/cookbook/restaurant metadata and Sous Chef identity integration may be evaluated; cookbook barcode recipe indexing remains rejected.
+- **Run It Back:** hidden from current product surfaces in Stage 4, with provenance/backend/historical data preserved; future workflow requires deliberate redesign, not an assumed release prerequisite.
 
 ## LATER — deferred product development
 

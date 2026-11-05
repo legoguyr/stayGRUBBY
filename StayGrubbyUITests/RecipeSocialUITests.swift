@@ -20,7 +20,7 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         let fork = app.buttons["shared-recipe-fork"]
         for _ in 0..<6 { if fork.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(fork.isHittable); fork.tap()
-        XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8))
+        app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["recipe-title"].exists)
     }
     @MainActor func testComposerRecipeChoiceStartsOffAndCancelDoesNotPublish() {

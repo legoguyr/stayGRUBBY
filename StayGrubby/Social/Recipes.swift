@@ -1,6 +1,6 @@
 import Foundation
 
-/// Structured recipe content enriching a Dish; never a second cooking or ranking identity.
+/// Independent Recipe content; optional cooking associations never define its identity.
 nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     var title = ""
     var description: String? = nil
@@ -32,6 +32,7 @@ nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var updatedAt: Double
     var saved: Bool
     var linkedDishID: UUID? = nil
+    var linkedAttemptID: UUID? = nil
 }
 nonisolated struct RecipesPage: Codable { var recipes: [Recipe] }
 nonisolated struct RecipeTicket: Codable, Identifiable { var id: UUID; var createdAt: Double; var recipe: Recipe? }

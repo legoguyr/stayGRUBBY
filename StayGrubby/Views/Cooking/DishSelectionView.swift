@@ -4,6 +4,10 @@ struct DishSelectionView: View {
     let dishes: [Dish]
     let onSelect: (Dish) -> Void
     let onCancel: () -> Void
+    var selectedCookID: UUID? = nil
+    var disabled = false
+    var onSelectCook: ((CookingAttempt) -> Void)? = nil
+    @State private var selectedDish: Dish?
     @State private var search = ""
     private var matches: [Dish] { DishSelectionSearch.matches(dishes, query: search) }
 
@@ -20,7 +24,7 @@ struct DishSelectionView: View {
                         }
                     }
                     ForEach(matches) { dish in
-                        Button { onSelect(dish) } label: {
+                        Button { if onSelectCook != nil { selectedDish = dish } else { onSelect(dish) } } label: {
                             HStack(spacing: SGTheme.Space.small) {
                                 DishPhoto(media: dish.attempts.sorted { $0.sequenceNumber > $1.sequenceNumber }.compactMap(\.primaryImage).first,
                                           thumbnail: true, name: dish.name)
@@ -32,7 +36,7 @@ struct DishSelectionView: View {
                                 }.frame(maxWidth: .infinity, alignment: .leading)
                                 Image(systemName: "chevron.right").foregroundStyle(.secondary)
                             }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-                        }.buttonStyle(.plain).accessibilityIdentifier("choose-dish-\(dish.name)")
+                        }.buttonStyle(.plain).disabled(disabled).accessibilityIdentifier("choose-dish-\(dish.name)")
                     }
                 }.padding(SGTheme.Space.medium)
             }
@@ -41,8 +45,9 @@ struct DishSelectionView: View {
                     .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
             }
             .scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
+            .navigationDestination(item: $selectedDish) { dish in CookVersionSelectionView(dish: dish, selectedID: selectedCookID, disabled: disabled) { onSelectCook?($0) } }
             .navigationTitle("Choose a Dish").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: onCancel) } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: onCancel).disabled(disabled) } }
         }
     }
 }

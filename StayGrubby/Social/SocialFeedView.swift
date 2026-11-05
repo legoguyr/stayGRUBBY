@@ -147,7 +147,7 @@ struct SocialFeedCard: View {
             }
             if let provenance = post.provenance {
                 if provenance.kind == "recreated", let creator = provenance.creator {
-                    Label("Ran It Back from \(creator.displayName)", systemImage: "arrow.triangle.branch").font(.subheadline)
+                    Label("Inspired by \(creator.displayName)", systemImage: "arrow.triangle.branch").font(.subheadline)
                 } else if let people = provenance.people, !people.isEmpty {
                     Text("Cooked with " + people.map(\.displayName).joined(separator: ", ")).font(.subheadline).fixedSize(horizontal: false, vertical: true)
                 }
@@ -157,10 +157,6 @@ struct SocialFeedCard: View {
             if !post.published { Text("Unpublished photo draft").foregroundStyle(.secondary) }
             if post.moderationState != "active" { Text("Hidden by moderation").foregroundStyle(.secondary) }
             if post.published && post.moderationState == "active" { SocialEngagementView(post: post) }
-            if !post.isAuthor && post.published && post.moderationState == "active" {
-                Button { navigate(.recreate(post.id)) } label: { Label("Run It Back", systemImage: "arrow.triangle.branch") }
-                    .accessibilityIdentifier("recreate-\(post.id)")
-            }
         }
         .padding(.vertical, SGTheme.Space.medium)
         .overlay(alignment: .bottom) { SGTheme.ColorToken.border.frame(height: SGTheme.Size.border) }

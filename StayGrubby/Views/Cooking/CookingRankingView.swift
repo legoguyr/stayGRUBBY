@@ -58,7 +58,7 @@ struct CookingRankingView: View {
         }
         .accessibilityIdentifier("ranking-scroll")
         .background(SGTheme.ColorToken.background)
-        .onChange(of: scores.isUnlocked) { _, unlocked in if !unlocked && sort == .score { sort = .grubRank } }
+        .onChange(of: scores.isUnlocked) { _, unlocked in if !unlocked && sort.needsScores { sort = .grubRank } }
         .navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .top, spacing: 0) {
@@ -123,17 +123,8 @@ struct CookingRankingView: View {
                     filterButton(.avoid, count: filters.avoidedAllergens.count)
                 }
             }.accessibilityIdentifier("filter-strip")
-            Menu {
-                ForEach(CookingBrowseSort.allCases) { option in
-                    Button {
-                        sort = option
-                    } label: {
-                        if option == sort { Label(option.rawValue, systemImage: "checkmark") }
-                        else { Text(option.rawValue) }
-                    }.disabled(option == .score && !scores.isUnlocked).accessibilityIdentifier("ranking-sort-\(option.id)")
-                }
-            } label: { SGBrowseControlLabel(title: "Sort", symbol: "arrow.up.arrow.down", active: sort != .grubRank) }
-                .accessibilityLabel("Sort, \(sort.rawValue)").accessibilityIdentifier("ranking-sort")
+            SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
+                             disabled: { $0.needsScores && !scores.isUnlocked }, active: sort != .grubRank, identifier: "ranking-sort")
             if filters.isActive {
                 SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
                     .accessibilityIdentifier("clear-filters")

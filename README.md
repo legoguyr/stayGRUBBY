@@ -16,4 +16,4 @@ Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recip
 
 Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).
 
-Next release: [approved staged specification](NEXT_RELEASE_SPEC.md), [Stage 1 foundation evidence](NEXT_RELEASE_STAGE_1_REVIEW.md), [Stage 2 core UI evidence](NEXT_RELEASE_STAGE_2_REVIEW.md), [Stage 3 social/sharing evidence](NEXT_RELEASE_STAGE_3_REVIEW.md).
+Next release: [approved staged specification](NEXT_RELEASE_SPEC.md), [Stage 1 foundation evidence](NEXT_RELEASE_STAGE_1_REVIEW.md), [Stage 2 core UI evidence](NEXT_RELEASE_STAGE_2_REVIEW.md), [Stage 3 social/sharing evidence](NEXT_RELEASE_STAGE_3_REVIEW.md), [Stage 4 Food Bible/Recipe evidence](NEXT_RELEASE_STAGE_4_REVIEW.md).

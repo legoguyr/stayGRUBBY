@@ -10,6 +10,7 @@ struct RecipeEditor: View {
     @Query private var dishes: [Dish]
     let recipe: Recipe?
     var dishID: UUID?
+    var attemptID: UUID?
     let importReview: RecipeImportReview?
     let onSave: (Recipe) -> Void
     @State private var content: RecipeDraft
@@ -24,6 +25,7 @@ struct RecipeEditor: View {
     @State private var saving = false
     @State private var failed = false
     @State private var discard = false
+    @State private var choosingCuisine = false
     @State private var deleteSection: UUID?
     @State private var ingredientEntry = IngredientEntryDraft()
     @State private var bulkSection: RecipeBulkSection?
@@ -32,8 +34,8 @@ struct RecipeEditor: View {
     @State private var ordering: RecipeOrderingKind?
     @State private var allergenSelection: RecipeAllergenSelection?
     @FocusState private var focus: RecipeField?
-    init(recipe: Recipe? = nil, dishID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, onSave: @escaping (Recipe) -> Void) {
-        self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.onSave = onSave
+    init(recipe: Recipe? = nil, dishID: UUID? = nil, attemptID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, onSave: @escaping (Recipe) -> Void) {
+        self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.attemptID = attemptID; self.onSave = onSave
         var value = draft ?? recipe?.content ?? RecipeContent(title: title, course: course, cuisine: cuisine)
         value.components = value.orderedComponents
         original = value; originallyShared = recipe?.visibility == "friends"
@@ -42,7 +44,8 @@ struct RecipeEditor: View {
     }
     private var dirty: Bool { content != original || shared != originallyShared || ingredientEntry.hasChanges || photoBytes != nil || photoRemoved }
     private var parts: [RecipeComponent] { content.components ?? [] }
-    private var dish: Dish? { dishes.first { $0.id == dishID } }
+    private var dish: Dish? { dishes.first { $0.id == (dishID ?? recipe?.linkedDishID) } ?? cook?.dish }
+    private var cook: CookingAttempt? { dishes.lazy.flatMap(\.attempts).first { $0.id == (attemptID ?? recipe?.linkedAttemptID) } }
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
@@ -116,6 +119,8 @@ struct RecipeEditor: View {
                 }
                 ingredientEntry.forget(corrected.id)
             }
+        }.sheet(isPresented: $choosingCuisine) {
+            CuisinePicker(selection: Binding(get: { content.cuisine.flatMap { CuisineCatalog.resolve($0) } }, set: { content.cuisine = $0?.label }))
         }.sheet(item: $bulkSection) { target in
             PasteIngredientsView(capacity: max(0, 100 - parts.reduce(0) { $0 + $1.ingredients.count })) { raw in ingredientEntry.appendBulk(raw, to: target.id, in: &content) }
         }.interactiveDismissDisabled(dirty || saving)
@@ -129,7 +134,7 @@ struct RecipeEditor: View {
     }
     private var identity: some View {
         VStack(alignment: .leading, spacing: 16) {
-            RecipePhotoEditor(id: content.photoID, dish: dish, name: content.title, bytes: $photoBytes, removed: $photoRemoved, assetID: $photoAssetID, loading: $photoLoading)
+            RecipePhotoEditor(id: content.photoID, dish: dish, cook: cook, exactCookLink: (attemptID ?? recipe?.linkedAttemptID) != nil, name: content.title, bytes: $photoBytes, removed: $photoRemoved, assetID: $photoAssetID, loading: $photoLoading)
             TextField("Recipe title", text: $content.title, axis: .vertical).font(SGTheme.TypeRole.hero).focused($focus, equals: .title).accessibilityIdentifier("recipe-edit-title")
             TextField("Describe the recipe in 1–3 useful sentences…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
         }
@@ -260,16 +265,15 @@ struct RecipeEditor: View {
             DisclosureGroup("Details & source") {
                 VStack(alignment: .leading, spacing: 16) {
                     Picker("Course", selection: optional(\.course)) { Text("None").tag(""); ForEach(DishCategory.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) } }
-                    TextField("Cuisine · optional", text: optional(\.cuisine))
+                    Button { choosingCuisine = true } label: {
+                        HStack { Text("Cuisine"); Spacer(); Text(content.cuisine ?? "None").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
+                    }.frame(minHeight: 44).accessibilityIdentifier("recipe-cuisine")
                     TextField("Original creator · optional", text: optional(\.originalCreator))
-                    TextField("Source · optional", text: optional(\.source))
-                    TextField("HTTPS source URL · optional", text: optional(\.externalURL)).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL)
-                    Text("The original creator, who saved the recipe, and who inspired your cook stay separate.").font(.footnote).foregroundStyle(.secondary)
+                    ManualSourceFields(name: optional(\.source), url: optional(\.externalURL), identifierPrefix: "recipe-source")
                 }.padding(.top, 12)
             }
             DisclosureGroup("Recipe tips") {
                 TextField("Anything helpful for next time…", text: optional(\.tips), axis: .vertical).padding(.vertical, 12)
-                Text("Recipe tips are shared only if you turn sharing on. Personal Notes on a cook always stay private.").font(.footnote).foregroundStyle(.secondary)
             }
             Toggle("Share recipe with Sous Chefs", isOn: $shared).accessibilityIdentifier("recipe-sharing")
             Text("Off keeps this Recipe private and revokes shared-post Recipe access. On shares Recipe content and its Recipe photo with current Sous Chefs; cooking notes and private cooking photos stay private. Earlier private copies and completed cook snapshots remain with their owners.").font(.footnote).foregroundStyle(.secondary)
@@ -315,7 +319,7 @@ struct RecipeEditor: View {
     private func save() async {
         guard let request else { failed = true; return }; saving = true; failed = false; defer { saving = false }
         do {
-            var payload = SocialPayload(); payload.recipeID = recipeID; payload.dishID = dishID; payload.expectedRevision = recipe?.revision
+            var payload = SocialPayload(); payload.recipeID = recipeID; payload.dishID = recipe == nil && attemptID == nil ? dishID : nil; payload.attemptID = recipe == nil ? attemptID : nil; payload.expectedRevision = recipe?.revision
             var saved = ingredientEntry.prepared(content)
             if let photoBytes {
                 guard let media else { throw AccountFoundationError.accountNotResolved }

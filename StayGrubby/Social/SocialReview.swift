@@ -17,6 +17,7 @@ import SwiftData
     var recipePhotos: [UUID: RecipePhotoDescriptor] = [:]
     var reviewContext: ModelContext?
     var dishRecipes: [UUID: UUID] = [:]
+    var cookRecipeLinks: [UUID: UUID] = [:]
     var ticketDates: [UUID: Double] = [:]
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
     var sharedRecipeSnapshots: [UUID: SharedRecipe] = [:]
@@ -43,7 +44,7 @@ import SwiftData
         if let url = recipeReviewURL, let data = try? Data(contentsOf: url) {
             let archive = try? JSONDecoder().decode(RecipeReviewArchive.self, from: data)
             let saved = archive?.versions ?? (try? JSONDecoder().decode([Recipe].self, from: data)) ?? []
-            if let archive { recipePhotos = archive.photos; avatars = archive.bytes }
+            if let archive { recipePhotos = archive.photos; avatars = archive.bytes; cookRecipeLinks = archive.cookLinks ?? [:]; dishRecipes = archive.dishLinks ?? [:] }
             for r in saved { recipeVersions[r.id, default: []].append(r); if (recipes[r.id]?.revision ?? 0) <= r.revision { recipes[r.id] = r; if let dish = r.linkedDishID { dishRecipes[dish] = r.id } } }
         }
         if ProcessInfo.processInfo.arguments.contains("--product-review-grid") {
@@ -72,9 +73,17 @@ import SwiftData
             }
         }
     }
-    private struct RecipeReviewArchive: Codable { var versions: [Recipe]; var photos: [UUID: RecipePhotoDescriptor]; var bytes: [String: Data] }
+    private struct RecipeReviewArchive: Codable { var versions: [Recipe]; var photos: [UUID: RecipePhotoDescriptor]; var bytes: [String: Data]; var cookLinks: [UUID:UUID]? = nil; var dishLinks: [UUID:UUID]? = nil }
     private func persistRecipes() throws {
-        if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars)).write(to: url, options: .atomic) }
+        if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars, cookLinks: cookRecipeLinks, dishLinks: dishRecipes)).write(to: url, options: .atomic) }
+    }
+    private func linkedRecipe(_ id: UUID) -> Recipe? {
+        guard var value = recipes[id] else { return nil }
+        value.linkedAttemptID = cookRecipeLinks[id]
+        if let chosen = cookRecipeLinks[id] {
+            value.linkedDishID = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first { $0.id == chosen }?.dish?.id
+        } else { value.linkedDishID = dishRecipes.first { $0.value == id }?.key }
+        return value
     }
     private var recipeReviewURL: URL? {
         guard ProcessInfo.processInfo.arguments.contains("--recipe-persistence-review"), let store = DebugReviewConfiguration.current.storeURL(in: FileManager.default.temporaryDirectory) else { return nil }
@@ -96,9 +105,17 @@ import SwiftData
             if ProcessInfo.processInfo.arguments.contains("--bible-long-review"), index == 0 {
                 content.components?[0].steps += (2...25).map { RecipeStep(instruction: "Step \($0): simmer gently, checking the texture and adding a little stock when needed. Keep the sauce moving and taste before serving.") }
             }
+            if ProcessInfo.processInfo.arguments.contains("--stage4-review") {
+                content.allergens = index == 0 ? .init(contains: ["milk"], possible: ["wheat"]) : .init()
+                if index == 0 {
+                    let asset = UUID(), path = "10000000-0000-0000-0000-000000000099/\(asset.uuidString.lowercased()).jpg"
+                    let bytes = Self.avatarFixture; avatars[path] = bytes
+                    recipePhotos[asset] = .init(id: asset, path: path, sha256: RecipePhotoService.digest(bytes), ready: true); content.photoID = asset
+                }
+            }
             content = content.preparedForSave()
             dish.name = content.title; dishRecipes[dish.id] = id
-            recipes[id] = Recipe(id: id, isOwner: true, content: content, visibility: "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false, linkedDishID: dish.id)
+            recipes[id] = Recipe(id: id, isOwner: true, content: content, visibility: "private", revision: 1, createdAt: 100 + Double(index), updatedAt: 100 + Double(index), saved: false, linkedDishID: dish.id)
         }
         try context.save()
     }
@@ -121,6 +138,27 @@ import SwiftData
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
         if endpoint == "recipes" {
+            if action == "cook", let chosen = payload.attemptID,
+               let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.id == chosen }) {
+                let exact = cookRecipeLinks.first { $0.value == chosen }?.key
+                let claim = recipeClaims.values.first { $0.itemID == cook.rankedItemID && $0.completed }
+                let used = claim.flatMap { c in c.recipeSnapshot.map { RecipeCookSnapshot(id: c.id, recipeID: recipes.values.first { $0.content == c.recipeSnapshot }?.id, snapshot: $0, revision: 1) } }
+                let rid = exact ?? used?.recipeID ?? cook.dish.flatMap { dishRecipes[$0.id] }
+                struct Response: Encodable { var recipe: Recipe?; var legacyFamilyLink: Bool; var linkedRecipeID: UUID?; var exactCookLink: Bool; var usedRecipe: RecipeCookSnapshot? }
+                return try JSONEncoder().encode(Response(recipe: rid.flatMap(linkedRecipe), legacyFamilyLink: exact == nil && used == nil && rid != nil, linkedRecipeID: rid, exactCookLink: exact != nil, usedRecipe: used))
+            }
+            if ["link_cook", "unlink_cook"].contains(action), let rid = payload.recipeID {
+                guard cookRecipeLinks[rid] == payload.previousAttemptID else { throw URLError(.cannotParseResponse) }
+                if action == "unlink_cook" { cookRecipeLinks[rid] = nil }
+                else {
+                    guard let chosen = payload.attemptID, recipes[rid] != nil,
+                          (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.contains(where: { $0.id == chosen }) == true,
+                          !cookRecipeLinks.contains(where: { $0.key != rid && $0.value == chosen }) else { throw URLError(.resourceUnavailable) }
+                    cookRecipeLinks[rid] = chosen
+                }
+                try persistRecipes(); return try JSONEncoder().encode(payload.recipeID.flatMap(linkedRecipe))
+            }
+
             if action == "share_options" {
                 let candidate = recipes.values.first { $0.isOwner }
                 return try JSONEncoder().encode(RecipeShareOption(recipe: candidate, fromCookSnapshot: false))
@@ -152,7 +190,7 @@ import SwiftData
                 return try JSONEncoder().encode(recipePhotos[id])
             }
             if action == "library_index" {
-                let entries = recipes.values.map { r in CookbookEntry(dishID: dishRecipes.first { $0.value == r.id }?.key, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID) }.sorted { $0.id.uuidString < $1.id.uuidString }
+                let entries = recipes.values.compactMap { r in linkedRecipe(r.id) }.map { r in CookbookEntry(dishID: r.linkedDishID, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID, linkedAttemptID: r.linkedAttemptID, createdAt: r.createdAt, allergens: r.content.allergens) }.sorted { $0.id.uuidString < $1.id.uuidString }
                 return try JSONEncoder().encode(CookbookPage(entries: entries))
             }
             if action == "history", let id = payload.recipeID, let current = recipes[id] {
@@ -189,25 +227,28 @@ import SwiftData
             if action == "complete", let id = payload.originID, let previous = recipeClaims[id] {
                 recipeClaims[id] = .init(id: id, itemID: previous.itemID, kind: previous.kind, completed: true, metadata: previous.metadata, recipeOriginID: id, recipeSnapshot: previous.recipeSnapshot)
                 if let attempts = try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()),
-                   let dish = attempts.first(where: { $0.rankedItemID == previous.itemID })?.dish,
+                   let cook = attempts.first(where: { $0.rankedItemID == previous.itemID }), let dish = cook.dish,
                    let recipeID = recipes.values.first(where: { $0.content == previous.recipeSnapshot })?.id {
                     dishRecipes[dish.id] = dishRecipes[dish.id] ?? recipeID; recipes[recipeID]?.linkedDishID = dish.id
+                    if cookRecipeLinks[recipeID] == nil && !cookRecipeLinks.values.contains(cook.id) { cookRecipeLinks[recipeID] = cook.id }
                 }
                 return Data("{}".utf8)
             }
             guard let id = payload.recipeID else { throw URLError(.badURL) }
             if action == "save", let content = payload.recipe {
+                if let chosen = payload.attemptID, cookRecipeLinks.contains(where: { $0.key != id && $0.value == chosen }) { throw URLError(.cannotParseResponse) }
                 let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? "private", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
                 if let prior = recipes[id], recipeVersions[id] == nil { recipeVersions[id] = [prior] }
                 recipeVersions[id, default: []].append(value)
                 recipes[id] = value
                 if let dish = payload.dishID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish }
+                if let chosen = payload.attemptID { cookRecipeLinks[id] = chosen }
                 try persistRecipes()
-                return try JSONEncoder().encode(recipes[id])
+                return try JSONEncoder().encode(linkedRecipe(id))
             }
-            if action == "delete" { recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }
+            if action == "delete" { cookRecipeLinks[id] = nil; recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }
             if action == "unticket" { ticketDates[id] = nil; recipes[id]?.saved = false; return Data("{}".utf8) }
-            guard var recipe = recipes[id] else { throw URLError(.resourceUnavailable) }
+            guard var recipe = linkedRecipe(id) else { throw URLError(.resourceUnavailable) }
             if action == "ticket" { ticketDates[id] = ticketDates[id] ?? 100; recipe.saved = true; recipes[id] = recipe }
             if action == "begin", let reservation = payload.originID {
                 if recipeClaims[reservation] == nil {

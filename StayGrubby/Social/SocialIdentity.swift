@@ -41,6 +41,7 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var context: String?
     var postID: UUID?
     var attemptID: UUID?
+    var previousAttemptID: UUID?
     var expectedRevision: Int?
     var confirmed: Bool?
     var includePhoto: Bool?

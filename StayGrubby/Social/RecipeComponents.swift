@@ -91,6 +91,9 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var elapsedMinutes: Int? = nil
     var creatorMetadata: Bool? = nil
     var photoID: UUID? = nil
+    var linkedAttemptID: UUID? = nil
+    var createdAt: Double? = nil
+    var allergens: RecipeAllergenAssessment? = nil
     var id: UUID { recipeID }
     var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
     var duration: Int? { if let elapsedMinutes { return elapsedMinutes }; if creatorMetadata == true { return nil }; return prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
