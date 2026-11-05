@@ -99,3 +99,8 @@ The owner-approved additive `20261103030054_recipe_owned_copy_share_options` fol
 ## Next-release Stage 4 — specific Recipe/cook association
 
 `20261105033728_stage4_recipe_cook_experience.sql` is deployed. All 36 local/hosted migration hashes match, including the byte-identical CLI→hosted timestamp alignment. The new owner-private `recipe_cook_links` is RLS/closed/RPC-only; existing Dish-family links and immutable Recipe-used snapshots remain intact with no backfill. Wrapper authorization, live-account/session checks and stale-link conflict guards are retained. Original 40 data/Storage fingerprints match, Storage remains 82 objects and the new table is empty. No Edge Function/provider/secret/auth configuration changes. See [current Recipe contract](../STAYGRUBBY_ARCHITECTURE.md#food-bible-and-recipes--architecture-v2) and [Stage 4 evidence](../NEXT_RELEASE_STAGE_4_REVIEW.md).
+
+
+## V1 Stage 5 — authorized Kitchen Recipes
+
+`20261105214537_stage5_kitchen_recipes.sql` is deployed; all 37 local/hosted migration hashes match and reference SQL remains exact. `recipes.profile_index` returns up to 25 minimal owned-Recipe summaries subject to existing live-account/mutual-Sous-Chef/visibility/block rules, with no new tables, raw grants or data backfill. Other profiles receive no private cook/family IDs; owner-only fallback remains local/private. All 41 original data/Storage fingerprints match; Stage 5 Storage baseline/final is 83 objects. No Edge Function/Auth/secret/provider configuration change. See [Stage 5 evidence](../NEXT_RELEASE_STAGE_5_REVIEW.md).

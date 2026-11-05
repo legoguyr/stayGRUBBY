@@ -37,13 +37,13 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — Next Release: Stage 4 Food Bible + Recipe Experience
+## CURRENT — Stage 5: Final Product Polish & V1 Readiness
 
-Stage 3 automated acceptance passed at `d733eff`; device-specific sharing/two-account acceptance remains pending and does not block Stage 4 absent a demonstrated regression. Stage 4 implements Recipe browsing/filter/sort, explicit specific-cook association/photo fallback, deterministic reader units and Recipe actions/source language; Run It Back entry points are hidden with data/capability preserved. The additive association migration is deployed; automated/physical evidence is recorded in the [Stage 4 review](NEXT_RELEASE_STAGE_4_REVIEW.md). [Stage 4 scope](NEXT_RELEASE_SPEC.md) governs this cycle; Stage 5 must not start automatically.
+Stages 1–4 implementation is complete through `7a2f7a3`; Stage 5 automated acceptance has passed, with owner physical acceptance pending. Stage 5 replaces the planned Photography stage and is the final normal product-development stage before the release gate. Existing photos/multi-photo ownership/sync are sufficient for V1 and frozen except evidenced regressions. Stage 5 hides conversion controls, adds authorized owned-Recipe Kitchen previews and resolves material whole-app consistency defects. No new normal feature stage begins automatically. See [Stage 5 scope/evidence](NEXT_RELEASE_STAGE_5_REVIEW.md).
 
 ## Required first App Store release milestone
 
-**Stage 4 Food Bible + Recipes → Stage 5 Photography → Stage 6 whole-app polish/release acceptance → controlled/public beta as appropriate → Pre-App-Store Privacy + Trust & Safety + Compliance Gate → Release Candidate → APP STORE V1 → continued roadmap development.** Privacy/moderation/security dependencies may move earlier. No submission/distribution is authorized by a development checkpoint.
+**Stages 1–4 complete → Stage 5 Final Product Polish & V1 Readiness → Pre-App-Store Trust/Safety/Privacy/Compliance Gate → Release Candidate → APP STORE V1 → post-V1 development.** Privacy/moderation/security dependencies may move earlier. No submission/distribution is authorized by a development checkpoint.
 
 App Store V1 is a concrete required milestone, not a horizon optional ideas may repeatedly postpone. When proposing work classify it as **required before V1**, **desirable but deferrable**, or **post-V1**. Require before V1 only what product coherence, safety/privacy/platform compliance, data integrity and a credible first public version need; strongly prefer deferring optional expansion. Adjust dependencies dynamically without casually moving release farther away.
 
@@ -56,6 +56,15 @@ App Store V1 is a concrete required milestone, not a horizon optional ideas may 
 - **Invitations / premium exploration:** later explicit phases; no current Recipe-sharing paywall. Monetization requires explicit owner approval.
 - **Source taxonomy direction:** My Own, Online, Cookbook, Restaurant, Friend / Family, Sous Chef, Other. Manual entry remains. Later URL/cookbook/restaurant metadata and Sous Chef identity integration may be evaluated; cookbook barcode recipe indexing remains rejected.
 - **Run It Back:** hidden from current product surfaces in Stage 4, with provenance/backend/historical data preserved; future workflow requires deliberate redesign, not an assumed release prerequisite.
+
+## Confirmed post-V1 deferrals and growth
+
+- **Advanced photography:** crop/reposition, advanced gallery polish, optional editing and other nonessential media work. V1 keeps the working upload, ordered multi-photo, ownership and sync/restore architecture.
+- **Recipe Unit Conversion:** retained implementation/tests, hidden in normal V1 readers after physical reliability failures. Improve post-V1; serving scaling remains V1.
+- **Social Discovery & Growth:** better people discovery, privacy-authorized public content/feed, optional Contacts, referral/invite links, successful-signup attribution/analytics and abuse protection. A referral counts only after a genuinely new user successfully signs up through the attributed path, never on a sent/clicked link.
+- **Referral/Entitlement exploration:** five progression tiers and approximately five successful referred signups for full progression; exact rewards undecided. Possible enhanced AI Creator/social/commenting allowances or other desirable features remain concepts, not current caps or entitlements. Core functionality must stay usable without recruiting friends.
+- **Administration:** manual entitlement grants/revocation, tester access, restrictions, moderation and administrative roles. Roles and entitlements remain separate. No Stage 5 admin system, current Recipe-sharing paywall or billing configuration.
+- Saved Recipes (name TBD), privacy-aware Recipe Social History, Source metadata expansion and deliberate Run It Back redesign remain post-V1 as specified above. Optional growth must not displace App Store V1.
 
 ## LATER — deferred product development
 
@@ -81,9 +90,9 @@ Future Taste Intelligence may use permitted cooking/evidence, cuisines/ingredien
 
 Foreground social refresh/shared unread state, stable Comments/list refresh, direct Recipe availability, current/pinned Recipe links, actual own-Kitchen routing and contained hosted website correction are implemented. Focused checks plus one broader integration pass precede the checkpoint; owner two-account/device acceptance remains pending. [Review/checklist](NEXT_VERSION_INTEGRATION_REVIEW.md). This explicitly supersedes the earlier deferral of the small sharing-link dependency; public web browsing remains deferred.
 
-## Pre-App-Store Trust & Safety / Compliance — formal future gate
+## NEXT — V1 Release Gate
 
-After public-beta learning and before App Store release, separately verify objectionable-UGC filtering/moderation, complete reporting/review/resolution operations, block/privacy enforcement, account deletion/associated UGC cleanup, published support/contact, appropriate Terms/disclaimers covering Recipe/serving estimates and ingredient-derived allergen limitations (not solely the Privacy Policy), privacy/data flows/App Store disclosures, Community Guidelines/Terms, App Review access, Social Media/age-rating submission configuration. This is a planned gate, not implemented compliance or permission to distribute. See [scope and safeguards](NEXT_RELEASE_SPEC.md#formal-pre-app-store-trust--safety--compliance-gate).
+After public-beta learning and before App Store release, separately verify objectionable-UGC filtering/moderation, complete reporting/review/resolution operations, block/privacy enforcement, account deletion/associated UGC cleanup, published support/contact, appropriate Terms/disclaimers covering Recipe/serving estimates and ingredient-derived allergen limitations (not solely the Privacy Policy), privacy/data flows/App Store disclosures, Community Guidelines/Terms, App Review access, Social Media/age-rating submission configuration. The canonical actionable [V1 Release Gate checklist](V1_RELEASE_GATE.md) separates hard release blockers, deferrable work and post-V1. This is a planned gate, not implemented compliance or permission to distribute. See [scope and safeguards](NEXT_RELEASE_SPEC.md#formal-pre-app-store-trust--safety--compliance-gate).
 
 ## RELEASE — separate authorization and gates
 

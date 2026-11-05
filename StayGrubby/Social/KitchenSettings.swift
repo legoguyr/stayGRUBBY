@@ -2,6 +2,7 @@ import SwiftUI
 
 struct KitchenSettings<AccountUtilities: View>: View {
     @Environment(\.socialRequest) private var request
+    @State private var showingPolicy = false
     @ViewBuilder var account: () -> AccountUtilities
     var body: some View {
         List {
@@ -29,11 +30,12 @@ struct KitchenSettings<AccountUtilities: View>: View {
             Section("Developer") { NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() } }
             #endif
             Section("Support & About") {
-                Link("Privacy Policy", destination: URL(string: "https://staygrubby.com/privacy")!)
-                Link("Support", destination: URL(string: "mailto:support@staygrubby.com")!)
+                Button("Privacy Policy") { showingPolicy = true }.accessibilityIdentifier("privacy-policy-open")
+                Link("Support", destination: URL(string: "https://staygrubby.com/support")!)
                 LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
         }.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
+            .sheet(isPresented: $showingPolicy) { PrivacyPolicyView() }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }

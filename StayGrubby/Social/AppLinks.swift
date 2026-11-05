@@ -40,6 +40,8 @@ nonisolated enum AppRoute: Equatable, Identifiable, Sendable {
 @MainActor @Observable final class AppLinkRouter {
     var pending: AppRoute?
     private(set) var ownKitchenRequests = 0
+    private(set) var foodBibleRequests = 0
+    func openFoodBible() { pending = nil; foodBibleRequests += 1 }
     func openOwnKitchen() { pending = nil; ownKitchenRequests += 1 }
     func receive(_ url: URL) { pending = AppRoute(url: url) }
 }

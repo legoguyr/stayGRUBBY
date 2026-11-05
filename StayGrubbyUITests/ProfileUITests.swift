@@ -49,8 +49,11 @@ final class ProfileUITests: StayGrubbyUITestCase {
     }
 
     @MainActor private func accountSettings(_ app: XCUIApplication) {
-        app.buttons["settings-open"].tap()
-        XCTAssertTrue(app.buttons["settings-sync"].waitForExistence(timeout: 8)); app.buttons["settings-sync"].tap()
+        let settings=app.buttons["settings-open"];XCTAssertTrue(settings.waitForExistence(timeout:8))
+        settings.tap()
+        if !app.navigationBars["Settings"].waitForExistence(timeout:3), settings.isHittable { settings.tap() }
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout:8),app.debugDescription)
+        XCTAssertTrue(app.buttons["settings-sync"].waitForExistence(timeout: 8),app.debugDescription); app.buttons["settings-sync"].tap()
         XCTAssertTrue(app.navigationBars["Account & Sync"].waitForExistence(timeout: 8))
     }
     @MainActor private func element(_ id: String, in app: XCUIApplication) -> XCUIElement {
@@ -206,6 +209,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
                                "--profile-sync-current", "--test-light", "--test-reduce-motion"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20)); openProfile(in: app); accountSettings(app)
+        app.navigationBars.buttons["Settings"].tap()
         let privacy = app.buttons["privacy-policy-open"]
         reach(privacy, in: app); privacy.tap()
         XCTAssertTrue(app.navigationBars["Privacy Policy"].waitForExistence(timeout: 10))
@@ -213,6 +217,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'private cooking journal' ")).firstMatch.exists)
         app.buttons["Done"].tap()
 
+        app.buttons["settings-sync"].tap()
         let start = app.buttons["account-delete-start"]
         reach(start, in: app); start.tap()
         XCTAssertTrue(app.alerts["Permanently delete your account?"].waitForExistence(timeout: 10))

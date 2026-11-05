@@ -40,6 +40,16 @@ import SwiftData
             let id = UUID(uuidString: "60000000-0000-0000-0000-000000000001")!
             recipes[id] = Recipe(id: id, isOwner: true, content: RecipeContent(title: "Lemon Soup Recipe", description: "A bright soup for a simple supper.", ingredients: ["1 lemon", "2 cups stock"], steps: ["Simmer gently"], course: "soup", cuisine: "Italian", source: "A recipe author"), visibility: ProcessInfo.processInfo.arguments.contains("--stage3-review-sharing") ? "friends" : "private", revision: 1, createdAt: 100, updatedAt: 100, saved: false)
         }
+        if ProcessInfo.processInfo.arguments.contains("--stage5-review"), let peer = people.first {
+            let shared = UUID(uuidString:"60000000-0000-0000-0000-000000000051")!, hidden = UUID(uuidString:"60000000-0000-0000-0000-000000000052")!
+            recipes[shared] = Recipe(id:shared,isOwner:false,creator:peer,content:.init(title:"Sous Chef Lemon Cake",ingredients:["lemon"],steps:["Bake"]),visibility:"friends",revision:1,createdAt:1,updatedAt:1,saved:false)
+            recipes[hidden] = Recipe(id:hidden,isOwner:false,creator:peer,content:.init(title:"PRIVATE RECIPE MUST STAY HIDDEN",ingredients:["stock"],steps:["Simmer"]),visibility:"private",revision:1,createdAt:1,updatedAt:1,saved:false)
+            for (suffix,title) in [("53","Roasted Tomato Tart"),("54","Cinnamon Loaf")] {
+                let id=UUID(uuidString:"60000000-0000-0000-0000-0000000000"+suffix)!
+                recipes[id] = Recipe(id:id,isOwner:true,content:.init(title:title,ingredients:["flour"],steps:["Bake"]),visibility:"private",revision:1,createdAt:2,updatedAt:2,saved:false)
+            }
+
+        }
         if ProcessInfo.processInfo.arguments.contains("--bible-v2-empty") || ProcessInfo.processInfo.arguments.contains("--bible-review") { recipes = [:] }
         if let url = recipeReviewURL, let data = try? Data(contentsOf: url) {
             let archive = try? JSONDecoder().decode(RecipeReviewArchive.self, from: data)
@@ -190,8 +200,16 @@ import SwiftData
                 if action == "complete_photo" { recipePhotos[id] = .init(id: id, path: previous.path, sha256: previous.sha256, ready: true) }
                 return try JSONEncoder().encode(recipePhotos[id])
             }
+            if action == "profile_index" {
+                if ProcessInfo.processInfo.arguments.contains("--stage5-recipes-offline") { throw URLError(.notConnectedToInternet) }
+                let peer = payload.peerID
+                let allowed = peer == nil || people.contains { $0.id == peer && $0.relationship == .friends }
+                let values = recipes.values.filter { r in allowed && (peer == nil ? r.isOwner : (!r.isOwner && r.creator?.id == peer && r.visibility == "friends")) }
+                let entries = values.map { r in CookbookEntry(dishID: peer == nil ? linkedRecipe(r.id)?.linkedDishID : nil, recipeID:r.id,dishTitle:r.content.title,recipeTitle:r.content.title,course:r.content.course,cuisine:r.content.cuisine,revision:r.revision,updatedAt:r.updatedAt,yield:r.content.yield,prepMinutes:r.content.prepMinutes,cookMinutes:r.content.cookMinutes,source:r.content.source,elapsedMinutes:r.content.elapsedMinutes,creatorMetadata:r.content.metadataOrigins != nil,photoID:r.content.photoID,linkedAttemptID:peer == nil ? r.linkedAttemptID : nil,createdAt:r.createdAt) }.sorted { $0.id.uuidString < $1.id.uuidString }.filter { payload.beforeID == nil || $0.id.uuidString > payload.beforeID!.uuidString }
+                return try JSONEncoder().encode(CookbookPage(entries:Array(entries.prefix(25))))
+            }
             if action == "library_index" {
-                let entries = recipes.values.compactMap { r in linkedRecipe(r.id) }.map { r in CookbookEntry(dishID: r.linkedDishID, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID, linkedAttemptID: r.linkedAttemptID, createdAt: r.createdAt, allergens: r.content.allergens) }.sorted { $0.id.uuidString < $1.id.uuidString }
+                let entries = recipes.values.filter { r in r.isOwner || (r.visibility == "friends" && (dishRecipes.values.contains(r.id) || cookRecipeLinks[r.id] != nil) && people.contains { $0.id == r.creator?.id && $0.relationship == .friends }) }.compactMap { r in linkedRecipe(r.id) }.map { r in CookbookEntry(dishID: r.linkedDishID, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID, linkedAttemptID: r.linkedAttemptID, createdAt: r.createdAt, allergens: r.content.allergens) }.sorted { $0.id.uuidString < $1.id.uuidString }
                 return try JSONEncoder().encode(CookbookPage(entries: entries))
             }
             if action == "history", let id = payload.recipeID, let current = recipes[id] {

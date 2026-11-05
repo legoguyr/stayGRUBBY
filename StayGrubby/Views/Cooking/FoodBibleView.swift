@@ -92,7 +92,7 @@ struct FoodBibleView: View {
         catch is CancellationError {} catch { if generation == token { entries = []; failed = true } }
     }
 }
-private struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID? }
+struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID? }
 
 struct CookbookPhoto: View {
     var dish: Dish?
@@ -107,14 +107,15 @@ struct CookbookPhoto: View {
         }
     }
 }
-private struct CookbookCard: View {
+struct CookbookCard: View {
     let entry: CookbookEntry
     var dish: Dish?
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
             Text(entry.recipeTitle).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
-            Text([entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+            let metadata = [entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
+            if !metadata.isEmpty { Text(metadata).font(.caption).foregroundStyle(.secondary) }
         }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
     }
 }

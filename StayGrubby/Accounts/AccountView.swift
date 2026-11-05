@@ -8,7 +8,6 @@ struct AccountView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @Query private var sharingCooks: [CookingAttempt]
     @Query private var sharingTombstones: [SyncTombstone]
-    @State private var showingPrivacyPolicy = false
     @State private var socialRoute: SocialPostRoute?
     @State private var confirmingDeletion = false
     @State private var showingDeletion = false
@@ -38,6 +37,7 @@ struct AccountView: View {
                 VStack(spacing: 0) { KitchenIdentityHeader(); SocialFriendsLink() }
                     .frame(maxWidth: .infinity)
                 ProfileCookingContent(snapshot: snapshot, ranking: ranking)
+                KitchenRecipesSection()
                 SocialPendingShares()
                 SharedCookingPending()
                 SocialProfilePosts(open: { socialRoute = .post($0) })
@@ -123,11 +123,6 @@ struct AccountView: View {
                 .accessibilityIdentifier("development-verify-fresh-restore")
             if let restoreCheck { Text(restoreCheck).font(.footnote).foregroundStyle(.secondary) }
             #endif
-            }
-            Section("Privacy") {
-            Button("Privacy Policy") { showingPrivacyPolicy = true }
-                .accessibilityIdentifier("privacy-policy-open")
-                .sheet(isPresented: $showingPrivacyPolicy) { PrivacyPolicyView() }
             }
             Section("Account Actions") {
             Button("Sign out") { Task { await session.signOut() } }

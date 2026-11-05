@@ -135,6 +135,7 @@ struct FriendProfileView: View {
                     }
                 }.disabled(busy)
                 if person.relationship != .blocked {
+                    KitchenRecipesSection(personID: person.id).id(person.id).listRowSeparator(.hidden)
                     SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id(person.id)
                         .listRowSeparator(.hidden)
                     SocialReportButton(kind: "profile", targetID: person.id)
@@ -160,8 +161,8 @@ struct FriendProfileView: View {
         .onSocialRefresh { if !busy && person.relationship != .blocked { await refresh() } }
         .onChange(of: phase) { _, next in generation = UUID(); unavailable = true; if next == .active { Task { await refresh() } } }
         .onDisappear { generation = UUID() }
-        .confirmationDialog(confirmation == "block" ? "Block this person?" : "Remove this friend?", isPresented: Binding(get: { confirmation != nil }, set: { if !$0 { confirmation = nil } }), titleVisibility: .visible) {
-            Button(confirmation == "block" ? "Block Person" : "Remove Friendship", role: .destructive) {
+        .confirmationDialog(confirmation == "block" ? "Block this person?" : "Remove this Sous Chef?", isPresented: Binding(get: { confirmation != nil }, set: { if !$0 { confirmation = nil } }), titleVisibility: .visible) {
+            Button(confirmation == "block" ? "Block Person" : "Remove Sous Chef", role: .destructive) {
                 let action = confirmation ?? "remove"; confirmation = nil; Task { await mutate(action) }
             }
         } message: { Text("This changes your social relationship only. Private cooking and rankings are unchanged.") }

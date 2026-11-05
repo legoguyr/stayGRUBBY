@@ -15,7 +15,7 @@ struct SocialSettingsView: View {
         Form {
             Section("Sharing defaults") {
                 if identity != nil {
-                    Toggle("Automatically Share New Dishes", isOn: $automaticallyShare).accessibilityIdentifier("social-settings-default")
+                    Toggle("Share New Cooks by Default", isOn: $automaticallyShare).accessibilityIdentifier("social-settings-default")
                         .disabled(busy)
                     Text(SocialSharingCopy.explanation)
                     Button(busy ? "Saving…" : "Save default") { Task { await save() } }

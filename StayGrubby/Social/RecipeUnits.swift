@@ -9,6 +9,8 @@ nonisolated enum RecipeUnitMode: String, CaseIterable, Identifiable {
 /// US customary factors, rounded for cooking and marked approximate.
 /// https://www.nist.gov/pml/owm/metric-si/unit-conversion/approximate-conversions-us-customary-measures-metric
 nonisolated enum RecipeUnits {
+    // V1: retained for post-release improvements, absent from normal Recipe UI.
+    static let showsControl = false
     private static let factors: [String: (volume: Bool, metric: Decimal)] = [
         "tsp": (true, Decimal(string: "4.92892159375")!), "tbsp": (true, Decimal(string: "14.78676478125")!),
         "cup": (true, Decimal(string: "236.5882365")!), "fl oz": (true, Decimal(string: "29.5735295625")!),

@@ -41,17 +41,13 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
     }
     @MainActor func testUnitsServingsAndCompactActionsLeaveCanonicalRecipeIntact() throws {
         let app = launch(["--test-dark"]); recipe("Braised Short Ribs", app)
-        let units = app.buttons["recipe-units"]
-        for _ in 0..<5 { if units.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(units.waitForExistence(timeout: 5)); units.press(forDuration: 0.2)
-        XCTAssertTrue(app.buttons["Metric"].waitForExistence(timeout: 5)); app.buttons["Metric"].tap()
-        XCTAssertTrue(units.label.contains("Metric"))
-        let amount = app.staticTexts.matching(NSPredicate(format: "label CONTAINS '≈' AND label CONTAINS 'g'")).firstMatch
-        XCTAssertTrue(amount.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.buttons["recipe-units"].exists)
+        XCTAssertFalse(app.buttons["Metric"].exists)
         let servings = app.steppers["recipe-servings"]
+        for _ in 0..<6 { if servings.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(servings.buttons["recipe-servings-Increment"].exists, app.debugDescription); servings.buttons["recipe-servings-Increment"].tap()
         XCTAssertEqual(servings.value as? String, "5")
-        shot("Stage 4 converted Recipe dark", app)
+        shot("V1 written quantities and serving scaling dark", app)
         action("recipe-history", app)
         XCTAssertTrue(app.navigationBars["Version History"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["recipe-version-1"].exists)

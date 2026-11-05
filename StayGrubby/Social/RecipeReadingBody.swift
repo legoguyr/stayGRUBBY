@@ -6,13 +6,15 @@ struct RecipeReadingBody: View {
     var allowScaling = false
     @State private var servings: Int?
     @State private var units = RecipeUnitMode.original
-    private var displayed: RecipeContent { RecipeUnits.content(content, mode: units, servings: allowScaling ? servings : nil) }
+    private var displayed: RecipeContent { RecipeUnits.content(content, mode: RecipeUnits.showsControl ? units : .original, servings: allowScaling ? servings : nil) }
     @Environment(\.dynamicTypeSize) private var size
     var body: some View {
         VStack(alignment: .leading, spacing: 32) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: SGTheme.Space.medium) { servingControl; unitControl }
-                VStack(alignment: .leading, spacing: SGTheme.Space.small) { servingControl; unitControl }
+            if RecipeUnits.showsControl || (allowScaling && RecipeScaling.canonicalServings(content.yield) != nil) {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: SGTheme.Space.medium) { servingControl; if RecipeUnits.showsControl { unitControl } }
+                    VStack(alignment: .leading, spacing: SGTheme.Space.small) { servingControl; if RecipeUnits.showsControl { unitControl } }
+                }
             }
             RecipeSummaryMetrics(content: displayed)
             VStack(alignment: .leading, spacing: 20) {

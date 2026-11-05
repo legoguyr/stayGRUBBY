@@ -17,3 +17,5 @@ Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recip
 Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).
 
 Next release: [approved staged specification](NEXT_RELEASE_SPEC.md), [Stage 1 foundation evidence](NEXT_RELEASE_STAGE_1_REVIEW.md), [Stage 2 core UI evidence](NEXT_RELEASE_STAGE_2_REVIEW.md), [Stage 3 social/sharing evidence](NEXT_RELEASE_STAGE_3_REVIEW.md), [Stage 4 Food Bible/Recipe and owner-correction evidence](NEXT_RELEASE_STAGE_4_REVIEW.md).
+
+Current V1 closeout: [Stage 5 final product polish](NEXT_RELEASE_STAGE_5_REVIEW.md) → [V1 Release Gate](V1_RELEASE_GATE.md) → Release Candidate → App Store V1. Photography enhancements and Recipe unit conversion are post-V1; no distribution is authorized by a development checkpoint.

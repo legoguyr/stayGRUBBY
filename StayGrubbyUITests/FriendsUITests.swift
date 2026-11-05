@@ -20,7 +20,16 @@ final class FriendsUITests: StayGrubbyUITestCase {
             }
             XCTAssertTrue(app.buttons["settings-open"].waitForExistence(timeout: 5)); app.buttons["settings-open"].tap()
             XCTAssertTrue(app.buttons[title].waitForExistence(timeout: 5)); app.buttons[title].tap()
-        } else { app.segmentedControls.buttons[title].tap() }
+        } else {
+            let control=app.segmentedControls.buttons[title]
+            XCTAssertTrue(control.waitForExistence(timeout:5))
+            for _ in 0..<2 {
+                if control.isSelected { break }; control.tap()
+                let selected=XCTNSPredicateExpectation(predicate:NSPredicate(format:"isSelected == true"),object:control)
+                if XCTWaiter.wait(for:[selected],timeout:3) == .completed { break }
+            }
+            XCTAssertTrue(control.isSelected,app.debugDescription)
+        }
     }
     @MainActor func testFriendsRequestsAndBlockingUseMinimalProfiles() throws {
         let app = launch(["--test-dark"])
@@ -29,12 +38,12 @@ final class FriendsUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["@friend_cook"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Signature Dishes"].exists)
         XCTAssertFalse(app.buttons["Edit Cook"].exists)
-        app.buttons["friend-profile-actions"].tap(); app.buttons["Remove Sous Chef"].tap(); app.buttons["Remove Friendship"].tap()
+        app.buttons["friend-profile-actions"].tap(); app.buttons["Remove Sous Chef"].tap(); app.buttons["Remove Sous Chef"].tap()
         XCTAssertTrue(app.navigationBars["Sous Chefs"].waitForExistence(timeout: 5))
         XCTAssertFalse(friend.exists)
         section("Requests", in: app)
         let incoming = app.buttons["friend-person-incoming_cook"]
-        XCTAssertTrue(incoming.waitForExistence(timeout: 5)); incoming.tap()
+        XCTAssertTrue(incoming.waitForExistence(timeout: 5),app.debugDescription); incoming.tap()
         app.buttons["friend-action-accept"].tap()
         XCTAssertTrue(app.staticTexts["Sous Chef"].waitForExistence(timeout: 5))
         app.buttons["friend-profile-actions"].tap()
