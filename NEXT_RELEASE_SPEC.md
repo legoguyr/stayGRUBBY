@@ -66,3 +66,8 @@ Existing baseline beta/release safeguards still apply. Recording this future gat
 ## Stage 4 — current authorized consolidation, November 4
 
 Reuse accepted browse/version selectors and native actions. Implement real Recipe metadata filters, directional browsing, explicit Recipe↔cook/version association with legacy Dish relationships preserved, deterministic Recipe-owned-photo→explicit linked cook→branded fallback, reader-only US/Metric conversion composed with servings, compact Recipe actions and focused copy/source consistency. No inference/backfill of historical Recipe usage, no photo ownership transfer, no Creator/ranking changes. Run It Back is presentation-hidden with capability/data retained. Future Saved Recipes/bookmarks remain distinct from Save as New; full privacy/admin/invitations/monetization remain roadmap only. Required release sequence and scope control are canonical in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md#required-first-app-store-release-milestone).
+
+
+### Stage 4 owner corrections — November 4
+
+Rank My Version retains existing pinned Recipe provenance; Link a Dish uses one searchable photographic list of actual versions. Creator attribution moves up, allergens down, repeated estimate helper paragraphs are removed with compact safety access retained. Deterministic reader conversion gains curated ingredient-specific densities and unambiguous measured-line compatibility. Canonical architecture owns the detailed boundaries. No new schema, provider, Stage 5 or distribution work; Saved Recipes and Recipe Social History remain explicitly post-App-Store V1.

@@ -14,16 +14,7 @@ struct RecipeReadingBody: View {
                 HStack(spacing: SGTheme.Space.medium) { servingControl; unitControl }
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) { servingControl; unitControl }
             }
-            if units != .original { Text("Converted amounts are approximate. The method stays as written.").font(.footnote).foregroundStyle(.secondary) }
             RecipeSummaryMetrics(content: displayed)
-            if content.metadataOrigins?.values.contains("estimated") == true { Text("Servings and times may include estimates. Adjust for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
-            if let allergens = content.allergens {
-                VStack(alignment: .leading, spacing: 8) {
-                    if !allergens.contains.isEmpty { Text("Contains: " + allergens.contains.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")).font(.subheadline) }
-                    if !allergens.possible.isEmpty { Text("Possible: " + allergens.possible.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")).font(.subheadline) }
-                    Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
-                }.accessibilityIdentifier("recipe-allergen-information")
-            }
             VStack(alignment: .leading, spacing: 20) {
                 SGEyebrow(text: "Ingredients")
                 ForEach(displayed.orderedComponents) { part in
@@ -37,7 +28,7 @@ struct RecipeReadingBody: View {
                 }
             }
             VStack(alignment: .leading, spacing: 24) {
-                SGEyebrow(text: "Method")
+                SGEyebrow(text: "Method").accessibilityIdentifier("recipe-method-heading")
                 ForEach(displayed.orderedComponents) { part in
                     VStack(alignment: .leading, spacing: 20) {
                         sectionTitle(part)
@@ -55,6 +46,13 @@ struct RecipeReadingBody: View {
                     SGEyebrow(text: "Recipe tips")
                     Text(tips).font(.body).lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
+            }
+            if let allergens = content.allergens, !allergens.contains.isEmpty || !allergens.possible.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    if !allergens.contains.isEmpty { Text("Contains: " + allergens.contains.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")) }
+                    if !allergens.possible.isEmpty { Text("Possible: " + allergens.possible.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")) }
+                    DisclosureGroup("Allergen safety") { Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary) }
+                }.font(.subheadline).accessibilityIdentifier("recipe-allergen-information")
             }
         }.textSelection(.enabled)
     }

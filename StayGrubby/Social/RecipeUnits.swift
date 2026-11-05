@@ -5,7 +5,7 @@ nonisolated enum RecipeUnitMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-/// Reader-only values, never saved. Volume stays volume; mass stays mass.
+/// Reader-only values, never saved. Cross-dimension conversion requires an explicit ingredient mapping.
 /// US customary factors, rounded for cooking and marked approximate.
 /// https://www.nist.gov/pml/owm/metric-si/unit-conversion/approximate-conversions-us-customary-measures-metric
 nonisolated enum RecipeUnits {
@@ -27,6 +27,18 @@ nonisolated enum RecipeUnits {
         return nil
     }
     static func ingredient(_ original: RecipeIngredient, mode: RecipeUnitMode, base: Int?, servings: Int?) -> RecipeIngredient {
+        if mode == .original && servings == nil { return original }
+        // Older/manual rows may keep a complete measured line in name or quantity.
+        // Reuse the accepted parser only for an unambiguous reader projection.
+        var original = original
+        if original.unit.isEmpty && quantity(original.quantity) == nil {
+            let parsed = IngredientParser.parse([original.quantity, original.name].filter { !$0.isEmpty }.joined(separator: " "))
+            if parsed.confidence == .high, parsed.quantity != nil, unit(parsed.unit) != nil {
+                original.quantity = parsed.quantity!.canonical; original.unit = parsed.unit; original.name = parsed.name
+                original.preparation = [original.preparation, parsed.preparation].filter { !$0.isEmpty }.joined(separator: ", ")
+                original.note = [original.note, parsed.note].filter { !$0.isEmpty }.joined(separator: ", ")
+            }
+        }
         guard let (quantity, prefix) = quantity(original.quantity),
               ![original.quantity,original.unit,original.name,original.preparation,original.note].contains(where: {
                   $0.range(of: #"(?i)\b(to taste|as needed|per[- ]person|per[- ]serving|each serving)\b"#, options: .regularExpression) != nil
@@ -38,13 +50,20 @@ nonisolated enum RecipeUnits {
         var row = original; row.quantity = prefix + scaled.canonical
         guard mode != .original, let source = unit(row.unit), let factor = factors[source] else { return row }
         let isMetric = ["mL","L","g","kg"].contains(source)
-        guard (mode == .metric) != isMetric else { return row }
-        func decimal(_ value: IngredientNumber) -> Decimal { Decimal(value.numerator) / Decimal(value.denominator) * factor.metric }
+        let density = RecipeIngredientMeasures.gramsPerUSCup(row)
+        let crossDimension = density != nil && ((mode == .us && !factor.volume) || (mode == .metric && factor.volume))
+        guard crossDimension || (mode == .metric) != isMetric else { return row }
+        func decimal(_ value: IngredientNumber) -> Decimal {
+            let amount = Decimal(value.numerator) / Decimal(value.denominator) * factor.metric
+            guard crossDimension, let density else { return amount }
+            return factor.volume ? amount / factors["cup"]!.metric * density : amount / density * factors["cup"]!.metric
+        }
+        let volume = crossDimension ? !factor.volume : factor.volume
         let low = decimal(scaled.lower), high = scaled.upper.map(decimal)
         let largest = high ?? low
         let target: String
-        if mode == .metric { target = factor.volume ? (largest >= 1000 ? "L" : "mL") : (largest >= 1000 ? "kg" : "g") }
-        else if factor.volume { target = largest >= factors["cup"]!.metric / 4 ? "cup" : largest >= factors["tbsp"]!.metric ? "tbsp" : "tsp" }
+        if mode == .metric { target = volume ? (largest >= 1000 ? "L" : "mL") : (largest >= 1000 ? "kg" : "g") }
+        else if volume { target = largest >= factors["cup"]!.metric / 4 ? "cup" : largest >= factors["tbsp"]!.metric ? "tbsp" : "tsp" }
         else { target = largest >= factors["lb"]!.metric ? "lb" : "oz" }
         let divisor = factors[target]!.metric
         func formatted(_ amount: Decimal) -> String {

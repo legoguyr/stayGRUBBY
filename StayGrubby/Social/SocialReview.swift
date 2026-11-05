@@ -106,6 +106,7 @@ import SwiftData
                 content.components?[0].steps += (2...25).map { RecipeStep(instruction: "Step \($0): simmer gently, checking the texture and adding a little stock when needed. Keep the sauce moving and taste before serving.") }
             }
             if ProcessInfo.processInfo.arguments.contains("--stage4-review") {
+                content.originalCreator = "Fixture Author"
                 content.allergens = index == 0 ? .init(contains: ["milk"], possible: ["wheat"]) : .init()
                 if index == 0 {
                     let asset = UUID(), path = "10000000-0000-0000-0000-000000000099/\(asset.uuidString.lowercased()).jpg"

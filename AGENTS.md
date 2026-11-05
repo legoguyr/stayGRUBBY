@@ -44,7 +44,7 @@ Before creating a selector, picker, sheet, popover, menu, confirmation, search/f
 
 ### Living Documentation
 
-Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release.
+Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release. Recipe estimate/quantity and ingredient-derived allergen limitations belong in appropriate Terms/disclaimer/safety coverage, not solely the Privacy Policy. Avoid repeated reader warnings; retain actionable safety, privacy and provenance information.
 
 ## Verification and owner acceptance
 

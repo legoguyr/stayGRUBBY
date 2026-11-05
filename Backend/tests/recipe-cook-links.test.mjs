@@ -43,18 +43,20 @@ try {
  await db.exec('reset role');check((await db.query('select count(*)::int n from staygrubby.cooking_attempts where account_id=$1 and id=$2',[users[0].id,rows[2].id])).rows[0].n===1,'Deleting a linked Recipe preserves its actual cook');
 
  await actor(0);const legacyCook=await rpc('recipes','cook',{attemptID:rows[2].id});check(legacyCook.legacyFamilyLink&&!legacyCook.usedRecipe,'An actual legacy family link is not relabeled as a Recipe-used snapshot');
- async function completedCook(recipeID) {
+ async function completedCook(recipeID, editAfterBegin=false) {
   await actor(0);const originID=randomUUID(),claim=await rpc('recipes','begin',{recipeID,originID}),attemptID=randomUUID();
+  if(editAfterBegin) { const current=await rpc('recipes','get',{recipeID});await rpc('recipes','save',{recipeID,expectedRevision:current.revision,visibility:current.visibility,recipe:{...current.content,title:'Edited after version began'}}); }
   await db.exec('reset role');
   await db.query("insert into staygrubby.ranked_items(account_id,id,ranking_id,name,created_at_ref,strength,uncertainty) values($1,$2,$3,'Exact Recipe cook',1000,0,1)",[users[0].id,claim.itemID,cook.ranking]);
   await db.query("insert into staygrubby.cooking_attempts(account_id,id,dish_id,ranked_item_id,course_code,sequence_number,created_at_ref,updated_at_ref,is_legacy_import) values($1,$2,$3,$4,'soup',(select coalesce(max(sequence_number),0)+1 from staygrubby.cooking_attempts where account_id=$1 and dish_id=$3),1000,1000,false)",[users[0].id,attemptID,rows[0].dish_id,claim.itemID]);
   await actor(0);await rpc('recipes','complete',{originID});await rpc('recipes','complete',{originID});return attemptID;
  }
- const repeated=await completedCook(r2);card=await rpc('recipes','get',{recipeID:r2});check(card.linkedAttemptID===rows[1].id,'Completing another cook never moves an explicitly selected current link');
- const actual=await rpc('recipes','cook',{attemptID:repeated});check(!actual.exactCookLink&&!actual.legacyFamilyLink&&actual.usedRecipe.recipeID===r2&&actual.usedRecipe.snapshot.title==='New version soup','A new cook resolves the actual immutable Recipe used, even when the Recipe current link points elsewhere');
+ const repeated=await completedCook(r2,true);card=await rpc('recipes','get',{recipeID:r2});check(card.linkedAttemptID===rows[1].id,'Completing another cook never moves an explicitly selected current link');
+ const actual=await rpc('recipes','cook',{attemptID:repeated});check(!actual.exactCookLink&&!actual.legacyFamilyLink&&actual.usedRecipe.recipeID===r2&&actual.usedRecipe.snapshot.title==='New version soup'&&actual.usedRecipe.revision===1&&actual.recipe.revision===2,'Rank My Version pins the exact Recipe revision/content at begin despite later editing or another current cook link');
  const fresh=randomUUID();await rpc('recipes','save',{recipeID:fresh,visibility:'private',recipe:{title:'Fresh Recipe',ingredients:['stock'],steps:['Simmer']}});
  const firstCook=await completedCook(fresh);card=await rpc('recipes','get',{recipeID:fresh});check(card.linkedAttemptID===firstCook,'Completing a fresh Recipe cook establishes one exact link idempotently');
  check((await rpc('recipes','cook',{attemptID:firstCook})).exactCookLink,'Fresh cook association is available through the canonical resolver');
+ await db.exec('reset role');check((await db.query('select recipe_id from staygrubby.dish_recipes where account_id=$1 and dish_id=$2',[users[0].id,rows[0].dish_id])).rows[0].recipe_id===r1,'New versions preserve the existing Dish-family Recipe relationship without replacing legacy history');
  await actor(1);card=await rpc('recipes','get',{recipeID:r1});check(!card.linkedAttemptID&&!card.linkedDishID,'Other viewer never receives private cook/family IDs');
  await rejects(()=>rpc('recipes','link_cook',{recipeID:r1,attemptID:rows[0].id}),'40001');
  await rpc('recipes','link_cook',{recipeID:r1,attemptID:foreign.attempts[0]});

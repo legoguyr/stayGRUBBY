@@ -80,4 +80,18 @@ import Testing
         let claim = try JSONDecoder().decode(SocialCookingClaim.self, from: bytes)
         #expect(claim.recipeOriginID == nil && claim.recipeSnapshot == nil && claim.draft().dishName == "Legacy soup")
     }
+    @Test func rankMyVersionUsesExistingPinnedRecipeReservation() async throws {
+        let recipeID = UUID(), reservation = UUID(), itemID = UUID()
+        let snapshot = RecipeContent(title:"My recipe",ingredients:["400 g Arborio rice"],steps:["Cook as written."],source:"Original author")
+        var requests = 0
+        let request: SocialRequest = { endpoint, action, payload in
+            #expect(endpoint == "recipes" && action == "begin" && payload.recipeID == recipeID && payload.originID == reservation)
+            requests += 1
+            return try JSONEncoder().encode(SocialCookingClaim(id:reservation,itemID:itemID,kind:"recipe",completed:false,metadata:.init(title:snapshot.title),recipeOriginID:reservation,recipeSnapshot:snapshot))
+        }
+        let claim = try await RecipeService.begin(id:recipeID,reservation:reservation,request:request)
+        #expect(requests == 1 && claim.itemID == itemID && claim.recipeOriginID == reservation && claim.recipeSnapshot == snapshot)
+        #expect(claim.draft().dishName == snapshot.title && claim.draft().notes.isEmpty)
+    }
+
 }

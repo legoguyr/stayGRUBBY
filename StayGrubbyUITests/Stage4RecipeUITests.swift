@@ -6,7 +6,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--discovery-fixture", "--bible-review", "--stage4-review", "--recipe-photo-review", "--test-reduce-motion"] + extra
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        app.tabBars.buttons["Food Bible"].press(forDuration: 0.2)
+        app.tabBars.buttons["Food Bible"].tap()
         XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout: 8)); return app
     }
     @MainActor private func recipe(_ title: String, _ app: XCUIApplication) {
@@ -64,13 +64,11 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         let hero = app.descendants(matching: .any).matching(identifier: "recipe-hero").firstMatch
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Recipe photo'"), object: hero)], timeout: 8), .completed)
         action("recipe-link", app)
-        let dish = app.buttons["choose-dish-Braised Short Ribs with Polenta"]
-        XCTAssertTrue(dish.waitForExistence(timeout: 5)); dish.tap()
         let versions = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'choose-cook-'"))
         XCTAssertTrue(versions.firstMatch.waitForExistence(timeout: 5)); XCTAssertGreaterThanOrEqual(versions.count, 2); versions.firstMatch.tap()
         XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8))
         XCTAssertEqual(hero.value as? String, "Recipe photo")
-        action("recipe-link", app); XCTAssertTrue(dish.waitForExistence(timeout: 5)); dish.tap()
+        action("recipe-link", app)
         XCTAssertGreaterThanOrEqual(versions.count, 2); versions.element(boundBy: 1).tap()
         XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8))
         action("recipe-detach", app); app.buttons["Unlink"].tap()
@@ -97,8 +95,8 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         }
         photo("Dish family photo")
         for (version, expected) in [("Smoky Sunday", "Linked cook photo"), ("Golden sear", "StayGrubby placeholder")] {
-            action("recipe-link", app); let dish = app.buttons["choose-dish-Braised Short Ribs with Polenta"]
-            XCTAssertTrue(dish.waitForExistence(timeout: 5)); dish.tap()
+            action("recipe-link", app)
+            XCTAssertTrue(app.navigationBars["Link a Dish"].waitForExistence(timeout: 5))
             let choice = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'choose-cook-' AND label CONTAINS %@", version)).firstMatch
             XCTAssertTrue(choice.waitForExistence(timeout: 5)); choice.tap()
             XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8)); photo(expected)
@@ -118,6 +116,30 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         source.tap(); source.typeText(" notes"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8)); photo("Recipe photo")
         shot("Stage 4 exact cook fallback and independent Recipe replacement", app)
+    }
+
+    @MainActor func testOwnerCorrectionsReaderAndRankMyVersion() throws {
+        let app = launch(["--test-dark", "--test-large-type"]); recipe("Braised Short Ribs", app)
+        let attribution = app.staticTexts["recipe-attribution"], make = app.buttons["recipe-make"]
+        XCTAssertEqual(attribution.label, "Created by Fixture Author"); XCTAssertLessThan(attribution.frame.minY, make.frame.minY)
+        XCTAssertTrue(make.label.contains("Rank My Version"))
+        let allergens = app.descendants(matching:.any).matching(identifier:"recipe-allergen-information").firstMatch
+        XCTAssertGreaterThan(allergens.frame.minY, app.staticTexts["recipe-method-heading"].frame.minY)
+        XCTAssertFalse(app.staticTexts["Servings and times may include estimates. Adjust for your kitchen."].exists)
+        for _ in 0..<6 { if make.isHittable && make.frame.maxY < app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
+        make.tap(); XCTAssertTrue(app.navigationBars["New Version"].waitForExistence(timeout:8))
+        XCTAssertTrue(app.staticTexts["inherited-dish-name"].waitForExistence(timeout:5)); XCTAssertEqual(app.staticTexts["inherited-dish-name"].label,"Braised Short Ribs with Polenta")
+        app.buttons["Cancel"].tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
+        app.revealRecipeActions(); XCTAssertEqual(app.buttons["recipe-link"].label,"Link a Dish"); app.buttons["recipe-link"].tap()
+        XCTAssertTrue(app.navigationBars["Link a Dish"].waitForExistence(timeout:5))
+        let choices = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-cook-'"))
+        XCTAssertGreaterThanOrEqual(choices.count,2); XCTAssertFalse(app.buttons["choose-dish-Braised Short Ribs with Polenta"].exists)
+        let search = app.textFields["parent-dish-search"]; search.tap(); search.typeText("Sea Bass\n")
+        XCTAssertEqual(choices.count,1); XCTAssertTrue(choices.firstMatch.label.contains("Sea Bass"))
+        app.buttons["parent-dish-search-clear"].tap(); search.tap(); search.typeText("Golden sear\n")
+        XCTAssertEqual(choices.count,1); XCTAssertTrue(choices.firstMatch.label.contains("Braised Short Ribs")); XCTAssertTrue(choices.firstMatch.label.contains("Golden sear"))
+        shot("Stage 4 owner correction flat version selector",app)
+        choices.firstMatch.tap(); XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout:8))
     }
 
 }

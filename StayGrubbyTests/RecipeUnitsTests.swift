@@ -43,4 +43,36 @@ struct RecipeUnitsTests {
         #expect(RecipeUnits.content(content, mode: .original, servings: nil).orderedComponents[0].ingredients[0].quantity == "1/2")
         #expect(RecipeUnits.content(content, mode: .metric, servings: 4) == metric)
     }
+    @Test func ingredientSpecificMassVolumeConversionAndScaling() {
+        for (name, grams) in [("Arborio rice",180),("risotto rice",180),("all-purpose flour",120),("granulated sugar",198),("butter",227),("honey",336),("cocoa powder",84)] {
+            let source = RecipeIngredient(quantity: String(grams), unit: "g", name: name)
+            let us = RecipeUnits.ingredient(source, mode: .us, base: nil, servings: nil)
+            #expect(us.quantity == "≈ 1" && us.unit == "cup")
+            let metric = RecipeUnits.ingredient(.init(quantity: "1/2",unit:"cup",name:name),mode:.metric,base:2,servings:4)
+            #expect(metric.quantity == "≈ " + String(grams) && metric.unit == "g")
+        }
+        let rice = RecipeIngredient(quantity:"400",unit:"g",name:"Arborio/risotto rice",preparation:"rinsed")
+        let us = RecipeUnits.ingredient(rice,mode:.us,base:nil,servings:nil)
+        #expect(us.quantity == "≈ 2.22" && us.unit == "cup" && us.preparation == "rinsed" && us.id == rice.id)
+        let range = RecipeUnits.ingredient(.init(quantity:"90-180",unit:"g",name:"dry Arborio rice"),mode:.us,base:2,servings:4)
+        #expect(range.quantity == "≈ 1–2" && range.unit == "cup")
+        #expect(RecipeUnits.ingredient(.init(quantity:"90",unit:"g",name:"Arborio rice"),mode:.us,base:nil,servings:nil).quantity == "≈ ½")
+    }
+    @Test func legacyMeasuredLinesConvertWithoutCanonicalWritesOrDensityGuesses() {
+        for source in [RecipeIngredient(name:"400 g Arborio rice"), .init(quantity:"400 g",name:"Arborio rice"), .init(name:"400g Arborio rice")] {
+            let value = RecipeUnits.ingredient(source,mode:.us,base:nil,servings:nil)
+            #expect(value.quantity == "≈ 2.22" && value.unit == "cup" && value.name == "Arborio rice")
+            #expect(RecipeUnits.ingredient(source,mode:.original,base:nil,servings:nil) == source)
+        }
+        for source in [RecipeIngredient(quantity:"400",unit:"g",name:"cooked Arborio rice"), .init(quantity:"400",unit:"g",name:"rice"), .init(quantity:"400",unit:"g",name:"rice flour")] {
+            #expect(RecipeUnits.ingredient(source,mode:.us,base:nil,servings:nil).unit == "oz")
+        }
+        let ambiguous = RecipeIngredient(quantity:"to taste",unit:"",name:"honey")
+        #expect(RecipeUnits.ingredient(ambiguous,mode:.metric,base:2,servings:4) == ambiguous)
+        var source = RecipeContent(title:"Rice",ingredients:["400g Arborio rice"],steps:["Cook as written."])
+        source.yield = "4 servings"; let before = source
+        #expect(RecipeUnits.content(source,mode:.us,servings:8).orderedComponents[0].ingredients[0].quantity == "≈ 4.44")
+        #expect(source == before && RecipeUnits.content(source,mode:.original,servings:nil).ingredients == before.ingredients)
+    }
+
 }

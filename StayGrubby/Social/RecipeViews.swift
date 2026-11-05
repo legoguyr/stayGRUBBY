@@ -125,9 +125,9 @@ struct RecipeDetailView: View {
                                 Button("Version History", systemImage: "clock") { management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                                 Button("Save as New Recipe", systemImage: "document.on.document") { management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                             }
-                            Button(recipe.linkedAttemptID == nil ? "Link a Cook" : "Change Linked Cook", systemImage: "link") { management = .link(recipe) }.accessibilityIdentifier("recipe-link")
+                            Button(recipe.linkedAttemptID == nil ? "Link a Dish" : "Change Linked Dish", systemImage: "link") { management = .link(recipe) }.accessibilityIdentifier("recipe-link")
                             if recipe.linkedAttemptID != nil || linkedDish != nil {
-                                Button(recipe.linkedAttemptID == nil ? "Unlink Dish Family" : "Unlink Cook", systemImage: "link.badge.plus", role: .destructive) { detaching = true }.accessibilityIdentifier("recipe-detach")
+                                Button(recipe.linkedAttemptID == nil ? "Unlink Dish Family" : "Unlink Dish", systemImage: "link.badge.plus", role: .destructive) { detaching = true }.accessibilityIdentifier("recipe-detach")
                             }
                             if recipe.visibility == "friends" { Button("Send to Sous Chef", systemImage: "person.crop.circle.badge.checkmark") { management = .send(.recipe(recipe.id)) }.accessibilityIdentifier("recipe-send-friend") }
                             if recipe.isOwner { Button("Delete Recipe", systemImage: "trash", role: .destructive) { deleting = true }.accessibilityIdentifier("recipe-delete") }
@@ -166,28 +166,31 @@ struct RecipeDetailView: View {
                 Text(recipe.content.title).font(SGTheme.TypeRole.hero).accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 let metadata = [recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
                 if !metadata.isEmpty { Text(metadata).font(.subheadline).foregroundStyle(.secondary) }
+                if let creator = recipe.content.originalCreator, !creator.isEmpty {
+                    Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-attribution")
+                    if let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(.subheadline) }
+                } else if let creator = recipe.creator { Text("Created by \(creator.displayName)").font(.subheadline).accessibilityIdentifier("recipe-attribution") }
                 if let description = recipe.content.description, !description.isEmpty { Text(description).font(.body).lineSpacing(6) }
             }
-            Button { Task { await begin() } } label: { Label("Cook Recipe", systemImage: "fork.knife").frame(maxWidth: .infinity) }
+            Button { Task { await begin() } } label: { Label("Rank My Version", systemImage: "fork.knife").frame(maxWidth: .infinity) }
                 .buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-make")
             if !recipe.isOwner { Button("Save a Private Copy") { Task { await copyRecipe() } }.frame(minHeight: 44).disabled(busy).accessibilityIdentifier("recipe-fork") }
             if let cook = linkedCook {
                 NavigationLink { AttemptDetailView(attempt: cook) } label: {
-                    HStack { CookVersionIdentity(cook: cook); Image(systemName: "chevron.right") }
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) { Text(cook.dish?.name ?? cook.displayName); CookVersionIdentity(cook: cook) }
+                        Image(systemName: "chevron.right")
+                    }
                 }.accessibilityIdentifier("recipe-linked-cook")
-                Text("Linked cook · \(cook.dish?.name ?? cook.displayName)").font(.caption).foregroundStyle(.secondary)
-            } else if recipe.linkedAttemptID != nil { Text("Linked cook unavailable").foregroundStyle(.secondary) }
+            } else if recipe.linkedAttemptID != nil { Text("Linked Dish unavailable").foregroundStyle(.secondary) }
             else if let dish = linkedDish {
                 Text("Dish family · \(dish.name)").font(.subheadline)
-                Text("Legacy link: no specific version recorded.").font(.footnote).foregroundStyle(.secondary)
             }
             RecipeReadingBody(content: recipe.content, allowScaling: true)
             Divider()
             VStack(alignment: .leading, spacing: 10) {
-                if let creator = recipe.content.originalCreator, !creator.isEmpty { Text("Original creator · \(creator)") }
                 if let source = recipe.content.source, !source.isEmpty { Text("Source · \(source)") }
                 if let url = recipe.content.externalURL.flatMap(URL.init(string:)) { Link("Original source", destination: url) }
-                if let creator = recipe.creator { Text("Added by \(creator.displayName)") }
                 if recipe.isOwner { RecipeForkAttribution(recipeID: recipe.id) }
                 Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private Recipe")").font(.caption).foregroundStyle(.secondary)
             }.font(.subheadline)
