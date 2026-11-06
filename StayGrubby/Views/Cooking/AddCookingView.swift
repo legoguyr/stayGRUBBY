@@ -54,8 +54,8 @@ struct AddCookingView: View {
                         let opponentAttempt = attempts.first { $0.rankedItemID == opponent.id }
                         ComparisonView(newName: draft.cleanDishName,
                                        existingName: opponentAttempt?.dish?.name ?? opponent.name,
-                                       newVersion: draft.cleanTitle ?? "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)",
-                                       existingVersion: opponentAttempt?.versionLabel,
+                                       newVersion: draft.cleanTitle ?? (dish == nil ? nil : "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)"),
+                                       existingVersion: opponentAttempt?.meaningfulVersionLabel,
                                        newPreparedPhoto: draft.pendingPhoto,
                                        existingPhoto: opponentAttempt?.primaryImage,
                                        canUndo: session.canUndo,

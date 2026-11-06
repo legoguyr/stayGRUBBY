@@ -169,6 +169,7 @@ struct DishRecipeSection: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             if let usedRecipe {
                 SGSectionHeader(title: "Recipe used")
+                if let creator = usedRecipe.creatorName { Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("cook-recipe-creator") }
                 NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: { Label(usedRecipe.snapshot.title, systemImage: "clock") }.accessibilityIdentifier("cook-recipe-snapshot")
                 Text("Recipe revision \(usedRecipe.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
             }

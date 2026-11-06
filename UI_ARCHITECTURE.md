@@ -1,3 +1,9 @@
+# V1 Product Closeout presentation — November 5, 2026
+
+This supersedes the Stage 5 preview/See All interaction below. My Kitchen prioritizes Dishes Ranked and Signature Dishes; a compact Recipes row opens a native authorized collection sheet using Food Bible cards/readers; an already presented social Kitchen uses its existing sheet navigation for that same collection. No separate large Recipe preview or cross-tab See All navigation remains. Current and post-pinned Recipe readers use one compact Share/Send/overflow action pattern, with explicit current-versus-pinned destination semantics. Dish Detail uses the same native back, compact toolbar Share and overflow pattern; Edit Cook/Re-rank are discoverable menu actions, not primary full-width buttons. Normal Recipe editing uses a compact Share with Sous Chefs toggle, no redundant generic allergen/sharing paragraphs. Preserve actionable safety, metadata, privacy, destructive confirmations and provenance.
+
+Show cook version labels only when meaningful: an intentional title or multiple versions (including meaningful later sequence numbers). Never decorate a lone untitled first cook with Version 1. This is presentation only. Recipe creation activity is visibly a Recipe, never a cook/rank/score; reuse person identity and Food Bible cards. Reuse Before Reinvention applies throughout. [Closeout evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md).
+
 # V1 Stage 5 presentation supersession — November 5, 2026
 
 Reuse before reinvention remains the governing rule. Kitchen Recipes reuses Food Bible cards/photo/reader: a compact two-card preview, owner See All opens the actual Food Bible root, and other-profile See All lists only currently authorized owned Recipes. No bookmark collection or private-count/cook-data projection. All profile states use the existing account/scene refresh boundaries and concise retry/empty/loading patterns.

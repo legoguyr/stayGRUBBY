@@ -27,7 +27,7 @@ Without the app, the website explains beta access and privacy, and keeps Support
 
 ## Source, verification and deployment
 
-The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, currently effective November 2, 2026. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
+The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, updated effective November 5, 2026 for Product Closeout. It is bundled offline and rendered completely by `build.py`. This updated default-sharing/activity disclosure is prepared locally; hosted policy publication is required before distributing the updated build, through the router-preserving release-gate workflow. Official artwork comes from the app asset catalog.
 
 ```sh
 python3 Website/build.py

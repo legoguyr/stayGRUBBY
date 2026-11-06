@@ -31,7 +31,7 @@ final class ScoreCalibrationUITests: StayGrubbyUITestCase {
             XCTAssertGreaterThanOrEqual(lower.frame.minY, ceiling)
             XCTAssertLessThanOrEqual(lower.frame.maxY, floor)
             shot("Calibrated lower score visible \(appearance)", app)
-            lower.tap(); XCTAssertTrue(app.buttons["detail-edit-cook"].waitForExistence(timeout: 8))
+            lower.tap(); XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 8))
             XCTAssertTrue(app.staticTexts["Score " + lowerScore].waitForExistence(timeout: 8))
             shot("Calibrated score Dish Detail \(appearance)", app)
             app.terminate()

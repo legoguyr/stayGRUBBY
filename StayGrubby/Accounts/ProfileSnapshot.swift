@@ -12,7 +12,7 @@ import SwiftData
         var title: String { attempt.dish?.name ?? attempt.displayName }
         var accessibilityLabel: String {
             let score = scoreText.map { "score \($0)" } ?? "score locked"
-            return "Rank \(rank), \(title), \(attempt.versionLabel), \(attempt.category.label), \(score)"
+            return ["Rank \(rank)", title, attempt.meaningfulVersionLabel, attempt.category.label, score].compactMap { $0 }.joined(separator: ", ")
         }
     }
 

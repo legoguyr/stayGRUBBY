@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 
 final class Stage3SocialUITests: StayGrubbyUITestCase {
     @MainActor func testRecipeShareAndSearchableSousChefSend() throws {
@@ -33,8 +34,15 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         let copy = app.cells.matching(identifier: "actionGroupCell").matching(NSPredicate(format: "label == 'Copy'")).firstMatch
         XCTAssertTrue(copy.waitForExistence(timeout: 15), app.debugDescription)
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "Stage 3 native image and caption share"; shot.lifetime = .keepAlways; add(shot)
-        copy.tap()
-        XCTAssertTrue(copy.waitForNonExistence(timeout: 8))
+        let previousCopy = UIPasteboard.general.changeCount
+        copy.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let copied = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            MainActor.assumeIsolated { UIPasteboard.general.changeCount > previousCopy && (UIPasteboard.general.hasImages || UIPasteboard.general.hasStrings) }
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for:[copied],timeout:8),.completed,"Native Copy must produce a fresh image/text payload")
+        let close = app.buttons["header.closeButton"]
+        if close.exists { close.coordinate(withNormalizedOffset: CGVector(dx:0.5,dy:0.5)).tap() }
+        XCTAssertTrue(copy.waitForNonExistence(timeout:8))
         XCTAssertTrue(share.waitForExistence(timeout: 5))
     }
     @MainActor func testDirectedOrderUpDestinationsUseAuthorizedReaders() throws {

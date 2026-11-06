@@ -5,7 +5,7 @@ struct SocialFeedView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @Environment(\.scenePhase) private var scenePhase
-    @State private var posts: [SocialPost] = []
+    @State private var posts: [GrubListActivity] = []
     @State private var identity: SocialIdentity?
     @State private var friendCount = 0
     @State private var loading = false
@@ -33,12 +33,15 @@ struct SocialFeedView: View {
                     Text("Couldn’t load posts. Check your connection and retry.").accessibilityIdentifier("feed-error")
                     Button("Retry") { revision += 1 }.accessibilityIdentifier("feed-retry")
                 } else if !loading && posts.isEmpty {
-                    ContentUnavailableView("No shared cooks yet", systemImage: "fork.knife",
-                        description: Text(friendCount == 0 ? "Find a Sous Chef to see shared cooks." : "Shared cooks from your Sous Chefs will appear here."))
+                    ContentUnavailableView("Nothing shared yet", systemImage: "fork.knife",
+                        description: Text(friendCount == 0 ? "Find a Sous Chef to see their cooks and Recipes." : "Cooks and Recipes from your Sous Chefs will appear here."))
                     NavigationLink("Find Sous Chefs") { FriendsView() }.accessibilityIdentifier("feed-find-friends")
                 }
-                ForEach(posts) { post in
-                    SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
+                ForEach(posts) { activity in
+                    switch activity {
+                    case .cook(let post): SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
+                    case .recipe(let recipe): RecipeActivityCard(activity: recipe, profile: { person = recipe.author })
+                    }
                 }.listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 if hasMore { Button("Load more posts") { Task { await load(more: true) } }.disabled(loading).accessibilityIdentifier("feed-more") }
             }
@@ -90,10 +93,10 @@ struct SocialFeedView: View {
             guard !Task.isCancelled, generation == token else { return }; identity = ownIdentity
             guard ownIdentity.isConfigured else { return }
             let people = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init()))
-            let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
+            let next = try JSONDecoder().decode(GrubListPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, generation == token else { return }
             friendCount = people.people.count
-            if more { let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) } } else { posts = next.posts }; hasMore = next.posts.count == 25
+            if more { let ids = Set(posts.map(\.id)); posts += next.activities.filter { !ids.contains($0.id) } } else { posts = next.activities }; hasMore = next.activities.count == 25
             await SocialPhotoCleanup.run(request: request, media: media)
         } catch is CancellationError { } catch {
             guard generation == token else { return }; posts = []; hasMore = false; failed = true

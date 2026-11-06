@@ -40,6 +40,7 @@ nonisolated struct TicketsPage: Codable { var tickets: [RecipeTicket] }
 nonisolated struct RecipeCookSnapshot: Codable, Identifiable {
     var id: UUID
     var recipeID: UUID?
+    var creatorName: String? = nil
     var snapshot: RecipeContent
     var revision: Int
 }

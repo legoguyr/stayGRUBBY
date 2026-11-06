@@ -25,7 +25,12 @@ final class CookingAttempt {
         set { categoryCode = newValue.rawValue }
     }
     var versionLabel: String { versionTitle ?? "Version \(sequenceNumber)" }
-    var displayName: String { "\(dish?.name ?? rankedItem?.name ?? "Dish") — \(versionLabel)" }
+    /// Presentation only; stored sequence/title and historical snapshots stay unchanged.
+    var meaningfulVersionLabel: String? {
+        if let title = versionTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty { return title }
+        return (dish?.attempts.count ?? 1) > 1 || sequenceNumber > 1 ? "Version \(sequenceNumber)" : nil
+    }
+    var displayName: String { [dish?.name ?? rankedItem?.name ?? "Dish", meaningfulVersionLabel].compactMap { $0 }.joined(separator: " — ") }
     var dietaryTags: Set<DietaryTag> { Set(tags.filter { $0.kindCode == CookingTagKind.dietary.rawValue }.compactMap { DietaryTag(rawValue: $0.value) }) }
     var allergyTags: Set<AllergyTag> { Set(tags.filter { $0.kindCode == CookingTagKind.allergy.rawValue }.compactMap { AllergyTag(rawValue: $0.value) }) }
     var containedAllergens: Set<Allergen> { Set(tags.filter { $0.kindCode == CookingTagKind.contains.rawValue }.compactMap { Allergen(rawValue: $0.value) }) }

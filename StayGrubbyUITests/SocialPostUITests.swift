@@ -10,7 +10,7 @@ final class SocialPostUITests: StayGrubbyUITestCase {
         let name = app.textFields["dish-name"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Private Social Soup")
         app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
-        let share = app.buttons["share-with-friends"]
+        let share = app.cookAction("share-with-friends")
         XCTAssertTrue(share.waitForExistence(timeout: 15))
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "social-share-success").firstMatch.exists)
         share.tap()

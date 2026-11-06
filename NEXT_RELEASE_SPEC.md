@@ -2,6 +2,10 @@
 
 Canonical approved release specification, updated November 5, 2026. [Architecture](STAYGRUBBY_ARCHITECTURE.md) records implemented behavior; [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md) records sequencing. Baseline `b9871df88930699f22ed80b2c586996e4775ebd8` is sufficiently owner accepted to continue. This is a staged release, not permission to implement every screen in Stage 1 or distribute a build.
 
+## V1 Product Closeout supersession
+
+Owner physical feedback supersedes Stage 5's large Kitchen Recipes preview/See All with a compact authorized Recipe-sheet control and restores Dishes Ranked emphasis. Meaningful version labels only; Recipe and Dish details share compact native Share/overflow treatment. New owner Recipes default to Sous Chefs with an editable compact toggle, never globally Public; existing private Recipes and explicit private copies remain private. Shared new Recipe creation/first sharing may produce one distinct authorized Grub List activity without pretending it is a cook/score or spamming revisions. Foreign creator credit is retained with exact cook provenance. [Current architecture](STAYGRUBBY_ARCHITECTURE.md#v1-product-closeout--owner-corrections) and [closeout evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md) govern. Product Closeout → Release Gate → Release Candidate → App Store V1; no new normal feature stage.
+
 ## Current V1 sequencing supersession — Stage 5
 
 **Stages 1–4 complete → Stage 5 Final Product Polish & V1 Readiness → Pre-App-Store Trust/Safety/Privacy/Compliance Gate → Release Candidate → APP STORE V1.** This replaces Photography as a pre-V1 stage and the earlier Stage 6 plan. Stage 5 is the final normal product-development cycle. Existing upload/multi-photo/ownership/sync/restore are sufficient for V1; crop/reposition/advanced gallery/editing are post-V1. Unit conversion is hidden, retained for post-V1; serving scaling stays. Kitchen owned-Recipe previews use existing cards and current server authorization. No full future Saved/private-public/admin/referral/follower system, provider tuning or distribution. [Current evidence](NEXT_RELEASE_STAGE_5_REVIEW.md), [release checklist](V1_RELEASE_GATE.md).

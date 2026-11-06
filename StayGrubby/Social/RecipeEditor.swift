@@ -34,12 +34,12 @@ struct RecipeEditor: View {
     @State private var ordering: RecipeOrderingKind?
     @State private var allergenSelection: RecipeAllergenSelection?
     @FocusState private var focus: RecipeField?
-    init(recipe: Recipe? = nil, dishID: UUID? = nil, attemptID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, onSave: @escaping (Recipe) -> Void) {
+    init(recipe: Recipe? = nil, dishID: UUID? = nil, attemptID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, initiallyShared: Bool? = nil, onSave: @escaping (Recipe) -> Void) {
         self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.attemptID = attemptID; self.onSave = onSave
         var value = draft ?? recipe?.content ?? RecipeContent(title: title, course: course, cuisine: cuisine)
         value.components = value.orderedComponents
-        original = value; originallyShared = recipe?.visibility == "friends"
-        _content = State(initialValue: value); _shared = State(initialValue: recipe?.visibility == "friends")
+        original = value; originallyShared = initiallyShared ?? RecipeSharingPolicy.initiallyShared(recipe)
+        _content = State(initialValue: value); _shared = State(initialValue: originallyShared)
         _recipeID = State(initialValue: recipe?.id ?? UUID())
     }
     private var dirty: Bool { content != original || shared != originallyShared || ingredientEntry.hasChanges || photoBytes != nil || photoRemoved }
@@ -164,7 +164,6 @@ struct RecipeEditor: View {
                 HStack { Text("Possible · check labels"); Spacer(); Text("\(content.allergens?.possible.count ?? 0) selected").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
                     .frame(minHeight: 44).contentShape(Rectangle())
             }.accessibilityIdentifier("recipe-allergen-possible")
-            Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary)
             if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(.footnote).foregroundStyle(.secondary) }
         }.accessibilityElement(children: .contain)
     }
@@ -275,8 +274,7 @@ struct RecipeEditor: View {
             DisclosureGroup("Recipe tips") {
                 TextField("Anything helpful for next time…", text: optional(\.tips), axis: .vertical).padding(.vertical, 12)
             }
-            Toggle("Share recipe with Sous Chefs", isOn: $shared).accessibilityIdentifier("recipe-sharing")
-            Text("Off keeps this Recipe private and revokes shared-post Recipe access. On shares Recipe content and its Recipe photo with current Sous Chefs; cooking notes and private cooking photos stay private. Earlier private copies and completed cook snapshots remain with their owners.").font(.footnote).foregroundStyle(.secondary)
+            Toggle("Share with Sous Chefs", isOn: $shared).accessibilityIdentifier("recipe-sharing")
         }
     }
     private func rowActions(_ part: RecipeComponent, rowID: UUID, ingredient: Bool) -> some View {

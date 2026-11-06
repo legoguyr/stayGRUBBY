@@ -71,8 +71,8 @@ struct ComparisonView: View {
     private func card(_ name: String, version: String?, media: CookingMedia?,
                       prepared: PreparedCookingPhoto?, side: CGFloat,
                       answer: ComparisonAnswer, identifier: String) -> some View {
-        let versionLabel = version ?? "Version 1"
-        let spokenName = "\(name) — \(versionLabel)"
+        let versionLabel = version ?? ""
+        let spokenName = [name, version].compactMap { $0 }.joined(separator: " — ")
         return Button { choose(answer) } label: {
             VStack(spacing: SGTheme.Space.small) {
                 DishPhoto(media: media, prepared: prepared, name: spokenName)

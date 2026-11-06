@@ -6,6 +6,8 @@ struct AttemptDetailView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.cookingMediaRoot) private var mediaRoot
     let attempt: CookingAttempt
+    @Environment(\.socialRequest) private var request
+    @State private var sharingSocial = false
     @State private var editing = false
     @State private var editingDishText = false
     @State private var reranking = false
@@ -22,7 +24,6 @@ struct AttemptDetailView: View {
             LazyVStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 SGHeroMedia(media: attempt.primaryImage, name: attempt.dish?.name ?? attempt.displayName)
                 header
-                actionButtons
                 metadata
                 if let dish = attempt.dish {
                     if let description = dish.publicDescription { Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description") }
@@ -35,7 +36,6 @@ struct AttemptDetailView: View {
                 }
                 if let dish = attempt.dish { DishRecipeSection(dish: dish, attempt: attempt) }
                 CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
-                SocialShareAction(attempt: attempt)
                 if let source = attempt.dish?.source {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                         SGSectionHeader(title: "Source")
@@ -58,14 +58,19 @@ struct AttemptDetailView: View {
         .navigationTitle("Dish Details").navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                DishShareAction(model: .make(for: attempt), toolbar: true, currentModel: { .make(for: attempt) })
                 Menu {
+                    Button("Edit Cook", systemImage: "pencil") { editing = true }.accessibilityIdentifier("detail-edit-cook")
+                    Button("Re-rank", systemImage: "arrow.triangle.2.circlepath") { reranking = true }.accessibilityIdentifier("detail-rerank")
+                    if request != nil { Button("Share with Sous Chefs", systemImage: "person.2") { sharingSocial = true }.accessibilityIdentifier("share-with-friends") }
                     Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
                     Button("Delete Cook", systemImage: "trash", role: .destructive) { deleting = true }
-                } label: { Image(systemName: "ellipsis") }
+                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
                 .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
-            }
+            }.sharedBackgroundVisibility(.hidden)
         }
+        .sheet(isPresented: $sharingSocial) { SocialPostComposer(attempt: attempt, close: { sharingSocial = false }) }
         .sheet(isPresented: $editingDishText) { if let dish = attempt.dish { DishTextEditor(dish: dish) } }
         .sheet(isPresented: $editing) { EditCookingView(attempt: attempt) }
         .sheet(isPresented: $reranking) { ReRankView(attempt: attempt) }
@@ -100,7 +105,7 @@ struct AttemptDetailView: View {
             SGEyebrow(text: globalRank == 1 ? "Signature Dish" : "From your Grub Rank")
             Text(attempt.dish?.name ?? "Dish").font(SGTheme.TypeRole.hero)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(attempt.versionLabel).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+            if let version = attempt.meaningfulVersionLabel { Text(version).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
             HStack(spacing: SGTheme.Space.small) {
                 if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
                 if let globalRank {
@@ -186,7 +191,7 @@ struct AttemptDetailView: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             HStack(spacing: SGTheme.Space.small) {
                 if cook.primaryImage != nil {
-                    DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.versionLabel)
+                    DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.meaningfulVersionLabel ?? cook.dish?.name ?? "Dish")
                         .frame(width: SGTheme.Size.versionThumbnail, height: SGTheme.Size.versionThumbnail)
                         .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.chip))
                 }
@@ -205,31 +210,6 @@ struct AttemptDetailView: View {
         .accessibilityHint(current ? "Current version" : "Opens this version")
     }
     private func versionIdentity(_ cook: CookingAttempt) -> some View { CookVersionIdentity(cook: cook) }
-    private var actionButtons: some View {
-        Group {
-            if textSize.isAccessibilitySize {
-                VStack(spacing: SGTheme.Space.small) { editButton; rerankButton; shareButton }
-            } else {
-                HStack(spacing: SGTheme.Space.xSmall) {
-                    editButton; rerankButton; shareButton
-                }
-            }
-        }
-    }
-    private var editButton: some View {
-        Button { editing = true } label: {
-            Label("Edit Cook", systemImage: "pencil").frame(maxWidth: .infinity)
-                .labelStyle(SGCenteredActionLabelStyle())
-        }.buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("detail-edit-cook")
-    }
-    private var rerankButton: some View {
-        Button { reranking = true } label: {
-            Label("Re-rank", systemImage: "arrow.triangle.2.circlepath").frame(maxWidth: .infinity)
-        }.buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("detail-rerank")
-    }
-    private var shareButton: some View {
-        DishShareAction(model: .make(for: attempt), compact: true, currentModel: { .make(for: attempt) })
-    }
 
 }
 

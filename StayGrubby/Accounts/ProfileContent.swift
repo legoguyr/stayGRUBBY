@@ -16,9 +16,9 @@ struct ProfileCookingContent: View {
 
     private var cookingSnapshot: some View {
         HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-            statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
+            statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count")
                 .frame(maxWidth: .infinity)
-            statistic(snapshot.dishCount, title: "Dishes ranked", identifier: "profile-dish-count")
+            statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
                 .frame(maxWidth: .infinity)
         }.padding(.vertical, SGTheme.Space.xSmall)
     }

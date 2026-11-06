@@ -64,7 +64,7 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap(); app.buttons["cook-more-actions"].tap(); app.buttons["dish-text-edit"].tap()
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-public").firstMatch.value as? String, "Bright lemon soup")
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-private").firstMatch.value as? String, "Only my Dish technique")
-        app.buttons["Cancel"].tap(); app.buttons["detail-edit-cook"].tap()
+        app.buttons["Cancel"].tap(); app.cookAction("detail-edit-cook").tap()
         let editedDescription = app.descendants(matching: .any).matching(identifier: "cook-dish-description").firstMatch
         reach(editedDescription, app)
         XCTAssertEqual(editedDescription.value as? String, "Bright lemon soup")
@@ -101,12 +101,12 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
         let app = launch(["--test-light", "--score-unlock-fixture", "10", "--multi-photo-review"])
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
-        XCTAssertTrue(app.buttons["detail-edit-cook"].waitForExistence(timeout: 8)); app.buttons["detail-edit-cook"].tap()
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 8)); app.cookAction("detail-edit-cook").tap()
         let collection = app.descendants(matching: .any).matching(identifier: "cook-photo-collection").firstMatch
         XCTAssertTrue(collection.waitForExistence(timeout: 8)); XCTAssertTrue(collection.label.contains("2 photos"))
         shot("Stage 2 multi-photo cover editing", app)
         app.buttons["Remove"].tap(); app.buttons["Cancel"].tap()
-        app.buttons["detail-edit-cook"].tap()
+        app.cookAction("detail-edit-cook").tap()
         XCTAssertTrue(collection.waitForExistence(timeout: 8)); XCTAssertTrue(collection.label.contains("2 photos"))
         XCTAssertTrue(app.buttons["Replace Photo"].exists)
         app.buttons["Cancel"].tap()

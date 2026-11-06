@@ -34,14 +34,13 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             app.launchWithReviewOptions()
             XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
             transition(firstRow(app), to: app.navigationBars["Dish Details"], app)
-            let edit = app.buttons["detail-edit-cook"], rerank = app.buttons["detail-rerank"], share = app.buttons["detail-share-dish"]
-            XCTAssertEqual(edit.frame.midY, rerank.frame.midY, accuracy: 2)
-            XCTAssertEqual(edit.frame.height, share.frame.height, accuracy: 2)
-            XCTAssertGreaterThanOrEqual(edit.frame.height, 44 - 0.01) // XCTest frame rounding.
-            capture("Centered pencil \(appearance)", app)
-            transition(edit, to: app.textFields["version-title"], app)
+            let share = app.buttons["detail-share-dish"], menu = app.buttons["cook-more-actions"]
+            XCTAssertEqual(share.frame.midY, menu.frame.midY, accuracy: 2)
+            XCTAssertGreaterThanOrEqual(share.frame.height, 44 - 0.01)
+            capture("Native Dish toolbar \(appearance)", app)
+            transition(app.cookAction("detail-edit-cook"), to: app.textFields["version-title"], app)
             tap(app.buttons["Cancel"], app)
-            XCTAssertTrue(edit.waitForExistence(timeout: 15))
+            XCTAssertTrue(menu.waitForExistence(timeout: 15))
             let version = app.buttons["detail-new-version"]
             for _ in 0..<10 { if version.exists && version.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(version.exists && version.isHittable)
@@ -73,13 +72,11 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
     @MainActor func testFreshRerankReactionControlsAutomaticResultAndProfileTopThree() {
         let app = launch(12)
         transition(firstRow(app), to: app.navigationBars["Dish Details"], app)
-        let edit = app.buttons["detail-edit-cook"], rerank = app.buttons["detail-rerank"], share = app.buttons["detail-share-dish"]
-        XCTAssertTrue(edit.exists && rerank.exists && share.exists)
-        XCTAssertEqual(edit.frame.minY, rerank.frame.minY, accuracy: 2)
-        XCTAssertEqual(edit.frame.minY, share.frame.minY, accuracy: 2)
-        XCTAssertEqual(edit.frame.height, share.frame.height, accuracy: 2)
-        capture("One-row Detail actions red", app)
-        transition(rerank, to: app.buttons["Liked it"], app)
+        let share = app.buttons["detail-share-dish"], menu = app.buttons["cook-more-actions"]
+        XCTAssertTrue(share.exists && menu.exists)
+        XCTAssertEqual(share.frame.midY, menu.frame.midY, accuracy: 2)
+        capture("Native Detail toolbar red", app)
+        transition(app.cookAction("detail-rerank"), to: app.buttons["Liked it"], app)
         XCTAssertTrue(app.buttons["It was fine"].exists && app.buttons["Didn't like it"].exists)
         capture("Fresh Re-rank initial reaction", app)
         transition(app.buttons["It was fine"], to: app.buttons["Skip"], app)
@@ -98,7 +95,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["Save Answers"].exists || app.buttons["Save Score"].exists)
         capture("Automatic Re-rank result", app)
         tap(app.buttons["ranking-result-close"], app)
-        XCTAssertTrue(edit.waitForExistence(timeout: 15))
+        XCTAssertTrue(menu.waitForExistence(timeout: 15))
         tap(app.navigationBars.buttons.firstMatch, app)
         tap(app.tabBars.buttons["My Kitchen"], app)
         let top = app.buttons["profile-share-top-three"]
@@ -117,7 +114,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         let app = launch(9, large: true)
         transition(firstRow(app), to: app.navigationBars["Dish Details"], app)
         XCTAssertTrue(app.descendants(matching: .any)["dish-sharing-locked"].exists)
-        let rerank = app.buttons["detail-rerank"]
+        let rerank = app.cookAction("detail-rerank")
         transition(rerank, to: app.buttons["Liked it"], app)
         tap(app.buttons["Cancel"], app)
         XCTAssertTrue(rerank.waitForExistence(timeout: 15))

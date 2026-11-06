@@ -120,13 +120,20 @@ struct SharedRecipeView: View {
                     RecipeReadingBody(content: value.content, allowScaling: true)
                     if let source = value.content.source { Text("Source · \(source)") }
                     if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
-                    SocialLinkShareAction(url: AppRoute.sharedRecipeURL(postID: postID), title: "Share Recipe Link").accessibilityIdentifier("shared-recipe-share-link")
                     Text("This link opens this post’s shared revision for Sous Chefs who still have access.").font(.footnote).foregroundStyle(.secondary)
 
                 } else if !failed { ProgressView("Loading shared Recipe") }
                 if failed { Text("Recipe unavailable or sharing has changed. Your saved cooking is unchanged.").accessibilityIdentifier("shared-recipe-unavailable"); Button("Retry") { Task { await load() } } }
             }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }.background(SGTheme.ColorToken.background).navigationTitle("Shared Recipe").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if let value {
+                    RecipeToolbarActions(url: AppRoute.sharedRecipeURL(postID: postID), sendContent: .recipe(value.recipeID), sendTitle: "Send Current Recipe to Sous Chef", disabled: busy) {
+                            NavigationLink { RecipeDetailView(id: value.recipeID) } label: { Label("Current Recipe", systemImage: "book.closed") }
+                        }
+
+                }
+            }
             .task(id: postID) { await load() }.refreshable { await load() }
             .onSocialRefresh { if !busy { await load() } }
             .navigationDestination(item: $copiedID) { RecipeDetailView(id: $0) }

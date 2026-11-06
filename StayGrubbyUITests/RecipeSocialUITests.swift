@@ -14,9 +14,15 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         for _ in 0..<4 { if recipe.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(recipe.waitForExistence(timeout: 8)); recipe.tap()
         XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["recipe-share-link"].exists)
+        app.revealRecipeActions()
+        XCTAssertTrue(app.buttons["recipe-send-friend"].waitForExistence(timeout:5))
+        XCTAssertEqual(app.buttons["recipe-send-friend"].label,"Send Current Recipe to Sous Chef")
         XCTAssertFalse(app.buttons["recipe-edit"].exists)
         XCTAssertFalse(app.buttons["recipe-history"].exists)
         XCTAssertFalse(app.buttons["recipe-link"].exists)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.55)).tap()
+        XCTAssertTrue(app.buttons["recipe-send-friend"].waitForNonExistence(timeout:5))
         let fork = app.buttons["shared-recipe-fork"]
         for _ in 0..<6 { if fork.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(fork.isHittable); fork.tap()
@@ -31,7 +37,7 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.revealCreation(); app.buttons["new-dish"].tap()
         let name = app.textFields["dish-name"]; XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Recipe sharing check")
         app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
-        let share = app.buttons["share-with-friends"]; XCTAssertTrue(share.waitForExistence(timeout: 15)); share.tap()
+        let share = app.cookAction("share-with-friends"); XCTAssertTrue(share.waitForExistence(timeout: 15)); share.tap()
         let toggle = app.switches["post-include-recipe"]
         for _ in 0..<4 { if toggle.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(toggle.waitForExistence(timeout: 8)); XCTAssertEqual(toggle.value as? String, "0")

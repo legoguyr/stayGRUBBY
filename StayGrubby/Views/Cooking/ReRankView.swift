@@ -23,7 +23,7 @@ struct ReRankView: View {
                         let opponentAttempt = attempts.first { $0.rankedItemID == opponent.id }
                         ComparisonView(newName: attempt.dish?.name ?? attempt.displayName,
                             existingName: opponentAttempt?.dish?.name ?? opponent.name,
-                            newVersion: attempt.versionLabel, existingVersion: opponentAttempt?.versionLabel,
+                            newVersion: attempt.meaningfulVersionLabel, existingVersion: opponentAttempt?.meaningfulVersionLabel,
                             newPhoto: attempt.primaryImage, existingPhoto: opponentAttempt?.primaryImage,
                             canUndo: session.canUndo, onAnswer: { workflow.answer($0) }, onUndo: { workflow.undo() })
                     } else if error == nil { ProgressView("Finishing your ranking…") }

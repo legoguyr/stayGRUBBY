@@ -135,8 +135,8 @@ struct FriendProfileView: View {
                     }
                 }.disabled(busy)
                 if person.relationship != .blocked {
-                    KitchenRecipesSection(personID: person.id).id(person.id).listRowSeparator(.hidden)
-                    SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id(person.id)
+                    KitchenRecipesSection(personID: person.id).id("recipes:\(person.id)").listRowSeparator(.hidden)
+                    SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id("posts:\(person.id)")
                         .listRowSeparator(.hidden)
                     SocialReportButton(kind: "profile", targetID: person.id)
                 }

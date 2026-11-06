@@ -5,7 +5,7 @@ struct CookVersionIdentity: View {
     let cook: CookingAttempt
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-            Text(cook.versionLabel).font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
+            if let version = cook.meaningfulVersionLabel { Text(version).font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true) }
             Text(cook.cookedAt?.formatted(date: .abbreviated, time: .omitted) ?? "Date unknown")
                 .font(SGTheme.TypeRole.secondary).foregroundStyle(SGTheme.ColorToken.subdued)
         }.frame(maxWidth: .infinity, alignment: .leading)

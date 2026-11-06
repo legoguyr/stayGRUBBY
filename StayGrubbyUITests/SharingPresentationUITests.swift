@@ -121,7 +121,7 @@ final class SharingPresentationUITests: StayGrubbyUITestCase {
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
         tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch, app)
-        tap(app.buttons["detail-rerank"], app)
+        tap(app.cookAction("detail-rerank"), app)
         tap(app.buttons["Liked it"], app)
         XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.staticTexts["result-dish-title"].label, "Matzo Ball Soup")
@@ -135,7 +135,7 @@ final class SharingPresentationUITests: StayGrubbyUITestCase {
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Locked result identity and private position"; screenshot.lifetime = .keepAlways; add(screenshot)
         tap(app.buttons["ranking-result-close"], app)
-        XCTAssertTrue(app.buttons["detail-rerank"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 10))
     }
 }
 #endif

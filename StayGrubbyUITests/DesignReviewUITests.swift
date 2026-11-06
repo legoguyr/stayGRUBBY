@@ -24,9 +24,9 @@ final class DesignReviewUITests: StayGrubbyUITestCase {
         let app = launch([appearance])
         shot("01 Grub Rank \(appearance) Signature Dish", app)
         let first = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch
-        XCTAssertTrue(first.exists); first.tap(); XCTAssertTrue(app.buttons["detail-edit-cook"].waitForExistence(timeout: 8))
+        XCTAssertTrue(first.exists); first.tap(); XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 8))
         shot("02 Dish Detail \(appearance)", app)
-        reach(app.buttons["detail-edit-cook"], app); app.buttons["detail-edit-cook"].tap()
+        reach(app.cookAction("detail-edit-cook"), app); app.cookAction("detail-edit-cook").tap()
         XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8)); shot("03 Edit Cook \(appearance)", app)
         app.buttons["Cancel"].tap(); XCTAssertTrue(app.buttons["detail-new-version"].waitForExistence(timeout: 8))
         reach(app.buttons["detail-new-version"], app); app.buttons["detail-new-version"].tap()
@@ -78,7 +78,7 @@ final class DesignReviewUITests: StayGrubbyUITestCase {
         app.showAllVersions()
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Smoky Sunday'")).firstMatch
         reach(row, app); row.tap()
-        reach(app.buttons["detail-rerank"], app); app.buttons["detail-rerank"].tap()
+        reach(app.cookAction("detail-rerank"), app); app.cookAction("detail-rerank").tap()
         XCTAssertTrue(app.buttons["It was fine"].waitForExistence(timeout: 8)); shot("19 First Impression Dark", app)
         app.buttons["It was fine"].tap()
         XCTAssertTrue(app.buttons["comparison-choice-new"].waitForExistence(timeout: 8)); shot("20 Comparison Dark", app)

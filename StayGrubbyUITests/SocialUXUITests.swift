@@ -90,7 +90,7 @@ final class SocialUXUITests: StayGrubbyUITestCase {
         let toggle = revealSharing(app); waitToggle(toggle, value: "1"); setToggle(toggle, value: "0")
         app.buttons["Continue"].tap(); XCTAssertTrue(app.buttons["Liked it"].waitForExistence(timeout: 5)); app.buttons["Liked it"].tap()
         XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["share-with-friends"].exists)
+        XCTAssertTrue(app.cookAction("share-with-friends").exists)
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "automatic-share-success").firstMatch.exists)
         app.buttons["ranking-result-close"].tap(); selectFeed(app)
         app.tabBars.buttons["My Kitchen"].tap()

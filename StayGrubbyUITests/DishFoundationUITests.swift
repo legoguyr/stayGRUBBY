@@ -23,7 +23,7 @@ final class DishFoundationUITests: StayGrubbyUITestCase {
         pub.tap(); pub.typeText("Bright, lemony test dish")
         priv.tap(); priv.typeText("Only my technique notes")
         app.buttons["dish-text-save"].tap()
-        XCTAssertTrue(app.buttons["detail-edit-cook"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 8))
         app.buttons["cook-more-actions"].tap(); app.buttons["dish-text-edit"].tap()
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-public").firstMatch.value as? String,"Bright, lemony test dish")
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-private").firstMatch.value as? String,"Only my technique notes")

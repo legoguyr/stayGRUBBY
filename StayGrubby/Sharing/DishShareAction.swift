@@ -5,6 +5,7 @@ struct DishShareAction: View {
     let model: ShareCardModel
     var prominent = false
     var compact = false
+    var toolbar = false
     var identifier = "detail-share-dish"
     var currentModel: (() -> ShareCardModel)? = nil
     @Environment(\.cookingMediaRoot) private var mediaRoot
@@ -13,7 +14,12 @@ struct DishShareAction: View {
 
     var body: some View {
         Group {
-            if model.scoreText == nil {
+            if toolbar {
+                Button { prepare() } label: { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }
+                    .buttonStyle(.plain).disabled(model.scoreText == nil)
+                    .accessibilityIdentifier(model.scoreText == nil ? "dish-sharing-locked" : identifier)
+                    .accessibilityLabel(model.scoreText == nil ? "Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing." : "Share Dish")
+            } else if model.scoreText == nil {
                 Label(compact ? "Share" : "Share Dish unlocks with your scores", systemImage: "lock.fill")
                     .font(compact ? SGTheme.TypeRole.headline : SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     .accessibilityIdentifier("dish-sharing-locked")
@@ -22,8 +28,7 @@ struct DishShareAction: View {
                     .background(compact ? SGTheme.ColorToken.elevatedSurface : .clear, in: RoundedRectangle(cornerRadius: SGTheme.Radius.field))
             } else {
                 Button {
-                    do { card = try ShareCardRenderer.render(model: currentModel?() ?? model, mediaRoot: mediaRoot) }
-                    catch { notice = .preparationFailed(error.localizedDescription) }
+                    prepare()
                 } label: {
                     Label(compact ? "Share" : "Share Dish", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
                 }
@@ -35,5 +40,9 @@ struct DishShareAction: View {
         }
         .shareCardSheet(card: $card, notice: $notice)
         .onChange(of: model.scoreText) { _, score in if score == nil { card = nil } }
+    }
+    private func prepare() {
+        do { card = try ShareCardRenderer.render(model: currentModel?() ?? model, mediaRoot: mediaRoot) }
+        catch { notice = .preparationFailed(error.localizedDescription) }
     }
 }

@@ -1,3 +1,7 @@
+## November 5, 2026 — V1 Recipe activity closeout
+
+The current Grub List supports distinct cooking posts and authorized Recipe creation/first-sharing activity. One RPC-only/RLS event per Recipe, no backfill or revision spam; current Recipe visibility, mutual Sous Chefs, blocks and active account/profile state govern every read. Recipe cards confer no access or cooking/score claim. Old feed endpoints remain compatible. New owner Recipes default to Sous Chefs via a visible toggle; existing private Recipes and private forks remain private. Current/pinned readers reuse sharing actions; pinned native links preserve revision while directed Send explicitly sends the current Recipe. Private foreign-creator credit is retained with new cook snapshots, not exposed as social history. [Canonical contract](STAYGRUBBY_ARCHITECTURE.md#v1-product-closeout--owner-corrections), [evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md).
+
 ## November 4, 2026 — Stage 3 interaction and directed sharing
 
 Stage 2 is OWNER ACCEPTED. Comments now uses native detents/keyboard-aware bottom input and compact Delete/Report controls. Discovery, expanded tagging, Send and Order Up! share compact identity/selection/timestamp language, with existing avatar transport and symmetric Sous Chefs. Activity infrastructure and account isolation are retained.

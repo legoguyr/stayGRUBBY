@@ -10,7 +10,7 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         let name = app.textFields["dish-name"]
         XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Integrated Private Soup")
         app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
-        XCTAssertTrue(app.buttons["share-with-friends"].waitForExistence(timeout: 15)); app.buttons["share-with-friends"].tap()
+        XCTAssertTrue(app.cookAction("share-with-friends").waitForExistence(timeout: 15)); app.cookAction("share-with-friends").tap()
         XCTAssertTrue(app.staticTexts["social-share-score-locked"].waitForExistence(timeout: 5))
         let publish = app.buttons["social-share-publish"]
         for _ in 0..<7 { if publish.isHittable { break }; app.swipeUp() }

@@ -120,14 +120,14 @@ final class CookingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(row("Salmon — First cook").exists)
         openRow("Salmon — Second cook")
         capture("Dish Detail")
-        tap(app.buttons["Edit Cook"])
+        tap(app.cookAction("detail-edit-cook"))
         let title = app.textFields["version-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 15)); title.tap()
         title.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Second cook".count) + "Grilled\n")
         tap(app.buttons["save-cook-metadata"])
         XCTAssertTrue(app.staticTexts["Grilled"].waitForExistence(timeout: 15))
 
-        transition(app.buttons["Re-rank"], to: app.buttons["Liked it"])
+        transition(app.cookAction("detail-rerank"), to: app.buttons["Liked it"])
         XCTAssertTrue(app.buttons["It was fine"].exists && app.buttons["Didn't like it"].exists)
         transition(app.buttons["Liked it"], to: app.buttons["Too Tough"])
         // With one opponent, Too Tough is a legitimate ordinary stop and saves
@@ -138,7 +138,7 @@ final class CookingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["result-rank"].exists)
         tap(app.buttons["ranking-result-close"])
-        XCTAssertTrue(app.buttons["Edit Cook"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 15))
 
         app.terminate(); app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
@@ -148,7 +148,7 @@ final class CookingUITests: StayGrubbyUITestCase {
         app.buttons["Delete Cook"].tap()
         XCTAssertTrue(app.alerts["Delete this cook?"].buttons["Cancel"].waitForExistence(timeout: 10))
         app.alerts["Delete this cook?"].buttons["Cancel"].tap()
-        XCTAssertTrue(app.buttons["Edit Cook"].exists)
+        XCTAssertTrue(app.buttons["cook-more-actions"].exists)
         app.buttons["cook-more-actions"].tap()
         XCTAssertTrue(app.buttons["Delete Cook"].waitForExistence(timeout: 10))
         app.buttons["Delete Cook"].tap()

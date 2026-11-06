@@ -37,13 +37,17 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
+## CURRENT — V1 Product Closeout
+
+Owner Stage 5 physical feedback reopened only the compact Kitchen Recipe sheet, meaningful version labels, consistent Recipe/Dish actions, new-Recipe Sous-Chef-default audience, editor copy, creator provenance and distinct privacy-aware Recipe-created Grub List activity. This is a contained V1 correction, not a new feature stage. [Evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md). Focused automated acceptance has passed; owner physical recheck is pending. Proceed immediately to the release gate after that recheck, without another normal feature stage.
+
 ## CURRENT — Stage 5: Final Product Polish & V1 Readiness
 
 Stages 1–4 implementation is complete through `7a2f7a3`; Stage 5 automated acceptance has passed, with owner physical acceptance pending. Stage 5 replaces the planned Photography stage and is the final normal product-development stage before the release gate. Existing photos/multi-photo ownership/sync are sufficient for V1 and frozen except evidenced regressions. Stage 5 hides conversion controls, adds authorized owned-Recipe Kitchen previews and resolves material whole-app consistency defects. No new normal feature stage begins automatically. See [Stage 5 scope/evidence](NEXT_RELEASE_STAGE_5_REVIEW.md).
 
 ## Required first App Store release milestone
 
-**Stages 1–4 complete → Stage 5 Final Product Polish & V1 Readiness → Pre-App-Store Trust/Safety/Privacy/Compliance Gate → Release Candidate → APP STORE V1 → post-V1 development.** Privacy/moderation/security dependencies may move earlier. No submission/distribution is authorized by a development checkpoint.
+**Stages 1–4 complete → Stage 5 Final Product Polish → V1 Product Closeout → Pre-App-Store Trust/Safety/Privacy/Compliance Gate → Release Candidate → APP STORE V1 → post-V1 development.** Privacy/moderation/security dependencies may move earlier. No submission/distribution is authorized by a development checkpoint.
 
 App Store V1 is a concrete required milestone, not a horizon optional ideas may repeatedly postpone. When proposing work classify it as **required before V1**, **desirable but deferrable**, or **post-V1**. Require before V1 only what product coherence, safety/privacy/platform compliance, data integrity and a credible first public version need; strongly prefer deferring optional expansion. Adjust dependencies dynamically without casually moving release farther away.
 

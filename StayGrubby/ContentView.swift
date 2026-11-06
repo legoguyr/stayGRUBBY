@@ -16,7 +16,7 @@ struct ContentView: View {
                 .tabItem { Label("Grub Rank", systemImage: "chart.bar.fill") }
                 .tag(StayGrubbyTab.rankings)
 
-            NavigationStack { FoodBibleView().modifier(SGPrimaryTabChrome()) }.id(links.foodBibleRequests)
+            NavigationStack { FoodBibleView().modifier(SGPrimaryTabChrome()) }
                 .tabItem { Label("Food Bible", systemImage: "book.closed") }.tag(StayGrubbyTab.bible)
 
             NavigationStack {
@@ -26,7 +26,6 @@ struct ContentView: View {
         }
         .tint(SGTheme.ColorToken.accent)
         .onChange(of: links.ownKitchenRequests) { _, _ in selection = .profile }
-        .onChange(of: links.foodBibleRequests) { _, _ in selection = .bible }
         .modifier(AppLinkPresentation())
         .modifier(SocialActivityHost(coordinator: activity))
         .modifier(SocialPublicationHost())

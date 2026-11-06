@@ -104,3 +104,7 @@ The owner-approved additive `20261103030054_recipe_owned_copy_share_options` fol
 ## V1 Stage 5 — authorized Kitchen Recipes
 
 `20261105214537_stage5_kitchen_recipes.sql` is deployed; all 37 local/hosted migration hashes match and reference SQL remains exact. `recipes.profile_index` returns up to 25 minimal owned-Recipe summaries subject to existing live-account/mutual-Sous-Chef/visibility/block rules, with no new tables, raw grants or data backfill. Other profiles receive no private cook/family IDs; owner-only fallback remains local/private. All 41 original data/Storage fingerprints match; Stage 5 Storage baseline/final is 83 objects. No Edge Function/Auth/secret/provider configuration change. See [Stage 5 evidence](../NEXT_RELEASE_STAGE_5_REVIEW.md).
+
+## V1 Product Closeout — November 5
+
+`20261106022814_v1_product_closeout.sql` is deployed, aligned byte-identically from the CLI scaffold; all 38 hashes match. One closed/RLS Recipe creation/first-sharing event per Recipe, fresh audience/block/moderation checks and the new typed `activity_page` leave old-client feeds unchanged. New private historical creator credit is separate from exact Recipe content/revision. No existing Recipe audience/data backfill, raw client grant, account/Auth/Edge Function/secret/provider or Storage change. All 41 existing data/Storage fingerprints and 83 objects match; new activity and attributed-cook rows are zero at deployment. [Review](../V1_PRODUCT_CLOSEOUT_REVIEW.md).

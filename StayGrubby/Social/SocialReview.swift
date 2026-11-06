@@ -13,6 +13,7 @@ import SwiftData
     var posts: [SocialPost] = []
     var comments: [UUID: [SocialComment]] = [:]
     var recipes: [UUID: Recipe] = [:]
+    var recipeActivityTimes: [UUID: (id: UUID, date: Double)] = [:]
     var recipeVersions: [UUID: [Recipe]] = [:]
     var recipePhotos: [UUID: RecipePhotoDescriptor] = [:]
     var reviewContext: ModelContext?
@@ -256,7 +257,8 @@ import SwiftData
             guard let id = payload.recipeID else { throw URLError(.badURL) }
             if action == "save", let content = payload.recipe {
                 if let chosen = payload.attemptID, cookRecipeLinks.contains(where: { $0.key != id && $0.value == chosen }) { throw URLError(.cannotParseResponse) }
-                let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? "private", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
+                let value = Recipe(id: id, isOwner: true, content: content, visibility: payload.visibility ?? recipes[id]?.visibility ?? "friends", revision: (recipes[id]?.revision ?? 0) + 1, createdAt: recipes[id]?.createdAt ?? 100, updatedAt: 200, saved: ticketDates[id] != nil)
+                if value.visibility == "friends", recipes[id]?.visibility != "friends", recipeActivityTimes[id] == nil { recipeActivityTimes[id] = (UUID(),Date().timeIntervalSince1970) }
                 if let prior = recipes[id], recipeVersions[id] == nil { recipeVersions[id] = [prior] }
                 recipeVersions[id, default: []].append(value)
                 recipes[id] = value
@@ -367,7 +369,7 @@ import SwiftData
             return try JSONEncoder().encode(SocialPostsPage(posts: [posts[index]]))
         }
         if endpoint == "social_feed" {
-            if action == "page" && feedFailures > 0 { feedFailures -= 1; throw URLError(.notConnectedToInternet) }
+            if (action == "page" || action == "activity_page") && feedFailures > 0 { feedFailures -= 1; throw URLError(.notConnectedToInternet) }
             if !feedSeeded && ProcessInfo.processInfo.arguments.contains("--social-review-feed") {
                 feedSeeded = true
                 posts.append(SocialPost(id: UUID(uuidString: "20000000-0000-0000-0000-000000000001")!, author: people[0], title: "Harissa Chicken with Roasted Peppers", versionTitle: "Grilled with lemon", scoreText: "8.6", achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: nil, published: true, isAuthor: false, moderationState: "active"))
@@ -389,6 +391,19 @@ import SwiftData
                 return post.isAuthor
             })) }
             if action == "post" { return try JSONEncoder().encode(SocialPostsPage(posts: visible.filter { $0.id == payload.postID })) }
+            if action == "activity_page" {
+                if ProcessInfo.processInfo.arguments.contains("--v1-closeout-review"), let id = recipes.values.first(where: { !$0.isOwner && $0.visibility == "friends" })?.id, recipeActivityTimes[id] == nil { recipeActivityTimes[id] = (UUID(),Date().timeIntervalSince1970) }
+                var activities = visible.map { GrubListActivity.cook($0) }
+                for (id,stamp) in recipeActivityTimes {
+                    guard let r = recipes[id], r.visibility == "friends", r.isOwner || people.contains(where: { $0.id == r.creator?.id && $0.relationship == .friends }) else { continue }
+                    let author = r.isOwner ? SocialPerson(id: UUID(uuidString:"10000000-0000-0000-0000-000000000099")!,displayName:identity.displayName,username:identity.username ?? "review_cook",relationship:.none) : r.creator!
+                    let entry = CookbookEntry(recipeID:id,dishTitle:r.content.title,recipeTitle:r.content.title,course:r.content.course,cuisine:r.content.cuisine,revision:r.revision,updatedAt:r.updatedAt,photoID:r.content.photoID)
+                    activities.append(.recipe(.init(id:stamp.id,createdAt:stamp.date,author:author,entry:entry,isAuthor:r.isOwner)))
+                }
+                activities.sort { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
+                if let date = payload.beforeTime, let id = payload.beforeID { activities = activities.filter { $0.createdAt < date || ($0.createdAt == date && $0.id.uuidString < id.uuidString) } }
+                return try JSONEncoder().encode(GrubListPage(activities:Array(activities.prefix(25))))
+            }
             return try JSONEncoder().encode(SocialPostsPage(posts: visible))
         }
         if endpoint == "social_content" {

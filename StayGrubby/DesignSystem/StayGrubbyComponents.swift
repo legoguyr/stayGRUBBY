@@ -108,8 +108,8 @@ struct RankedDishRow: View {
             else if rank <= 3 { Text("Signature Dishes").font(SGTheme.TypeRole.secondary).foregroundStyle(SGTheme.ColorToken.accent) }
             Text(attempt.dish?.name ?? attempt.displayName)
                 .font(SGTheme.TypeRole.dish).lineLimit(textSize.isAccessibilitySize ? nil : 2)
-            Text(attempt.versionLabel).font(SGTheme.TypeRole.body)
-                .foregroundStyle(.secondary).lineLimit(textSize.isAccessibilitySize ? nil : 2)
+            if let version = attempt.meaningfulVersionLabel { Text(version).font(SGTheme.TypeRole.body)
+                .foregroundStyle(.secondary).lineLimit(textSize.isAccessibilitySize ? nil : 2) }
             Text(attempt.category.label).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -200,7 +200,7 @@ struct SignatureRankHero: View {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     SGEyebrow(text: "01 · Signature Dish")
                     Text(attempt.dish?.name ?? attempt.displayName).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
-                    Text(attempt.versionLabel).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                    if let version = attempt.meaningfulVersionLabel { Text(version).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
                 }
                 Spacer(minLength: SGTheme.Space.small)
                 if let item = attempt.rankedItem { ScoreBadge(score: item.score) }

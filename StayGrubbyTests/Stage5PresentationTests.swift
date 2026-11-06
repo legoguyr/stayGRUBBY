@@ -12,10 +12,6 @@ import Testing
         #expect(scaled.orderedComponents[0].ingredients[0].unit == "g" && content == original)
         #expect(RecipeUnits.content(content,mode:.original,servings:nil).orderedComponents[0].ingredients[0].quantity == "400")
     }
-    @Test func kitchenLibraryActionClearsExternalPointerWithoutAuthenticating() {
-        let links=AppLinkRouter();links.receive(AppRoute.recipeURL(UUID()));links.openFoodBible()
-        #expect(links.pending == nil && links.foodBibleRequests == 1 && links.ownKitchenRequests == 0)
-    }
     #if DEBUG
     @Test func reviewProfileRecipesNeverReturnForeignPrivateOrBorrowedOwnership() async throws {
         let review=SocialReview(), peer=review.people[0], own=UUID(), shared=UUID(), secret=UUID()

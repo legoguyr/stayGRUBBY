@@ -118,12 +118,27 @@ extension XCUIApplication {
     @MainActor func revealRecipeActions(file: StaticString = #filePath, line: UInt = #line) {
         let menu = buttons["recipe-actions"]
         XCTAssertTrue(menu.waitForExistence(timeout: 8), "Recipe actions unavailable", file: file, line: line)
-        menu.tap()
+        // UIKit exposes this Menu through legacy Button attributes; use its actual bounds.
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
     @MainActor func openRecipeAction(_ id: String, file: StaticString = #filePath, line: UInt = #line) {
         let action = buttons[id]
         if !action.isHittable { revealRecipeActions(file: file, line: line) }
         XCTAssertTrue(action.waitForExistence(timeout: 5), "Recipe action unavailable: \(id)", file: file, line: line)
         action.press(forDuration: 0.2)
+    }
+}
+
+// Detail management actions use the same native overflow pattern as Recipes.
+extension XCUIApplication {
+    @MainActor func cookAction(_ id: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        let action = buttons[id]
+        if !action.isHittable {
+            let menu = buttons["cook-more-actions"]
+            XCTAssertTrue(menu.waitForExistence(timeout: 8), "Dish actions unavailable", file: file, line: line)
+            menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
+        XCTAssertTrue(action.waitForExistence(timeout: 5), "Dish action unavailable: \(id)", file: file, line: line)
+        return action
     }
 }

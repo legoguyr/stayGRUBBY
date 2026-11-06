@@ -69,7 +69,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 12)); app.buttons["ranking-result-close"].press(forDuration: 0.2)
         app.terminate(); app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch
-        row.press(forDuration: 0.2); XCTAssertTrue(app.buttons["detail-edit-cook"].waitForExistence(timeout: 5)); app.buttons["detail-edit-cook"].press(forDuration: 0.2)
+        row.press(forDuration: 0.2); XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 5)); app.cookAction("detail-edit-cook").press(forDuration: 0.2)
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "cook-dish-description").firstMatch.value as? String, "Bright soup")
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "cook-dish-private-notes").firstMatch.value as? String, "Only my technique")
         app.openCookingDetails(); XCTAssertEqual(app.buttons["cook-course"].value as? String, "Soup"); XCTAssertTrue(app.buttons["dish-cuisine"].label.contains("Italian")); XCTAssertTrue(app.buttons["dish-source-type"].label.contains("My Own"))

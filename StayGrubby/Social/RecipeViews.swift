@@ -79,8 +79,8 @@ struct TicketsView: View {
 }
 
 private enum RecipeManagementSheet: Identifiable {
-    case edit(Recipe), history(Recipe), link(Recipe), duplicate(Recipe), send(SocialSendContent)
-    var id: String { switch self { case .edit: "edit"; case .history: "history"; case .link: "link"; case .duplicate: "duplicate"; case .send: "send" } }
+    case edit(Recipe), history(Recipe), link(Recipe), duplicate(Recipe)
+    var id: String { switch self { case .edit: "edit"; case .history: "history"; case .link: "link"; case .duplicate: "duplicate" } }
 }
 struct RecipeDetailView: View {
     let id: UUID
@@ -117,9 +117,7 @@ struct RecipeDetailView: View {
         }.background(SGTheme.ColorToken.background).navigationTitle("Recipe").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let recipe {
-                    ToolbarItemGroup(placement: .topBarTrailing) {
-                        if recipe.visibility == "friends" { SocialLinkShareAction(url: AppRoute.recipeURL(recipe.id), title: "Share Recipe Link", compact: true).accessibilityIdentifier("recipe-share-link") }
-                        Menu {
+                    RecipeToolbarActions(url: recipe.visibility == "friends" ? AppRoute.recipeURL(recipe.id) : nil, sendContent: recipe.visibility == "friends" ? .recipe(recipe.id) : nil, disabled: busy) {
                             if recipe.isOwner {
                                 Button("Edit Recipe", systemImage: "pencil") { management = .edit(recipe) }.accessibilityIdentifier("recipe-edit")
                                 Button("Version History", systemImage: "clock") { management = .history(recipe) }.accessibilityIdentifier("recipe-history")
@@ -129,11 +127,9 @@ struct RecipeDetailView: View {
                             if recipe.linkedAttemptID != nil || linkedDish != nil {
                                 Button(recipe.linkedAttemptID == nil ? "Unlink Dish Family" : "Unlink Dish", systemImage: "link.badge.plus", role: .destructive) { detaching = true }.accessibilityIdentifier("recipe-detach")
                             }
-                            if recipe.visibility == "friends" { Button("Send to Sous Chef", systemImage: "person.crop.circle.badge.checkmark") { management = .send(.recipe(recipe.id)) }.accessibilityIdentifier("recipe-send-friend") }
                             if recipe.isOwner { Button("Delete Recipe", systemImage: "trash", role: .destructive) { deleting = true }.accessibilityIdentifier("recipe-delete") }
-                        } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
-                            .disabled(busy).accessibilityLabel("Recipe actions").accessibilityIdentifier("recipe-actions")
-                    }.sharedBackgroundVisibility(.hidden)
+                        }
+
                 }
             }
             .task(id: id) { await load() }.refreshable { await load() }
@@ -146,8 +142,7 @@ struct RecipeDetailView: View {
                 case .edit(let r): RecipeEditor(recipe: r) { recipe = $0 }
                 case .history(let r): RecipeHistoryView(recipe: r) { recipe = $0 }
                 case .link(let r): RecipeDishLinker(recipe: r) {}
-                case .duplicate(let r): RecipeEditor(draft: r.content) { _ in }
-                case .send(let value): SocialSendSheet(content: value)
+                case .duplicate(let r): RecipeEditor(draft: r.content, initiallyShared: false) { _ in }
                 }
             }
             .sheet(item: $claim, onDismiss: { reservation = UUID() }) { claim in if let list { AddCookingView(list: list, dish: linkedDish, origin: claim) } }
@@ -166,10 +161,10 @@ struct RecipeDetailView: View {
                 Text(recipe.content.title).font(SGTheme.TypeRole.hero).accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 let metadata = [recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
                 if !metadata.isEmpty { Text(metadata).font(.subheadline).foregroundStyle(.secondary) }
-                if let creator = recipe.content.originalCreator, !creator.isEmpty {
+                if let creator = RecipeSharingPolicy.creatorCredit(recipe) {
                     Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-attribution")
-                    if let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(.subheadline) }
-                } else if let creator = recipe.creator { Text("Created by \(creator.displayName)").font(.subheadline).accessibilityIdentifier("recipe-attribution") }
+                    if !recipe.isOwner, let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(.subheadline) }
+                }
                 if let description = recipe.content.description, !description.isEmpty { Text(description).font(.body).lineSpacing(6) }
             }
             Button { Task { await begin() } } label: { Label("Rank My Version", systemImage: "fork.knife").frame(maxWidth: .infinity) }
@@ -243,6 +238,7 @@ struct RecipeCookingProvenance: View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach(cooks) { cook in
                 Text("Recipe · \(cook.snapshot.title)").font(.headline)
+                if let creator = cook.creatorName { Text("Created by \(creator)").font(.subheadline) }
                 if let source = cook.snapshot.source { Text("Source · \(source)").font(.subheadline) }
                 Text("Recipe revision \(cook.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
                 NavigationLink("View recipe used for this cook") { RecipeSnapshotView(cook: cook) }
@@ -263,6 +259,7 @@ struct RecipeSnapshotView: View {
     var body: some View {
         List {
             Text(cook.snapshot.title).font(.title2.bold())
+            if let creator = cook.creatorName { Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-snapshot-creator") }
             if let description = cook.snapshot.description { Text(description) }
             if let source = cook.snapshot.source { Text("Source · \(source)") }
             RecipeReadingBody(content: cook.snapshot)

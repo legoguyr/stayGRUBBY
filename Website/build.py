@@ -87,7 +87,7 @@ def build(output, distribution=None):
     association = json.loads((ROOT / 'Website/association.json').read_text())
     (output / ".well-known/apple-app-site-association").write_text(json.dumps(association, separators=(',', ':')), encoding="utf-8")
     text = POLICY.read_text(encoding="utf-8")
-    assert "Effective date: November 2, 2026" in text
+    assert "Effective date: November 5, 2026" in text
     landing = '''<section class="hero">
       <p class="eyebrow">Your cooking. Your taste.</p>
       <h1>Remember what<br>you loved cooking.</h1>
