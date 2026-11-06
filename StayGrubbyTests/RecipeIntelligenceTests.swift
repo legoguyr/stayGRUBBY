@@ -55,38 +55,35 @@ import Testing
         #expect(throws:RecipeImportFailure.tooLong){try RecipeImportValidation.input(String(repeating:"🧄",count:9_000))}
         let roundtrip=try RecipeImportValidation.decode(JSONEncoder().encode(extraction));#expect(roundtrip==extraction)
     }
-    @Test func applePreferredAndAutomaticFallbackContract() async throws {
-        let apple=Provider(identity:"Apple",value:extraction),gemini=Provider(identity:"Gemini",value:extraction)
-        let result=try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
-        #expect(result.provider=="Apple" && apple.calls==1 && gemini.calls==0)
+    @Test func geminiOnlyRequestDoesNotRetryAndManualRemainsIndependent() async throws {
+        let gemini = Provider(identity: "Gemini", value: extraction)
+        let result = try await RecipeIntelligenceService.format(simple, dishTitle: "Dish", provider: gemini)
+        #expect(result.provider == "Gemini" && gemini.calls == 1)
         gemini.error = .quota
-        _ = try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
-        #expect(gemini.calls == 0) // cloud cooldown cannot block a future on-device path
-        gemini.error = nil
-        let cloud = try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini,preferOnDevice:false)
-        #expect(cloud.provider == "Gemini" && apple.calls == 2 && gemini.calls == 1)
-        gemini.calls = 0
-        apple.isAvailable=false
-        let fallback=try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
-        #expect(fallback.provider=="Gemini" && gemini.calls==1)
-        apple.isAvailable=true;apple.error = .timeout
-        _=try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)
-        #expect(gemini.calls==2)
+        await #expect(throws: RecipeImportFailure.quota) {
+            try await RecipeIntelligenceService.format(simple, dishTitle: "Dish", provider: gemini)
+        }
+        #expect(gemini.calls == 2) // One deliberate request, no automatic retry/provider substitution.
+        let manual = RecipeImportValidation.manual(simple, dishTitle: "Dish")
+        #expect(manual.draft.components?.first?.steps.first?.instruction == simple)
+        gemini.isAvailable = false
+        await #expect(throws: RecipeImportFailure.unavailable) {
+            try await RecipeIntelligenceService.format(simple, dishTitle: "Dish", provider: gemini)
+        }
+        #expect(gemini.calls == 2)
     }
     @Test func allFailureCategoriesRetainInputAndAllowManual() async {
         for error in [RecipeImportFailure.unavailable,.timeout,.quota,.rateLimited,.network,.invalid] {
-            let apple=Provider(identity:"Apple",value:extraction);apple.isAvailable=false
             let gemini=Provider(identity:"Gemini",value:extraction);gemini.error=error
-            await #expect(throws:error){try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)}
+            await #expect(throws:error){try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",provider:gemini)}
             let manual=RecipeImportValidation.manual(simple,dishTitle:"Original Dish")
             #expect(manual.draft.title=="Original Dish" && manual.draft.steps.isEmpty && manual.draft.components![0].steps[0].instruction==simple)
         }
     }
-    @Test func cancelledProviderNeverFallsBackOrProducesDraft() async {
-        let apple=Provider(identity:"Apple",value:extraction);apple.cancel=true
-        let gemini=Provider(identity:"Gemini",value:extraction)
-        await #expect(throws:CancellationError.self){try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",apple:apple,fallback:gemini)}
-        #expect(gemini.calls==0)
+    @Test func cancelledProviderNeverProducesDraftOrRetries() async {
+        let gemini=Provider(identity:"Gemini",value:extraction);gemini.cancel=true
+        await #expect(throws:CancellationError.self){try await RecipeIntelligenceService.format(simple,dishTitle:"Dish",provider:gemini)}
+        #expect(gemini.calls==1)
     }
     @Test func legacyStorageWireAndSearchRemainExistingContract() throws {
         let result=try RecipeImportValidation.review(extraction,raw:simple,dishTitle:"Dish",provider:"Gemini")

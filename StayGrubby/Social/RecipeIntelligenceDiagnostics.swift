@@ -1,6 +1,5 @@
 #if DEBUG
 import SwiftUI
-import FoundationModels
 
 @MainActor @Observable final class RecipeIntelligenceDiagnostics {
     static let shared = RecipeIntelligenceDiagnostics()
@@ -31,7 +30,6 @@ struct RecipeIntelligenceDiagnosticsView: View {
     var body: some View {
         Form {
             Section("Recipe Intelligence · Debug") {
-                LabeledContent("Apple Foundation Models", value: String(describing: SystemLanguageModel.default.availability))
                 LabeledContent("Gemini", value: diagnostics.configured.map { $0 ? "Configured (last response)" : "Not configured" } ?? "Not checked")
                 LabeledContent("Cloud permission", value: diagnostics.cloudAllowed ? "Allowed for last import" : "Not allowed")
                 LabeledContent("Supabase session", value: diagnostics.sessionValid.map { $0 ? "Valid at last request" : "Invalid" } ?? (request == nil ? "No account connection" : "Not checked"))

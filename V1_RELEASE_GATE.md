@@ -16,7 +16,7 @@ Canonical next-cycle checklist — November 5, 2026. Stage 5 plus its focused ow
 - [ ] Complete age-rating/social-media/UGC considerations using current platform requirements during the gate.
 - [ ] Verify Sign in with Apple, account readiness/sign-out, offline ready-account behavior and App Review access strategy. Automated fixtures cannot establish physical Apple authorization.
 - [ ] Disposition existing security advisories, including the leaked-password linter warning against the intended Apple-only Auth configuration. Do not change Auth settings merely to suppress a warning.
-- [ ] Production configuration/signing/entitlements/portrait identity, client-safe configuration, secrets/local-artifact scan and no Release development bypass.
+- [ ] Production configuration/signing/entitlements/portrait identity, iOS 17+ physical smoke and retirement of incompatible historical TestFlight builds where needed, client-safe configuration, secrets/local-artifact scan and no Release development bypass.
 - [ ] One release-candidate regression/crash review proportionate to final changes, including real-device photos/auth/sync/sharing/accessibility where needed; resolve actual blockers without reopening frozen systems.
 - [ ] Prepare and owner-approve a release TestFlight candidate; obtain owner approval before archive/build-number changes/upload/distribution.
 - [ ] Prepare App Store metadata/screenshots, reviewer instructions and final submission checklist. Obtain explicit owner approval before submission/publication.

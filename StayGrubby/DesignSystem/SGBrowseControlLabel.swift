@@ -16,6 +16,6 @@ struct SGBrowseControlLabel: View {
 struct SGPrimaryTabChrome: ViewModifier {
     func body(content: Content) -> some View {
         content.toolbarBackground(SGTheme.ColorToken.surface, for: .tabBar)
-            .toolbarBackgroundVisibility(.visible, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
     }
 }

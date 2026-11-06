@@ -28,10 +28,7 @@ import Testing
         #expect(a.reviewIngredients.contains("stock"))
         #expect(!RecipeAllergenAssessment.safetyText.contains("safe for"))
     }
-    @Test func onDeviceSuitabilityUsesObservedCapabilityAndCloudCooldownIsFriendly() {
-        #expect(RecipeCreatorContract.onDeviceSuitable("Scramble 2 eggs in butter."))
-        #expect(!RecipeCreatorContract.onDeviceSuitable(String(repeating: "Cook rice. ", count: 50)))
-        #expect(!RecipeCreatorContract.onDeviceSuitable("Prepare a crisp separately, then top rice with the crisp."))
+    @Test func cloudCooldownIsFriendly() {
         #expect(RecipeImportFailure.quota.message.contains("cooldown"))
         for word in ["Gemini","Google","API","quota"] { #expect(!RecipeImportFailure.quota.message.contains(word)) }
         #expect(RecipeImportFailure.server(status: 429, data: Data(#"{"code":"provider_quota"}"#.utf8)) == .quota)

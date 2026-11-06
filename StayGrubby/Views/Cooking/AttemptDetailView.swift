@@ -68,7 +68,7 @@ struct AttemptDetailView: View {
                     Button("Delete Cook", systemImage: "trash", role: .destructive) { deleting = true }
                 } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
                 .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
-            }.sharedBackgroundVisibility(.hidden)
+            }.sgIndependentToolbarBackground()
         }
         .sheet(isPresented: $sharingSocial) { SocialPostComposer(attempt: attempt, close: { sharingSocial = false }) }
         .sheet(isPresented: $editingDishText) { if let dish = attempt.dish { DishTextEditor(dish: dish) } }

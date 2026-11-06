@@ -10,9 +10,9 @@ Start with these three sources:
 
 The architecture overview indexes task-specific domain documents. Dated review files retain implementation/test/deployment evidence; they are not a competing current roadmap or instruction system. Future prompts need only name the cycle, unique requirements and acceptance criteria, referencing the three sources above.
 
-Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Current target is iPhone, upright portrait only. Do not reset data to build or review the app. See the architecture overview for account/development isolation and existing verification tools.
+Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Minimum target is iOS 17.0 on iPhone, upright portrait only. Do not reset data to build or review the app. See the architecture overview for account/development isolation and existing verification tools.
 
-Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini constructs content, the app validates structure, and the user reviews before Save. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.
+Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini is the only active V1 AI provider; it constructs content, the app validates structure, and the user reviews before Save. Manual creation and deterministic ingredient entry remain independent. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.
 
 Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).
 

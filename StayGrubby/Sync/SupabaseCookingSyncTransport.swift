@@ -2,9 +2,10 @@ import Foundation
 import Supabase
 
 nonisolated enum CookingSyncError: Error, Equatable {
-    case conflict, rejected, authenticationRequired, unavailable
+    case conflict, rejected, authenticationRequired, unavailable, rankingUpdateRequired
     var diagnosticCode: String {
         switch self {
+        case .rankingUpdateRequired: "ranking-update-required"
         case .conflict: "revision-conflict"
         case .rejected: "operation-rejected"
         case .authenticationRequired: "authentication-required"
@@ -44,6 +45,7 @@ extension SupabaseAccountBackend: AccountSyncBackend {
         } catch let error as PostgrestError {
             // SQL errors can include user data: expose/persist only a fixed diagnostic code.
             switch error.code {
+            case "0A000": throw CookingSyncError.rankingUpdateRequired
             case "40001": throw CookingSyncError.conflict
             case "42501", "PGRST301", "PGRST302": throw CookingSyncError.authenticationRequired
             default: throw CookingSyncError.rejected

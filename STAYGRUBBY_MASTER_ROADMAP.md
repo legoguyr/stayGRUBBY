@@ -37,7 +37,11 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — V1 Ranking Integrity & Final UX Corrections
+## CURRENT — iOS compatibility expansion before functional TestFlight preparation
+
+The owner requested iOS 17 first, falling back to 18 only for disproportionate rewrites. iOS 17.0 compiles with small native toolbar fallbacks; SwiftData/Observation and accepted ranking remain intact. Gemini is the only active V1 AI Recipe provider, with Apple generation removed from compilation. The separately approved hosted sync guard prevents incompatible older builds from overwriting assessment-aware data. [Compatibility evidence](IOS_COMPATIBILITY_REVIEW.md). Older-iOS physical smoke remains required; no Release Gate or TestFlight upload starts automatically. Post-V1 priorities are unchanged.
+
+## PREVIOUS — V1 Ranking Integrity & Final UX Corrections
 
 Owner physical feedback after `094c178` explicitly reopened ranking for an evidenced re-ranking acquisition/commit mismatch. This correction preserves comparisons/IDs and uses explicit assessment boundaries plus model-aware stopping, with focused Kitchen search, Recipe actions/multi-send and content-first cleanup. [Evidence](V1_RANKING_INTEGRITY_REVIEW.md). Owner physical acceptance remains pending; afterward proceed directly to the existing V1 Release Gate. No next feature stage, release-gate execution or distribution is begun here. Post-V1 priorities remain unchanged.
 

@@ -22,7 +22,7 @@ struct RecipeToolbarActions<Management: View>: ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             RecipeLinkShare(url: url).disabled(disabled)
             RecipeActions(sendContent: sendContent, sendTitle: sendTitle, management: management).disabled(disabled)
-        }.sharedBackgroundVisibility(.hidden)
+        }.sgIndependentToolbarBackground()
     }
 }
 

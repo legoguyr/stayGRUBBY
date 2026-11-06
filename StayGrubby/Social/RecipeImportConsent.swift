@@ -21,6 +21,6 @@ import Foundation
 @MainActor enum RecipePasteRequest {
     static func format(_ raw: String, dishTitle: String, acknowledged: Bool, request: RecipeImportRequest?) async throws -> RecipeImportResult {
         guard acknowledged else { throw RecipeImportFailure.unavailable }
-        return try await RecipeIntelligenceService.format(raw, dishTitle: dishTitle, apple: AppleRecipeIntelligenceProvider(), fallback: GeminiRecipeIntelligenceProvider(request: request), preferOnDevice: false)
+        return try await RecipeIntelligenceService.format(raw, dishTitle: dishTitle, provider: GeminiRecipeIntelligenceProvider(request: request))
     }
 }

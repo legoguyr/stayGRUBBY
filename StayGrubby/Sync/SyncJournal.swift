@@ -57,6 +57,8 @@ import CryptoKit
 }
 
 nonisolated struct SyncChanges: Codable, Equatable, Sendable {
+    /// Missing on old immutable outbox operations; never relabel/rewrite those payloads.
+    var rankingAssessmentVersion: Int? = 1
     /// Absent in old queued/client payloads; protects galleries from legacy replace-all edits.
     var photoCollectionVersion: Int? = 1
     var upserts: [SyncRecord]

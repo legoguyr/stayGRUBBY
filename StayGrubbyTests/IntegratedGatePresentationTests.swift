@@ -54,7 +54,7 @@ final class IntegratedGatePresentationTests: XCTestCase {
         let controller = UIHostingController(rootView: view)
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let window = UIWindow(windowScene: scene)
-        window.frame = scene.effectiveGeometry.coordinateSpace.bounds
+        window.frame = scene.coordinateSpace.bounds
         window.overrideUserInterfaceStyle = appearance == .light ? .light : .dark
         window.rootViewController = controller
         window.isHidden = false

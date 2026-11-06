@@ -1,3 +1,7 @@
+# iOS 17+ compatibility — November 6, 2026
+
+Preserve the accepted screens and components across iOS 17+. `sgIndependentToolbarBackground` retains the accepted background treatment on iOS 26+, while earlier supported versions use their native toolbar appearance. Tab-bar visibility uses the older equivalent API. No screen duplication or redesign. V1 Recipe Creator is Gemini-only: no Apple Intelligence availability UI or device-dependent provider choice. Manual/deterministic entry, portrait, accessibility and light/dark support remain required. [Evidence](IOS_COMPATIBILITY_REVIEW.md).
+
 # V1 final UX corrections — November 6, 2026
 
 Kitchen Recipes adds native search and reuses Food Bible literal matching plus the shared authorized pagination loader. Share and overflow Recipe toolbar actions use adaptive StayGrubby red; inactive private Share stays secondary. Dish Recipe actions are compact Add Recipe / Link Existing Recipe beneath Recipe, stacking only for accessibility/narrow space. Send uses the canonical person row with multi-selection, selected count, explicit Send, success and partial-failure Retry Unsent; no chat or permission grant.

@@ -68,7 +68,7 @@ struct FriendsView: View {
             }
         }
         .navigationTitle(administrative?.title ?? "Sous Chefs").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
-        .toolbar { if administrative == nil { ToolbarItem(placement: .topBarTrailing) { ShareMyKitchen(compact: true) }.sharedBackgroundVisibility(.hidden) } }
+        .toolbar { if administrative == nil { ToolbarItem(placement: .topBarTrailing) { ShareMyKitchen(compact: true) }.sgIndependentToolbarBackground() } }
         .scrollDismissesKeyboard(.interactively).refreshable { await load() }
         .onSocialRefresh { if !loading && section != .search { await load() } }
         .task(id: taskKey) {

@@ -48,6 +48,11 @@ private actor DelayedAcceptedTransport: SyncTransport {
     func release() { reply?.resume(); reply = nil }
 }
 
+private actor RankingRejectionCounter {
+    private(set) var calls = 0
+    func reject() throws -> SyncReceipt { calls += 1; throw CookingSyncError.rankingUpdateRequired }
+}
+
 @MainActor struct StructuredCookingSyncTests {
     private func root() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent("structured-sync-\(UUID())") }
     private func empty(_ account: UUID) throws -> CookingGraph {
@@ -84,6 +89,36 @@ private actor DelayedAcceptedTransport: SyncTransport {
         let snapshot = await cloud.snapshot()
         try CookingGraphHydration.apply(snapshot.graph, revision: snapshot.account.syncRevision, context: store.container.mainContext)
     }
+    @Test func legacyRankingOutboxIsPreservedAndStopsAutomaticRetries() async throws {
+        let owner = UUID(), base = root(), initial = try empty(owner), user = UUID()
+        defer { try? FileManager.default.removeItem(at: base) }
+        let store = try device(initial, root: base), context = store.container.mainContext
+        _ = try create(context, "Preserved local cook")
+        let queued = try #require(SyncJournal.pending(context).first)
+        var old = try #require(JSONSerialization.jsonObject(with: queued.payload) as? [String: Any])
+        old.removeValue(forKey: "rankingAssessmentVersion")
+        queued.payload = try JSONSerialization.data(withJSONObject: old, options: [.sortedKeys])
+        queued.payloadHash = SyncJournal.digest(queued.payload); try context.save()
+        let original = SyncJournal.envelope(queued), graph = try current(store)
+        let rejected = RankingRejectionCounter(), coordinator = CookingSyncCoordinator()
+        let account = ProvisionedAccount(formatVersion: 1, authUserID: user, accountID: owner, syncRevision: 1, libraryState: .initialized)
+        try coordinator.connect(store: store, account: account, send: { _ in try await rejected.reject() }, load: {
+            Issue.record("Rejected old work must not be overwritten by hydration")
+            return .init(account: account, graph: initial)
+        })
+        for _ in 0..<100 {
+            if coordinator.status == .rankingUpdateRequired { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(coordinator.status == .rankingUpdateRequired)
+        #expect(try current(store) == graph)
+        #expect(SyncJournal.envelope(try #require(SyncJournal.pending(context).first)) == original)
+        #expect(try SyncJournal.pending(context).first?.lastError == "ranking-update-required")
+        coordinator.request(); try await Task.sleep(for: .milliseconds(400))
+        #expect(await rejected.calls == 1)
+        coordinator.disconnect()
+    }
+
     @Test func twoDevicesCreateEditSourceTagsEvidenceMediaMetadataAndDeleteWithoutEcho() async throws {
         let owner = UUID(), user = UUID(), aRoot = root(), bRoot = root(), initial = try empty(owner)
         defer { try? FileManager.default.removeItem(at: aRoot); try? FileManager.default.removeItem(at: bRoot) }

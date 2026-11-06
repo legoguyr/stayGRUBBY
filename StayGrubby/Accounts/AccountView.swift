@@ -62,13 +62,13 @@ struct AccountView: View {
         .navigationTitle("My Kitchen").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "My Kitchen") }
-            ToolbarItem(placement: .topBarLeading) { ShareMyKitchen(compact: true) }.sharedBackgroundVisibility(.hidden)
-            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sharedBackgroundVisibility(.hidden)
+            ToolbarItem(placement: .topBarLeading) { ShareMyKitchen(compact: true) }.sgIndependentToolbarBackground()
+            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
                     Image(systemName: "gearshape").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
                 }.accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
-            }.sharedBackgroundVisibility(.hidden)
+            }.sgIndependentToolbarBackground()
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
