@@ -26,6 +26,12 @@ nonisolated struct RankingEngine {
     private(set) var answers: [Answer] = []
     private(set) var totalAnswerActions = 0
     private(set) var undoCount = 0
+    let context: RankingContext?
+    private var fitted: RankingAnalysis?
+
+    init(itemID: UUID, orderedIDs: [UUID], reaction: InitialReaction, context: RankingContext? = nil) {
+        self.itemID = itemID; self.orderedIDs = orderedIDs; self.reaction = reaction; self.context = context
+    }
 
     var evidence: [PreferenceEvidence] {
         answers.compactMap { entry in
@@ -75,7 +81,40 @@ nonisolated struct RankingEngine {
         return nil
     }
 
-    var placementResolved: Bool { confidenceStopReason != nil }
+    var placementResolved: Bool { confidenceStopReason != nil && modelPlacementAgrees }
+
+    private var modelPlacementAgrees: Bool {
+        guard context != nil, !orderedIDs.isEmpty else { return true }
+        guard let fitted, fitted.diagnostics.converged, let target = fitted.estimates[itemID] else { return false }
+        // Same quantization as the persisted ordering. A near tie is within the
+        // conditional interval; the store retains createdAt/UUID tie breaking.
+        let position = orderedIDs.filter { (fitted.estimates[$0]!.strength * 1e7).rounded() > (target.strength * 1e7).rounded() }.count
+        var cumulative = 0.0, lower = 0, upper = orderedIDs.count
+        var found = false
+        for (slot, probability) in placementProbabilities.enumerated() {
+            cumulative += probability
+            if !found && cumulative >= 0.025 { lower = slot; found = true }
+            if cumulative >= 0.975 { upper = slot; break }
+        }
+        return position >= lower && position <= upper
+    }
+
+    /// When the insertion heuristic and the actual global fit disagree, ask a
+    /// useful corrective pair, including repeated evidence. Skip remains local.
+    private var correctiveCandidate: (id: UUID, information: Double)? {
+        guard context != nil, let fitted, fitted.diagnostics.converged else { return nil }
+        let skipped = Set(answers.filter { $0.answer == .skip }.map(\.opponent))
+        let probabilities = placementProbabilities
+        var candidates: [(UUID, Double)] = [], cumulative = 0.0
+        for (index, id) in orderedIDs.enumerated() {
+            cumulative += probabilities[index]
+            guard !skipped.contains(id), let relationship = fitted.relationship(itemID, id), relationship.informationGainBits >= 0.01 else { continue }
+            let p = BradleyTerryModel.logistic(relationship.strengthDifference)
+            candidates.append((id, abs(cumulative - p) * relationship.informationGainBits))
+        }
+        let varied = candidates.filter { $0.0 != answers.last?.opponent }
+        return (varied.isEmpty ? candidates : varied).max { $0.1 < $1.1 }
+    }
 
     private var bestCandidate: (id: UUID, information: Double)? {
         let used = Set(answers.map(\.opponent))
@@ -94,13 +133,16 @@ nonisolated struct RankingEngine {
     }
 
     var stopReason: SessionStopReason? {
-        if let reason = confidenceStopReason { return reason }
+        if let reason = confidenceStopReason, modelPlacementAgrees { return reason }
+        if confidenceStopReason != nil, context != nil { return correctiveCandidate == nil ? .lowInformation : nil }
         guard let best = bestCandidate else { return .opponentsExhausted }
         return best.information < 0.08 ? .lowInformation : nil
     }
 
     var nextOpponent: UUID? {
-        guard !placementResolved, let candidate = bestCandidate, candidate.information >= 0.08 else { return nil }
+        guard !placementResolved else { return nil }
+        if confidenceStopReason != nil, context != nil { return correctiveCandidate?.id }
+        guard let candidate = bestCandidate, candidate.information >= 0.08 else { return nil }
         return candidate.id
     }
 
@@ -110,9 +152,13 @@ nonisolated struct RankingEngine {
         guard let opponent = nextOpponent else { return }
         answers.append(Answer(opponent: opponent, answer: answer, timestamp: timestamp))
         totalAnswerActions += 1
+        if answer != .skip { fitted = context?.analyze(adding: evidence, newItem: itemID) }
     }
     mutating func undo() {
-        if canUndo { answers.removeLast(); undoCount += 1 }
+        if canUndo {
+            let removed = answers.removeLast(); undoCount += 1
+            if removed.answer != .skip { fitted = context?.analyze(adding: evidence, newItem: itemID) }
+        }
     }
 
     func diagnostics(analysis: RankingAnalysis? = nil, rank: RankEstimate? = nil) -> SessionDiagnostics {

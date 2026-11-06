@@ -40,7 +40,8 @@ private struct KitchenRecipeCollection: View {
     @State private var entries: [CookbookEntry] = []
     @State private var loading = false
     @State private var failed = false
-    @State private var more = false
+    @State private var query = ""
+    private var visible: [CookbookEntry] { entries.filter { CookbookSearch.matches($0.searchableText, query: query) } }
     @State private var generation = UUID()
     var body: some View {
         ScrollView {
@@ -53,35 +54,36 @@ private struct KitchenRecipeCollection: View {
                     Text(personID == nil ? "No Recipes yet" : "No shared Recipes available").foregroundStyle(.secondary)
                         .accessibilityIdentifier("kitchen-recipes-empty")
                 }
+                if !loading && !failed && !entries.isEmpty && visible.isEmpty {
+                    ContentUnavailableView.search(text: query).accessibilityIdentifier("kitchen-recipes-no-results")
+                }
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top), count: size.isAccessibilitySize ? 1 : 2), alignment: .leading, spacing: SGTheme.Space.medium) {
-                    ForEach(entries) { entry in
+                    ForEach(visible) { entry in
                         NavigationLink { RecipeDetailView(id: entry.recipeID) } label: {
                             CookbookCard(entry: entry, dish: personID == nil ? dishes.first { $0.id == entry.dishID } : nil)
                         }.buttonStyle(.plain).accessibilityIdentifier("kitchen-recipe-\(entry.recipeID)")
                     }
                 }
-                if more { Button("More Recipes") { Task { await load(nextPage: true) } }.frame(minHeight: SGTheme.Size.minimumTap).disabled(loading) }
             }.frame(maxWidth: .infinity, alignment: .leading)
                 .task(id: personID) { await load() }
                 .onSocialRefresh { await load() }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
-                .onChange(of: phase) { _, next in  generation = UUID(); entries = []; more = false; if next == .active { Task { await load() } } }
+                .onChange(of: phase) { _, next in  generation = UUID(); entries = []; if next == .active { Task { await load() } } }
                 // Pushing a reader must retain its source collection. Dismissal destroys the sheet;
                 // scene/account/access refreshes still clear or reauthorize foreign summaries.
                 .onDisappear { generation = UUID() }
                 .padding(SGTheme.Space.medium)
-        }.background(SGTheme.ColorToken.background).navigationTitle("Recipes").navigationBarTitleDisplayMode(.inline)
+        }.searchable(text: $query, prompt: "Search Recipes").scrollDismissesKeyboard(.interactively)
+        .background(SGTheme.ColorToken.background).navigationTitle("Recipes").navigationBarTitleDisplayMode(.inline)
     }
-    private func load(nextPage: Bool = false) async {
+    private func load() async {
         guard let request else { return }; let token = UUID(); generation = token
-        let cursor = nextPage ? entries.last?.id : nil
-        if !nextPage { if personID != nil { entries = [] }; more = false }
+        if personID != nil { entries = [] }
         loading = true; failed = false; defer { if generation == token { loading = false } }
         do {
-            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", "profile_index", .init(peerID: personID, beforeID: cursor)))
+            let next = try await CookbookIndex.profile(request: request, personID: personID)
             guard !Task.isCancelled, token == generation else { return }
-            if nextPage { let seen = Set(entries.map(\.id)); entries += page.entries.filter { !seen.contains($0.id) } } else { entries = page.entries }
-            more = page.entries.count == 25
-        } catch is CancellationError {} catch { if token == generation { entries = []; more = false; failed = true } }
+            entries = next
+        } catch is CancellationError {} catch { if token == generation { entries = []; failed = true } }
     }
 }

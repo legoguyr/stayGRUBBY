@@ -51,12 +51,6 @@ struct RecipeEditor: View {
             ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
-                    if let importReview {
-                        VStack(alignment: .leading, spacing: 12) {
-                            ForEach(importReview.warnings, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
-                            DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
-                        }.accessibilityIdentifier("recipe-import-review")
-                    }
                     identity
                     details
                     VStack(alignment: .leading, spacing: 16) {
@@ -74,6 +68,14 @@ struct RecipeEditor: View {
                     Divider()
                     attribution
                     allergenDetails
+                    if let importReview {
+                        VStack(alignment: .leading, spacing: 12) {
+                            DisclosureGroup("Draft review") {
+                                ForEach(importReview.warnings, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
+                            }.accessibilityIdentifier("recipe-draft-review")
+                            DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.accessibilityIdentifier("recipe-original-paste")
+                        }.accessibilityIdentifier("recipe-import-review")
+                    }
                     if failed { Label("Couldn’t save. Your draft is safe here. Check your connection and cooking sync, then try Save again. If it changed elsewhere, keep your draft while you review that change.", systemImage: "wifi.exclamationmark").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
                 }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
@@ -152,7 +154,6 @@ struct RecipeEditor: View {
     private var totalField: some View { VStack(alignment: .leading, spacing: 6) {
         Text("TOTAL · MIN").font(.caption.bold()).foregroundStyle(.secondary)
         TextField("—", value: $content.elapsedMinutes, format: .number).keyboardType(.numberPad).accessibilityIdentifier("recipe-total-minutes").accessibilityLabel("Total elapsed time in minutes")
-        if content.metadataOrigins?.values.contains("estimated") == true { Text("Suggested servings and times may be estimates. Adjust them for your kitchen.").font(.footnote).foregroundStyle(.secondary) }
     } }
     private var allergenDetails: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -352,8 +353,8 @@ private struct RecipeRowActions: View {
             .accessibilityLabel(label).confirmationDialog("Delete this row?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete Row", role: .destructive, action: remove) }
     }
 }
-private struct RecipeInlineAction: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View { configuration.label.font(.body.weight(.medium)).frame(minHeight: 44).foregroundStyle(SGTheme.ColorToken.accent).opacity(configuration.isPressed ? 0.6 : 1) }
+struct RecipeInlineAction: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { configuration.label.font(.body.weight(.medium)).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle()).foregroundStyle(SGTheme.ColorToken.accent).opacity(configuration.isPressed ? 0.6 : 1) }
 }
 
 private struct RecipeBulkSection: Identifiable { let id: UUID }

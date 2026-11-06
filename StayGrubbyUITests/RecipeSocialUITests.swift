@@ -17,7 +17,7 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["recipe-share-link"].exists)
         app.revealRecipeActions()
         XCTAssertTrue(app.buttons["recipe-send-friend"].waitForExistence(timeout:5))
-        XCTAssertEqual(app.buttons["recipe-send-friend"].label,"Send Current Recipe to Sous Chef")
+        XCTAssertEqual(app.buttons["recipe-send-friend"].label,"Send Current Recipe to Sous Chefs")
         XCTAssertFalse(app.buttons["recipe-edit"].exists)
         XCTAssertFalse(app.buttons["recipe-history"].exists)
         XCTAssertFalse(app.buttons["recipe-link"].exists)

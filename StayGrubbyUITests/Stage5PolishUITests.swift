@@ -33,6 +33,28 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format:"label BEGINSWITH 'Off keeps this Recipe private'")).firstMatch.exists)
         app.buttons["recipe-editor-cancel"].tap()
     }
+    @MainActor func testKitchenRecipeSearchAndCompactReaderInBothAppearances() {
+        for appearance in ["--test-light", "--test-dark"] {
+            let app = launch([appearance]); openRecipes(app)
+            let search = app.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 8)); search.tap(); search.typeText("lemon")
+            let cards = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'kitchen-recipe-'"))
+            XCTAssertTrue(cards.firstMatch.waitForExistence(timeout: 5))
+            XCTAssertEqual(cards.count, 1)
+            search.typeText(" no-match")
+            XCTAssertTrue(app.descendants(matching: .any)["kitchen-recipes-no-results"].waitForExistence(timeout: 5))
+            search.buttons["Clear text"].tap(); search.typeText("lemon")
+            if app.keyboards.buttons["Search"].exists { app.keyboards.buttons["Search"].tap() }
+            cards.firstMatch.tap()
+            XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+            // This fixture is private: inactive Share remains secondary by design.
+            XCTAssertTrue(app.images["recipe-sharing-off"].exists)
+            app.revealRecipeActions(); app.buttons["recipe-edit"].tap()
+            XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Suggested servings and times'")).firstMatch.exists)
+            app.buttons["recipe-editor-cancel"].tap()
+            app.terminate()
+        }
+    }
     @MainActor func testOtherKitchenAuthorizedRecipesShareAndSendAtLargeType() {
         let app=launch(["--test-dark","--test-large-type"]);app.buttons["friends-open"].tap()
         let friend=app.buttons["friend-person-friend_cook"];XCTAssertTrue(friend.waitForExistence(timeout:8));friend.tap();openRecipes(app)
@@ -43,6 +65,20 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         let send=app.buttons["recipe-send-friend"];XCTAssertTrue(send.waitForExistence(timeout:5),app.debugDescription);send.press(forDuration:0.2);let recipient=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'send-recipient-'")).firstMatch
         XCTAssertTrue(recipient.waitForExistence(timeout:8));reach(recipient,app);recipient.tap();app.buttons["social-send-confirm"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["social-send-success"].waitForExistence(timeout:8))
+    }
+    @MainActor func testDishRecipeRelationshipActionsShareOneCompactRow() {
+        let app = launch(["--test-light"]); app.tabBars.buttons["Grub Rank"].tap()
+        let cook = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'" )).firstMatch
+        XCTAssertTrue(cook.waitForExistence(timeout: 8)); cook.tap()
+        let add = app.buttons["dish-add-recipe"], link = app.buttons["dish-link-recipe"]
+        reach(add, app); reach(link, app)
+        XCTAssertTrue(add.isHittable && link.isHittable)
+        XCTAssertEqual(add.frame.midY, link.frame.midY, accuracy: 2)
+        XCTAssertGreaterThanOrEqual(add.frame.height, 44); XCTAssertGreaterThanOrEqual(link.frame.height, 44)
+        shot("Compact Dish Recipe relationship row", app)
+        add.tap(); XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout: 8))
+        app.buttons["recipe-editor-cancel"].tap()
+        XCTAssertTrue(link.waitForExistence(timeout: 8))
     }
     @MainActor func testRecipeSheetOfflineRetryAndDismissKeepsKitchen() {
         let app=launch(["--test-light","--stage5-recipes-offline"]);openRecipes(app)

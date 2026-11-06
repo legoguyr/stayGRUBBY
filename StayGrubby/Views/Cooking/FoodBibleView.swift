@@ -173,7 +173,7 @@ struct DishRecipeSection: View {
                 NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: { Label(usedRecipe.snapshot.title, systemImage: "clock") }.accessibilityIdentifier("cook-recipe-snapshot")
                 Text("Recipe revision \(usedRecipe.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
             }
-            SGSectionHeader(title: legacy ? "Dish family Recipe" : exactLink ? "Linked Recipe" : "Current Recipe")
+            SGSectionHeader(title: "Recipe")
             if let recipe {
                 NavigationLink { RecipeDetailView(id: recipe.id) } label: { Label(recipe.content.title, systemImage: "book") }.accessibilityIdentifier("dish-view-recipe")
                 if legacy { Text("Legacy link: no specific version recorded.").font(.footnote).foregroundStyle(.secondary) }
@@ -182,8 +182,11 @@ struct DishRecipeSection: View {
                     Text("Linked Recipe unavailable").foregroundStyle(.secondary)
                     Button("Unlink Recipe") { Task { await unlink() } }
                 } else if attempt != nil {
-                    if usedRecipe == nil { Button("Add Recipe", systemImage: "plus") { creating = true }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("dish-add-recipe") }
-                    Button("Link an Existing Recipe") { selecting = true }.frame(minHeight: 44).accessibilityIdentifier("dish-link-recipe")
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: SGTheme.Space.medium) { relationshipActions }
+                        VStack(alignment: .leading, spacing: SGTheme.Space.small) { relationshipActions }
+                    }
+
                 } else { Text("Choose a version to link a Recipe.").foregroundStyle(.secondary) }
             }
             if failed { Button("Retry Recipe") { Task { await load() } }; Text("Recipe access needs a connection and completed cooking sync.").font(.footnote) }
@@ -195,6 +198,14 @@ struct DishRecipeSection: View {
                 RecipeEditor(attemptID: attempt?.id, title: dish.name, course: attempt?.categoryCode ?? dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { recipe = $0; loaded = true }
             }
             .sheet(isPresented: $selecting, onDismiss: { Task { await load() } }) { NavigationStack { RecipeLibraryView(attemptID: attempt?.id) } }
+    }
+    @ViewBuilder private var relationshipActions: some View {
+        if usedRecipe == nil {
+            Button("Add Recipe", systemImage: "plus") { creating = true }
+                .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-add-recipe")
+        }
+        Button("Link Existing Recipe", systemImage: "link") { selecting = true }
+            .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-link-recipe")
     }
     private func load() async {
         guard let request else { failed = true; return }; let token = UUID(); generation = token

@@ -37,7 +37,11 @@ The completed Recipe + Social checkpoint implements deliberate friends-visible R
 
 Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic Recipe-update posts remain deferred. The current Next-Version cycle completes the scoped Sous Chef/notification refresh and indication work; it adds no APNs.
 
-## CURRENT — V1 Product Closeout
+## CURRENT — V1 Ranking Integrity & Final UX Corrections
+
+Owner physical feedback after `094c178` explicitly reopened ranking for an evidenced re-ranking acquisition/commit mismatch. This correction preserves comparisons/IDs and uses explicit assessment boundaries plus model-aware stopping, with focused Kitchen search, Recipe actions/multi-send and content-first cleanup. [Evidence](V1_RANKING_INTEGRITY_REVIEW.md). Owner physical acceptance remains pending; afterward proceed directly to the existing V1 Release Gate. No next feature stage, release-gate execution or distribution is begun here. Post-V1 priorities remain unchanged.
+
+## PREVIOUS — V1 Product Closeout
 
 Owner Stage 5 physical feedback reopened only the compact Kitchen Recipe sheet, meaningful version labels, consistent Recipe/Dish actions, new-Recipe Sous-Chef-default audience, editor copy, creator provenance and distinct privacy-aware Recipe-created Grub List activity. This is a contained V1 correction, not a new feature stage. [Evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md). Focused automated acceptance has passed; owner physical recheck is pending. Proceed immediately to the release gate after that recheck, without another normal feature stage.
 

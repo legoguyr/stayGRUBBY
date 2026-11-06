@@ -5,16 +5,21 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
     @MainActor func testRecipeShareAndSearchableSousChefSend() throws {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--stage3-review-sharing", "--stage3-send-failure", "--test-dark", "--review-profile-url", "https://staygrubby.com/r/60000000-0000-0000-0000-000000000001"]
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--stage3-review-sharing", "--stage3-send-failure", "--v1-multi-send-review", "--test-dark", "--review-profile-url", "https://staygrubby.com/r/60000000-0000-0000-0000-000000000001"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 15), app.debugDescription)
+        let toolbar = XCTAttachment(screenshot: app.screenshot()); toolbar.name = "Recipe active Share and overflow accent red, dark"; toolbar.lifetime = .keepAlways; add(toolbar)
         app.openRecipeAction("recipe-send-friend")
-        XCTAssertTrue(app.navigationBars["Send to Sous Chef"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Send to Sous Chefs"].waitForExistence(timeout: 5))
         let search = app.searchFields.firstMatch
         XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("friend_cook")
         let row = app.buttons["send-recipient-10000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(row.waitForExistence(timeout: 5)); row.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        search.tap(); search.buttons["Clear text"].tap(); search.typeText("incoming_cook")
+        let second = app.buttons["send-recipient-10000000-0000-0000-0000-000000000002"]
+        XCTAssertTrue(second.waitForExistence(timeout: 5)); second.tap()
+        XCTAssertTrue(app.staticTexts["2 selected"].exists)
         let confirm = app.buttons["social-send-confirm"]
         XCTAssertTrue(confirm.isEnabled); confirm.tap()
         XCTAssertTrue(app.staticTexts["social-send-error"].waitForExistence(timeout: 5))
@@ -22,6 +27,10 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.descendants(matching: .any)["social-send-success"].waitForExistence(timeout: 5), app.debugDescription)
         app.buttons["social-send-done"].tap()
         XCTAssertTrue(app.navigationBars["Recipe"].waitForExistence(timeout: 5))
+        app.terminate(); app.launchArguments = app.launchArguments.map { $0 == "--test-dark" ? "--test-light" : $0 }
+        app.launchWithReviewOptions(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 15))
+        let light = XCTAttachment(screenshot: app.screenshot()); light.name = "Recipe active Share and overflow accent red, light"; light.lifetime = .keepAlways; add(light)
+        XCTAssertTrue(app.buttons["recipe-share-link"].exists && app.buttons["recipe-actions"].exists)
     }
     @MainActor func testNativeDishCopyProducesUsefulSheetPayload() throws {
         continueAfterFailure = false

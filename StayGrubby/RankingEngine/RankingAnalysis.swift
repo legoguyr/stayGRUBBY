@@ -84,6 +84,16 @@ nonisolated struct RankingAnalysis {
                                 informationGainBits: gain)
     }
 
+    /// Marginalize historical assessment parameters. Slicing the precision would
+    /// condition on their MAP values and incorrectly understate uncertainty.
+    func projected(onto visible: [UUID]) -> Self {
+        if ids == visible { return self }
+        let selected = visible.map { indices[$0]! }
+        let marginal = selected.flatMap { column in selected.map { row in covariance[row + column * ids.count] } }
+        let precision = PosteriorMatrix(precision: marginal, size: visible.count).covariance
+        return Self(ids: visible, strengths: visible.map { estimates[$0]!.strength }, precision: precision, diagnostics: diagnostics)
+    }
+
     /// Existing pairs may be revisited: repeated answers remain independent observations.
     /// `excluding` is session-local (e.g. Skip); it does not remove saved evidence.
     func nextRefinement(involving itemID: UUID? = nil, excluding: Set<ComparisonPair> = [], confidenceLimit: Double = 0.975,

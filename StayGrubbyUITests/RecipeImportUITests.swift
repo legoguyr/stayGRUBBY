@@ -27,7 +27,14 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
     @MainActor func testImportReviewExplicitSaveSameDishAndReopen() {
         let app=launch(["--test-light"]);input(app);shot(app,"Import recipe consent light")
         app.buttons["recipe-import-format"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:10));XCTAssertEqual(app.textFields["recipe-edit-title"].value as? String,"Soup")
-        XCTAssertTrue(app.otherElements["recipe-import-review"].exists || app.staticTexts["Some ingredients have no definite quantity. The original wording is preserved."].exists)
+        let review = app.buttons["Draft review"]
+        for _ in 0..<12 { if review.exists && review.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(review.isHittable, app.debugDescription); review.tap()
+        XCTAssertTrue(app.staticTexts["Some ingredients have no definite quantity. The original wording is preserved."].waitForExistence(timeout: 5))
+        let original = app.buttons["Original pasted recipe"]
+        for _ in 0..<8 { if original.isHittable { break }; app.swipeUp() }
+        original.tap()
+        XCTAssertTrue(app.staticTexts["Soup\n2 carrots\nstock\ncook chicken until done"].waitForExistence(timeout: 5))
         shot(app,"Imported draft review before Save")
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout:8));XCTAssertTrue(app.textViews["recipe-import-text"].waitForNonExistence(timeout:8))
         let entry=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'"));XCTAssertEqual(entry.count,1);entry.firstMatch.tap()

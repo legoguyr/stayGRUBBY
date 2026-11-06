@@ -32,7 +32,8 @@ struct AddItemView: View {
                     }
                 } else if choosingReaction {
                     InitialReactionView(name: draft.name) { reaction in
-                        draft.session = RankingEngine(itemID: UUID(), orderedIDs: list.orderedItems.map(\.id), reaction: reaction)
+                        do { draft.session = RankingEngine(itemID: UUID(), orderedIDs: list.orderedItems.map(\.id), reaction: reaction, context: try list.rankingContext()) }
+                        catch { self.error = error.localizedDescription }
                         if draft.session?.isComplete == true { save() }
                     }
                 } else {

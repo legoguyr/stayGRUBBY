@@ -15,7 +15,7 @@ nonisolated enum RecipeSharingPolicy {
 struct RecipeToolbarActions<Management: View>: ToolbarContent {
     let url: URL?
     let sendContent: SocialSendContent?
-    var sendTitle = "Send to Sous Chef"
+    var sendTitle = "Send to Sous Chefs"
     var disabled = false
     @ViewBuilder let management: () -> Management
     var body: some ToolbarContent {
@@ -30,7 +30,7 @@ struct RecipeLinkShare: View {
     let url: URL?
     var body: some View {
         if let url {
-            SocialLinkShareAction(url: url, title: "Share Recipe Link", compact: true).accessibilityIdentifier("recipe-share-link")
+            SocialLinkShareAction(url: url, title: "Share Recipe Link", compact: true).tint(SGTheme.ColorToken.accent).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("recipe-share-link")
         } else {
             Image(systemName: "square.and.arrow.up").foregroundStyle(.secondary).frame(width: 44, height: 44)
                 .accessibilityLabel("Recipe sharing off").accessibilityIdentifier("recipe-sharing-off")
@@ -40,7 +40,7 @@ struct RecipeLinkShare: View {
 
 struct RecipeActions<Management: View>: View {
     let sendContent: SocialSendContent?
-    var sendTitle = "Send to Sous Chef"
+    var sendTitle = "Send to Sous Chefs"
     @ViewBuilder let management: () -> Management
     @State private var sending: SocialSendContent?
     var body: some View {
@@ -48,6 +48,7 @@ struct RecipeActions<Management: View>: View {
                 if let sendContent { Button(sendTitle, systemImage: "person.crop.circle.badge.checkmark") { sending = sendContent }.accessibilityIdentifier("recipe-send-friend") }
                 management()
             } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                .tint(SGTheme.ColorToken.accent).foregroundStyle(SGTheme.ColorToken.accent)
                 .accessibilityLabel("Recipe actions").accessibilityIdentifier("recipe-actions")
         .sheet(item: $sending) { SocialSendSheet(content: $0) }
     }

@@ -54,7 +54,7 @@ import Testing
         let saved = try CookingGraphExport.snapshot(context: f.context)
         try workflow.finish(context: f.context)
         #expect(try CookingGraphExport.snapshot(context: f.context) == saved)
-        let expected = BradleyTerryModel.analyze(ids: f.list.items.map(\.id), evidence: f.list.comparisons.map(\.evidence))
+        let expected = try f.list.rankingContext().analyze()
         for item in f.list.items { #expect(abs(item.strength - (expected.estimates[item.id]?.strength ?? .infinity)) < 1e-12) }
     }
     @Test func skipTieUndoAndCancellationKeepAllDraftEvidenceOffDisk() throws {

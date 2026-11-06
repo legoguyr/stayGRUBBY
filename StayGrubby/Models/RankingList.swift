@@ -20,9 +20,15 @@ final class RankingList {
             return $0.id.uuidString < $1.id.uuidString
         }
     }
+    func rankingContext() throws -> RankingContext {
+        try RankingContext(currentIDs: items.map(\.id),
+            observations: comparisons.map { RankingObservation(id: $0.id, evidence: $0.evidence) },
+            assessments: Dictionary(uniqueKeysWithValues: try items.map { ($0.id, try RankingAssessment.read($0.sessionDiagnosticsData)) }))
+    }
+
     @discardableResult
-    func recompute() -> RankingAnalysis {
-        let analysis = BradleyTerryModel.analyze(ids: items.map(\.id), evidence: comparisons.map(\.evidence))
+    func recompute() throws -> RankingAnalysis {
+        let analysis = try rankingContext().analyze()
         let estimates = analysis.estimates
         for item in items {
             if let estimate = estimates[item.id] {

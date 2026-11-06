@@ -1,3 +1,9 @@
+# November 6, 2026 — ranking-integrity simulation supplement
+
+`RankingIntegrityTests` supplements the historical conditional-only matrix below with the actual `RankingContext` production policy. Deterministic all-pair histories of 105/315/840 observations reproduce the former #4 → #7/#5/#4 result after four fresh losses, despite conditional last-place stopping. Explicit assessment boundaries plus global-model consistency produce #4 → #15 and #14 → #1 in 4/6/7 questions. Initial-ranking scenarios use 15/40/100 existing entries, two observations per pair, excellent/poor/middle/contradictory/tie/Skip responses and exact Undo checks. Persistence/reopen/sync, independent versions, repeated reassessment, Skip-only, stale sessions, covariance marginalization and deletion have dedicated regressions. [Full cycle evidence](V1_RANKING_INTEGRITY_REVIEW.md).
+
+The October 2 table below is retained historical acquisition evidence, not a claim that the former insertion-only stop establishes current global-rank confidence. It was not rerun as the November 6 policy matrix.
+
 # Ranking simulation results
 
 Deterministic Swift Testing run on iPhone 17 / iOS 26.5 Simulator, October 2, 2026.

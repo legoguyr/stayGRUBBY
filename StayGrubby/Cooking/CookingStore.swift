@@ -184,7 +184,7 @@ enum CookingStore {
             context.delete(attempt)
             context.delete(item)
             if let dish, dish.attempts.isEmpty { context.delete(dish) }
-            list?.recompute()
+            try list?.recompute()
             try SyncJournal.stage(baseline, kind: "deleteCook", context: context)
             try context.save()
             SyncJournal.didCommit(context)
@@ -195,11 +195,11 @@ enum CookingStore {
         } catch { context.rollback(); throw error }
     }
 
-    static func rerank(_ attempt: CookingAttempt, evidence: [PreferenceEvidence], context: ModelContext, reaction: InitialReaction? = nil) throws {
+    static func rerank(_ attempt: CookingAttempt, evidence: [PreferenceEvidence], context: ModelContext, reaction: InitialReaction? = nil, reassessment: RankingAssessment? = nil) throws {
         guard let item = attempt.rankedItem, let list = item.list else { throw StoreError.missingItem }
         guard evidence.allSatisfy({ $0.first == item.id || $0.second == item.id }) else { throw RankingStore.EvidenceError.invalidComparison }
         // The generic batch API appends and globally refits; no old evidence is removed.
-        try RankingStore.record(evidence, in: list, context: context, completedReaction: reaction.map { (item, $0) })
+        try RankingStore.record(evidence, in: list, context: context, completedReaction: reaction.map { (item, $0) }, reassessment: reassessment)
     }
 
     static func requireNewPhoto(_ id: UUID, context: ModelContext) throws {

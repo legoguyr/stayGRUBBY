@@ -188,12 +188,14 @@ struct StayGrubbyTests {
         #expect(list.items.first { $0.id == savedSession.itemID }?.sessionDiagnostics?.scoreInterval95 != nil)
         #expect(list.comparisons.first?.preferredItemID == savedSession.itemID)
         let scores = list.orderedItems.map(\.score)
-        list.recompute()
+        try list.recompute()
         #expect(list.orderedItems.map(\.score) == scores)
         try RankingStore.removeSession(savedSession, from: list, context: context)
         #expect(list.items.count == 1)
         #expect(list.items.first?.id == firstID)
-        #expect(list.items.first?.score == 5.5)
+        #expect(list.items.first?.strength == 0)
+        #expect(list.items.first?.score == ScoreCalibration.score(strength: 0, reaction: .liked))
+        #expect(PreferenceEstimate.score(for: 0) == 5.5) // Diagnostic scale, not calibrated UI score.
         #expect(try context.fetchCount(FetchDescriptor<Comparison>()) == 0)
     }
 }

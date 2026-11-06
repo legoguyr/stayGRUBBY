@@ -36,6 +36,7 @@ import Foundation
         publicDescription = attempt.dish?.publicDescription ?? ""; privateNotes = attempt.dish?.privateNotes ?? ""
         existingPhoto = attempt.primaryImage; existingPhotoCount = attempt.orderedImages.count
     }
+    var validForRanking: Bool { !cleanDishName.isEmpty && cookedAt != nil && validDishText }
     var hasPhoto: Bool { pendingPhoto != nil || (existingPhoto != nil && !removeExistingPhoto) }
     var validDishText: Bool { DishTextPolicy.valid(description: publicDescription, notes: privateNotes) }
     var cleanDishName: String { dishName.trimmingCharacters(in: .whitespacesAndNewlines) }

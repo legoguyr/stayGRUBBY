@@ -71,7 +71,9 @@ struct AddCookingView: View {
                     }
                 } else if choosingReaction {
                     InitialReactionView(name: displayName) { reaction in
-                        session = RankingEngine(itemID: origin?.itemID ?? UUID(), orderedIDs: list.orderedItems.map(\.id), reaction: reaction)
+                        do {
+                            session = RankingEngine(itemID: origin?.itemID ?? UUID(), orderedIDs: list.orderedItems.map(\.id), reaction: reaction, context: try list.rankingContext())
+                        } catch { self.error = error.localizedDescription }
                     }
                 } else {
                     CookingFormScroll(draft: $draft, existingDish: dish != nil, sharingSelection: socialRequest == nil ? nil : $sharing, cookedWith: socialRequest != nil && sharing.configured == true ? $cookedWith : nil)
@@ -91,7 +93,7 @@ struct AddCookingView: View {
                     Button { sharingChoice = sharing.selected; choosingReaction = true } label: {
                         Text("Continue").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty || !draft.validDishText)
+                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(!draft.validForRanking)
                     .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
                 }
             }

@@ -34,6 +34,7 @@ import SwiftData
         SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000005")!, displayName: "A cook with a long friendly display name", username: "new_cook", relationship: .none)
     ]
     init() {
+        if DebugReviewConfiguration.current.storeID != nil, ProcessInfo.processInfo.arguments.contains("--v1-multi-send-review") { people[1].relationship = .friends }
         if ProcessInfo.processInfo.arguments.contains("--social-review-no-friends") { people = [] }
         if ProcessInfo.processInfo.arguments.contains("--social-review-ready") { identity = .init(displayName: "Review Cook", username: "review_cook", discoverable: false, automaticallyShareNewDishes: ProcessInfo.processInfo.arguments.contains("--social-review-share-default")) }
         if ProcessInfo.processInfo.arguments.contains("--recipes-review") {

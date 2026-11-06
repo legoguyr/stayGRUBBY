@@ -131,14 +131,20 @@ nonisolated enum CookbookSearch {
 }
 @MainActor enum CookbookIndex {
     static func load(request: SocialRequest) async throws -> [CookbookEntry] {
+        try await load(request: request, action: "library_index", personID: nil, pageSize: 50)
+    }
+    static func profile(request: SocialRequest, personID: UUID?) async throws -> [CookbookEntry] {
+        try await load(request: request, action: "profile_index", personID: personID, pageSize: 25)
+    }
+    private static func load(request: SocialRequest, action: String, personID: UUID?, pageSize: Int) async throws -> [CookbookEntry] {
         var entries: [CookbookEntry] = [], seen = Set<UUID>(), cursor: UUID?
         repeat {
             try Task.checkCancellation()
-            var payload = SocialPayload(); payload.beforeID = cursor
-            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", "library_index", payload))
+            var payload = SocialPayload(); payload.beforeID = cursor; payload.peerID = personID
+            let page = try JSONDecoder().decode(CookbookPage.self, from: await request("recipes", action, payload))
             let fresh = page.entries.filter { seen.insert($0.id).inserted }
             entries += fresh
-            if page.entries.count < 50 || fresh.isEmpty { break }
+            if page.entries.count < pageSize || fresh.isEmpty { break }
             cursor = page.entries.last?.id
         } while cursor != nil
         return entries

@@ -21,7 +21,7 @@ struct CookingMetadataForm: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("inherited-dish-name")
                 } else {
-                    TextField("Dish name", text: $draft.dishName).font(SGTheme.TypeRole.title)
+                    TextField("Dish name (required)", text: $draft.dishName).font(SGTheme.TypeRole.title)
                         .focused($focusedField, equals: .name).submitLabel(.done).onSubmit { focusedField = nil }
                         .accessibilityIdentifier("dish-name").sgField()
                 }
@@ -36,6 +36,9 @@ struct CookingMetadataForm: View {
                     Toggle("Cooked date known", isOn: Binding(get: { draft.cookedAt != nil }, set: { draft.cookedAt = $0 ? .now : nil }))
                 }
                 if draft.cookedAt != nil { cookedDate.accessibilityIdentifier("cook-date") }
+                else if !editing {
+                    Button("Set required cooked date") { draft.cookedAt = .now }.frame(minHeight: SGTheme.Size.minimumTap)
+                }
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     Label("Private Notes", systemImage: "lock").font(SGTheme.TypeRole.secondary.weight(.semibold))
                     TextField("For your kitchen only", text: $draft.privateNotes, axis: .vertical)
@@ -74,7 +77,7 @@ struct CookingMetadataForm: View {
         .sheet(isPresented: $details) { CookingDetailsSheet(draft: $draft, inherited: existingDish && !editing) }
     }
     private var cookedDate: some View {
-        DatePicker("Date cooked", selection: Binding(get: { draft.cookedAt ?? .now }, set: { draft.cookedAt = $0 }), displayedComponents: .date)
+        DatePicker(editing ? "Date cooked" : "Date cooked (required)", selection: Binding(get: { draft.cookedAt ?? .now }, set: { draft.cookedAt = $0 }), displayedComponents: .date)
             .font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap)
     }
 }

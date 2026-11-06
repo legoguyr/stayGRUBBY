@@ -28,7 +28,7 @@ struct SocialPostActions: View {
         Menu {
             if post.published && post.moderationState == "active" {
                 SocialLinkShareAction(url: AppRoute.postURL(post.id), title: "Share Post Link")
-                Button("Send to Sous Chef", systemImage: "person.crop.circle.badge.checkmark") { sending = .post(post.id) }.accessibilityIdentifier("post-send-friend")
+                Button("Send to Sous Chefs", systemImage: "person.crop.circle.badge.checkmark") { sending = .post(post.id) }.accessibilityIdentifier("post-send-friend")
             }
             if post.isAuthor {
                 if post.published && post.moderationState == "active" {

@@ -1,6 +1,8 @@
+> November 6, 2026 integrity correction: the owner explicitly reopened the ranking freeze after physical re-ranking failed to reflect fresh losses. The BT likelihood, unit weights, prior, optimizer, calibration and unlock rules remain unchanged. Explicit re-ranking now creates an assessment boundary; acquisition checks the same global model used on commit. The current contract below supersedes earlier insertion-only stopping claims. See [integrity evidence](V1_RANKING_INTEGRITY_REVIEW.md).
+
 > Current presentation, October 22, 2026: ranking mathematics, evidence and adaptive selection in this document are unchanged. User-facing `RankedItem.score` now uses the reaction-conditioned `ScoreCalibration` mapping described in [STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md](STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md). `PreferenceEstimate.score` and its interval remain the historical relative diagnostic transform, not the current calibrated UI scale. Latest completed re-rank assessment is persisted in existing opaque diagnostic JSON, without changing BT priors/outcomes or score-unlock eligibility.
 
-> Current application contract: one global cooking ranking, independent versions, Top Version / All Versions projections, re-ranking and score visibility are implemented. Ranking mathematics/evidence and current calibration are accepted/frozen under [AGENTS.md](AGENTS.md). The MVP status below is historical; use [current architecture](STAYGRUBBY_ARCHITECTURE.md) for product state and the calibration note above for displayed scores.
+> Current application contract: one global cooking ranking, independent versions, Top Version / All Versions projections, re-ranking and score visibility are implemented. Ranking is protected outside the explicitly authorized November 6 integrity correction under [AGENTS.md](AGENTS.md). The MVP status below is historical; use [current architecture](STAYGRUBBY_ARCHITECTURE.md) for product state and the calibration note above for displayed scores.
 
 # StayGrubby ranking system — technical specification
 
@@ -26,11 +28,23 @@ schema change, but would require recalibrating inference and uncertainty.
 
 Each list owns its own items and comparison history. The evidence is authoritative;
 item strengths and uncertainties are replaceable caches. Every committed answer
-batch/refinement recomputes the entire list from all retained observations. Scores
+batch/refinement recomputes the entire list from all retained observations and persisted assessment assignments. Scores
 and positions are not frozen at insertion. Disconnected components remain
 mathematically independent under the prior. Cross-list evidence is rejected at the
 persistence API; the fitter ignores malformed/self/unknown-ID evidence and reports
 the ignored count. Valid outcomes are exactly 0, 0.5, and 1.
+
+### Explicit reassessment, not evidence erasure
+
+A completed **Re-rank** is a fresh assessment of the same RankedItem, not ordinary incremental refinement of a stationary opinion. Before this correction, the session predicted an insertion slot from fresh answers alone, while commit pooled them into the original stationary strength. Four losses could imply last place to the session but leave the saved item fourth/fifth under dense old history. That fit was mathematically correct for the wrong assessment contract.
+
+`RankingAssessment` records an internal parameter UUID and the exact incident Comparison UUIDs belonging to the previous current assessment. These additive `rankingAssessments` entries live in existing opaque diagnostics JSON, preserving original diagnostics/unknown fields. Old observations retain original IDs, endpoints, outcomes and timestamps. At fitting, each endpoint maps to its historical assessment parameter when recorded; new answers address the item's current parameter. Every retained observation still contributes one full BT likelihood term. Each current/historical strength uses the same N(0,4) prior. Historical parameters inform the remaining graph but never become RankedItems, versions, unlock entries, ranks or shared scores.
+
+There is no history decay, arbitrary penalty, manual ordering or automatic reassessment on launch/restore. Multiple observations, contradictions and ties within an assessment accumulate normally. Generic refinement appends to the current assessment without creating a boundary. A new explicit re-rank retires only that item's still-current observations, never another version's assessment. Cancellation/Undo write nothing; Skip-only completion creates no boundary and preserves strengths. Save rejects stale session snapshots. Boundary metadata, fresh comparisons, strength caches and sync journal commit/rollback together. Malformed known boundary metadata fails closed rather than silently discarding evidence. Normal deletion removes incident comparisons and recomputes; harmless deleted-ID boundary markers do not create phantom parameters.
+
+Existing stores without boundaries fit exactly as before. No migration/backfill rewrites saved data. Sync/restore carries the existing opaque JSON and cached strengths unchanged. All devices doing subsequent ranking mutations must use this model-aware build; an older binary cannot interpret the new assessment assignments and must not be used to recompute such a library.
+
+The full joint posterior includes historical parameters. `RankingAnalysis.projected` marginalizes their covariance (it does not slice precision) before current-item refinement/rank sampling, preserving uncertainty while excluding historical ranks.
 
 ## 2. Bradley–Terry point estimates
 
@@ -95,7 +109,7 @@ one-dimensional preference model can all make them overconfident. A tie contribu
 the curvature of one fractional Bernoulli observation; a learned tie-propensity
 model is not implemented.
 
-## 4. Existing insertion acquisition policy (preserved)
+## 4. Insertion acquisition with global-model consistency
 
 `RankingEngine` is a value-type session with a frozen strongest-to-weakest snapshot
 of existing IDs and a new item ID. It has a separate distribution over n+1 insertion
@@ -120,12 +134,13 @@ and replay restores the previous opponent and probability distribution exactly.
 The next unused opponent maximizes binary entropy of the cumulative slot mass at
 that boundary. Ties in utility use the existing order deterministically. This asks
 near the uncertain boundary and exploits the old ranking instead of redundantly
-asking about every weaker/stronger item. The current insertion routine does not
-repeat an opponent; global refinement may revisit that pair later.
+asking about every weaker/stronger item. The ordinary insertion pass uses unused opponents. A corrective pass may repeat a useful pair when the conditional slot and committed global MAP disagree.
 
 ## 5. Exact stopping rules and instrumentation
 
-The first matching rule wins:
+Production New Dish/New Version and Re-rank supply an immutable `RankingContext`. A conditional-confidence stop additionally requires a converged global fit whose current MAP position is inside the conditional 95% slot interval. If not, choose a corrective opponent maximizing absolute disagreement between slot CDF and MAP win probability, multiplied by the existing pair information gain. Require at least 0.01 bits of pair information; avoid immediate repetition when another eligible candidate exists. Skips exclude that opponent locally; Undo restores acquisition and fit. No fixed question budget or rank forcing is introduced. Insufficient useful evidence is provisional `lowInformation`, never a confident placement claim. The context-free generic engine remains the historical acquisition baseline used in older simulations, not the application re-rank implementation.
+
+The first matching applicable rule wins:
 
 | Stop reason | Condition | Interpretation |
 |---|---|---|
@@ -151,20 +166,19 @@ are internal data, with no primary UI addition or telemetry transmission.
 
 ### Stopping audit
 
-The manually validated behavior and sublinear simulation results justify retaining
-this acquisition policy for now. **The 0.5% violation assumption is optimistic**:
+Earlier manual/sublinear evidence concerned the conditional acquisition heuristic alone; the November 6 reproduction demonstrated why that was insufficient for re-ranking. **The 0.5% violation assumption is optimistic**:
 it is not a measured human error rate. A high slot probability does not establish
 the same confidence in the displayed Bradley–Terry rank or numerical score. Noisy
 or cyclic preferences can concentrate this approximate posterior around an
 incorrect position. Large close clusters and ties also violate the idea of a
 single strict insertion slot. Do not expose “90% certain” product claims from it.
 The new joint uncertainty and refinement API provide a path to investigating these
-cases without changing the current fast insertion experience.
+cases; the current production policy now also verifies the global MAP before a confidence stop.
 
 ## 6. Global refinement API
 
 ```swift
-let analysis = BradleyTerryModel.analyze(ids: itemIDs, evidence: history)
+let analysis = try list.rankingContext().analyze() // Includes historical assessment assignments.
 if let suggestion = analysis.nextRefinement(excluding: skippedPairs) {
     // Present suggestion.pair; collect a win/loss/Too Tough observation.
     // RankingStore.record(observation, in: list, context: context)

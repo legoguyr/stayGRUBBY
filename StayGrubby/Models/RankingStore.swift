@@ -18,6 +18,7 @@ enum RankingStore {
     @discardableResult
     static func stage(name: String, session: RankingEngine, to list: RankingList, context: ModelContext) throws -> RankedItem {
         guard !list.items.contains(where: { $0.id == session.itemID }) else { throw EvidenceError.invalidComparison }
+        if let snapshot = session.context, try snapshot != list.rankingContext() { throw EvidenceError.sessionHasNewEvidence }
         let item = RankedItem(id: session.itemID, name: name)
         context.insert(item)
         list.items.append(item)
@@ -26,7 +27,7 @@ enum RankingStore {
             context.insert(comparison)
             list.comparisons.append(comparison)
         }
-        let analysis = list.recompute()
+        let analysis = try list.recompute()
         item.sessionDiagnosticsData = try JSONEncoder().encode(session.diagnostics(analysis: analysis, rank: analysis.rankEstimates()[item.id]))
         return item
     }
@@ -40,12 +41,20 @@ enum RankingStore {
     }
 
     static func record(_ evidence: [PreferenceEvidence], in list: RankingList, context: ModelContext,
-                       completedReaction: (item: RankedItem, reaction: InitialReaction)? = nil) throws {
+                       completedReaction: (item: RankedItem, reaction: InitialReaction)? = nil,
+                       reassessment: RankingAssessment? = nil) throws {
         let ids = Set(list.items.map(\.id))
         guard evidence.allSatisfy({ ids.contains($0.first) && ids.contains($0.second) && $0.first != $0.second && [0.0, 0.5, 1.0].contains($0.outcome) }) else { throw EvidenceError.invalidComparison }
         if let assessment = completedReaction, !list.items.contains(where: { $0 === assessment.item }) { throw EvidenceError.invalidComparison }
+        if let reassessment {
+            guard !evidence.isEmpty, let completedReaction,
+                  try list.rankingContext().reassessment(of: completedReaction.item.id)?.comparisonIDs == reassessment.comparisonIDs else { throw EvidenceError.invalidComparison }
+        }
         let baseline = try SyncJournal.begin(context)
         do {
+            if let reassessment, let completedReaction {
+                completedReaction.item.sessionDiagnosticsData = try RankingAssessment.appending(reassessment, to: completedReaction.item.sessionDiagnosticsData)
+            }
             if let assessment = completedReaction {
                 assessment.item.sessionDiagnosticsData = try ScoreCalibration.recording(assessment.reaction, in: assessment.item.sessionDiagnosticsData)
             }
@@ -54,7 +63,7 @@ enum RankingStore {
                 context.insert(comparison)
                 list.comparisons.append(comparison)
             }
-            list.recompute()
+            try list.recompute()
             try SyncJournal.stage(baseline, kind: "appendEvidence", context: context)
             try context.save()
             SyncJournal.didCommit(context)
@@ -72,13 +81,13 @@ enum RankingStore {
         }
         guard remaining.isEmpty else { throw EvidenceError.sessionHasNewEvidence }
         let baseline = try SyncJournal.begin(context)
-        let items = list.items.filter { $0.id == session.itemID }
-        list.comparisons.removeAll { $0.firstItemID == session.itemID || $0.secondItemID == session.itemID }
-        list.items.removeAll { $0.id == session.itemID }
-        for comparison in comparisons { context.delete(comparison) }
-        for item in items { context.delete(item) }
-        list.recompute()
         do {
+            let items = list.items.filter { $0.id == session.itemID }
+            list.comparisons.removeAll { $0.firstItemID == session.itemID || $0.secondItemID == session.itemID }
+            list.items.removeAll { $0.id == session.itemID }
+            for comparison in comparisons { context.delete(comparison) }
+            for item in items { context.delete(item) }
+            try list.recompute()
             try SyncJournal.stage(baseline, kind: "removeSession", context: context)
             try context.save()
             SyncJournal.didCommit(context)

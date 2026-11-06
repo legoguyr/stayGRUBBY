@@ -164,12 +164,12 @@ struct ShareCardModelTests {
         let attempt = try #require(f.attempts.last)
         let event = RankingCompletionSnapshot.capture(from: f.list)
         f.list.comparisons.removeAll()
-        f.list.recompute()
+        try f.list.recompute()
         #expect(ShareCardModel.make(for: attempt, event: event).achievement == nil)
         let opponent = try #require(f.attempts.first)
         f.list.comparisons.append(Comparison(evidence: PreferenceEvidence(first: attempt.rankedItemID,
             second: opponent.rankedItemID, outcome: 0.5)))
-        f.list.recompute()
+        try f.list.recompute()
         #expect(ShareCardModel.make(for: attempt, event: event).achievement == nil)
     }
 
