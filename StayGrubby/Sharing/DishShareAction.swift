@@ -15,8 +15,8 @@ struct DishShareAction: View {
     var body: some View {
         Group {
             if toolbar {
-                Button { prepare() } label: { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }
-                    .buttonStyle(.plain).disabled(model.scoreText == nil)
+                Button { prepare() } label: { SGToolbarIcon(symbol: "square.and.arrow.up") }
+                    .buttonStyle(.plain).sgUtilityTint().disabled(model.scoreText == nil)
                     .accessibilityIdentifier(model.scoreText == nil ? "dish-sharing-locked" : identifier)
                     .accessibilityLabel(model.scoreText == nil ? "Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing." : "Share Dish")
             } else if model.scoreText == nil {

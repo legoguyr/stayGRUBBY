@@ -10,10 +10,11 @@ struct KitchenRecipesSection: View {
         if request != nil {
             if let personID {
                 // A social Kitchen already has native sheet navigation. Keep one modal host.
-                NavigationLink { KitchenRecipeCollection(personID: personID) } label: { control }
+                // The visitor Kitchen is a List, whose NavigationLink draws the disclosure chevron.
+                NavigationLink { KitchenRecipeCollection(personID: personID) } label: { control(chevron: false) }
                     .buttonStyle(.plain).accessibilityIdentifier("kitchen-recipes-open")
             } else {
-                Button { showingRecipes = true } label: { control }
+                Button { showingRecipes = true } label: { control(chevron: true) }
                     .buttonStyle(.plain).accessibilityIdentifier("kitchen-recipes-open")
                     .sheet(isPresented: $showingRecipes) {
                         NavigationStack {
@@ -24,8 +25,11 @@ struct KitchenRecipesSection: View {
             }
         }
     }
-    private var control: some View {
-        HStack { Label("Recipes", systemImage: "book.closed"); Spacer(); Image(systemName: "chevron.right").foregroundStyle(.secondary) }
+    private func control(chevron: Bool) -> some View {
+        HStack {
+            Label("Recipes", systemImage: "book.closed"); Spacer()
+            if chevron { Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary).accessibilityHidden(true) }
+        }
             .frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
     }
 }

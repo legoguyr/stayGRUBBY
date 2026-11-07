@@ -25,7 +25,7 @@ struct PasteIngredientsView: View {
         let invalid = oversized || rows.count > capacity || rows.contains(where: { $0.text.count > 500 })
         return NavigationStack {
             ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 Text("Paste or type one ingredient per line. Bullets and numbered lists are welcome.").foregroundStyle(.secondary)
                 TextEditor(text: $text).font(.body).frame(minHeight: 240).padding(8)
                     .scrollContentBackground(.hidden).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12))
@@ -35,7 +35,7 @@ struct PasteIngredientsView: View {
                     .disabled(rows.isEmpty || invalid)
                     .accessibilityIdentifier("bulk-ingredient-format")
                 if invalid { Text("Use up to \(capacity) more ingredients in this section, at most 500 characters per line (32 KB total).").font(.footnote) }
-            }.padding(20)
+            }.padding(SGTheme.Space.readingMargin)
             }.scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
                 .navigationTitle("Paste Ingredients").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if text.isEmpty { dismiss() } else { discard = true } } } }

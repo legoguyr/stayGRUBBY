@@ -68,7 +68,7 @@ struct SocialPhoto: View {
     var body: some View {
         Group {
             if let image { Image(uiImage: image).resizable().scaledToFill() }
-            else { SGFoodPlaceholder() }
+            else { SGPhotoPlaceholder() }
         }.clipped().accessibilityHidden(true)
             .task(id: path) {
                 image = nil

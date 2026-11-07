@@ -6,9 +6,12 @@ struct SocialLinkShareAction: View {
     let title: String
     var compact = false
     var body: some View {
-        ShareLink(item: url) {
-            if compact { Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44) }
-            else { Label(title, systemImage: "square.and.arrow.up").frame(minHeight: 44) }
-        }.accessibilityLabel(title)
+        if compact {
+            ShareLink(item: url) { SGToolbarIcon(symbol: "square.and.arrow.up") }
+                .sgUtilityTint().accessibilityLabel(title)
+        } else {
+            ShareLink(item: url) { Label(title, systemImage: "square.and.arrow.up").frame(minHeight: 44) }
+                .accessibilityLabel(title)
+        }
     }
 }

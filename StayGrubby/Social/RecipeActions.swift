@@ -30,9 +30,9 @@ struct RecipeLinkShare: View {
     let url: URL?
     var body: some View {
         if let url {
-            SocialLinkShareAction(url: url, title: "Share Recipe Link", compact: true).tint(SGTheme.ColorToken.accent).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("recipe-share-link")
+            SocialLinkShareAction(url: url, title: "Share Recipe Link", compact: true).accessibilityIdentifier("recipe-share-link")
         } else {
-            Image(systemName: "square.and.arrow.up").foregroundStyle(.secondary).frame(width: 44, height: 44)
+            SGToolbarIcon(symbol: "square.and.arrow.up").foregroundStyle(SGTheme.ColorToken.unavailable)
                 .accessibilityLabel("Recipe sharing off").accessibilityIdentifier("recipe-sharing-off")
         }
     }
@@ -47,8 +47,8 @@ struct RecipeActions<Management: View>: View {
             Menu {
                 if let sendContent { Button(sendTitle, systemImage: "person.crop.circle.badge.checkmark") { sending = sendContent }.accessibilityIdentifier("recipe-send-friend") }
                 management()
-            } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
-                .tint(SGTheme.ColorToken.accent).foregroundStyle(SGTheme.ColorToken.accent)
+            } label: { SGToolbarIcon(symbol: "ellipsis") }
+                .sgUtilityTint()
                 .accessibilityLabel("Recipe actions").accessibilityIdentifier("recipe-actions")
         .sheet(item: $sending) { SocialSendSheet(content: $0) }
     }

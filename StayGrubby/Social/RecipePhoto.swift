@@ -53,7 +53,7 @@ struct RecipePhoto: View {
         Group {
             if let image = (preview ?? (loadedID == id ? loaded : nil)).flatMap(UIImage.init(data:)) { Image(uiImage: image).resizable().scaledToFill() }
             else if id != nil {
-                SGFoodPlaceholder().overlay { if !unavailable { ProgressView() } }
+                SGPhotoPlaceholder().overlay { if !unavailable { ProgressView() } }
             } else { CookbookPhoto(name: name, cook: fallbackCook) }
         }.clipped().accessibilityElement(children: .ignore).accessibilityLabel("Photo for \(name)")
             .accessibilityValue(preview != nil || (loadedID == id && loaded != nil) ? "Recipe photo" : id != nil ? "Recipe photo unavailable" : fallbackCook?.primaryImage != nil ? (exactCookLink || cook != nil ? "Linked cook photo" : "Dish family photo") : "StayGrubby placeholder")

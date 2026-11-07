@@ -29,8 +29,7 @@ struct SocialProfilePosts: View {
                     ForEach(posts) { post in
                         Button { open(post.id) } label: {
                             VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                                Color.clear.aspectRatio(1, contentMode: .fit).overlay { SocialPhoto(path: post.photoPath) }.clipped()
-                                    .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.chip)).accessibilityHidden(true)
+                                SocialPhoto(path: post.photoPath).sgPhotoFrame(.tile).accessibilityHidden(true)
                                 Text(post.title).font(SGTheme.TypeRole.secondary.weight(.semibold)).lineLimit(typeSize.isAccessibilitySize ? nil : 2)
                                     .fixedSize(horizontal: false, vertical: true)
                             }.frame(maxWidth: .infinity, alignment: .topLeading).contentShape(Rectangle())

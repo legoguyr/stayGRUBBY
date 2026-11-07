@@ -52,7 +52,7 @@ struct SocialFeedView: View {
         .toolbar {
             ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Grub List") }
             ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { Label("Sous Chefs", systemImage: "person.2") }.labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { SGToolbarIcon(symbol: "person.2") }.sgUtilityTint().accessibilityLabel("Sous Chefs") }.sgIndependentToolbarBackground()
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
@@ -197,9 +197,7 @@ struct SocialFeedCard: View {
                     }
                 }
             }
-            Color.clear.aspectRatio(4 / 3, contentMode: .fit)
-                .overlay { SocialPhoto(path: post.photoPath) }.clipped()
-                .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero))
+            SocialPhoto(path: post.photoPath).sgPhotoFrame(.card)
                 .accessibilityHidden(true)
         }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
@@ -208,13 +206,5 @@ struct SocialFeedCard: View {
 /// A presentation of an already-authorized/unlocked server snapshot. No new score policy.
 struct SocialScoreMedallion: View {
     let text: String
-    @ScaledMetric(relativeTo: .headline) private var diameter = 52.0
-    var body: some View {
-        Text(text).font(.headline.weight(.bold)).monospacedDigit()
-            .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: text))
-            .frame(width: diameter, height: diameter)
-            .background(SGTheme.ColorToken.surface, in: Circle())
-            .overlay { Circle().stroke(SGTheme.ScoreColor.color(forDisplayedScore: text).opacity(0.6), lineWidth: 1.5) }
-            .accessibilityLabel("Score \(text)").accessibilityIdentifier("social-score")
-    }
+    var body: some View { SGScore(text: text, role: .medallion, identifier: "social-score") }
 }

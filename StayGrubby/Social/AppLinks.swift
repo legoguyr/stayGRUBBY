@@ -136,12 +136,12 @@ struct ShareMyKitchen: View {
                             .buttonStyle(SGButtonStyle()).accessibilityIdentifier("share-my-kitchen")
                     }
                 } else if compact && !failed {
-                    Image(systemName: "square.and.arrow.up").frame(minWidth: 44, minHeight: 44).foregroundStyle(.secondary)
+                    SGToolbarIcon(symbol: "square.and.arrow.up").foregroundStyle(SGTheme.ColorToken.unavailable)
                         .accessibilityLabel("Kitchen sharing unavailable").accessibilityHint("Enable discovery in Settings, Profile to share your Kitchen")
                 } else if identity != nil { Text("To share your Kitchen, enable discovery in Settings → Profile.").font(.footnote).foregroundStyle(.secondary) }
                 if failed {
                     Button { Task { await load() } } label: {
-                        if compact { Image(systemName: "arrow.clockwise").frame(minWidth: 44, minHeight: 44) }
+                        if compact { SGToolbarIcon(symbol: "arrow.clockwise") }
                         else { Text("Retry Kitchen sharing") }
                     }.accessibilityLabel("Retry Kitchen sharing")
                 }

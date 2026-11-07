@@ -35,19 +35,23 @@ struct AttemptDetailView: View {
                         }
                     }
                 }
-                if let dish = attempt.dish { DishRecipeSection(dish: dish, attempt: attempt) }
-                CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
+                // Provenance is usually empty but still a stack child; grouping it keeps an
+                // empty block from doubling the section gap.
+                VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
+                    if let dish = attempt.dish { DishRecipeSection(dish: dish, attempt: attempt) }
+                    CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
+                }
                 if let source = attempt.dish?.source {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                         SGSectionHeader(title: "Source")
                         SourceSummary(source: source)
-                    }.padding(.vertical, SGTheme.Space.medium)
+                    }
                 }
                 if let notes = attempt.notes {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                         SGSectionHeader(title: "Personal Notes · private")
                         Text(notes)
-                    }.padding(.vertical, SGTheme.Space.medium)
+                    }
                 }
                 versions
             }
@@ -67,7 +71,8 @@ struct AttemptDetailView: View {
                     if request != nil { Button("Share with Sous Chefs", systemImage: "person.2") { sharingSocial = true }.accessibilityIdentifier("share-with-friends") }
                     Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
                     Button("86 Cook (Delete)", systemImage: "trash", role: .destructive) { deleting = true }
-                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
+                } label: { SGToolbarIcon(symbol: "ellipsis") }
+                .sgUtilityTint()
                 .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
             }.sgIndependentToolbarBackground()
         }
@@ -160,7 +165,7 @@ struct AttemptDetailView: View {
                     newVersionButton
                 }
             } else {
-                HStack { SGSectionHeader(title: "Versions"); newVersionButton }
+                SGSectionHeader(title: "Versions") { newVersionButton }
             }
             ForEach(versionEntries, id: \.attempt.id) { entry in
                 if entry.attempt.id == attempt.id {
@@ -193,8 +198,7 @@ struct AttemptDetailView: View {
             HStack(spacing: SGTheme.Space.small) {
                 if cook.primaryImage != nil {
                     DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.meaningfulVersionLabel ?? cook.dish?.name ?? "Dish")
-                        .frame(width: SGTheme.Size.versionThumbnail, height: SGTheme.Size.versionThumbnail)
-                        .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.chip))
+                        .sgPhotoFrame(.compactThumbnail)
                 }
                 if !textSize.isAccessibilitySize { versionIdentity(cook) }
                 Spacer(minLength: 0)

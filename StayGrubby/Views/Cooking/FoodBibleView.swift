@@ -24,31 +24,30 @@ struct FoodBibleView: View {
     var body: some View {
         let lookup = dishLookup
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                if loading && entries.isEmpty { ProgressView("Opening your cookbook").frame(maxWidth: .infinity) }
+            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
+                if loading && entries.isEmpty { SGLoadingState(label: "Opening your cookbook") }
                 if failed {
-                    Label("Your cookbook needs a connection to refresh.", systemImage: "wifi.exclamationmark").font(.subheadline)
-                    Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle())
+                    SGContentState(title: "Couldn’t refresh", symbol: "wifi.exclamationmark", message: "Your cookbook needs a connection to refresh.") {
+                        Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle())
+                    }
                 }
                 if !loading && !failed && visible.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Image(systemName: "book.closed").font(.system(size: 44, weight: .light)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-                        Text(entries.isEmpty ? "No recipes yet" : "No matching recipes").font(SGTheme.TypeRole.hero)
-                        Text(entries.isEmpty ? "Add a recipe to your Food Bible." : "Try another search or clear your filters.").foregroundStyle(.secondary)
+                    SGContentState(title: entries.isEmpty ? "No Recipes yet" : "No matching Recipes", symbol: "book.closed",
+                                   message: entries.isEmpty ? "Add a Recipe to your Food Bible." : "Try another search or clear your filters.") {
                         Button(entries.isEmpty ? "Add Recipe" : "Clear search & filters") {
                             if entries.isEmpty { choosing = true } else { query = ""; filters = RecipeFilters() }
-                        }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("bible-empty-add")
-                    }.padding(.vertical, 32)
+                        }.buttonStyle(SGButtonStyle(prominent: entries.isEmpty)).accessibilityIdentifier("bible-empty-add")
+                    }
                 }
-                LazyVGrid(columns: textSize.isAccessibilitySize ? [GridItem(.flexible(minimum: 0), alignment: .top)] : [GridItem(.flexible(minimum: 0), alignment: .top), GridItem(.flexible(minimum: 0), alignment: .top)], alignment: .leading, spacing: 24) {
+                LazyVGrid(columns: textSize.isAccessibilitySize ? [GridItem(.flexible(minimum: 0), alignment: .top)] : [GridItem(.flexible(minimum: 0), alignment: .top), GridItem(.flexible(minimum: 0), alignment: .top)], alignment: .leading, spacing: SGTheme.Space.large) {
                     ForEach(visible) { entry in
                         Button { selected = .init(recipeID: entry.recipeID, dishID: entry.dishID) } label: {
                             CookbookCard(entry: entry, dish: entry.dishID.flatMap { lookup[$0] })
                         }.buttonStyle(.plain).accessibilityIdentifier("bible-entry-\(entry.recipeID)")
                     }
                 }
-                if !entries.isEmpty { Text("\(entries.count) recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
-            }.padding(16).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                if !entries.isEmpty { Text(entries.count == 1 ? "1 Recipe" : "\(entries.count) Recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
+            }.padding(SGTheme.Space.margin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }.accessibilityIdentifier("bible-scroll").background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively)
             .safeAreaPadding(.bottom, SGTheme.Space.medium)
             .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
@@ -62,8 +61,8 @@ struct FoodBibleView: View {
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
     private var searchHeader: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
+            HStack(spacing: SGTheme.Space.small) {
                 Image(systemName: "magnifyingglass").accessibilityHidden(true)
                 TextField("Dish, ingredient, cuisine…", text: $query).accessibilityLabel("Search your cookbook").accessibilityIdentifier("bible-search").focused($searching).submitLabel(.search).onSubmit { searching = false }
                 if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("bible-search-clear") }
@@ -83,7 +82,7 @@ struct FoodBibleView: View {
                 if filters.isActive { SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = RecipeFilters() }.accessibilityIdentifier("bible-clear-filters") }
             }
 
-        }.padding(.horizontal, 16).padding(.top, 8).background(SGTheme.ColorToken.background)
+        }.padding(.horizontal, SGTheme.Space.margin).padding(.top, SGTheme.Space.compact).background(SGTheme.ColorToken.background)
     }
     private func load() async {
         guard let request else { failed = true; loading = false; return }
@@ -104,7 +103,7 @@ struct CookbookPhoto: View {
         if let media = (cook ?? dish?.cookbookRepresentativeCook)?.primaryImage {
             DishPhoto(media: media, thumbnail: true, name: name)
         } else {
-            SGFoodPlaceholder().accessibilityLabel("No photo for \(name)")
+            SGPhotoPlaceholder().accessibilityLabel("No photo for \(name)")
         }
     }
 }
@@ -112,8 +111,8 @@ struct CookbookCard: View {
     let entry: CookbookEntry
     var dish: Dish?
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).aspectRatio(0.9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14)).accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
+            RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).sgPhotoFrame(.cookbook).accessibilityHidden(true)
             Text(entry.recipeTitle).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
             let metadata = [entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
             if !metadata.isEmpty { Text(metadata).font(.caption).foregroundStyle(.secondary) }

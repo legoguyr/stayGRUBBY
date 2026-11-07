@@ -54,7 +54,7 @@ struct AccountDeletionAuthorizationView: View {
                 Text(session.deletionProgress == .failed
                      ? "Deletion did not complete. Your account has not been reported deleted. Verify with Apple and try again."
                      : "Verify with the Apple account linked to StayGrubby to continue.")
-                    .font(.footnote).foregroundStyle(session.deletionProgress == .failed ? .red : .secondary)
+                    .font(.footnote).foregroundStyle(session.deletionProgress == .failed ? SGTheme.ColorToken.destructive : .secondary)
                 SignInWithAppleButton(.continue) { request in
                     guard let attempt = session.beginAccountDeletionAuthorization() else { return }
                     requestID = attempt.id; attempt.configure(request)

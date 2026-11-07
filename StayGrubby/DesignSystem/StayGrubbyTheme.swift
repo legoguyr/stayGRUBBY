@@ -10,6 +10,10 @@ enum SGTheme {
         static let red = Color(red: 241 / 255, green: 6 / 255, blue: 7 / 255)
         static let charcoal = Color(red: 31 / 255, green: 31 / 255, blue: 31 / 255)
     }
+    /// Accent rule (Stage A): red means brand identity, the one primary action in a
+    /// region, selection, and destructive 86. Toolbar utilities, metadata, secondary
+    /// labels and row text stay neutral (`primaryText`/`subdued`); never let an inherited
+    /// tint color them. Use `sgUtilityTint()` and `SGRowButtonStyle` to stop leakage.
     enum ColorToken {
         // Accessible red variants for product controls; exports keep Brand.red.
         static let accent = adaptive(light: 0xCB1015, dark: 0xFF6B63)
@@ -24,6 +28,11 @@ enum SGTheme {
         static let tertiaryText = Color.secondary.opacity(0.8)
         static let photoScrim = Color.black.opacity(0.65)
         static let border = Color.primary.opacity(0.09)
+        static let separator = Color.primary.opacity(0.12)
+        /// Neutral ink for the restrained wordmark in missing-photo placeholders.
+        static let placeholderMark = Color.primary.opacity(0.16)
+        /// Locked/unavailable affordances: paired with a lock or text, never color alone.
+        static let unavailable = Color.secondary
         static let placeholderStart = Color.secondary.opacity(0.13)
         static let placeholderEnd = Color.secondary.opacity(0.05)
         static let onAccent = Color.white
@@ -71,12 +80,26 @@ enum SGTheme {
         static let medium: CGFloat = 16
         static let large: CGFloat = 24
         static let xLarge: CGFloat = 32
+        // Semantic rhythm (Stage A). Prefer these names in new layout code.
+        /// Tight label/value stacks and icon gaps.
+        static let compact: CGFloat = 8
+        /// Rows and grouped fields inside a section.
+        static let stack: CGFloat = 12
+        /// Standard page/content margin for lists and app screens.
+        static let margin: CGFloat = medium
+        /// Editorial reading/editor pages (Recipe reader, editor, import) use a wider margin.
+        static let readingMargin: CGFloat = 20
+        /// Groups within an editorial section.
+        static let group: CGFloat = 20
+        /// Between major page sections.
+        static let section: CGFloat = 28
     }
     enum Radius {
         static let chip: CGFloat = 10
         static let field: CGFloat = 12
         static let card: CGFloat = 16
         static let hero: CGFloat = 18
+        /// Photo corners are set by `SGPhotoRole`; small media uses `chip`/`field`, large media `hero`.
     }
     enum Size {
         static let rowThumbnail: CGFloat = 86
@@ -98,6 +121,8 @@ enum SGTheme {
         static let selectedBorder: CGFloat = 3
         static let placeholderIcon: CGFloat = 42
         static let thumbnailIcon: CGFloat = 22
+        /// Toolbar SF Symbols share one size/weight so utilities read as a family.
+        static let toolbarSymbol: CGFloat = 17
     }
     enum TypeRole {
         static let identity = Font.system(.title3, design: .default, weight: .black)

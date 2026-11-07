@@ -21,17 +21,32 @@ struct SGPageIntro: View {
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, SGTheme.Space.medium)
     }
 }
-struct SGEmptyState: View {
+/// Shared empty / unavailable / error state on the native ContentUnavailableView:
+/// short title, one-line message, optional recovery action. No paragraphs.
+struct SGContentState<Actions: View>: View {
     let title: String
-    let message: String
-    var symbol = "sparkle"
+    let symbol: String
+    var message: String? = nil
+    @ViewBuilder var actions: Actions
     var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            Image(systemName: symbol).font(.title).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-            Text(title).font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
-            Text(message).font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-        }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, SGTheme.Space.xLarge)
+        ContentUnavailableView {
+            Label(title, systemImage: symbol)
+        } description: {
+            if let message { Text(message) }
+        } actions: { actions }
+        .symbolRenderingMode(.hierarchical)
+        .foregroundStyle(SGTheme.ColorToken.primaryText)
     }
+}
+extension SGContentState where Actions == EmptyView {
+    init(title: String, symbol: String, message: String? = nil) {
+        self.init(title: title, symbol: symbol, message: message) { EmptyView() }
+    }
+}
+/// Shared loading state: native spinner with a concrete label.
+struct SGLoadingState: View {
+    let label: String
+    var body: some View { ProgressView(label).frame(maxWidth: .infinity).padding(.vertical, SGTheme.Space.xLarge) }
 }
 struct SGDestinationLabel: View {
     let title: String

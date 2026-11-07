@@ -30,8 +30,7 @@ struct CookVersionSelectionView: View {
                     Button { onSelect(cook) } label: {
                         HStack(spacing: SGTheme.Space.small) {
                             DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.dish?.name ?? cook.displayName)
-                                .frame(width: SGTheme.Size.versionThumbnail, height: SGTheme.Size.versionThumbnail)
-                                .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+                                .sgPhotoFrame(.compactThumbnail)
                             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                                 Text(cook.dish?.name ?? cook.displayName).font(SGTheme.TypeRole.headline)
                                 CookVersionIdentity(cook: cook)

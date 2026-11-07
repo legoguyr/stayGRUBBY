@@ -33,9 +33,16 @@ struct NotificationsLink: View {
         if request != nil {
             let unread = activity?.unread ?? 0
             NavigationLink { SocialNotificationsView() } label: {
-                Label("Tickets", systemImage: unread > 0 ? "bell.badge" : "bell")
-                    .frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-            }.accessibilityLabel("Tickets")
+                Label { Text("Tickets") } icon: {
+                    // Neutral bell; only the unread dot uses the accent.
+                    if unread > 0 {
+                        Image(systemName: "bell.badge").symbolRenderingMode(.palette)
+                            .foregroundStyle(SGTheme.ColorToken.accent, SGTheme.ColorToken.primaryText)
+                    } else { Image(systemName: "bell").foregroundStyle(SGTheme.ColorToken.primaryText) }
+                }
+                .font(.system(size: SGTheme.Size.toolbarSymbol, weight: .medium))
+                .frame(minWidth: SGTheme.Size.minimumTap, minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+            }.sgUtilityTint().accessibilityLabel("Tickets")
                 .accessibilityValue(activity?.failed == true ? "Refresh unavailable" : "\(unread) unread")
                 .accessibilityIdentifier("notifications-open")
         }
@@ -72,7 +79,7 @@ struct SocialNotificationsView: View {
                         }
                         if !notice.read { Image(systemName: "circle.fill").font(.system(size: 6)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true) }
                     }.padding(.vertical, SGTheme.Space.small).padding(.horizontal, SGTheme.Space.xSmall).contentShape(Rectangle())
-                }.buttonStyle(.borderless).disabled(busy).accessibilityValue(notice.read ? "Read" : "Unread").accessibilityIdentifier("notification-\(notice.id)")
+                }.buttonStyle(SGRowButtonStyle()).disabled(busy).accessibilityValue(notice.read ? "Read" : "Unread").accessibilityIdentifier("notification-\(notice.id)")
             }
             if hasMore { Button("Load more Tickets") { Task { await load(more: true) } }.disabled(busy) }
         }.navigationTitle("Tickets").navigationBarTitleDisplayMode(.inline)

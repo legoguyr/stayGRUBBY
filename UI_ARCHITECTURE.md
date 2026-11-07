@@ -1,6 +1,6 @@
 # StayGrubby UI architecture — current design-system specification
 
-**Canonical current UI truth — reconciled November 7, 2026 at Build 4 (`c09c18e`).** This file states how StayGrubby screens look and behave *now*, the rules every UI change follows, and the queued work for the system-wide UI overhaul. It replaces the former newest-first stack of dated sections, which is preserved verbatim in [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) as evidence. Product/technical architecture lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); sequencing in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow rules in [AGENTS.md](AGENTS.md).
+**Canonical current UI truth — reconciled November 7, 2026 at Build 4 (`c09c18e`); UI overhaul Stage A foundation added November 7, 2026.** This file states how StayGrubby screens look and behave *now*, the rules every UI change follows, and the queued work for the system-wide UI overhaul. It replaces the former newest-first stack of dated sections, which is preserved verbatim in [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) as evidence. Product/technical architecture lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); sequencing in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow rules in [AGENTS.md](AGENTS.md).
 
 Status words: **Implemented** (in Build 4 source), **Decided** (owner decision not yet implemented), **Planned** (overhaul work), **Known defect** (observed, not yet fixed).
 
@@ -33,7 +33,11 @@ Source of truth: `StayGrubby/DesignSystem/StayGrubbyTheme.swift` (`SGTheme`). Ch
 | `ColorToken.accent` | Adaptive control red (light `#CB1015`, dark `#FF6B63`); `buttonAccent` `#CB1015` for white-text contrast. Use for interactive controls instead of literal brand red. |
 | Surfaces | Adaptive `background`, `surface`, `elevatedSurface`, `focusBackground`; opaque content surfaces. Glass only for interactive chrome (system tab bar, iOS 26 toolbar). |
 | `ScoreColor` | Native in-app scores only: muted coral 1.0–4.9, orange 5.0–7.5, gold 7.6–10.0, adaptive shades. Exports and embedded rendered previews always use `Brand.red`. |
-| Type/space/radius/size/motion | `SGTheme.TypeRole`, `Space`, `Radius`, `Size`, motion timing. Rounded identity/title/score roles. |
+| Neutral tokens | `separator`, `border`, `placeholderMark` (quiet wordmark ink), `unavailable` (locked/disabled affordance, always paired with a symbol or text) |
+| Spacing | Scale `hairline 3 · xSmall 6 · small 10 · medium 16 · large 24 · xLarge 32`, plus semantic names: `compact 8` (label/value stacks), `stack 12` (rows inside a section), `margin 16` (app page margin), `readingMargin 20` (Recipe reader/editor/import pages), `group 20` (groups within an editorial section), `section 28` (between major sections). New layout code uses the names; share-card exports keep their fixed layout values. |
+| Type/radius/size/motion | `SGTheme.TypeRole`, `Radius` (`chip 10 · field 12 · card 16 · hero 18`), `Size` (incl. `minimumTap 44`, `toolbarSymbol 17`), motion timing. Rounded identity/title/score roles. |
+
+**Accent rule.** Red means brand identity, the one primary action in a region (e.g. Rank My Version, Add, New Dish +), selection/active state, unread dots, and destructive 86 via native destructive roles. Toolbar utilities (share, overflow, settings, Tickets bell, Sous Chefs), metadata, secondary labels, row text and reorder/utility controls stay neutral. The app shell sets `.tint(accent)` globally, so neutral surfaces must opt out explicitly with `sgUtilityTint()` or `SGRowButtonStyle` — an inherited tint was the cause of the Tickets red-text bleed (`.secondary` resolves against the tint).
 
 ## 4. App shell and navigation
 
@@ -47,19 +51,49 @@ Source of truth: `StayGrubby/DesignSystem/StayGrubbyTheme.swift` (`SGTheme`). Ch
 
 | Need | Use (Implemented) |
 | --- | --- |
-| Buttons | `SGButtonStyle` (prominent/secondary), native destructive roles, `SGIconButton` (44 pt, Reduce Motion aware) |
+| Photo framing | `sgPhotoFrame(_ role: SGPhotoRole)` — see 5.1 |
+| Missing photo | `SGPhotoPlaceholder` — the only placeholder (replaced `SGFoodPlaceholder` and the SF `photo` glyph) |
+| Scores | `SGScore(text:role:identifier:)` for already-gated text; `ScoreBadge(score:)` gates a local ranked item then uses `SGScore`; `LockedScoreIndicator` — see 5.2 |
+| Toolbar utility | `SGToolbarIcon(symbol:)` + `sgUtilityTint()` — see 5.3 |
+| List row buttons | `SGRowButtonStyle` (neutral text hierarchy under the app tint) |
+| Buttons | `SGButtonStyle` (prominent = primary, default = secondary, `compact`), native destructive roles, `SGIconButton` |
+| Section titles | `SGSectionHeader(title:) { optional trailing action }` — headline weight, header trait, no container |
+| Content states | `SGContentState(title:symbol:message:) { optional action }` on native `ContentUnavailableView`; `SGLoadingState(label:)` |
 | Header/titles | `SGPrimaryBrandTitle(page:)` in the native principal toolbar; `StayGrubbyHeader` for the Grub Rank search/creation inset |
 | Creation | `SGCreationChoices` (New Dish / New Version reveal) |
 | Lists/rows/cards | `SGEditorialList`, `SGDestinationLabel`, `sgCard`, `RankedDishRow`, `SignatureRankHero`, `SGSelectionRow`, `SGFormSection` |
-| Selection sheets | `SGSelectionSheet`; `CookVersionSelectionView` / `CookVersionIdentity` for Dish-version selection; `SocialPersonLabel` + `SocialPersonSelectionRow` for people |
+| Selection sheets | `SGSelectionSheet`; `CookVersionSelectionView` / `CookVersionIdentity`; `SocialPersonLabel` + `SocialPersonSelectionRow` |
 | Browse controls | `SGBrowseSortMenu`, `SGBrowseControlLabel` (shared by Grub Rank and Food Bible) |
-| Photos | `DishPhoto` (display/thumbnail loading), `SGHeroMedia` (detail/result hero), `SGFoodPlaceholder`, official-wordmark social/cookbook placeholder, `CookingPhotoEditor` |
-| Scores/tags | `ScoreBadge`, `TagChip`, `SourceSummary`, `SGSectionHeader` |
-| Allergens | `SGAllergenChoices` / Contains selector, shared with Avoid (opposite semantics kept separate) |
-| Content states | `SGEmptyState`, `ProgressView`, contextual retry |
-| Sharing | `SocialLinkShareAction` (native `ShareLink`, `square.and.arrow.up`), native activity controller for rendered image exports |
+| Photos (loading) | `DishPhoto`, `RecipePhoto`, `SocialPhoto` load bytes; `SGHeroMedia` (Dish/Signature hero fade); `CookingPhotoEditor` |
+| Tags/allergens | `TagChip`, `SourceSummary`, `SGAllergenChoices` / Contains selector |
+| Sharing | `SocialLinkShareAction` (compact = toolbar utility), native activity controller for rendered exports |
 
-Known gaps (Planned in Stage A): there is no single photo frame, score badge size scale, option sheet, filter bar, editor scaffold, content-state wrapper or toolbar tint rule, and roughly 99 hard-coded padding values bypass `SGTheme.Space`.
+Retired in Stage A: `SGFoodPlaceholder` (→ `SGPhotoPlaceholder`), unused `SGEmptyState` (→ `SGContentState`), per-screen score text/medallion code (→ `SGScore`).
+
+### 5.1 Photo roles
+
+| Role | Shape | Corner | Used by |
+| --- | --- | --- | --- |
+| `.thumbnail` | 86 pt square | 12 | Grub Rank rows |
+| `.compactThumbnail` | 44 pt square | 10 | Dish/version selection, Dish Detail version rows |
+| `.tile` | square, flexible width | 12 | Signature Dishes, Kitchen post grid |
+| `.card` | 4:3, flexible width | 18 | Grub List posts, Recipe activity |
+| `.cookbook` | 0.9 portrait, flexible width | 12 | Food Bible grid |
+| `.hero` | full width × 260 pt | 18 | Recipe reader, shared Recipe reader, Recipe history (Dish hero uses `SGHeroMedia` with the same corner) |
+
+Flexible roles size a clear aspect box first, so loading never shifts layout. **Placeholder language:** warm `elevatedSurface` plus a monochrome `#stayGRUBBY` mark in `placeholderMark` (≈44% width in small frames, ≈28% capped at 104 pt in large ones; frames under 64 pt show the surface only). It stays recognizable without turning a screen of missing photos into a wall of red logos. The full-color wordmark is for identity (headers, share cards). No synthetic food imagery. Placeholders are decorative (`accessibilityHidden`); the photo view owns the label ("No photo for …").
+
+### 5.2 Score roles
+
+`.standard` (open semantic-colored rounded numerals: rows, Signature tiles, detail, versions), `.outOfTen` (same numerals + "/ 10": ranking result, composer summary), `.medallion` (Dynamic-Type-scaled ring: Grub List card). All use `ScoreColor` bands, announce "Score N", and fall back to `LockedScoreIndicator` (lock + "Score locked" + hint) when text is nil. Presentation only — no calibration, order or unlock logic lives here. Rendered exports keep brand red.
+
+### 5.3 Toolbar and action rules
+
+- Toolbar utilities: `SGToolbarIcon` (17 pt medium SF Symbol, 44 pt target) + `sgUtilityTint()` — neutral in light and dark. Unavailable utilities use `ColorToken.unavailable` with an accessibility label stating why.
+- One accent toolbar action at most per screen, and only for the screen's primary action (Add Recipe +, Mark All Read).
+- Tickets bell: neutral `bell`; with unread, `bell.badge` in palette mode with only the dot in accent.
+- Overflow menus keep native destructive roles for 86 actions.
+- Action roles: primary `SGButtonStyle(prominent: true)` (one per region) · secondary `SGButtonStyle()` · compact utility `SGButtonStyle(compact: true)` or a native text button · toolbar as above · destructive native role · list rows `SGRowButtonStyle`. Native controls stay native where appropriate; targets stay ≥ 44 pt.
 
 ## 6. Screen contracts (Implemented unless marked)
 
@@ -81,19 +115,19 @@ Known gaps (Planned in Stage A): there is no single photo frame, score badge siz
 
 ## 7. Vocabulary in UI
 
-Grub Rank · Signature Dish / Signature Dishes · Grub List · My Kitchen · Sous Chefs · Requests · Tag a Sous Chef 🧑‍🍳 · Hands 🙌 / Give Hands 🙌 · Tickets 🎟️ / New Ticket · Rank My Version · Post to Grub List (internal) vs **Share** (external). Restrained 86: `86 (Delete)`, `86 this Dish?`, "Are you sure you want to 86 this Dish? This can’t be undone.", `86 Dish / Recipe / Cook / Comment / Post`. `Delete Account` stays conventional. Utility words stay plain: Comments, Search, Settings, Edit, Share, New Dish, New Version, Re-rank, Block, Report. Never "Profile", "friends", "likes" or "notifications" in user-facing copy. Keep "Your taste decides". Do not rename My Kitchen. Future achievements: Stars ⭐ (not implemented).
+Grub Rank · Signature Dish / Signature Dishes · Grub List · My Kitchen · Sous Chefs · Requests · Tag a Sous Chef 🧑‍🍳 · Hands 🙌 / Give Hands 🙌 · Tickets 🎟️ / New Ticket · Rank My Version · Post to Grub List (internal) vs **Share** (external). Restrained 86: `86 (Delete)`, `86 this Dish?`, "Are you sure you want to 86 this Dish? This can’t be undone.", `86 Dish / Recipe / Cook / Comment / Post`. `Delete Account` stays conventional. Utility words stay plain: Comments, Search, Settings, Edit, Share, New Dish, New Version, Re-rank, Block, Report. Never "Profile" for My Kitchen, nor "friends", "likes" or "notifications", in user-facing copy. (Open owner decision: the Settings identity editor — name, username, photo, discovery — is still titled "Profile"; renaming it is deferred to Stage E.) Keep "Your taste decides". Do not rename My Kitchen. Future achievements: Stars ⭐ (not implemented).
 
 ## 8. Score presentation
 
 Scores unlock at ten eligible saved ranked entries; locked states never render a number (UI, accessibility, previews, exports). Displayed score comes from reaction-conditioned `ScoreCalibration`; order comes from Bradley–Terry strength. These can disagree across reaction groups (see the pre-V1 investigation in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md#ranking--protected)). UI work must not hide, reorder or recolor around that disagreement until the investigation decides the presentation.
 
-## 9. System-wide UI overhaul — plan (Planned, not started)
+## 9. System-wide UI overhaul — plan
 
 A true consolidation across screens, not per-screen polish. Candidate shared systems: `SGPhotoFrame(role:)`, `ScoreBadge(size:)`, one Share menu/action model, `SGOptionSheet`, generalized `SGSelectionRow`, `SGFilterBar`, `SGEditorScaffold`, `SGContentState`, `SGSectionHeader` rule, shared toolbar/tint rules, and Recipe/Food Bible values routed through `SGTheme`.
 
 | Stage | Scope |
 | --- | --- |
-| A — Foundations | Shared visual/component foundations; spacing tokens; toolbar tint rule; low-risk confirmed defects |
+| A — Foundations | **Implemented November 7, 2026 — automated + Simulator checks passed, owner physical acceptance pending.** Tokens/accent rule, photo roles + placeholder, score roles, section/content states, toolbar/row action styles, foundational defects |
 | B — Pickers / Search / Filtering | Consolidate selectors, filter bars, search patterns (Grub Rank, Food Bible, Kitchen, people) |
 | C — Sharing | Separate Post to Grub List from external Share; one Share action (image + short `#stayGRUBBY` message + exact link); composer simplification |
 | D — Detail screens | Dish Detail / Recipe Detail consolidation |
@@ -109,21 +143,21 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 
 | Defect | Likely stage |
 | --- | --- |
-| Reaction screen labels a lone first cook "Version 1" (`AddCookingView` builds its own label instead of `meaningfulVersionLabel`) | A |
-| `1 versions` pluralization in `DishSelectionView` | A |
-| Unlock milestone says "from Profile" instead of My Kitchen (`TopThreeShareCard.swift`) | A / G |
-| Tickets row button tint bleeds red into handle/message/time; rows run four lines | E |
-| Sous Chef Kitchen Recipes row shows two chevrons | E |
+| ~~Reaction screen labels a lone first cook "Version 1"~~ | Fixed in A |
+| ~~`1 versions`~~ (also fixed `1 Sous Chefs`, `1 recipes`) | Fixed in A |
+| ~~Unlock milestone says "from Profile"~~ | Fixed in A |
+| ~~Tickets row tint bleeds red into handle/message/time~~ (fixed in A via `SGRowButtonStyle`); rows still run four lines | E |
+| ~~Sous Chef Kitchen Recipes row shows two chevrons~~ | Fixed in A |
 | Add Recipe → Add Manually shows both Back and Cancel (nested navigation) | F |
 | Keyboard Done pill overlaps the Comment Send button and New Dish Continue bar (iOS 26) | A / F |
 | Grub Rank Avoid chip clipped | B |
 | Empty Grub Rank still shows segmented control and filters | B |
 | Dietary editor reuses filter view and shows filter helper text | B / F |
-| Raw Account ID shown in Account & Sync | E |
+| ~~Raw Account ID shown in Account & Sync~~ (now Debug-only diagnostics) | Fixed in A |
 | Unnecessary "0 New Tickets" state | E |
-| Dark-mode unlock-banner treatment | A |
-| Doubled spacing on Dish Detail | D |
-| Share icon tint differs between Dish Detail (charcoal) and Recipe Detail (red) | A |
+| ~~Dark-mode unlock-banner treatment~~ (adaptive surface/text/track) | Fixed in A |
+| ~~Doubled spacing on Dish Detail~~ (stacked section padding and empty provenance gap) | Fixed in A |
+| ~~Share icon tint differs between Dish Detail and Recipe Detail~~ (toolbar rule) | Fixed in A |
 | Own Recipe activity shows name + handle while own post shows "You" | E |
 | Internal share composer says "friends" / "friends-visible" / "revision 1"; about eight paragraphs of copy; Publish is a plain buried row | C |
 | Result screen: three–four stacked buttons hide much of the share-card preview | G |
@@ -133,7 +167,7 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 | Tagged Sous Chef leaves no visible trace on Dish Detail / Grub List card (decided: show collaborators on the card, wording not final, e.g. "Guy + Alex cooked this") | D / E |
 | Rank My Version does not explain Recipe provenance or that it creates a new Dish rather than a version of an existing one | F |
 | Recipe editor uses red for nearly everything | F |
-| No-photo Recipe and Grub List cards form a wall of giant wordmarks; SF-symbol placeholders elsewhere | A |
+| ~~No-photo cards form a wall of giant wordmarks; SF-symbol placeholders elsewhere~~ (`SGPhotoPlaceholder`) | Fixed in A |
 | Edit Cook Save is compact while Continue is full-width | F |
 
 Separately tracked (not UI, protected system, needs evidence first): the ingredient parser split "toasted and crushed" into reversed lines and singularized "1½ cups".
@@ -145,3 +179,5 @@ Comparison screen; Initial Reaction; re-rank reuse of the ranking flow; #1 hero;
 ## 12. Verification for UI changes
 
 Follow AGENTS.md: build, directly affected UI tests and focused Simulator inspection in light/dark and at an accessibility text size for small UI; targeted Simulator flow verification for navigation/flow changes. Debug review fixtures require `--ui-test-store <UUID>` (isolated store and media root) and are compile-time excluded from Release; see [fixture rules](STAYGRUBBY_ARCHITECTURE.md#debug-fixtures-and-test-safety).
+
+**Stage A verification (November 7, 2026).** Debug build; 20 focused UI tests passed (score unlock, Kitchen/Account, Signature alignment, Tickets read-all, Food Bible empty state, Recipe share/Send, Dish Detail actions, re-rank result); full unit suite 390/396 with 6 failures that are pre-existing or order-dependent (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)). Simulator review of Grub Rank, Dish Detail, Food Bible, Recipe Detail, Grub List, Tickets and My Kitchen in light and dark, locked and unlocked scores, missing photos, and accessibility text size.

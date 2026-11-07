@@ -18,7 +18,7 @@ struct RecipeImportView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                     if !cloudConsent {
                         disclosure
                     } else {
@@ -38,7 +38,7 @@ struct RecipeImportView: View {
                             .accessibilityIdentifier("recipe-import-manual")
                     }
                     }
-                }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }.scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
                 .navigationTitle("Paste Recipe").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { if raw.isEmpty { cancel(); dismiss() } else { discard = true } }.accessibilityIdentifier("recipe-import-cancel") } }
@@ -65,7 +65,7 @@ struct RecipeImportView: View {
         }
     }
     private var disclosure: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.group) {
             Text("Turn your words into a recipe").font(SGTheme.TypeRole.headline)
             Text("Paste Recipe sends the text you submit through Supabase to Google Gemini, an external AI service, to create an editable recipe. Google’s unpaid service may use text and responses to improve its products, and human reviewers may review them. Avoid confidential or personal information.")
             Text("You’ll review everything before saving. Add Manually works without this AI service.").foregroundStyle(.secondary)
@@ -104,12 +104,12 @@ struct RecipeCreationChoice: View {
     @State private var mode: RecipeCreationMode?
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 Text("Keep a recipe, whether you’ve cooked it yet or not.").foregroundStyle(.secondary)
-                Button { mode = .imported } label: { VStack(alignment: .leading, spacing: 6) { Label("Paste Recipe", systemImage: "doc.text").font(.headline); Text("Paste a full recipe and organize it for review.").font(.subheadline) }.frame(maxWidth: .infinity, alignment: .leading).padding(16) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-import")
-                Button { mode = .manual } label: { Label("Add Manually", systemImage: "square.and.pencil").frame(maxWidth: .infinity, alignment: .leading).padding(16) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-manual")
+                Button { mode = .imported } label: { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { Label("Paste Recipe", systemImage: "doc.text").font(.headline); Text("Paste a full recipe and organize it for review.").font(.subheadline) }.frame(maxWidth: .infinity, alignment: .leading).padding(SGTheme.Space.medium) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-import")
+                Button { mode = .manual } label: { Label("Add Manually", systemImage: "square.and.pencil").frame(maxWidth: .infinity, alignment: .leading).padding(SGTheme.Space.medium) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-manual")
                 Spacer()
-            }.padding(20).background(SGTheme.ColorToken.background).navigationTitle("Add Recipe")
+            }.padding(SGTheme.Space.readingMargin).background(SGTheme.ColorToken.background).navigationTitle("Add Recipe")
                 .navigationDestination(item: $mode) { mode in RecipeStandaloneComposer(mode: mode) { dismiss() } }
                 .toolbar { ToolbarItem(placement: .cancellationAction) { RecipeCreationDone() } }
         }

@@ -66,8 +66,8 @@ struct AccountView: View {
             ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
             ToolbarItem(placement: .topBarTrailing) {
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
-                    Image(systemName: "gearshape").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
-                }.accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
+                    SGToolbarIcon(symbol: "gearshape")
+                }.sgUtilityTint().accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
             }.sgIndependentToolbarBackground()
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
@@ -93,7 +93,10 @@ struct AccountView: View {
         if case .resolved(let account) = session.state {
             Section("Sign-in & synchronization") {
             Label("Account connected",systemImage:"checkmark.circle.fill").foregroundStyle(SGTheme.ColorToken.accent)
-            Text("Account ID: \(account.accountID.uuidString.lowercased())").font(.footnote).textSelection(.enabled)
+            #if DEBUG
+            // Development diagnostics only; Release never shows the internal account UUID.
+            Text("Account ID: \(account.accountID.uuidString.lowercased())").font(.footnote).foregroundStyle(.secondary).textSelection(.enabled)
+            #endif
             if let sync, sync.status != .idle {
                 Text(sync.status.label).font(.footnote).foregroundStyle(.secondary)
                 if [.savedLocally, .conflict, .needsReview].contains(sync.status) {

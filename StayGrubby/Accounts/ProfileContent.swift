@@ -35,9 +35,7 @@ struct ProfileCookingContent: View {
 
     private var topFoods: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-            HStack {
-                Text("Signature Dishes").font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
-                Spacer()
+            SGSectionHeader(title: "Signature Dishes") {
                 TopThreeShareAction(list: ranking, title: "Share Signature Dishes", compact: true)
             }
             if !snapshot.topFoods.isEmpty {
@@ -78,9 +76,8 @@ private struct ProfileTopFood: View {
     @Environment(\.dynamicTypeSize) private var textSize
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            Color.clear.aspectRatio(1, contentMode: .fit)
-                .overlay { DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title) }
-                .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+            DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title)
+                .sgPhotoFrame(.tile)
                 .overlay(alignment: .topLeading) {
                     Text("#\(food.rank)").font(.subheadline.bold()).monospacedDigit()
                         .padding(SGTheme.Space.xSmall)
@@ -92,11 +89,7 @@ private struct ProfileTopFood: View {
                 .lineLimit(textSize.isAccessibilitySize ? nil : 2).fixedSize(horizontal: false, vertical: true)
                 .background { GeometryReader { geometry in Color.clear.preference(key: SignatureTitleHeightKey.self, value: geometry.size.height) } }
                 .frame(height: titleHeight > 0 ? titleHeight : nil, alignment: .top)
-            if let score = food.scoreText {
-                Text(score).font(.title3.weight(.bold)).monospacedDigit()
-                    .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score))
-                    .accessibilityIdentifier("profile-score-\(food.rank)")
-            } else { LockedScoreIndicator() }
+            SGScore(text: food.scoreText, identifier: "profile-score-\(food.rank)")
         }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
 }

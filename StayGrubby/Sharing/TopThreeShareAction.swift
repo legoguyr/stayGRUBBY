@@ -28,8 +28,7 @@ struct TopThreeShareAction: View {
             catch { notice = .preparationFailed(error.localizedDescription) }
         } label: {
             if compact {
-                Image(systemName: model == nil ? "lock.fill" : "square.and.arrow.up")
-                    .frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
+                SGToolbarIcon(symbol: model == nil ? "lock.fill" : "square.and.arrow.up").sgUtilityTint()
             } else { Label(title, systemImage: model == nil ? "lock.fill" : "square.and.arrow.up").frame(maxWidth: .infinity) }
         }
     }

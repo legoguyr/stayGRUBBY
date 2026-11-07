@@ -31,11 +31,10 @@ struct DishSelectionView: View {
                                     HStack(spacing: SGTheme.Space.small) {
                                         DishPhoto(media: dish.attempts.sorted { $0.sequenceNumber > $1.sequenceNumber }.compactMap(\.primaryImage).first,
                                                   thumbnail: true, name: dish.name)
-                                            .frame(width: SGTheme.Size.versionThumbnail, height: SGTheme.Size.versionThumbnail)
-                                            .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+                                            .sgPhotoFrame(.compactThumbnail)
                                         VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                                             Text(dish.name).font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
-                                            Text("\(dish.attempts.count) versions").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                                            Text(dish.attempts.count == 1 ? "1 version" : "\(dish.attempts.count) versions").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                                         }.frame(maxWidth: .infinity, alignment: .leading)
                                         Image(systemName: "chevron.right").foregroundStyle(.secondary)
                                     }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())

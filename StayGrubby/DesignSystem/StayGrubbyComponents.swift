@@ -31,11 +31,7 @@ struct DishPhoto: View {
                     Image(uiImage: loadedImage).resizable().scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 } else {
-                    ZStack {
-                        SGTheme.ColorToken.elevatedSurface
-                        Image(systemName: "photo")
-                            .font(.system(size: thumbnail ? SGTheme.Size.thumbnailIcon : SGTheme.Size.placeholderIcon, weight: .ultraLight)).foregroundStyle(.secondary)
-                    }
+                    SGPhotoPlaceholder()
                 }
             }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
         }
@@ -56,17 +52,13 @@ struct DishPhoto: View {
     }
 }
 
+/// Gated score for a local ranked item: applies the unlock policy, then `SGScore`.
 struct ScoreBadge: View {
     let score: Double
     @Environment(\.scoreUnlockState) private var scores
     var body: some View {
         if let text = scores.scoreText(score) {
-        Text(text)
-            .font(SGTheme.TypeRole.score)
-            .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: text))
-            .padding(.horizontal, SGTheme.Space.xSmall).padding(.vertical, SGTheme.Space.xSmall)
-            .fixedSize()
-            .accessibilityLabel("Score \(text)")
+            SGScore(text: text).padding(SGTheme.Space.xSmall)
         } else { LockedScoreIndicator() }
     }
 }
@@ -115,8 +107,7 @@ struct RankedDishRow: View {
     }
     private var photo: some View {
         DishPhoto(media: attempt.primaryImage, thumbnail: true, name: attempt.dish?.name ?? attempt.displayName)
-            .frame(width: SGTheme.Size.rowThumbnail, height: SGTheme.Size.rowThumbnail)
-            .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+            .sgPhotoFrame(.thumbnail)
     }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
@@ -134,11 +125,21 @@ struct RankedDishRow: View {
     }
 }
 
-struct SGSectionHeader: View {
+/// Section title rule: headline weight, header trait, no container. An optional
+/// trailing view holds one compact action (e.g. share, New Version).
+struct SGSectionHeader<Trailing: View>: View {
     let title: String
+    @ViewBuilder var trailing: Trailing
     var body: some View {
-        Text(title).font(SGTheme.TypeRole.headline).frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .firstTextBaseline, spacing: SGTheme.Space.small) {
+            Text(title).font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            trailing
+        }
     }
+}
+extension SGSectionHeader where Trailing == EmptyView {
+    init(title: String) { self.init(title: title) { EmptyView() } }
 }
 
 /// Keep action symbols centered beside their title instead of using label baselines.
@@ -160,7 +161,7 @@ struct SGHeroMedia: View {
         DishPhoto(media: media, name: name)
             .frame(maxWidth: .infinity)
             .frame(height: media == nil ? SGTheme.Size.placeholderHeight : SGTheme.Size.heroHeight)
-            .clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: SGPhotoRole.hero.cornerRadius, style: .continuous))
             .overlay {
                 if media != nil {
                     LinearGradient(stops: [

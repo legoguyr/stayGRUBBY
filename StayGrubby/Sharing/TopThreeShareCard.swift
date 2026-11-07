@@ -108,7 +108,7 @@ struct ScoreUnlockMilestoneView: View {
                         SharePreviewFailure(message: previewError) { fileRevision += 1 }
                     } else { ProgressView("Preparing your card") }
                 }
-                Text("Share your current Top 3 again anytime from Profile.")
+                Text("Share your current Top 3 again anytime from My Kitchen.")
                     .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
             }.multilineTextAlignment(.center).padding(SGTheme.Space.large)
                 .frame(maxWidth: SGTheme.Size.sharingContentMaximum).frame(maxWidth: .infinity)

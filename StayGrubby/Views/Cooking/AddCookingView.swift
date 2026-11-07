@@ -36,8 +36,13 @@ struct AddCookingView: View {
         }
         _draft = State(initialValue: initial)
     }
+    /// A lone untitled first cook shows no "Version 1" (same rule as `meaningfulVersionLabel`);
+    /// a New Version of an existing Dish keeps its sequence label. Presentation only.
+    private var newVersionLabel: String? {
+        draft.cleanTitle ?? (dish == nil ? nil : "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)")
+    }
     private var displayName: String {
-        "\(draft.cleanDishName) — \(draft.cleanTitle ?? "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)")"
+        [draft.cleanDishName, newVersionLabel].compactMap { $0 }.joined(separator: " — ")
     }
     var body: some View {
         NavigationStack {
@@ -54,7 +59,7 @@ struct AddCookingView: View {
                         let opponentAttempt = attempts.first { $0.rankedItemID == opponent.id }
                         ComparisonView(newName: draft.cleanDishName,
                                        existingName: opponentAttempt?.dish?.name ?? opponent.name,
-                                       newVersion: draft.cleanTitle ?? (dish == nil ? nil : "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)"),
+                                       newVersion: newVersionLabel,
                                        existingVersion: opponentAttempt?.meaningfulVersionLabel,
                                        newPreparedPhoto: draft.pendingPhoto,
                                        existingPhoto: opponentAttempt?.primaryImage,

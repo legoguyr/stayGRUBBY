@@ -12,11 +12,11 @@ When proposing work classify it as **required before V1**, **desirable but defer
 
 ## NEXT — System-wide UI overhaul (Stages A–G)
 
-A true consolidation of shared components and patterns, not per-screen polish, and no unrelated major functionality. Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan-planned-not-started).
+A true consolidation of shared components and patterns, not per-screen polish, and no unrelated major functionality. Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan).
 
 | Stage | Scope |
 | --- | --- |
-| A — Foundations | Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
+| A — Foundations | **Implemented Nov 7 — owner physical acceptance pending.** Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
 | B — Pickers / Search / Filtering | Selectors, filter bars, search |
 | C — Sharing | Post to Grub List vs external Share; one Share action with image + short `#stayGRUBBY` message + exact link |
 | D — Detail screens | Dish / Recipe Detail |

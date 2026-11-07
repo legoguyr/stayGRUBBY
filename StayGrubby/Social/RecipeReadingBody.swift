@@ -9,7 +9,7 @@ struct RecipeReadingBody: View {
     private var displayed: RecipeContent { RecipeUnits.content(content, mode: RecipeUnits.showsControl ? units : .original, servings: allowScaling ? servings : nil) }
     @Environment(\.dynamicTypeSize) private var size
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.xLarge) {
             if RecipeUnits.showsControl || (allowScaling && RecipeScaling.canonicalServings(content.yield) != nil) {
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: SGTheme.Space.medium) { servingControl; if RecipeUnits.showsControl { unitControl } }
@@ -17,25 +17,25 @@ struct RecipeReadingBody: View {
                 }
             }
             RecipeSummaryMetrics(content: displayed)
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.group) {
                 SGEyebrow(text: "Ingredients")
                 ForEach(displayed.orderedComponents) { part in
                     VStack(alignment: .leading, spacing: 0) {
                         sectionTitle(part)
                         ForEach(part.ingredients) { ingredient in
-                            ingredientRow(ingredient).padding(.vertical, 12)
+                            ingredientRow(ingredient).padding(.vertical, SGTheme.Space.stack)
                             Divider().accessibilityHidden(true)
                         }
                     }
                 }
             }
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 SGEyebrow(text: "Method").accessibilityIdentifier("recipe-method-heading")
                 ForEach(displayed.orderedComponents) { part in
-                    VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: SGTheme.Space.group) {
                         sectionTitle(part)
                         ForEach(Array(part.steps.enumerated()), id: \.element.id) { index, step in
-                            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                            HStack(alignment: .firstTextBaseline, spacing: SGTheme.Space.medium) {
                                 Text("\(offset(part.id)+index+1)").font(.title2.bold()).foregroundStyle(SGTheme.ColorToken.accent).frame(minWidth: 25, alignment: .leading)
                                 Text(step.instruction).font(.body).lineSpacing(7).frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
                             }.accessibilityElement(children: .combine).accessibilityLabel("Step \(offset(part.id)+index+1). \(step.instruction)")
@@ -44,13 +44,13 @@ struct RecipeReadingBody: View {
                 }
             }
             if let tips = content.tips, !tips.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
                     SGEyebrow(text: "Recipe tips")
                     Text(tips).font(.body).lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
             if let allergens = content.allergens, !allergens.contains.isEmpty || !allergens.possible.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
                     if !allergens.contains.isEmpty { Text("Contains: " + allergens.contains.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")) }
                     if !allergens.possible.isEmpty { Text("Possible: " + allergens.possible.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")) }
                     DisclosureGroup("Allergen safety") { Text(RecipeAllergenAssessment.safetyText).font(.footnote).foregroundStyle(.secondary) }
@@ -86,7 +86,7 @@ struct RecipeSummaryMetrics: View {
             if let prep = content.prepMinutes { metric("Prep", "\(prep) min") }
             if let cook = content.cookMinutes { metric("Cook", "\(cook) min") }
             if let total = content.totalMinutes { metric("Total", "\(total) min") }
-        }.padding(.vertical, 6)
+        }.padding(.vertical, SGTheme.Space.xSmall)
     }
     private func metric(_ title: String, _ value: String) -> some View { VStack(alignment: .leading, spacing: 5) { Text(title.uppercased()).font(.caption.bold()).foregroundStyle(.secondary); Text(value).font(.body.weight(.semibold)) }.accessibilityElement(children: .combine) }
 }

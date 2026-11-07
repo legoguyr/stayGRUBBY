@@ -106,14 +106,14 @@ struct RecipeDetailView: View {
     private var linkedCook: CookingAttempt? { guard let id = recipe?.linkedAttemptID else { return nil }; return dishes.lazy.flatMap(\.attempts).first { $0.id == id } }
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.section) {
                 if let recipe { reader(recipe) }
                 else if !failed { ProgressView("Loading Recipe").frame(maxWidth: .infinity) }
                 if failed {
                     Text(recipe?.isOwner == true ? "Offline. Showing your previously opened Recipe. Changes need a connection to save." : "Recipe unavailable, changed, or offline. Your cooking history is unchanged.").font(.subheadline).accessibilityIdentifier("recipe-error")
                     Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle())
                 }
-            }.padding(SGTheme.Space.medium).frame(maxWidth: 680).frame(maxWidth: .infinity)
+            }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }.background(SGTheme.ColorToken.background).navigationTitle("Recipe").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if let recipe {
@@ -154,10 +154,10 @@ struct RecipeDetailView: View {
             } message: { Text("This removes the Recipe and its current links and can’t be undone. Dishes, cooks, rankings and saved cook snapshots stay intact.") }
     }
     private func reader(_ recipe: Recipe) -> some View {
-        VStack(alignment: .leading, spacing: 28) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.section) {
             RecipePhoto(id: recipe.content.photoID, dish: linkedDish, name: recipe.content.title, cook: linkedCook, exactCookLink: recipe.linkedAttemptID != nil)
-                .frame(height: 260).clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card)).accessibilityIdentifier("recipe-hero")
-            VStack(alignment: .leading, spacing: 12) {
+                .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
+            VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
                 Text(recipe.content.title).font(SGTheme.TypeRole.hero).accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 let metadata = [recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
                 if !metadata.isEmpty { Text(metadata).font(.subheadline).foregroundStyle(.secondary) }
@@ -183,7 +183,7 @@ struct RecipeDetailView: View {
             }
             RecipeReadingBody(content: recipe.content, allowScaling: true)
             Divider()
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                 if let source = recipe.content.source, !source.isEmpty { Text("Source · \(source)") }
                 if let url = recipe.content.externalURL.flatMap(URL.init(string:)) { Link("Original source", destination: url) }
                 if recipe.isOwner { RecipeForkAttribution(recipeID: recipe.id) }
@@ -235,7 +235,7 @@ struct RecipeCookingProvenance: View {
     @State private var cooks: [RecipeCookSnapshot] = []
     @State private var failed = false
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             ForEach(cooks) { cook in
                 Text("Recipe · \(cook.snapshot.title)").font(.headline)
                 if let creator = cook.creatorName { Text("Created by \(creator)").font(.subheadline) }

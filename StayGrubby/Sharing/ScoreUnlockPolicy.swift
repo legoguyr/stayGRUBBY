@@ -102,9 +102,11 @@ struct ScoreUnlockProgressBanner: View {
                 .accessibilityIdentifier("score-unlock-progress")
             Text(state.remainingText).font(SGTheme.TypeRole.secondary)
         }
-        .foregroundStyle(SGTheme.Brand.charcoal)
+        // Adaptive surface/text: a fixed cream card glared in dark mode.
+        .foregroundStyle(SGTheme.ColorToken.primaryText)
         .padding(SGTheme.Space.medium)
-        .background(SGTheme.Brand.cream, in: RoundedRectangle(cornerRadius: SGTheme.Radius.card))
+        .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.card))
+        .overlay { RoundedRectangle(cornerRadius: SGTheme.Radius.card).stroke(SGTheme.ColorToken.border, lineWidth: SGTheme.Size.border) }
         .padding(.vertical, SGTheme.Space.small)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("score-unlock-banner")
@@ -128,7 +130,7 @@ struct StayGrubbyUnlockProgressStyle: ProgressViewStyle {
     func makeBody(configuration: Configuration) -> some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule().fill(SGTheme.Brand.charcoal.opacity(0.18))
+                Capsule().fill(SGTheme.ColorToken.separator)
                 Capsule().fill(SGTheme.Brand.red)
                     .frame(width: geometry.size.width * min(1, max(0, configuration.fractionCompleted ?? 0)))
             }

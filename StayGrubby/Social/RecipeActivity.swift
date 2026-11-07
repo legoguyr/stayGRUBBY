@@ -41,9 +41,8 @@ struct RecipeActivityCard: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                    Color.clear.aspectRatio(4 / 3, contentMode: .fit)
-                        .overlay { RecipePhoto(id: activity.entry.photoID, dish: nil, name: activity.entry.recipeTitle) }
-                        .clipped().clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero))
+                    RecipePhoto(id: activity.entry.photoID, dish: nil, name: activity.entry.recipeTitle)
+                        .sgPhotoFrame(.card)
                         .accessibilityHidden(true)
                     SGEyebrow(text: "Recipe")
                     HStack {

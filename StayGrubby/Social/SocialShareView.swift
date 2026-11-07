@@ -84,7 +84,7 @@ struct SocialPostComposer: View {
                     Text("Your cooking stays private unless you publish here. This creates a separate post for your current eligible friends.")
                     Text(model.title).font(SGTheme.TypeRole.headline)
                     if let version = model.versionSubtitle { Text(version).foregroundStyle(.secondary) }
-                    if let score = model.scoreText { Text("\(score) / 10").foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score)) }
+                    if let score = model.scoreText { SGScore(text: score, role: .outOfTen) }
                     else { Text("Your score is locked and will not be shared.").accessibilityIdentifier("social-share-score-locked") }
                     if attempt.primaryImage != nil { Toggle("Include this food photo", isOn: $includePhoto).accessibilityIdentifier("social-share-photo") }
                     Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, and comparison history are not shared. Unlocked rankings may include the position and total at sharing. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")

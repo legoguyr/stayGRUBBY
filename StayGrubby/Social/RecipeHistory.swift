@@ -63,9 +63,9 @@ private struct RecipeVersionReader: View {
     @State private var confirming = false
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 if let content {
-                    RecipePhoto(id: content.photoID, name: content.title).frame(height: 220).clipShape(RoundedRectangle(cornerRadius: 16))
+                    RecipePhoto(id: content.photoID, name: content.title).sgPhotoFrame(.hero)
                     Text(content.title).font(SGTheme.TypeRole.hero)
                     if let text = content.description { Text(text) }
                     RecipeReadingBody(content: content)
@@ -73,7 +73,7 @@ private struct RecipeVersionReader: View {
                     Text("Restoring creates a new current version. Existing versions and cooked snapshots stay unchanged.").font(.footnote).foregroundStyle(.secondary)
                 } else if !failed { ProgressView() }
                 if failed { Text("This version is unavailable or the Recipe changed. Close history and refresh before retrying.") }
-            }.padding(20)
+            }.padding(SGTheme.Space.readingMargin)
         }.background(SGTheme.ColorToken.background).navigationTitle("Version \(version)")
             .task {
                 guard let request else { failed = true; return }

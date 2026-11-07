@@ -168,7 +168,9 @@ Reuse `StayGrubby/DesignSystem` and asset-catalog artwork. Logo red **#F10607** 
 
 ## Verification
 
-Follow AGENTS.md's minimum-confidence table. In particular: documentation-only changes need consistency/link/secret checks only; website deployments need `deploy-production.sh` and its live gate; schema work needs migration/hash, RLS/security tests and fingerprints; release candidates need one broader regression and Release verification.
+Follow AGENTS.md's minimum-confidence table.
+
+**Known unit-test debt (observed November 7, 2026 at `cfe67df`, unchanged by UI Stage A):** `CuisineTests.dishEditsInheritanceAndFiltersNeverChangeRankingEvidence` and `Stage2CookingEntryTests.editingAndCancellingDraftsPreserveEvidenceAndOriginalCookNotes` fail their exact item/comparison snapshot equality; `RankingsPresentationTests.normalTopThreeOmitsMilestoneClaimWhileActualUnlockMayIncludeIt` and `SharingPresentationTests.nativeCompletionDeliversSuccessfulSaveAfterItsCallback` still expect image-only share items, while exports now carry image + caption; `DishSourceTests.simplifiedSourceOptionsAndOriginalURLsPersistWithoutRankingChanges` fails only in full-suite order (passes alone). Diagnose before the release gate. The two evidence-snapshot failures touch protected ranking tests: establish whether the test or the behavior is stale before changing either. In particular: documentation-only changes need consistency/link/secret checks only; website deployments need `deploy-production.sh` and its live gate; schema work needs migration/hash, RLS/security tests and fingerprints; release candidates need one broader regression and Release verification.
 
 ## Task-specific source map
 

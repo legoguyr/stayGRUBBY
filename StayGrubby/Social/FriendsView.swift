@@ -150,8 +150,9 @@ struct FriendProfileView: View {
                 Menu {
                     if person.relationship == .friends { Button("Remove Sous Chef", role: .destructive) { confirmation = "remove" } }
                     if person.relationship != .blocked { Button("Block", role: .destructive) { confirmation = "block" } }
-                } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
-                    .accessibilityLabel("Profile actions").accessibilityIdentifier("friend-profile-actions")
+                } label: { SGToolbarIcon(symbol: "ellipsis") }
+                    .sgUtilityTint()
+                    .accessibilityLabel("Sous Chef actions").accessibilityIdentifier("friend-profile-actions")
                     .disabled(busy)
                 }
             }
@@ -202,7 +203,7 @@ struct SocialFriendsLink: View {
             NavigationLink { FriendsView() } label: {
                 HStack(spacing: SGTheme.Space.xSmall) {
                     if let count { Text("\(count)" + (hasMore ? "+" : "")).fontWeight(.semibold).monospacedDigit() }
-                    Text("Sous Chefs")
+                    Text(count == 1 && !hasMore ? "Sous Chef" : "Sous Chefs")
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold))
                 }.font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityIdentifier("friends-open")

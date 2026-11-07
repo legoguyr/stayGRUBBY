@@ -64,12 +64,7 @@ struct CookingRankingResultView: View {
                             .multilineTextAlignment(.center).accessibilityIdentifier("result-achievement")
                     }
                     // Accessible score text complements the raster preview.
-                    if let score = model.scoreText {
-                    Text("\(score) / 10").font(SGTheme.TypeRole.score)
-                        .foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score))
-                        .accessibilityLabel("Score \(score)")
-                        .accessibilityIdentifier("result-score")
-                    } else { LockedScoreIndicator() }
+                    SGScore(text: model.scoreText, role: .outOfTen, identifier: "result-score")
                     if let rank {
                         Text("#\(rank) overall").font(SGTheme.TypeRole.headline)
                             .accessibilityIdentifier("result-rank")

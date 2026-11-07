@@ -30,11 +30,11 @@ struct RecipeShareChoice: View {
             if let recipe = option?.recipe {
                 Toggle("Include Recipe", isOn: Binding(get: { selection != nil }, set: { selection = $0 ? recipe : nil })).accessibilityIdentifier("post-include-recipe")
                 NavigationLink {
-                    ScrollView { VStack(alignment: .leading, spacing: 20) {
+                    ScrollView { VStack(alignment: .leading, spacing: SGTheme.Space.group) {
                         Text(recipe.content.title).font(SGTheme.TypeRole.title)
                         if let description = recipe.content.description { Text(description) }
                         RecipeReadingBody(content: recipe.content)
-                    }.padding(20) }.navigationTitle("Recipe to Share")
+                    }.padding(SGTheme.Space.readingMargin) }.navigationTitle("Recipe to Share")
                 } label: { Text("\(recipe.content.title) · revision \(recipe.revision)") }
                 Text(option?.fromCookSnapshot == true ? "This is the Recipe snapshot associated with this cook." : "This is the currently linked Recipe. The link does not establish which Recipe was used for this cook.").font(.footnote)
                 Text("Including it shares this revision and its Recipe photo with current Sous Chefs. The Recipe becomes friends-visible. Later edits won’t rewrite this attachment. Personal Notes and private cooking photos are never included.").font(.footnote).foregroundStyle(.secondary)
@@ -105,11 +105,11 @@ struct SharedRecipeView: View {
     @State private var copiedID: UUID?
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 if let value {
                     if let photoID = value.content.photoID {
-                        RecipePhoto(id: photoID, name: value.content.title).frame(height: 240).clipped()
-                    } else { SocialPhoto(path: value.photoPath).frame(height: 240).clipped() }
+                        RecipePhoto(id: photoID, name: value.content.title).sgPhotoFrame(.hero)
+                    } else { SocialPhoto(path: value.photoPath).sgPhotoFrame(.hero) }
                     Text(value.content.title).font(SGTheme.TypeRole.hero).accessibilityIdentifier("shared-recipe-title")
                     if let description = value.content.description { Text(description).accessibilityIdentifier("shared-recipe-description") }
                     if let creator = value.creator { Text("Recipe shared by \(creator.displayName)").font(.subheadline) }

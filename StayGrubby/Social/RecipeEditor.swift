@@ -50,10 +50,10 @@ struct RecipeEditor: View {
         NavigationStack {
             ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.section) {
                     identity
                     details
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                         HStack { SGEyebrow(text: "Ingredients"); Spacer(); Button("Reorder") { beginOrdering(.ingredients) }.accessibilityIdentifier("recipe-reorder-ingredients") }
                         ForEach(parts) { part in ingredientSection(part) }
                         Button("Add Section", systemImage: "plus.rectangle.on.rectangle") {
@@ -61,7 +61,7 @@ struct RecipeEditor: View {
                         }.buttonStyle(RecipeInlineAction()).disabled(parts.count >= 20).accessibilityIdentifier("recipe-add-component")
                     }
                     Divider()
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                         HStack { SGEyebrow(text: "Method"); Spacer(); Button("Reorder") { beginOrdering(.steps) }.accessibilityIdentifier("recipe-reorder-steps") }
                         ForEach(parts) { part in methodSection(part) }
                     }
@@ -69,7 +69,7 @@ struct RecipeEditor: View {
                     attribution
                     allergenDetails
                     if let importReview {
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
                             DisclosureGroup("Draft review") {
                                 ForEach(importReview.warnings, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
                             }.accessibilityIdentifier("recipe-draft-review")
@@ -77,7 +77,7 @@ struct RecipeEditor: View {
                         }.accessibilityIdentifier("recipe-import-review")
                     }
                     if failed { Label("Couldn’t save. Your draft is safe here. Check your connection and cooking sync, then try Save again. If it changed elsewhere, keep your draft while you review that change.", systemImage: "wifi.exclamationmark").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
-                }.padding(20).frame(maxWidth: 680).frame(maxWidth: .infinity)
+                }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
                 .navigationTitle(recipe == nil ? "Add Recipe" : "Edit Recipe").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -135,7 +135,7 @@ struct RecipeEditor: View {
             }
     }
     private var identity: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             RecipePhotoEditor(id: content.photoID, dish: dish, cook: cook, exactCookLink: (attemptID ?? recipe?.linkedAttemptID) != nil, name: content.title, bytes: $photoBytes, removed: $photoRemoved, assetID: $photoAssetID, loading: $photoLoading)
             TextField("Recipe title", text: $content.title, axis: .vertical).font(SGTheme.TypeRole.hero).focused($focus, equals: .title).accessibilityIdentifier("recipe-edit-title")
             TextField("Describe the recipe in 1–3 useful sentences…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
@@ -143,20 +143,20 @@ struct RecipeEditor: View {
     }
     @ViewBuilder private var details: some View {
         Group {
-            if textSize.isAccessibilitySize { VStack(alignment: .leading, spacing: 16) { yieldField; prepField; cookField } }
-            else { HStack(alignment: .top, spacing: 20) { yieldField; prepField; cookField } }
-        }.padding(.vertical, 8)
+            if textSize.isAccessibilitySize { VStack(alignment: .leading, spacing: SGTheme.Space.medium) { yieldField; prepField; cookField } }
+            else { HStack(alignment: .top, spacing: SGTheme.Space.group) { yieldField; prepField; cookField } }
+        }.padding(.vertical, SGTheme.Space.compact)
         totalField
     }
-    private var yieldField: some View { VStack(alignment: .leading, spacing: 6) { Text("YIELD").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. Serves 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
-    private var prepField: some View { VStack(alignment: .leading, spacing: 6) { Text("PREP · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.prepMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Preparation time in minutes") }.frame(minWidth: 75) }
-    private var cookField: some View { VStack(alignment: .leading, spacing: 6) { Text("COOK · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.cookMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Cooking time in minutes") }.frame(minWidth: 75) }
-    private var totalField: some View { VStack(alignment: .leading, spacing: 6) {
+    private var yieldField: some View { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { Text("YIELD").font(.caption.bold()).foregroundStyle(.secondary); TextField("e.g. Serves 4", text: optional(\.yield)).accessibilityIdentifier("recipe-yield").accessibilityLabel("Servings or yield, optional") }.frame(minWidth: 80) }
+    private var prepField: some View { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { Text("PREP · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.prepMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Preparation time in minutes") }.frame(minWidth: 75) }
+    private var cookField: some View { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { Text("COOK · MIN").font(.caption.bold()).foregroundStyle(.secondary); TextField("—", value: $content.cookMinutes, format: .number).keyboardType(.numberPad).accessibilityLabel("Cooking time in minutes") }.frame(minWidth: 75) }
+    private var totalField: some View { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
         Text("TOTAL · MIN").font(.caption.bold()).foregroundStyle(.secondary)
         TextField("—", value: $content.elapsedMinutes, format: .number).keyboardType(.numberPad).accessibilityIdentifier("recipe-total-minutes").accessibilityLabel("Total elapsed time in minutes")
     } }
     private var allergenDetails: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
             Button { finishIngredient(); focus = nil; allergenSelection = .contains } label: {
                 HStack { Label("Contains", systemImage: "checklist"); Spacer(); Text("\(content.allergens?.contains.count ?? 0) selected").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
                     .frame(minHeight: 44).contentShape(Rectangle())
@@ -208,7 +208,7 @@ struct RecipeEditor: View {
             if let row = activeIngredient(in: part.id) {
                 // This field has SECTION identity, never the changing next-row identity.
                 // Return clears it in place, preserving the native first responder.
-                HStack(alignment: .top, spacing: 8) {
+                HStack(alignment: .top, spacing: SGTheme.Space.compact) {
                     IngredientLineField(text: Binding(get: {
                         activeIngredient(in: part.id).map { ingredientEntry.text(for: $0) } ?? ""
                     }, set: { value in
@@ -236,9 +236,9 @@ struct RecipeEditor: View {
         }
     }
     private func ingredientDisplay(_ row: RecipeIngredient, in part: RecipeComponent) -> some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: SGTheme.Space.compact) {
             Button { finishIngredient(); ingredientEntry.begin(row); focus = nil; ingredientFocusedSection = part.id } label: {
-                RecipeIngredientLabel(row: row).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 12).contentShape(Rectangle())
+                RecipeIngredientLabel(row: row).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, SGTheme.Space.stack).contentShape(Rectangle())
             }.buttonStyle(.plain).accessibilityLabel(IngredientLineFormatter.accessibilityLine(row) + ". Ingredient.")
                 .accessibilityHint("Edits the ingredient as one line").accessibilityIdentifier("recipe-ingredient-row-\(row.id)")
             rowActions(part, rowID: row.id, ingredient: true)
@@ -251,9 +251,9 @@ struct RecipeEditor: View {
         VStack(alignment: .leading, spacing: 14) {
             if parts.count > 1 { Text(part.title?.isEmpty == false ? part.title! : "Untitled section").font(.title3.bold()).accessibilityAddTraits(.isHeader) }
             ForEach(Array(part.steps.enumerated()), id: \.element.id) { i,row in
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: SGTheme.Space.small) {
                     Text("\(stepOffset(part.id)+i+1)").font(.title3.bold()).foregroundStyle(.secondary).frame(minWidth: 24).padding(.top, 10).accessibilityLabel("Step \(stepOffset(part.id)+i+1)")
-                    TextField("What happens next?", text: step(part.id,row.id), axis: .vertical).lineLimit(3...20).font(.body).lineSpacing(6).focused($focus, equals: .step(row.id)).padding(.vertical, 10).accessibilityIdentifier("recipe-step-text")
+                    TextField("What happens next?", text: step(part.id,row.id), axis: .vertical).lineLimit(3...20).font(.body).lineSpacing(6).focused($focus, equals: .step(row.id)).padding(.vertical, SGTheme.Space.small).accessibilityIdentifier("recipe-step-text")
                     rowActions(part, rowID: row.id, ingredient: false)
                 }
             }
@@ -261,9 +261,9 @@ struct RecipeEditor: View {
         }
     }
     private var attribution: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.group) {
             DisclosureGroup("Details & source") {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                     Picker("Course", selection: optional(\.course)) { Text("None").tag(""); ForEach(DishCategory.allCases, id: \.rawValue) { Text($0.label).tag($0.rawValue) } }
                     Button { choosingCuisine = true } label: {
                         HStack { Text("Cuisine"); Spacer(); Text(content.cuisine ?? "None").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
@@ -273,7 +273,7 @@ struct RecipeEditor: View {
                 }.padding(.top, 12)
             }
             DisclosureGroup("Recipe tips") {
-                TextField("Anything helpful for next time…", text: optional(\.tips), axis: .vertical).padding(.vertical, 12)
+                TextField("Anything helpful for next time…", text: optional(\.tips), axis: .vertical).padding(.vertical, SGTheme.Space.stack)
             }
             Toggle("Share with Sous Chefs", isOn: $shared).accessibilityIdentifier("recipe-sharing")
         }
@@ -349,7 +349,7 @@ private struct RecipeRowActions: View {
             Button("Move Down", systemImage: "arrow.down", action: down).disabled(!canDown)
             if !destinations.isEmpty { Menu("Move to…") { ForEach(destinations, id: \.0) { id,name in Button(name) { move(id) } } } }
             Button("Delete", systemImage: "trash", role: .destructive) { deleting = true }
-        } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44).contentShape(Rectangle()) }
+        } label: { SGToolbarIcon(symbol: "ellipsis") }.sgUtilityTint()
             .accessibilityLabel(label).confirmationDialog("Delete this row?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete Row", role: .destructive, action: remove) }
     }
 }

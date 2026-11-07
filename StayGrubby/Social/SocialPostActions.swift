@@ -42,8 +42,8 @@ struct SocialPostActions: View {
                 Button("Block account", systemImage: "person.crop.circle.badge.xmark", role: .destructive) { blocking = true }
             }
         } label: {
-            Image(systemName: "ellipsis").frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap).contentShape(Rectangle())
-        }.accessibilityLabel("Post actions for \(post.title)").accessibilityIdentifier("post-actions-\(post.id)")
+            SGToolbarIcon(symbol: "ellipsis")
+        }.sgUtilityTint().accessibilityLabel("Post actions for \(post.title)").accessibilityIdentifier("post-actions-\(post.id)")
             .sheet(item: $sending) { SocialSendSheet(content: $0) }
             .sheet(isPresented: $editing) { SocialPostDescriptionEditor(post: post) }
             .sheet(isPresented: $sharingRecipe) { RecipePostSharingEditor(post: post) }
