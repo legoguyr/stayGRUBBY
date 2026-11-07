@@ -52,7 +52,7 @@ struct TicketsView: View {
     @State private var generation = UUID()
     var body: some View {
         SGEditorialList {
-            SGPageIntro(title: "Want to cook", subtitle: "Save the next good idea. Only a completed cook enters Grub Rank.", eyebrow: "Tickets")
+            SGPageIntro(title: "Want to cook", subtitle: "Save the next good idea. Only a completed cook enters Grub Rank.", eyebrow: "Food Bible")
             if loading { ProgressView() }
             ForEach(tickets) { ticket in
                 if let recipe = ticket.recipe {
@@ -63,7 +63,7 @@ struct TicketsView: View {
             if !loading && !failed && tickets.isEmpty { Text("No Tickets yet. Save a recipe you want to cook.").accessibilityIdentifier("tickets-empty") }
             NavigationLink("Browse Saved Recipes") { RecipeLibraryView() }
             if failed { Text("Tickets unavailable. Check your connection."); Button("Retry") { Task { await load() } } }
-        }.navigationTitle("Tickets").navigationBarTitleDisplayMode(.inline).task { await load() }.refreshable { await load() }
+        }.navigationTitle("Want to Cook").navigationBarTitleDisplayMode(.inline).task { await load() }.refreshable { await load() }
             .onChange(of: phase) { _, next in generation = UUID(); tickets = []; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
     }
@@ -127,7 +127,7 @@ struct RecipeDetailView: View {
                             if recipe.linkedAttemptID != nil || linkedDish != nil {
                                 Button(recipe.linkedAttemptID == nil ? "Unlink Dish Family" : "Unlink Dish", systemImage: "link.badge.plus", role: .destructive) { detaching = true }.accessibilityIdentifier("recipe-detach")
                             }
-                            if recipe.isOwner { Button("Delete Recipe", systemImage: "trash", role: .destructive) { deleting = true }.accessibilityIdentifier("recipe-delete") }
+                            if recipe.isOwner { Button("86 Recipe (Delete)", systemImage: "trash", role: .destructive) { deleting = true }.accessibilityIdentifier("recipe-delete") }
                         }
 
                 }
@@ -149,9 +149,9 @@ struct RecipeDetailView: View {
             .confirmationDialog("Unlink this Recipe?", isPresented: $detaching, titleVisibility: .visible) {
                 Button("Unlink", role: .destructive) { Task { await detach() } }
             } message: { Text("Only the current link is removed. The Recipe, cooks, photos and saved Recipe-used snapshots stay intact.") }
-            .confirmationDialog("Delete this Recipe?", isPresented: $deleting, titleVisibility: .visible) {
-                Button("Delete Recipe", role: .destructive) { Task { await delete() } }
-            } message: { Text("The Recipe and its current links are removed. Dishes, cooks, rankings and saved cook snapshots stay intact.") }
+            .confirmationDialog("86 this Recipe?", isPresented: $deleting, titleVisibility: .visible) {
+                Button("86 Recipe", role: .destructive) { Task { await delete() } }
+            } message: { Text("This removes the Recipe and its current links and can’t be undone. Dishes, cooks, rankings and saved cook snapshots stay intact.") }
     }
     private func reader(_ recipe: Recipe) -> some View {
         VStack(alignment: .leading, spacing: 28) {

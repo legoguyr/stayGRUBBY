@@ -3,6 +3,8 @@ import SwiftData
 
 struct CookedWithSelection: View {
     @Binding var selected: Set<UUID>
+    var editing = false
+    var existingPeople: [SocialPerson] = []
     @Environment(\.sgReduceMotion) private var reduceMotion
     @Environment(\.socialRequest) private var request
     @State private var people: [SocialPerson] = []
@@ -13,6 +15,11 @@ struct CookedWithSelection: View {
     @State private var choosing = false
     @State private var query = ""
     @State private var searching = false
+    private var previewPeople: [SocialPerson] {
+        let tagged = existingPeople.filter { selected.contains($0.id) }
+        let ids = Set(tagged.map(\.id))
+        return tagged + people.filter { !ids.contains($0.id) }
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             Button { choosing = true } label: {
@@ -23,10 +30,10 @@ struct CookedWithSelection: View {
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold))
                 }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
             }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("cooked-with-open")
-            if !people.isEmpty {
+            if !previewPeople.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-                        ForEach(people.prefix(8)) { person in
+                        ForEach(previewPeople.prefix(8)) { person in
                             Button { toggle(person) } label: {
                                 VStack(spacing: SGTheme.Space.xSmall) {
                                     SocialAvatar(name: person.displayName, path: person.avatarPath, size: 48)
@@ -49,12 +56,12 @@ struct CookedWithSelection: View {
         }
         .animation(reduceMotion ? nil : SGTheme.Motion.quick, value: selected)
         .sensoryFeedback(.selection, trigger: selected)
-        .task(id: revision) { await load() }
+        .task(id: "\(revision):\(editing ? query : "")") { await load() }
         .sheet(isPresented: $choosing) {
             NavigationStack {
                 SGEditorialList {
                     Section {
-                        Text("Invite up to eight Sous Chefs after ranking. They choose whether to add their own cook.")
+                        Text(editing ? "Add or remove up to eight Sous Chefs. New invitations are sent when you save." : "Invite up to eight Sous Chefs after ranking. They choose whether to add their own cook.")
                             .font(.footnote).foregroundStyle(.secondary)
                         DisclosureGroup("What invitations share") {
                             Text("Dish title, Course, Cuisine and public source attribution. Private notes, allergens and photos stay private. Tagging does not publish a Grub List post.")
@@ -86,7 +93,10 @@ struct CookedWithSelection: View {
         guard let request else { return }; loading = true; failed = false
         defer { loading = false }
         do {
-            let page = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init(afterUsername: after)))
+            let response = try await request(editing ? "social_cooking" : "social_people",
+                                             editing ? "eligible_selection" : "friends",
+                                             .init(query: editing ? String(query.prefix(50)) : nil, afterUsername: after))
+            let page = try JSONDecoder().decode(SocialPeoplePage.self, from: response)
             try Task.checkCancellation()
             if after == nil { people = [] }
             let ids = Set(people.map(\.id)); people += page.people.filter { !ids.contains($0.id) }; cursor = page.nextCursor

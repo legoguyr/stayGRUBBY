@@ -21,6 +21,13 @@ nonisolated struct SocialPost: Codable, Identifiable, Sendable {
     var recipeAttachmentPresent: Bool? = nil
     var postDescription: String? = nil
     var metadata: SharedCookingMetadata? = nil
+    var rankAtSharing: Int? = nil
+    var rankedCountAtSharing: Int? = nil
+    var sharedRankText: String? {
+        guard scoreText != nil, let rankAtSharing, let rankedCountAtSharing,
+              rankAtSharing > 0, rankAtSharing <= rankedCountAtSharing else { return nil }
+        return "#\(rankAtSharing) of \(rankedCountAtSharing)"
+    }
     var date: Date { Date(timeIntervalSince1970: createdAt) }
 }
 nonisolated struct SocialPostsPage: Codable, Sendable { var posts: [SocialPost] }

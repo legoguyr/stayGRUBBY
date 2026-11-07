@@ -11,6 +11,8 @@ import SwiftData
     var avatars: [String: Data] = [:]
     private var avatarDraft: String?
     var posts: [SocialPost] = []
+    var postCookIDs: [UUID: UUID] = [:]
+    var participantSelections: [UUID: CookParticipantSelection] = [:]
     var comments: [UUID: [SocialComment]] = [:]
     var recipes: [UUID: Recipe] = [:]
     var recipeActivityTimes: [UUID: (id: UUID, date: Double)] = [:]
@@ -299,6 +301,20 @@ import SwiftData
             return try JSONEncoder().encode(SocialNotificationsPage(notifications: visible.filter { n in payload.beforeTime == nil || n.createdAt < payload.beforeTime! }.prefix(25).map { $0 }, unread: visible.filter { !$0.read }.count))
         }
         if endpoint == "social_cooking" {
+            if action == "eligible_selection" {
+                return try JSONEncoder().encode(SocialPeoplePage(people: people.filter {
+                    $0.relationship == .friends && ((payload.query ?? "").isEmpty ||
+                        $0.displayName.localizedCaseInsensitiveContains(payload.query ?? "") ||
+                        $0.username.localizedCaseInsensitiveContains(payload.query ?? ""))
+                }))
+            }
+            if let id = payload.attemptID, action == "edit_selection" || action == "update_selection" {
+                if action == "update_selection" {
+                    participantSelections[id] = .init(selectionToken: UUID().uuidString,
+                        selectedIDs: Set(payload.participantIDs ?? []), event: nil)
+                }
+                return try JSONEncoder().encode(participantSelections[id] ?? .init(selectionToken: "fixture", selectedIDs: [], event: nil))
+            }
             if action == "own" {
                 let origins = cookingClaims.values.filter { $0.itemID == payload.targetID }.map { c in CookingProvenance(id: c.id, kind: c.kind, itemID: c.itemID, completed: c.completed, creator: people[0].relationship == .friends ? people[0] : nil, eventID: nil) }
                 return try JSONEncoder().encode(CookingProvenancePage(origins: origins, events: sharedEvents.values.filter { $0.isOwner && $0.id == payload.targetID }))
@@ -409,7 +425,18 @@ import SwiftData
         }
         if endpoint == "social_content" {
             if action == "cleanup" { return Data(#"{"paths":[]}"#.utf8) }
+            if action == "source", let cook = payload.attemptID {
+                return try JSONEncoder().encode(SocialPostsPage(posts: posts.filter { postCookIDs[$0.id] == cook && $0.published }))
+            }
+            if action == "cancelDraft" {
+                posts.removeAll { $0.id == payload.postID && !$0.published }
+                return try JSONEncoder().encode(SocialPostsPage(posts: []))
+            }
             if action == "prepare", let id = payload.postID {
+                if let cook = payload.attemptID, let previous = posts.first(where: { postCookIDs[$0.id] == cook && $0.id != id }) {
+                    return try JSONEncoder().encode(SocialPostsPage(posts: [previous]))
+                }
+                postCookIDs[id] = payload.attemptID
                 if !posts.contains(where: { $0.id == id }) {
                     let author = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: identity.displayName, username: identity.username ?? "review_cook", relationship: .none)
                     posts.append(SocialPost(id: id, author: author, title: "Review cooking post", versionTitle: nil, scoreText: nil, achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: payload.includePhoto == true ? author.id.uuidString.lowercased() + "/" + id.uuidString.lowercased() + ".jpg" : nil, published: payload.includePhoto != true, isAuthor: true, moderationState: "active", postDescription: payload.postDescription))

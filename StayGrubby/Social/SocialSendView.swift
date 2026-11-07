@@ -30,7 +30,7 @@ struct SocialSendSheet: View {
             SGEditorialList {
                 if batch.complete {
                     Label("Sent", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-send-success")
-                    Text("Your Sous Chefs can open it in Order Up!").foregroundStyle(.secondary)
+                    Text("Your Sous Chefs can open it from their New Ticket.").foregroundStyle(.secondary)
                 } else {
                     if loading && people.isEmpty { ProgressView("Loading Sous Chefs") }
                     if loadFailed {

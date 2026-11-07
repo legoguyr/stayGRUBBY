@@ -15,7 +15,7 @@ Personal cooking/comparison ranking stays central. Saving, cooking, ranking and 
 | Accounts/cloud/privacy | Required Apple/Supabase permanent account; isolated offline working cooking store, structured/photo sync, restore, tombstones and coordinated account deletion implemented |
 | Release foundation | Static public website/policy foundation and prior App Privacy entries exist; historical 1.0 (1) Internal Only TestFlight upload succeeded; current release gates are separate below |
 | Post-TestFlight Cuisine | Optional primary Dish Cuisine/custom values, selection/search/filter and hosted migration complete |
-| Social foundation | Optional identity/avatar, mutual Sous Chefs/requests, explicit friends-only chronological Grub List, Hands/comments, blocks/reports, sharing preferences, Shared Cooking and in-app Order Up! implemented; Run It Back capability retained but its entry points hidden in Stage 4 |
+| Social foundation | Optional identity/avatar, mutual Sous Chefs/requests, explicit friends-only chronological Grub List, Hands/comments, blocks/reports, sharing preferences, Shared Cooking and in-app Tickets implemented; Run It Back capability retained but its entry points hidden in Stage 4 |
 | V1 product correction | Four tabs, cooking/Recipe separation, My Kitchen/Settings hierarchy and accepted score calibration implemented; ranking remains independent of social |
 | Food Bible foundation | Derived cooked-Dish cookbook, structured Recipe content, components, stable Recipe IDs, revision archive/link/provenance infrastructure and explicit manual Save implemented |
 | Food Bible UX 2.0 | Earlier cookbook/editor/reader/search foundation implemented; Architecture V2 now supplies independent Recipe membership |
@@ -25,7 +25,7 @@ Personal cooking/comparison ranking stays central. Saving, cooking, ranking and 
 
 Recipe Creator is an intelligent cookbook editor for messy input, not merely transcription formatting. Gemini is the standard consented intelligent path; Apple infrastructure is dormant for normal creation. No daily StayGrubby cap, recurring 30-day/date expiration, secret renewal or paid billing; burst abuse protection, friendly provider cooldown and manual/deterministic fallback remain. See [current architecture](STAYGRUBBY_ARCHITECTURE.md), [Recipe Style Guide](RECIPE_STYLE_GUIDE.md) and [accepted refinement evidence](RECIPE_CREATOR_REFINEMENT_REVIEW.md).
 
-Food Bible now includes linked and standalone Recipes exactly once. Existing Recipe identity/revisions/provenance were extended rather than replaced; no cooking/ranking data was migrated or retuned. Recipe allergens are primary for ingredient information while actual cook assertions remain intact. Tickets remain dormant; share achievements are not the future Stars system. [Architecture V2 evidence and one owner procedure](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md).
+Food Bible now includes linked and standalone Recipes exactly once. Existing Recipe identity/revisions/provenance were extended rather than replaced; no cooking/ranking data was migrated or retuned. Recipe allergens are primary for ingredient information while actual cook assertions remain intact. Want to Cook remains dormant; share achievements are not the future Stars system. [Architecture V2 evidence and one owner procedure](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md).
 
 Physical Apple account-deletion/revocation verification is intentionally deferred, not a development blocker. Owner acceptance is never inferred from automated tests. Default work is single-agent/main/one Simulator lane, with risk-based verification under AGENTS.md.
 
@@ -40,6 +40,12 @@ Dedicated Recipe-only post types, All/Grub Ranks/Recipes filters and automatic R
 ## CURRENT — iOS compatibility expansion before functional TestFlight preparation
 
 The owner requested iOS 17 first, falling back to 18 only for disproportionate rewrites. iOS 17.0 compiles with small native toolbar fallbacks; SwiftData/Observation and accepted ranking remain intact. Gemini is the only active V1 AI Recipe provider, with Apple generation removed from compilation. The separately approved hosted sync guard prevents incompatible older builds from overwriting assessment-aware data. [Compatibility evidence](IOS_COMPATIBILITY_REVIEW.md). Older-iOS physical smoke remains required; no Release Gate or TestFlight upload starts automatically. Post-V1 priorities are unchanged.
+
+## CURRENT — functional TestFlight improvement
+
+The focused beta cycle addresses exact-cook publication, optional Recipe lookup, isolated Recipe share actions, participant editing, rank-at-sharing, Kitchen presentation, Tickets and restrained 86 copy. The benchmark-gated ranking change only bounds repeated corrective comparisons per opponent. [Verification and owner checklist](NEXT_TESTFLIGHT_IMPROVEMENTS_REVIEW.md).
+
+The stable beta route and browser share fallback use the verified TestFlight invitation. The App Store acquisition destination will replace it in the same configuration at release. Optional referral metadata is ready for a future program. True attribution means a genuinely new account attributed to the inviter; durable post-install handoff, rewards and reporting remain future scope. System-wide UI consolidation and the V1 Release Gate are separate cycles.
 
 ## PREVIOUS — V1 Ranking Integrity & Final UX Corrections
 
@@ -86,15 +92,15 @@ This preserves the established broader progression after the nearer Recipe cycle
 | --- | --- |
 | Social/notification hardening | Reliable Sous Chef and in-app notification behavior; timing depends on actual social changes/release risk |
 | Personal History + Stats | Private history/activity/statistics from actual cooking/evidence; no ranking retuning |
-| Recipe Engine / Food Library / Tickets expansion | Resume Want to Cook/Tickets as appropriate; saving never creates cooked/ranked history; source/creator attribution and eligible save/made counters |
+| Recipe Engine / Food Library / Want to Cook | Resume Want to Cook as appropriate; saving never creates cooked/ranked history; source/creator attribution and eligible save/made counters |
 | Public Web Sharing expansion | Authorized native pointers/minimal private-safe fallback are implemented; any broader public web content requires explicit future scope, never an implicit browsable Recipe catalog/feed |
-| Social + Recipe Expansion | Stage 3 delivers existing-access Recipe/post pointers through Order Up!; broader save/cook/rank/dismiss and Tickets integrations remain future work, without chat |
+| Social + Recipe Expansion | Stage 3 delivers existing-access Recipe/post pointers through Tickets; broader save/cook/rank/dismiss and Tickets integrations remain future work, without chat |
 | Social Polish / Push | APNs, preferences and privacy/tagging polish after reliable in-app behavior; no engagement spam |
 | Challenges / Bigger Social / Community Discovery | Only after dependable personal/social/safety foundations; sponsorship cannot change personal scores |
 | Creator / Commerce / broader discovery | Possible following/public-private follower migration, creator profiles/collections, partnerships and affiliate commerce; no conventional native display ads |
 | Personalized Taste Intelligence & Discovery | **Final long-term major phase**, after social, Recipes, public sharing and discovery foundations |
 
-Stars and a public/private follower model remain future product work. Mutual friendship is today's model. Tickets remain deferred from current user-facing V1 navigation; do not delete their records/domain because they are hidden.
+Stars and a public/private follower model remain future product work. Mutual friendship is today's model. Want to Cook remains deferred from V1 navigation. Preserve its existing dormant records and domain; Tickets is the notification center.
 
 Future Taste Intelligence may use permitted cooking/evidence, cuisines/ingredients/techniques, Recipes/sources, photos and explicit preferences to explain taste/discovery. Separate preference from execution, respect small-data uncertainty and never infer allergens/flavor with certainty from images. Recommendations, popularity, sponsorship and monetization never alter Bradley–Terry ranking. Personal ranking remains free; any future subscriptions must add genuine new value. **No new Taste Intelligence/AI infrastructure or paid service is authorized now.** Existing Recipe Creator is a separate accepted system.
 

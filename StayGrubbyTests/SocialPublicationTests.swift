@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import SwiftData
+import Observation
 import Testing
 @testable import StayGrubby
 
@@ -14,6 +15,49 @@ import Testing
         var session = RankingEngine(itemID: itemID, orderedIDs: list.orderedItems.map(\.id), reaction: .fine)
         while session.nextOpponent != nil { session.answer(.newItem) }
         return try CookingStore.create(draft: draft, session: session, context: context)
+    }
+    private func accept(_ context: ModelContext, owner: UUID) throws -> SyncStoreBinding {
+        let binding: SyncStoreBinding
+        if let existing = try SyncJournal.binding(context) { binding = existing }
+        else { binding = SyncStoreBinding(accountID: owner, restorationRequired: false); context.insert(binding) }
+        binding.enabled = true
+        binding.acceptedSnapshotData = try CookingGraphExport.snapshot(context: context).encoded()
+        binding.acceptedRevision += 1
+        try context.save()
+        return binding
+    }
+
+    @Test func exactCookBecomesReadyOnReceiptWhileUnrelatedWorkRemains() throws {
+        let container = try memory(), context = container.mainContext, owner = UUID()
+        _ = try CookingStore.prepare(context: context)
+        let old = try create(context)
+        let binding = try accept(context, owner: owner)
+        let new = try create(context)
+        #expect(CookPublicationReadiness.revision(for: new, binding: binding) == nil)
+        let observation = ReceiptObservation()
+        _ = withObservationTracking {
+            CookPublicationReadiness.revision(for: new, binding: binding)
+        } onChange: { observation.changed = true }
+        _ = try accept(context, owner: owner)
+        #expect(observation.changed)
+        var edit = CookingDraft(attempt: old); edit.versionTitle = "Unsynced older version"
+        try CookingStore.edit(old, draft: edit, context: context)
+        #expect(CookPublicationReadiness.revision(for: old, binding: binding) == nil)
+        #expect(CookPublicationReadiness.revision(for: new, binding: binding) == binding.acceptedRevision)
+        #expect(!(try SyncJournal.pending(context)).isEmpty)
+    }
+    private final class ReceiptObservation: @unchecked Sendable { var changed = false }
+
+    @Test func reconcileReturnsAutomaticWinnerAndRetryKeepsOnePost() async throws {
+        let review = SocialReview(), attemptID = UUID(), autoID = UUID()
+        let request: SocialRequest = { try await review.request($0, $1, $2) }
+        let post = try await SocialPostPublisher.publish(attemptID: attemptID, postID: autoID, revision: 0,
+                                                         includePhoto: false, photo: nil, request: request, media: nil, scoreLocked: true)
+        #expect(try await SocialPostPublisher.existing(attemptID: attemptID, request: request)?.id == post.id)
+        let retry = try await SocialPostPublisher.publish(attemptID: attemptID, postID: UUID(), revision: 0,
+                                                          includePhoto: false, photo: nil, request: request, media: nil)
+        #expect(retry.id == autoID)
+        #expect(review.posts.count == 1 && retry.recipeID == nil)
     }
     @Test func overridesWinAndUnknownDefaultIsPrivate() {
         var selection = CookingSharingSelection()
@@ -53,6 +97,7 @@ import Testing
         await worker.retryNow()
         #expect(review.posts.isEmpty && list.items.isEmpty) // Form intent is not publication.
         let cook = try create(context, itemID: item)
+        _ = try accept(context, owner: owner)
         let before = try CookingGraphExport.snapshot(context: context)
         await worker.retryNow()
         #expect(worker.status(item) == .failed)
@@ -89,12 +134,15 @@ import Testing
             if offline { throw URLError(.notConnectedToInternet) }
             return try await review.request(endpoint, action, payload)
         }
-        worker.connect(context: context, root: root, accountID: UUID(), request: request, media: nil, sync: nil)
+        let owner = UUID()
+        worker.connect(context: context, root: root, accountID: owner, request: request, media: nil, sync: nil)
         let item = UUID(); worker.record(itemID: item, includePhoto: false)
         let cook = try create(context, itemID: item); worker.privateSaveFinished(cook)
+        _ = try accept(context, owner: owner)
         await worker.retryNow(); #expect(worker.status(item) == .failed)
         for _ in 0..<9 { _ = try create(context) }
         #expect(ScoreUnlockPolicy.state(for: cook).isUnlocked)
+        _ = try accept(context, owner: owner)
         offline = false; await worker.retryNow()
         #expect(worker.status(item) == .review && review.posts.isEmpty)
         _ = try await SocialPostPublisher.publish(attemptID: cook.id, postID: item, revision: 0, includePhoto: false, photo: nil, request: request, media: nil)

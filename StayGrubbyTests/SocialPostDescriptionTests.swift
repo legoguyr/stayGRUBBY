@@ -36,7 +36,7 @@ import Testing
             // The accepted Recipe + Social publisher always sends explicit false without an attachment.
             #expect(payload["includeRecipe"] as? Bool == false)
             #expect(payload["recipeID"] == nil && payload["sourceRevision"] == nil)
-            #expect(Set(payload.keys).isSubset(of: ["postID", "attemptID", "expectedRevision", "confirmed", "includePhoto", "includeAttribution", "postDescription", "includeRecipe"]))
+            #expect(Set(payload.keys).isSubset(of: ["postID", "attemptID", "expectedRevision", "confirmed", "includePhoto", "includeAttribution", "postDescription", "includeRecipe", "includeRankSnapshot", "omitScore"]))
         }
     }
 }

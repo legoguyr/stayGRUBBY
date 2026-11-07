@@ -95,7 +95,7 @@ struct SocialCommentsView: View {
                             if comment.canDelete {
                                 Button { deleting = comment; confirmingDelete = true } label: {
                                     Image(systemName: "trash").frame(width: 44, height: 44)
-                                }.accessibilityLabel("Delete comment").accessibilityIdentifier("comment-delete-\(comment.id)")
+                                }.accessibilityLabel("86 Comment (Delete)").accessibilityIdentifier("comment-delete-\(comment.id)")
                             }
                             if !comment.isAuthor {
                                 Button { reporting = comment } label: {
@@ -138,11 +138,11 @@ struct SocialCommentsView: View {
                             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } }
                     }
                 }
-                .confirmationDialog("Delete this comment?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { comment in
-                    Button("Delete comment", role: .destructive) {
+                .confirmationDialog("86 this Comment?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { comment in
+                    Button("86 Comment", role: .destructive) {
                         deletionRequest = comment
                     }
-                }
+                } message: { _ in Text("This removes your comment and can’t be undone.") }
         }
         .presentationDetents(textSize.isAccessibilitySize ? [.large] : [.medium, .large])
         .presentationDragIndicator(.visible).presentationContentInteraction(.scrolls)

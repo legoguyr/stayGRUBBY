@@ -37,7 +37,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.buttons["settings-open"].waitForExistence(timeout: 8))
             let bell = app.buttons["notifications-open"]
             XCTAssertTrue(bell.isHittable); capture("Kitchen header \(appearance)", app)
-            bell.tap(); XCTAssertTrue(app.navigationBars["Order Up!"].waitForExistence(timeout: 8))
+            bell.tap(); XCTAssertTrue(app.navigationBars["Tickets"].waitForExistence(timeout: 8))
             capture("Order Up \(appearance)", app)
             app.tabBars.buttons["Grub List"].tap()
             let recipe = app.buttons["post-recipe"]

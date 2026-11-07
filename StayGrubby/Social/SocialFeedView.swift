@@ -40,7 +40,7 @@ struct SocialFeedView: View {
                 ForEach(posts) { activity in
                     switch activity {
                     case .cook(let post): SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
-                    case .recipe(let recipe): RecipeActivityCard(activity: recipe, profile: { person = recipe.author })
+                    case .recipe(let recipe): RecipeActivityCard(activity: recipe, profile: { person = recipe.author }, open: { route = .currentRecipe(recipe.entry.recipeID) })
                     }
                 }.listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 if hasMore { Button("Load more posts") { Task { await load(more: true) } }.disabled(loading).accessibilityIdentifier("feed-more") }
@@ -78,9 +78,9 @@ struct SocialFeedView: View {
         .sheet(isPresented: $editingIdentity, onDismiss: { revision += 1 }) {
             if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0; revision += 1 } }
         }
-        .confirmationDialog("Delete this shared post?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { post in
-            Button("Delete shared post", role: .destructive) { Task { await delete(post) } }
-        } message: { _ in Text("Your private cook, photo and ranking stay intact.") }
+        .confirmationDialog("86 this Post?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { post in
+            Button("86 Post", role: .destructive) { Task { await delete(post) } }
+        } message: { _ in Text("This removes the shared post and can’t be undone. Your private cook, photo and ranking stay intact.") }
     }
     private func load(more: Bool = false) async {
         guard let request else { return }
@@ -134,7 +134,7 @@ struct SocialFeedCard: View {
             else {
                 Button { navigate(.post(post.id)) } label: { foodIdentity }
                     .buttonStyle(.plain).accessibilityLabel("Open post: \(post.title)")
-                    .accessibilityValue(post.scoreText.map { "Score \($0)" } ?? "Score locked")
+                    .accessibilityValue(post.scoreText.map { "Score \($0)" + (post.sharedRankText.map { ", rank at sharing \($0)" } ?? "") } ?? "Score locked")
                     .accessibilityIdentifier("post-open-\(post.id)")
             }
             if let description = post.postDescription, !description.isEmpty {
@@ -187,7 +187,15 @@ struct SocialFeedCard: View {
                     }
                     if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
-                if let score = post.scoreText { SocialScoreMedallion(text: score) }
+                if let score = post.scoreText {
+                    VStack(alignment: .trailing, spacing: SGTheme.Space.xSmall) {
+                        SocialScoreMedallion(text: score)
+                        if let rank = post.sharedRankText {
+                            Text(rank).font(SGTheme.TypeRole.secondary).monospacedDigit()
+                                .accessibilityLabel("Rank at sharing: \(rank)")
+                        }
+                    }
+                }
             }
             Color.clear.aspectRatio(4 / 3, contentMode: .fit)
                 .overlay { SocialPhoto(path: post.photoPath) }.clipped()

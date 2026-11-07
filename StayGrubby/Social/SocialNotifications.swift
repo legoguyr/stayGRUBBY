@@ -33,9 +33,9 @@ struct NotificationsLink: View {
         if request != nil {
             let unread = activity?.unread ?? 0
             NavigationLink { SocialNotificationsView() } label: {
-                Label("Order Up!", systemImage: unread > 0 ? "bell.badge" : "bell")
+                Label("Tickets", systemImage: unread > 0 ? "bell.badge" : "bell")
                     .frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-            }.accessibilityLabel(unread > 0 ? "Order Up!, \(unread) unread" : "Order Up!")
+            }.accessibilityLabel("Tickets")
                 .accessibilityValue(activity?.failed == true ? "Refresh unavailable" : "\(unread) unread")
                 .accessibilityIdentifier("notifications-open")
         }
@@ -55,14 +55,14 @@ struct SocialNotificationsView: View {
     @State private var generation = UUID()
     var body: some View {
         SGEditorialList {
-            if busy && notifications.isEmpty { ProgressView("Loading notifications") }
+            if busy && notifications.isEmpty { ProgressView("Loading Tickets") }
             if failed {
-                Text("Notifications unavailable. Check your connection and retry.")
-                Button("Retry notifications") { Task { await load() } }
+                Text("Tickets unavailable. Check your connection and retry.")
+                Button("Retry Tickets") { Task { await load() } }
             } else if !busy && notifications.isEmpty {
                 ContentUnavailableView("You’re all caught up", systemImage: "bell", description: Text("Sous Chef requests and cooking activity appear here."))
             }
-            Text("\(unread) unread").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("notifications-unread")
+            Text(unread == 1 ? "1 New Ticket" : "\(unread) New Tickets").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("notifications-unread")
             ForEach(notifications) { notice in
                 Button { Task { await open(notice) } } label: {
                     HStack(alignment: .top, spacing: 12) {
@@ -74,8 +74,8 @@ struct SocialNotificationsView: View {
                     }.padding(.vertical, SGTheme.Space.small).padding(.horizontal, SGTheme.Space.xSmall).contentShape(Rectangle())
                 }.buttonStyle(.borderless).disabled(busy).accessibilityValue(notice.read ? "Read" : "Unread").accessibilityIdentifier("notification-\(notice.id)")
             }
-            if hasMore { Button("Load more notifications") { Task { await load(more: true) } }.disabled(busy) }
-        }.navigationTitle("Order Up!").navigationBarTitleDisplayMode(.inline)
+            if hasMore { Button("Load more Tickets") { Task { await load(more: true) } }.disabled(busy) }
+        }.navigationTitle("Tickets").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Mark All Read") { Task { await load(action: "readAll") } }.disabled(busy || unread == 0) } }
             .task { await load() }.refreshable { await load() }
             .onSocialRefresh { if !busy { await load() } }
@@ -147,7 +147,9 @@ struct SocialPostDetailView: View {
             .onDisappear { generation = UUID() }
             .sheet(isPresented: $showingComments, onDismiss: { Task { await load() } }) { SocialCommentsView(postID: postID) }
             .sheet(item: $person, onDismiss: { Task { await load() } }) { person in NavigationStack { FriendProfileView(person: person) { Task { await load() } }.toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } } } }
-            .confirmationDialog("Delete shared post?", isPresented: $deleting, titleVisibility: .visible) { Button("Delete shared post", role: .destructive) { Task { await remove() } } }
+            .confirmationDialog("86 this Post?", isPresented: $deleting, titleVisibility: .visible) {
+                Button("86 Post", role: .destructive) { Task { await remove() } }
+            } message: { Text("This removes the shared post and can’t be undone. Your private cook, photo and ranking stay intact.") }
     }
     private func load() async {
         guard let request else { failed = true; return }; let token = UUID(); generation = token; failed = false

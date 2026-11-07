@@ -29,8 +29,8 @@ Use established vocabulary where appropriate:
 | Friends / friend requests | Sous Chefs / Requests |
 | Cooked Together tagging | Tag a Sous Chef |
 | Likes / Like action | Hands / Give Hands |
-| Notifications / Recreate | Order Up! / Run It Back |
-| Future achievements / deferred Want to Cook | Stars / Tickets |
+| Notifications / Recreate | Tickets / Run It Back |
+| Future achievements / deferred Want to Cook | Stars / name undecided |
 
 Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, New Version, Re-rank. Vocabulary does not authorize future features.
 

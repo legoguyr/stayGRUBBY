@@ -135,9 +135,9 @@ struct FriendProfileView: View {
                     }
                 }.disabled(busy)
                 if person.relationship != .blocked {
-                    KitchenRecipesSection(personID: person.id).id("recipes:\(person.id)").listRowSeparator(.hidden)
-                    SocialProfilePosts(open: { socialRoute = .post($0) }, personID: person.id).id("posts:\(person.id)")
-                        .listRowSeparator(.hidden)
+                    KitchenSharedContent(personID: person.id, open: { socialRoute = .post($0) }) { EmptyView() }
+                        .padding(.vertical, SGTheme.Space.small).listRowSeparator(.hidden)
+                        .listRowBackground(SGTheme.ColorToken.background)
                     SocialReportButton(kind: "profile", targetID: person.id)
                 }
             }

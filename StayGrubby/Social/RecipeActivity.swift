@@ -33,22 +33,46 @@ nonisolated struct GrubListPage: Codable { var activities: [GrubListActivity] }
 struct RecipeActivityCard: View {
     let activity: RecipeActivity
     let profile: () -> Void
+    let open: () -> Void
     @Environment(AppLinkRouter.self) private var links
     @State private var reporting = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            Button(action: open) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                    Color.clear.aspectRatio(4 / 3, contentMode: .fit)
+                        .overlay { RecipePhoto(id: activity.entry.photoID, dish: nil, name: activity.entry.recipeTitle) }
+                        .clipped().clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.hero))
+                        .accessibilityHidden(true)
+                    SGEyebrow(text: "Recipe")
+                    HStack {
+                        Text(activity.entry.recipeTitle).font(SGTheme.TypeRole.title)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: SGTheme.Space.small)
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).accessibilityHidden(true)
+                    }
+                }.foregroundStyle(SGTheme.ColorToken.primaryText)
+                    .frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain).accessibilityLabel(activity.entry.recipeTitle)
+                .accessibilityValue("Recipe").accessibilityHint("Opens Recipe")
+                .accessibilityIdentifier("feed-recipe-open-\(activity.entry.recipeID)")
             HStack {
-                Button(action: { if activity.isAuthor == true { links.openOwnKitchen() } else { profile() } }) { SocialPersonLabel(person: activity.author, detail: "Added a new Recipe · " + SocialPostPresentation.timestamp(Date(timeIntervalSince1970: activity.createdAt)), size: 40) }.buttonStyle(.plain)
-                RecipeLinkShare(url: AppRoute.recipeURL(activity.entry.recipeID))
+                Button {
+                    if activity.isAuthor == true { links.openOwnKitchen() } else { profile() }
+                } label: {
+                    SocialPersonLabel(person: activity.author,
+                                      detail: SocialPostPresentation.timestamp(Date(timeIntervalSince1970: activity.createdAt)), size: 36)
+                }.buttonStyle(.plain)
+                Spacer(minLength: 0)
+                RecipeLinkShare(url: AppRoute.recipeURL(activity.entry.recipeID)).buttonStyle(.borderless)
                 RecipeActions(sendContent: .recipe(activity.entry.recipeID)) {
                     if activity.isAuthor != true { Button("Report account", systemImage: "flag") { reporting = true } }
                 }
             }
-            NavigationLink { RecipeDetailView(id: activity.entry.recipeID) } label: {
-                CookbookCard(entry: activity.entry)
-            }.buttonStyle(.plain).accessibilityIdentifier("feed-recipe-open-\(activity.entry.recipeID)")
         }.padding(.vertical, SGTheme.Space.medium)
             .overlay(alignment: .bottom) { SGTheme.ColorToken.border.frame(height: SGTheme.Size.border) }
+            .buttonStyle(.borderless)
             .accessibilityElement(children: .contain).accessibilityIdentifier("feed-recipe-\(activity.id)")
             .sheet(isPresented: $reporting) { SocialReportEditor(kind: "profile", targetID: activity.author.id, close: { reporting = false }) }
     }

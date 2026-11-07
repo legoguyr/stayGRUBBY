@@ -64,8 +64,8 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         let recipe = app.buttons["notification-50000000-0000-0000-0000-000000000007"]
         XCTAssertTrue(recipe.waitForExistence(timeout: 8)); recipe.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8)); XCTAssertEqual(app.staticTexts["recipe-title"].label, "Lemon Soup Recipe")
-        app.navigationBars.buttons["Order Up!"].tap()
-        XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 unread")
+        app.navigationBars.buttons["Tickets"].tap()
+        XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 New Ticket")
         let post = app.buttons["notification-50000000-0000-0000-0000-000000000008"]
         XCTAssertTrue(post.waitForExistence(timeout: 8)); post.tap()
         XCTAssertTrue(app.navigationBars["Post"].waitForExistence(timeout: 8))

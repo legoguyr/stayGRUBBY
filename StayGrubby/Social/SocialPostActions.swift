@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// One explicit action per button, avoiding competing NavigationLinks in a List row.
-enum SocialPostRoute: Hashable { case post(UUID), recreate(UUID), recipe(UUID) }
+enum SocialPostRoute: Hashable { case post(UUID), recreate(UUID), recipe(UUID), currentRecipe(UUID) }
 struct SocialPostDestination: View {
     let route: SocialPostRoute
     var body: some View {
@@ -9,6 +9,7 @@ struct SocialPostDestination: View {
         case .post(let id): SocialPostDetailView(postID: id)
         case .recreate(let id): SharedCookingEntryView(postID: id)
         case .recipe(let id): SharedRecipeView(postID: id)
+        case .currentRecipe(let id): RecipeDetailView(id: id)
         }
     }
 }
@@ -35,7 +36,7 @@ struct SocialPostActions: View {
                     Button("Edit Post", systemImage: "pencil") { editing = true }.accessibilityIdentifier("post-edit-\(post.id)")
                     Button("Recipe Sharing", systemImage: "book") { sharingRecipe = true }.accessibilityIdentifier("post-recipe-sharing")
                 }
-                Button("Delete Post", systemImage: "trash", role: .destructive, action: delete).accessibilityIdentifier("feed-delete-\(post.id)")
+                Button("86 Post (Delete)", systemImage: "trash", role: .destructive, action: delete).accessibilityIdentifier("feed-delete-\(post.id)")
             } else {
                 Button("Report post", systemImage: "flag") { reporting = true }.accessibilityIdentifier("social-report-post")
                 Button("Block account", systemImage: "person.crop.circle.badge.xmark", role: .destructive) { blocking = true }

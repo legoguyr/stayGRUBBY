@@ -47,7 +47,7 @@ final class DesignReviewUITests: StayGrubbyUITestCase {
             let liked = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1 Hands'"), object: hands)
             XCTAssertEqual(XCTWaiter.wait(for: [liked], timeout: 8), .completed); shot("09 Hands \(appearance)", app)
             reach(app.buttons["notifications-open"], app); app.buttons["notifications-open"].tap()
-            XCTAssertTrue(app.navigationBars["Order Up!"].waitForExistence(timeout: 8)); shot("10 Order Up \(appearance)", app)
+            XCTAssertTrue(app.navigationBars["Tickets"].waitForExistence(timeout: 8)); shot("10 Order Up \(appearance)", app)
             tab("Food Bible", app); XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout: 8))
             XCTAssertFalse(app.buttons["bible-tickets"].exists); shot("11 Food Bible \(appearance)", app)
             let recipe = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch

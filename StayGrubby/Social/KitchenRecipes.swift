@@ -87,3 +87,18 @@ private struct KitchenRecipeCollection: View {
         } catch is CancellationError {} catch { if token == generation { entries = []; failed = true } }
     }
 }
+
+/// Shared Kitchen sections use the same authorized sources for owner and visitor.
+struct KitchenSharedContent<Between: View>: View {
+    var personID: UUID? = nil
+    let open: (UUID) -> Void
+    @ViewBuilder let between: () -> Between
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
+            KitchenRecipesSection(personID: personID).id("recipes:\(personID?.uuidString ?? "own")")
+            between()
+            SocialProfilePosts(open: open, personID: personID).id("posts:\(personID?.uuidString ?? "own")")
+        }.frame(maxWidth: SGTheme.Size.contentMaximum, alignment: .leading)
+    }
+}

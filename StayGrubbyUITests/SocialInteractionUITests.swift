@@ -27,7 +27,7 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Looks delicious!"].exists)
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         deletion.tap()
-        let confirm = app.sheets["Delete this comment?"].buttons["Delete comment"]
+        let confirm = app.sheets["86 this Comment?"].buttons["86 Comment"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5))
         confirm.press(forDuration: 0.2)
         XCTAssertTrue(app.staticTexts["No comments yet. Start a conversation."].waitForExistence(timeout: 5), app.debugDescription)

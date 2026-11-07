@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Supabase
 
 struct AttemptDetailView: View {
     @Environment(\.dismiss) private var dismiss
@@ -65,7 +66,7 @@ struct AttemptDetailView: View {
                     Button("Re-rank", systemImage: "arrow.triangle.2.circlepath") { reranking = true }.accessibilityIdentifier("detail-rerank")
                     if request != nil { Button("Share with Sous Chefs", systemImage: "person.2") { sharingSocial = true }.accessibilityIdentifier("share-with-friends") }
                     Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
-                    Button("Delete Cook", systemImage: "trash", role: .destructive) { deleting = true }
+                    Button("86 Cook (Delete)", systemImage: "trash", role: .destructive) { deleting = true }
                 } label: { Image(systemName: "ellipsis").frame(width: 44, height: 44) }
                 .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
             }.sgIndependentToolbarBackground()
@@ -81,13 +82,13 @@ struct AttemptDetailView: View {
                 AddCookingView(list: list, dish: dish, onResultClose: { versionFinalized = true })
             }
         }
-        .alert("Delete this cook?", isPresented: $deleting) {
-            Button("Delete Cook", role: .destructive) {
+        .alert("86 this Cook?", isPresented: $deleting) {
+            Button("86 Cook", role: .destructive) {
                 do { try CookingStore.delete(attempt, context: context, mediaDirectory: mediaRoot); dismiss() }
                 catch { self.error = error.localizedDescription }
             }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("Other cooks stay saved. If this is the dish's last version, the dish is also removed.") }
+        } message: { Text("This removes this cook and can’t be undone. Other cooks stay saved. If this is the dish's last version, the dish is also removed.") }
         .alert("Couldn't delete", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
@@ -217,31 +218,102 @@ struct EditCookingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.cookingMediaRoot) private var mediaRoot
+    @Environment(\.socialRequest) private var request
+    @Environment(\.sharedCooking) private var sharedCooking
+    @Query private var bindings: [SyncStoreBinding]
     let attempt: CookingAttempt
     @State private var draft: CookingDraft
     @State private var error: String?
+    @State private var selection: CookParticipantSelection?
+    @State private var participants: Set<UUID> = []
+    @State private var selectionFailed = false
+    @State private var reloadSelection = 0
+    @State private var saving = false
+    @State private var savedDraft = false
     init(attempt: CookingAttempt) { self.attempt = attempt; _draft = State(initialValue: CookingDraft(attempt: attempt)) }
+
+    private var accepted: Bool {
+        CookPublicationReadiness.revision(for: attempt, binding: bindings.first, requireCurrent: false) != nil
+    }
+    private var tagsPending: Bool {
+        sharedCooking?.intents.contains { $0.id == attempt.rankedItemID && !$0.participants.isEmpty } == true
+    }
     var body: some View {
         NavigationStack {
-            CookingFormScroll(draft: $draft, editing: true)
+            CookingFormScroll(draft: $draft, editing: true,
+                              cookedWith: selection == nil ? nil : $participants, editingParticipants: true,
+                              selectedPeople: selection?.event?.participants.map(\.person) ?? [])
+                .disabled(saving || savedDraft)
                 .navigationTitle("Edit Cook").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(savedDraft ? "Close" : "Cancel") { dismiss() }.disabled(saving)
+                    }
                 }
                 .safeAreaInset(edge: .bottom) {
-                    Button {
-                        do { try CookingStore.edit(attempt, draft: draft, context: context, mediaDirectory: mediaRoot); dismiss() }
-                        catch { self.error = error.localizedDescription }
-                    } label: { Text("Save").frame(maxWidth: .infinity) }
-                    .buttonStyle(SGButtonStyle(prominent: true)).disabled(draft.cleanDishName.isEmpty || !draft.validDishText)
-                    .accessibilityIdentifier("save-cook-metadata")
-                    .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
+                    VStack(spacing: SGTheme.Space.small) {
+                        if request != nil && selection == nil {
+                            if !accepted { Text("Sous Chef tags are available once this cook syncs.").font(.footnote) }
+                            else if tagsPending { Button("Retry pending Sous Chef invitations") { sharedCooking?.retry() } }
+                            else if selectionFailed { Button("Reload Sous Chef tags") { reloadSelection += 1 } }
+                            else { ProgressView("Loading Sous Chef tags") }
+                        }
+                        if savedDraft && selectionFailed {
+                            Button("Reload Sous Chef tags") { reloadSelection += 1 }
+                        }
+                        Button(savedDraft ? "Retry tag changes" : "Save") { Task { await save() } }
+                            .frame(maxWidth: .infinity)
+                            .buttonStyle(SGButtonStyle(prominent: true))
+                            .disabled(saving || draft.cleanDishName.isEmpty || !draft.validDishText)
+                            .accessibilityIdentifier("save-cook-metadata")
+                    }.padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
                 }
                 .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                     Button("OK") { error = nil }
                 } message: { Text(error ?? "") }
         }
+        .task(id: "\(accepted):\(tagsPending):\(reloadSelection)") { await loadSelection() }
         .deferRemoteCookingUpdates()
+    }
+
+    private func loadSelection() async {
+        guard accepted, !tagsPending, let request else { return }
+        do {
+            let data = try await request("social_cooking", "edit_selection", .init(attemptID: attempt.id))
+            let loaded = try JSONDecoder().decode(CookParticipantSelection.self, from: data)
+            try Task.checkCancellation()
+            selection = loaded; participants = loaded.selectedIDs; selectionFailed = false
+            if savedDraft { dismiss() }
+        } catch is CancellationError {} catch { selectionFailed = true }
+    }
+    private func save() async {
+        guard !saving else { return }
+        saving = true
+        defer { saving = false }
+        do {
+            if !savedDraft {
+                try CookingStore.edit(attempt, draft: draft, context: context, mediaDirectory: mediaRoot)
+                savedDraft = true
+            }
+            if let request, let selection, participants != selection.selectedIDs {
+                var payload = SocialPayload(attemptID: attempt.id, confirmed: true)
+                payload.participantIDs = participants.sorted { $0.uuidString < $1.uuidString }
+                payload.selectionToken = selection.selectionToken
+                _ = try await request("social_cooking", "update_selection", payload)
+                try Task.checkCancellation()
+                NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+            }
+            dismiss()
+        } catch is CancellationError {} catch {
+            if savedDraft {
+                selectionFailed = (error as? PostgrestError)?.code == "40001"
+                errorMessageForTagFailure()
+            } else { self.error = error.localizedDescription }
+        }
+    }
+    private func errorMessageForTagFailure() {
+        error = selectionFailed
+            ? "Your cook was saved. The tags changed elsewhere. Reload them before editing again."
+            : "Your cook was saved. Sous Chef changes couldn’t be confirmed. Retry them here."
     }
 }

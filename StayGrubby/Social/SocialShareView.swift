@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Supabase
 
 struct SocialShareAction: View {
     let attempt: CookingAttempt
@@ -17,12 +18,15 @@ struct SocialShareAction: View {
 struct SocialPostComposer: View {
     let attempt: CookingAttempt
     let close: () -> Void
-    @Environment(\.modelContext) private var context
     @Environment(\.cookingMediaRoot) private var mediaRoot
-    @Environment(\.cookingSyncCoordinator) private var sync
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @Environment(\.socialPublication) private var publication
+    @Query private var bindings: [SyncStoreBinding]
+    @State private var lookupGeneration = 0
+    @State private var alreadyShared = false
+    @State private var checkingPost = true
+    @State private var publicationError: String?
     @State private var identity: SocialIdentity?
     @State private var editingIdentity = false
     @State private var includePhoto = false
@@ -30,6 +34,7 @@ struct SocialPostComposer: View {
     @State private var descriptionInitialized = false
     @State private var sharedRecipe: Recipe?
     @State private var postID = UUID()
+    @State private var originalPostID: UUID?
     @State private var savedPost: SocialPost?
     @State private var busy = false
     @State private var failed = false
@@ -43,15 +48,24 @@ struct SocialPostComposer: View {
         guard didPublish, let sharedRecipe else { return false }
         return savedPost?.recipeID != sharedRecipe.id || savedPost?.recipeRevision != sharedRecipe.revision
     }
-    private var ready: Bool {
-        SocialPostPublisher.ready(context: context, sync: sync)
+    private var revision: Int? {
+        CookPublicationReadiness.revision(for: attempt, binding: bindings.first)
+    }
+    private var cookAccepted: Bool {
+        CookPublicationReadiness.revision(for: attempt, binding: bindings.first, requireCurrent: false) != nil
+    }
+    private var photo: Data? {
+        attempt.primaryImage.flatMap { LocalPhotoStore.data(for: $0, thumbnail: false, rootURL: mediaRoot) }
+    }
+    private var lookup: String {
+        "\(attempt.id):\(cookAccepted):\(lookupGeneration):\(publication?.status(attempt.rankedItemID) == .shared)"
     }
     var body: some View {
         NavigationStack {
             SGEditorialList {
                 if didPublish {
                     Section {
-                        Label("Shared with Sous Chefs", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-share-success")
+                        Label(alreadyShared ? "Already Shared" : "Shared with Sous Chefs", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-share-success")
                         Text("Your separate cooking post is available to eligible friends. Your private cooking and ranking are unchanged.")
                         if preservedExistingDescription {
                             Text("This cook was already shared. Its description was kept. To change it, use Edit Post in the post’s menu in My Kitchen.").accessibilityIdentifier("social-existing-description-preserved")
@@ -59,7 +73,10 @@ struct SocialPostComposer: View {
                         if preservedExistingRecipe {
                             Text("This cook was already shared. Its Recipe attachment was kept. Use Recipe Sharing in the post’s menu to change it.").accessibilityIdentifier("social-existing-recipe-preserved")
                         }
-                        if let savedPost { SocialLinkShareAction(url: AppRoute.postURL(savedPost.id), title: "Share Post Link") }
+                        if let savedPost {
+                            NavigationLink("View Post") { SocialPostDestination(route: .post(savedPost.id)) }
+                            SocialLinkShareAction(url: AppRoute.postURL(savedPost.id), title: "Share Post Link")
+                        }
                         Button("Done", action: close).accessibilityIdentifier("social-share-done")
                     }
                 } else {
@@ -70,7 +87,7 @@ struct SocialPostComposer: View {
                     if let score = model.scoreText { Text("\(score) / 10").foregroundStyle(SGTheme.ScoreColor.color(forDisplayedScore: score)) }
                     else { Text("Your score is locked and will not be shared.").accessibilityIdentifier("social-share-score-locked") }
                     if attempt.primaryImage != nil { Toggle("Include this food photo", isOn: $includePhoto).accessibilityIdentifier("social-share-photo") }
-                    Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, comparisons and personal rank are not shared. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")
+                    Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, and comparison history are not shared. Unlocked rankings may include the position and total at sharing. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 RecipeShareChoice(attemptID: attempt.id, selection: $sharedRecipe)
@@ -84,9 +101,14 @@ struct SocialPostComposer: View {
                         Button("Set up Profile") { editingIdentity = true }.accessibilityIdentifier("social-share-setup")
                     } else {
                         Text("Posting as \(identity.handle). If you have no friends yet, only you can see the post until you connect.")
-                        if !ready { Text("Wait for cooking data and photos to finish syncing before sharing.") }
+                        if revision == nil { Text("Waiting for this cook to sync.").accessibilityIdentifier("social-share-waiting-for-cook") }
+                        else if checkingPost { ProgressView("Checking for an existing post") }
+                        if let publicationError {
+                            Text(publicationError).accessibilityIdentifier("social-share-error")
+                            Button("Check again") { checkingPost = true; lookupGeneration += 1 }
+                        }
                         Button(busy ? "Sharing…" : "Publish to Sous Chefs") { Task { await publish() } }
-                            .disabled(busy || !ready || postDescription.unicodeScalars.count > 2000).accessibilityIdentifier("social-share-publish")
+                            .disabled(busy || checkingPost || revision == nil || postDescription.unicodeScalars.count > 2000).accessibilityIdentifier("social-share-publish")
                     }
                 } else {
                     if failed { Button("Retry identity") { Task { await load() } } }
@@ -99,6 +121,8 @@ struct SocialPostComposer: View {
             .navigationTitle("Share with Sous Chefs").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { if !didPublish { Button("Cancel") { Task { await cancel() } }.disabled(busy) } } }
             .interactiveDismissDisabled(busy).task { await load() }
+            .task(id: lookup) { await reconcile() }
+            .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in lookupGeneration += 1 }
             .sheet(isPresented: $editingIdentity) {
                 if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0 } }
             }
@@ -110,25 +134,53 @@ struct SocialPostComposer: View {
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }
     }
+    private func reconcile() async {
+        guard !didPublish, let request, cookAccepted else { return }
+        let current = lookup
+        checkingPost = true
+        defer { if current == lookup && !Task.isCancelled { checkingPost = false } }
+        do {
+            let existing = try await SocialPostPublisher.existing(attemptID: attempt.id, request: request)
+            guard !Task.isCancelled, current == lookup, !didPublish else { return }
+            publicationError = nil
+            if let existing { savedPost = existing; alreadyShared = true; didPublish = true }
+        } catch is CancellationError {} catch {
+            if current == lookup, !Task.isCancelled { publicationError = "Couldn’t check the existing post. Try again." }
+        }
+    }
     private func publish() async {
-        guard let request, ready else { return }; busy = true; failed = false
+        guard let request, let revision, !checkingPost, !didPublish else { return }
+        busy = true; failed = false; publicationError = nil
         defer { busy = false }
         do {
+            let bytes = includePhoto ? photo : nil
+            if includePhoto && (media == nil || bytes.map(SocialMediaRules.validJPEG) != true) {
+                publicationError = "The selected photo isn’t available. Retry the photo or turn off Include this food photo."
+                return
+            }
             attemptedShare = true
-            let revision = try SyncJournal.binding(context)?.acceptedRevision ?? 0
-            let bytes = includePhoto ? attempt.primaryImage.flatMap { LocalPhotoStore.data(for: $0, thumbnail: false, rootURL: mediaRoot) } : nil
-            _ = try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
-                includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, prepared: { post in
+            if originalPostID == nil { originalPostID = postID }
+            let post = try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
+                includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, scoreLocked: model.scoreText == nil, prepared: { post in
                     savedPost = post; postID = post.id
                 })
+            savedPost = post
+            alreadyShared = post.id != originalPostID
             didPublish = true
             publication?.sharedManually(attempt.rankedItemID)
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
-        } catch is CancellationError { } catch { failed = true }
+        } catch is CancellationError {} catch {
+            await reconcile()
+            if !didPublish {
+                publicationError = (error as? PostgrestError)?.code == "40001"
+                    ? "Cooking changed on another device. Refresh cooking sync, then try again."
+                    : "Couldn’t publish this post. Check your connection and retry."
+            }
+        }
     }
     private func cancel() async {
-        if attemptedShare && !didPublish && savedPost?.published != true, let request {
-            _ = try? await request("social_content", "delete", .init(postID: postID))
+        if attemptedShare && !didPublish, let request, let originalPostID {
+            _ = try? await request("social_content", "cancelDraft", .init(postID: originalPostID))
             await SocialPhotoCleanup.run(request: request, media: media)
         }
         close()

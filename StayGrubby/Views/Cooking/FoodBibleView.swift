@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Supabase
 
 /// Independent authorized Recipes; optional cooking links never define Recipe identity.
 struct FoodBibleView: View {
@@ -157,7 +158,12 @@ struct DishRecipeSection: View {
     @Environment(\.scenePhase) private var phase
     @State private var recipe: Recipe?
     @State private var loaded = false
-    @State private var failed = false
+    @Query private var syncBindings: [SyncStoreBinding]
+    @State private var relationshipError: String?
+    private var cookAvailable: Bool {
+        guard let attempt else { return true }
+        return CookPublicationReadiness.revision(for: attempt, binding: syncBindings.first, requireCurrent: false) != nil
+    }
     @State private var creating = false
     @State private var selecting = false
     @State private var legacy = false
@@ -189,8 +195,12 @@ struct DishRecipeSection: View {
 
                 } else { Text("Choose a version to link a Recipe.").foregroundStyle(.secondary) }
             }
-            if failed { Button("Retry Recipe") { Task { await load() } }; Text("Recipe access needs a connection and completed cooking sync.").font(.footnote) }
-        }.task(id: attempt?.id ?? dish.id) { await load() }
+            if !cookAvailable { Text("Recipe links are available once this cook syncs.").font(.footnote) }
+            else if let relationshipError {
+                Text(relationshipError).font(.footnote).accessibilityIdentifier("cook-recipe-error")
+                Button("Retry Recipe") { Task { await load() } }
+            }
+        }.task(id: "\(attempt?.id ?? dish.id):\(cookAvailable)") { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); recipe = nil; usedRecipe = nil; linkedID = nil; exactLink = false; legacy = false; loaded = false; if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
@@ -208,14 +218,21 @@ struct DishRecipeSection: View {
             .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-link-recipe")
     }
     private func load() async {
-        guard let request else { failed = true; return }; let token = UUID(); generation = token
+        guard cookAvailable, let request else { return }; let token = UUID(); generation = token
         do {
             var payload = SocialPayload(); payload.dishID = dish.id; payload.attemptID = attempt?.id
             let data = try await request("recipes", attempt == nil ? "dish" : "cook", payload)
             let page = try JSONDecoder().decode(CookRecipeResponse.self, from: data)
             guard !Task.isCancelled, generation == token else { return }
-            recipe = page.recipe; usedRecipe = page.usedRecipe; exactLink = page.exactCookLink ?? false; linkedID = page.linkedRecipeID; legacy = page.legacyFamilyLink ?? (attempt == nil); loaded = true; failed = false
-        } catch is CancellationError {} catch { if generation == token { recipe = nil; usedRecipe = nil; linkedID = nil; exactLink = false; legacy = false; loaded = false; failed = true } }
+            recipe = page.recipe; usedRecipe = page.usedRecipe; exactLink = page.exactCookLink ?? false; linkedID = page.linkedRecipeID; legacy = page.legacyFamilyLink ?? (attempt == nil); loaded = true; relationshipError = nil
+        } catch is CancellationError {} catch {
+            guard generation == token else { return }
+            recipe = nil; usedRecipe = nil; linkedID = nil; exactLink = false; legacy = false; loaded = false
+            if error is DecodingError { relationshipError = "Couldn’t read this Recipe link. Try again." }
+            else if error is URLError { relationshipError = "Recipe links need a connection. Try again when you’re online." }
+            else if (error as? PostgrestError)?.code == "42501" { relationshipError = "This cook or its Recipe link is unavailable." }
+            else { relationshipError = "Couldn’t load Recipe links. Try again." }
+        }
     }
     private func unlink() async {
         guard let request, let linkedID else { return }
@@ -224,7 +241,7 @@ struct DishRecipeSection: View {
             if legacy { payload.dishID = dish.id; _ = try await request("recipes", "detach", payload) }
             else { payload.previousAttemptID = attempt?.id; _ = try await request("recipes", "unlink_cook", payload) }
             NotificationCenter.default.post(name: .socialContentChanged, object: nil); await load()
-        } catch { failed = true }
+        } catch { relationshipError = "Couldn’t unlink this Recipe. Try again." }
     }
 }
 

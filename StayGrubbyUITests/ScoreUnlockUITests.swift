@@ -114,8 +114,8 @@ final class ScoreUnlockUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.staticTexts["Your scores are unlocked!"].exists)
         open("Unlock tenth dish", app)
         XCTAssertTrue(app.buttons["detail-share-dish"].exists)
-        tap(app.buttons["cook-more-actions"], app); tap(app.buttons["Delete Cook"], app)
-        let confirm = app.alerts.buttons["Delete Cook"]
+        tap(app.buttons["cook-more-actions"], app); tap(app.buttons["86 Cook (Delete)"], app)
+        let confirm = app.alerts.buttons["86 Cook"]
         tap(confirm, app)
         // The failure hierarchy/recording retained this exact confirmation
         // alert after the synthesized tap. Require dismissal, with one bounded

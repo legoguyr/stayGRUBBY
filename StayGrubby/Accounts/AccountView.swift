@@ -37,10 +37,10 @@ struct AccountView: View {
                 VStack(spacing: 0) { KitchenIdentityHeader(); SocialFriendsLink() }
                     .frame(maxWidth: .infinity)
                 ProfileCookingContent(snapshot: snapshot, ranking: ranking)
-                KitchenRecipesSection()
-                SocialPendingShares()
-                SharedCookingPending()
-                SocialProfilePosts(open: { socialRoute = .post($0) })
+                KitchenSharedContent(open: { socialRoute = .post($0) }) {
+                    SocialPendingShares()
+                    SharedCookingPending()
+                }
                 #if DEBUG
                 if let endDevelopmentReview {
                     VStack(alignment: .leading, spacing: SGTheme.Space.small) {

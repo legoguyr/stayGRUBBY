@@ -60,6 +60,11 @@ nonisolated struct SharedCookingEvent: Codable, Identifiable, Sendable {
         var id: UUID { person.id }
     }
 }
+nonisolated struct CookParticipantSelection: Codable, Sendable {
+    let selectionToken: String
+    let selectedIDs: Set<UUID>
+    let event: SharedCookingEvent?
+}
 nonisolated struct CookingProvenance: Codable, Identifiable, Sendable {
     let id: UUID
     let kind: String

@@ -29,7 +29,7 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         let deletion = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'feed-delete-'")).firstMatch
         for _ in 0..<3 { if deletion.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(deletion.waitForExistence(timeout: 5)); deletion.tap()
-        app.sheets["Delete shared post?"].buttons["Delete shared post"].tap()
+        app.sheets["86 this Post?"].buttons["86 Post"].tap()
         XCTAssertTrue(app.staticTexts["Post unavailable"].waitForExistence(timeout: 8), app.debugDescription)
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.staticTexts["profile-posts-empty"].waitForExistence(timeout: 8))

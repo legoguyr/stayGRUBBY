@@ -28,7 +28,7 @@ final class Phase2CReviewUITests: StayGrubbyUITestCase {
         tap(row("Smoky Sunday", app: app), app: app)
         XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 10))
         capture("Detail with photo Dark", app: app)
-        XCTAssertFalse(app.buttons["Delete Cook"].exists)
+        XCTAssertFalse(app.buttons["86 Cook (Delete)"].exists)
         let sibling = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'version-row-' AND label CONTAINS 'Golden sear'")).firstMatch
         tap(sibling, app: app)
         XCTAssertTrue(app.staticTexts["Golden sear"].waitForExistence(timeout: 10))

@@ -7,6 +7,8 @@ struct CookingMetadataForm: View {
     var editing = false
     var sharingSelection: Binding<CookingSharingSelection>? = nil
     var cookedWith: Binding<Set<UUID>>? = nil
+    var editingParticipants = false
+    var selectedPeople: [SocialPerson] = []
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var details = false
     @FocusState private var focusedField: EntryField?
@@ -61,7 +63,7 @@ struct CookingMetadataForm: View {
                     Image(systemName: "chevron.right").font(.caption.weight(.semibold))
                 }.font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
             }.buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("cook-details")
-            if let cookedWith { CookedWithSelection(selected: cookedWith) }
+            if let cookedWith { CookedWithSelection(selected: cookedWith, editing: editingParticipants, existingPeople: selectedPeople) }
             if let sharingSelection { CookingSharingChoice(selection: sharingSelection) }
 
 
@@ -100,9 +102,11 @@ struct CookingFormScroll: View {
     var editing = false
     var sharingSelection: Binding<CookingSharingSelection>? = nil
     var cookedWith: Binding<Set<UUID>>? = nil
+    var editingParticipants = false
+    var selectedPeople: [SocialPerson] = []
     var body: some View {
         ScrollView {
-            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith)
+            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople)
                 .frame(maxWidth: SGTheme.Size.contentMaximum)
                 .padding(SGTheme.Space.medium).frame(maxWidth: .infinity)
         }.accessibilityIdentifier("cooking-form").scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)

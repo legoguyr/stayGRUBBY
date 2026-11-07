@@ -17,9 +17,9 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 8), app.debugDescription)
         for _ in 0..<3 {
             link.tap()
-            if app.navigationBars["Order Up!"].waitForExistence(timeout: 3) { return }
+            if app.navigationBars["Tickets"].waitForExistence(timeout: 3) { return }
         }
-        XCTAssertTrue(app.navigationBars["Order Up!"].waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["Tickets"].waitForExistence(timeout: 8), app.debugDescription)
     }
     @MainActor private func invite(_ app: XCUIApplication) {
         notifications(app)
@@ -65,10 +65,10 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
     @MainActor func testNotificationReadAllAtLightAccessibilitySize() throws {
         let app = launch(["--test-light", "--test-large-type"]); notifications(app)
         let unread = app.staticTexts["notifications-unread"]
-        XCTAssertTrue(unread.waitForExistence(timeout: 8)); XCTAssertEqual(unread.label, "6 unread")
+        XCTAssertTrue(unread.waitForExistence(timeout: 8)); XCTAssertEqual(unread.label, "6 New Tickets")
         let shot = XCTAttachment(screenshot: app.screenshot()); shot.name = "Notifications light accessibility size"; shot.lifetime = .keepAlways; add(shot)
         app.buttons["Mark All Read"].tap()
-        let read = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == '0 unread'"), object: unread)
+        let read = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == '0 New Tickets'"), object: unread)
         XCTAssertEqual(XCTWaiter.wait(for: [read], timeout: 8), .completed)
         XCTAssertFalse(app.buttons["Mark All Read"].isEnabled)
     }
@@ -115,8 +115,8 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["Block"].waitForExistence(timeout: 5)); app.buttons["Block"].tap(); app.buttons["Block Person"].tap()
         XCTAssertTrue(app.staticTexts["Post unavailable"].waitForExistence(timeout: 8), app.debugDescription)
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Order Up!"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.navigationBars["Tickets"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["notification-50000000-0000-0000-0000-000000000001"].exists)
-        XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 unread")
+        XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 New Ticket")
     }
 }

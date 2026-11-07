@@ -10,10 +10,19 @@ import SwiftUI
         guard !context.hasChanges, (try? SyncJournal.pending(context).isEmpty) == true else { return false }
         return sync?.status != .conflict && sync?.status != .needsReview && sync?.status != .signInRequired
     }
+    static func existing(attemptID: UUID, request: SocialRequest) async throws -> SocialPost? {
+        let data = try await request("social_content", "source", .init(attemptID: attemptID))
+        return try JSONDecoder().decode(SocialPostsPage.self, from: data).posts.first
+    }
     static func publish(attemptID: UUID, postID: UUID, revision: Int, includePhoto: Bool, photo: Data?,
-                        request: SocialRequest, media: SocialMediaRequest?, postDescription: String? = nil, sharedRecipe: Recipe? = nil,
+                        request: SocialRequest, media: SocialMediaRequest?, postDescription: String? = nil, sharedRecipe: Recipe? = nil, scoreLocked: Bool = false,
                         prepared: (SocialPost) throws -> Void = { _ in }) async throws -> SocialPost {
+        if includePhoto {
+            guard let photo, media != nil, SocialMediaRules.validJPEG(photo) else { throw AccountFoundationError.invalidResolution }
+        }
         var payload = SocialPayload(postID: postID, attemptID: attemptID, expectedRevision: revision, confirmed: true, includePhoto: includePhoto, includeAttribution: true, postDescription: postDescription)
+        payload.omitScore = scoreLocked
+        payload.includeRankSnapshot = true
         payload.includeRecipe = sharedRecipe != nil; payload.recipeID = sharedRecipe?.id; payload.sourceRevision = sharedRecipe?.revision
         let response = try await request("social_content", "prepare", payload)
         guard let post = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { throw AccountFoundationError.invalidResolution }
@@ -155,20 +164,20 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
     private func process(token: UUID) async {
         guard let context, let request else { return }
         do { try persist(); storageFailed = false } catch { storageFailed = true; return }
-        guard SocialPostPublisher.ready(context: context, sync: sync) else { return }
+        guard sync?.status != .signInRequired else { return }
         for intent in intents {
             guard token == generation, !Task.isCancelled else { return }
             guard let attempt = (try? context.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.rankedItemID == intent.id }),
-                  attempt.rankedItem != nil, attempt.dish != nil else { continue }
+                  let revision = CookPublicationReadiness.revision(for: attempt, binding: try? SyncJournal.binding(context))
+            else { continue }
             if intent.scoreWasLocked != false && ScoreUnlockPolicy.state(for: attempt).isUnlocked {
                 reviewRequired.insert(intent.id); continue
             }
             publishing = intent.id; failed.remove(intent.id)
             do {
-                let revision = try SyncJournal.binding(context)?.acceptedRevision ?? 0
                 let bytes = intent.includePhoto ? attempt.primaryImage.flatMap { LocalPhotoStore.data(for: $0, thumbnail: false, rootURL: root) } : nil
                 _ = try await SocialPostPublisher.publish(attemptID: attempt.id, postID: intent.postID, revision: revision,
-                    includePhoto: intent.includePhoto, photo: bytes, request: request, media: media, prepared: { post in
+                    includePhoto: intent.includePhoto, photo: bytes, request: request, media: media, scoreLocked: intent.scoreWasLocked != false, prepared: { post in
                         guard token == self.generation else { throw CancellationError() }
                         if let index = self.intents.firstIndex(where: { $0.id == intent.id }) {
                             self.intents[index].postID = post.id; try self.persist()
@@ -212,6 +221,7 @@ struct SocialPublicationHost: ViewModifier {
     @Environment(\.socialMedia) private var media
     @Environment(\.cookingSyncCoordinator) private var sync
     @Environment(\.scenePhase) private var phase
+    @Query private var bindings: [SyncStoreBinding]
     @State private var coordinator = SocialPublicationCoordinator()
     @State private var sharedCooking = SharedCookingCoordinator()
     func body(content: Content) -> some View {
@@ -230,6 +240,7 @@ struct SocialPublicationHost: ViewModifier {
                 defer { coordinator.disconnect(); sharedCooking.disconnect() }
                 try? await Task.sleep(for: .seconds(31_536_000))
             }
+            .onChange(of: bindings.first?.acceptedRevision) { _, _ in coordinator.retry(); sharedCooking.retry() }
             .onChange(of: sync?.status) { _, _ in coordinator.retry(); sharedCooking.retry() }
             .onChange(of: phase) { _, next in if next == .active { coordinator.retry(); sharedCooking.retry() } }
             .onReceive(NotificationCenter.default.publisher(for: .cookingSyncWorkCommitted)) { _ in coordinator.retry(); sharedCooking.retry() }

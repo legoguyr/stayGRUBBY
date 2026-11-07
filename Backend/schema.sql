@@ -4690,3 +4690,174 @@ revoke all on function api.apply_cooking_operation(jsonb) from public,anon;
 grant execute on function api.apply_cooking_operation(jsonb) to authenticated;
 comment on function staygrubby.apply_cooking_operation(jsonb) is 'Requires rankingAssessmentVersion=1 for assessment-aware data; rejects old writers atomically. Original immutable operations remain retryable.';
 commit;
+-- Reconcile an owner's exact cook and capture only the authorized ranking snapshot.
+begin;
+alter table staygrubby.social_posts
+ add column rank_at_sharing integer,
+ add column ranked_count_at_sharing integer,
+ add constraint valid_rank_at_sharing check (
+  (rank_at_sharing is null and ranked_count_at_sharing is null) or
+  (rank_at_sharing is not null and ranked_count_at_sharing is not null and
+   score_text is not null and rank_at_sharing between 1 and ranked_count_at_sharing)
+ );
+
+alter function staygrubby.social_post_card(uuid,uuid) rename to social_post_card_before_rank_snapshot;
+revoke all on function staygrubby.social_post_card_before_rank_snapshot(uuid,uuid) from public,anon,authenticated;
+create function staygrubby.social_post_card(viewer uuid,post uuid) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare card jsonb:=staygrubby.social_post_card_before_rank_snapshot(viewer,post); p staygrubby.social_posts%rowtype;
+begin
+ if card is null then return null; end if;
+ select * into p from staygrubby.social_posts where id=post;
+ if p.rank_at_sharing is not null then
+  card:=card||jsonb_build_object('rankAtSharing',p.rank_at_sharing,'rankedCountAtSharing',p.ranked_count_at_sharing);
+ end if;
+ return card;
+end $$;
+revoke all on function staygrubby.social_post_card(uuid,uuid) from public,anon,authenticated;
+
+alter function staygrubby.social_content(text,jsonb) rename to social_content_before_rank_snapshot;
+revoke all on function staygrubby.social_content_before_rank_snapshot(text,jsonb) from public,anon,authenticated;
+create function staygrubby.social_content(action text,payload jsonb default '{}'::jsonb) returns jsonb
+language plpgsql volatile security definer set search_path='' as $$
+declare owner uuid; cook uuid; pid uuid; existing uuid; result jsonb; position integer; total integer;
+begin
+ if action not in ('source','cancelDraft','prepare') then return staygrubby.social_content_before_rank_snapshot(action,payload); end if;
+ owner:=staygrubby.social_actor();
+ if owner is null or octet_length(payload::text)>8192 then raise exception 'Invalid post' using errcode='42501'; end if;
+ if action='cancelDraft' then
+  pid:=(payload->>'postID')::uuid;
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('staygrubby:post:'||pid::text,0));
+  perform 1 from staygrubby.accounts where id=owner and status='active' for share;
+  if not found or staygrubby.social_actor() is distinct from owner then raise exception 'Account unavailable' using errcode='42501'; end if;
+  update staygrubby.social_posts set deleted_at=now()
+   where author_id=owner and id=pid and not published and deleted_at is null;
+  return jsonb_build_object('posts','[]'::jsonb);
+ end if;
+ cook:=(payload->>'attemptID')::uuid;
+ if action='source' then
+  select id into pid from staygrubby.social_posts
+   where author_id=owner and source_attempt_id=cook and deleted_at is null and published;
+  result:=staygrubby.social_post_card(owner,pid);
+  return jsonb_build_object('posts',case when result is null then '[]'::jsonb else jsonb_build_array(result) end);
+ end if;
+
+ perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('staygrubby:post-source:'||owner::text||':'||coalesce(cook::text,''),0));
+ select id into existing from staygrubby.social_posts where author_id=owner and source_attempt_id=cook and deleted_at is null;
+ result:=staygrubby.social_content_before_rank_snapshot(action,payload);
+ pid:=(result->'posts'->0->>'id')::uuid;
+ if existing is not null or pid is null then return result; end if;
+ if payload->>'omitScore'='true' then
+  update staygrubby.social_posts set score_text=null where id=pid and author_id=owner;
+ end if;
+ -- The delegated prepare holds the account lock and verified expectedRevision.
+ -- Require the global list and eligible attempt order to agree before exposing a position.
+ with ordered as (
+  select i.id,a.id attempt_id,row_number() over(order by round(i.strength::numeric*10000000) desc,i.created_at_ref,i.id) as pos,
+   count(*) over() as list_count,count(a.id) over() as eligible_count
+  from staygrubby.ranked_items i
+  join staygrubby.account_libraries l on l.account_id=i.account_id and l.global_ranking_id=i.ranking_id and l.deleted_at is null
+  join staygrubby.rankings r on r.account_id=i.account_id and r.id=i.ranking_id and r.deleted_at is null
+  left join (staygrubby.cooking_attempts a join staygrubby.dishes d
+    on d.account_id=a.account_id and d.id=a.dish_id and d.deleted_at is null)
+    on a.account_id=i.account_id and a.ranked_item_id=i.id and a.deleted_at is null
+  where i.account_id=owner and i.deleted_at is null
+ )
+ select pos,eligible_count into position,total from ordered where attempt_id=cook and list_count=eligible_count;
+ if position is not null and payload->'includeRankSnapshot'='true'::jsonb then
+  update staygrubby.social_posts set rank_at_sharing=position,ranked_count_at_sharing=total
+   where id=pid and author_id=owner and score_text is not null;
+ end if;
+ return jsonb_build_object('posts',jsonb_build_array(staygrubby.social_post_card(owner,pid)));
+end $$;
+revoke all on function staygrubby.social_content(text,jsonb) from public,anon;
+grant execute on function staygrubby.social_content(text,jsonb) to authenticated;
+create or replace function api.social_content(action text,payload jsonb default '{}'::jsonb) returns jsonb
+language sql volatile security invoker set search_path='' as $$ select staygrubby.social_content(action,payload) $$;
+notify pgrst,'reload schema';
+commit;
+-- Edit only the owner's invitations/attribution. The private cooking graph is untouched.
+begin;
+alter function staygrubby.social_cooking(text,jsonb) rename to social_cooking_before_participant_edit;
+revoke all on function staygrubby.social_cooking_before_participant_edit(text,jsonb) from public,anon,authenticated;
+create function staygrubby.social_cooking(action text,payload jsonb default '{}'::jsonb) returns jsonb
+language plpgsql volatile security definer set search_path='' as $$
+declare owner uuid; cook uuid; item uuid; eid uuid; peer uuid; metadata jsonb;
+ selected uuid[]; desired uuid[]; version_token text; response jsonb;
+ search_text text; people jsonb;
+begin
+ if action not in ('edit_selection','update_selection','eligible_selection') then
+  return staygrubby.social_cooking_before_participant_edit(action,payload);
+ end if;
+ owner:=staygrubby.social_actor();
+ if owner is null or octet_length(payload::text)>8192 then raise exception 'Invalid cook selection' using errcode='42501'; end if;
+ if action='update_selection' then
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('staygrubby:shared:'||owner::text,0));
+ end if;
+ perform 1 from staygrubby.accounts where id=owner and status='active' for share;
+ if not found or staygrubby.social_actor() is distinct from owner then raise exception 'Account unavailable' using errcode='42501'; end if;
+ if action='eligible_selection' then
+  search_text:=lower(btrim(coalesce(payload->>'query','')));
+  if length(search_text)>50 then raise exception 'Search is too long' using errcode='22023'; end if;
+  select coalesce(jsonb_agg(card order by username),'[]'::jsonb) into people from (
+   select p.username,staygrubby.social_person(owner,p.account_id) card
+   from staygrubby.friendships f join staygrubby.profiles p
+    on p.account_id=case when f.low_id=owner then f.high_id else f.low_id end
+   where owner in (f.low_id,f.high_id) and f.state='friends'
+    and p.username>coalesce(payload->>'afterUsername','')
+    and staygrubby.shared_friends(owner,p.account_id)
+    and (position(ltrim(search_text,'@') in p.username)>0 or position(search_text in lower(p.display_name))>0)
+   order by p.username limit 50
+  ) matches where card is not null;
+  return jsonb_build_object('people',people,'nextCursor',case when jsonb_array_length(people)=50 then people->49->>'username' end);
+ end if;
+ cook:=(payload->>'attemptID')::uuid;
+ select a.ranked_item_id into item from staygrubby.cooking_attempts a
+ where a.account_id=owner and a.id=cook and a.deleted_at is null;
+ metadata:=staygrubby.shared_cook_metadata(owner,cook);
+ if item is null or metadata is null then raise exception 'Cook unavailable' using errcode='42501'; end if;
+ select id into eid from staygrubby.shared_cooks where owner_id=owner and source_attempt_id=cook for update;
+ select coalesce(array_agg(s.account_id order by s.account_id) filter (
+   where s.state in ('pending','joining','joined') and staygrubby.shared_friends(owner,s.account_id)),array[]::uuid[]),
+  encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_array(s.account_id,s.state,s.updated_at) order by s.account_id)::text,'[]'),'UTF8')),'hex')
+ into selected,version_token from staygrubby.shared_participants s where s.event_id=eid;
+ if action='update_selection' then
+  if payload->'confirmed' is distinct from 'true'::jsonb
+   or jsonb_typeof(payload->'participantIDs') is distinct from 'array'
+   or jsonb_array_length(payload->'participantIDs')>8
+  then raise exception 'Invalid cook selection' using errcode='22023'; end if;
+  select coalesce(array_agg(distinct x::uuid order by x::uuid),array[]::uuid[]) into desired
+   from jsonb_array_elements_text(payload->'participantIDs') x;
+  if cardinality(desired)<>jsonb_array_length(payload->'participantIDs') or array_position(desired,null) is not null
+  then raise exception 'Duplicate or missing Sous Chef' using errcode='22023'; end if;
+  -- Identical retries (including lost replies) do not create another invitation or Ticket.
+  if desired is distinct from selected then
+   if payload->>'selectionToken' is distinct from version_token
+   then raise exception 'Sous Chef selection changed' using errcode='40001'; end if;
+   for peer in select unnest(desired) loop
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('staygrubby:pair:'||least(owner,peer)::text||':'||greatest(owner,peer)::text,0));
+    if not staygrubby.shared_friends(owner,peer) then raise exception 'Choose current Sous Chefs' using errcode='42501'; end if;
+   end loop;
+   if eid is null then
+    response:=staygrubby.social_cooking_before_participant_edit('create',payload||jsonb_build_object('eventID',item));
+    eid:=(response->>'id')::uuid;
+   else
+    update staygrubby.shared_participants set state='removed',updated_at=clock_timestamp()
+     where event_id=eid and account_id=any(selected) and not(account_id=any(desired));
+    for peer in select unnest(desired) except select unnest(selected) loop
+     insert into staygrubby.shared_participants(event_id,account_id) values(eid,peer)
+      on conflict(event_id,account_id) do update set state='pending',updated_at=clock_timestamp();
+     perform staygrubby.social_notice(peer,owner,'invited',eid,'invite:'||eid::text||':'||peer::text);
+    end loop;
+   end if;
+   return staygrubby.social_cooking('edit_selection',jsonb_build_object('attemptID',cook));
+  end if;
+ end if;
+ return jsonb_build_object('selectionToken',version_token,'selectedIDs',to_jsonb(selected),'event',staygrubby.shared_event_card(owner,eid));
+end $$;
+revoke all on function staygrubby.social_cooking(text,jsonb) from public,anon;
+grant execute on function staygrubby.social_cooking(text,jsonb) to authenticated;
+create or replace function api.social_cooking(action text,payload jsonb default '{}'::jsonb) returns jsonb
+language sql volatile security invoker set search_path='' as $$ select staygrubby.social_cooking(action,payload) $$;
+notify pgrst,'reload schema';
+commit;

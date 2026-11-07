@@ -95,9 +95,45 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:5));app.navigationBars.buttons["Done"].tap()
         app.tabBars.buttons["Grub List"].tap()
         let recipe=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'feed-recipe-open-'")).firstMatch;reach(recipe,app)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label CONTAINS 'Added a new Recipe'")).firstMatch.exists)
+        XCTAssertEqual(recipe.value as? String, "Recipe")
         shot("Closeout distinct new Recipe Grub List activity",app);recipe.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertEqual(app.staticTexts["recipe-title"].label,"Sous Chef Lemon Cake")
+        let activity = app.cells.matching(identifier: "actionGroupCell").matching(NSPredicate(format: "label == %@", "Copy"))
+        XCTAssertFalse(activity.firstMatch.exists, "Recipe navigation must not present the share sheet")
+        app.buttons["recipe-share-link"].tap()
+        XCTAssertTrue(activity.firstMatch.waitForExistence(timeout: 8), "Explicit Share presents the native sheet")
+        XCTAssertEqual(activity.count, 1)
     }
+    @MainActor func testEditCookTagsLoadSaveAndCancel() {
+        let app = launch(["--test-light"])
+        app.tabBars.buttons["Grub Rank"].tap()
+        let row = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'cook-row-'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
+        func openEditor() {
+            app.cookAction("detail-edit-cook").press(forDuration: 0.2)
+            XCTAssertTrue(app.navigationBars["Edit Cook"].waitForExistence(timeout: 8))
+        }
+        func openPicker() {
+            let picker = app.buttons["cooked-with-open"]
+            reach(picker, app); picker.tap()
+            XCTAssertTrue(app.navigationBars["Tag a Sous Chef"].waitForExistence(timeout: 8))
+        }
+        let friend = app.buttons["sous-chef-selection-10000000-0000-0000-0000-000000000001"]
+        openEditor(); openPicker()
+        XCTAssertTrue(friend.waitForExistence(timeout: 8)); friend.tap()
+        XCTAssertEqual(friend.value as? String, "Selected")
+        app.buttons["cooked-with-done"].tap()
+        app.buttons["save-cook-metadata"].tap()
+        XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 8))
+        openEditor(); openPicker()
+        XCTAssertTrue(friend.waitForExistence(timeout: 8)); XCTAssertEqual(friend.value as? String, "Selected")
+        friend.tap(); app.buttons["cooked-with-done"].tap(); app.navigationBars.buttons["Cancel"].tap()
+        XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 8))
+        openEditor(); openPicker()
+        XCTAssertTrue(friend.waitForExistence(timeout: 8)); XCTAssertEqual(friend.value as? String, "Selected")
+        friend.tap(); app.buttons["cooked-with-done"].tap(); app.buttons["save-cook-metadata"].tap()
+        XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 8))
+    }
+
     @MainActor func testDishToolbarEditAndRerankUseNativeActionsMenu() {
         let app=launch(["--test-dark"]);app.tabBars.buttons["Grub Rank"].tap()
         let row=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'cook-row-'")).firstMatch;XCTAssertTrue(row.waitForExistence(timeout:8));row.tap()
