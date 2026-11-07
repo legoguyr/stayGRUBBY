@@ -1,5 +1,7 @@
 # StayGrubby hosted setup — October 11, 2026
 
+> Current hosted system map (schemas, tables, buckets, Edge Functions, advisors): [architecture — Supabase system map](../STAYGRUBBY_ARCHITECTURE.md#supabase-system-map).
+>
 > This setup record preserves historical deployment evidence. Current product/provider/privacy boundaries are in [STAYGRUBBY_ARCHITECTURE.md](../STAYGRUBBY_ARCHITECTURE.md); development/deployment rules are in [AGENTS.md](../AGENTS.md). Old initial empty-project counts, provisioning limitations and publication requirements below are dated observations. Inspect actual migration history and current authorization for a deployment; do not replay historical setup against the live project.
 
 ## Post-V1 account deletion deployment — October 20, 2026

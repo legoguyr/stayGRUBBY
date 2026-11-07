@@ -27,10 +27,13 @@ Use established vocabulary where appropriate:
 | Ranking / #1 / Top 3 | Grub Rank / Signature Dish / Signature Dishes |
 | Friends Feed / Profile | Grub List / My Kitchen |
 | Friends / friend requests | Sous Chefs / Requests |
-| Cooked Together tagging | Tag a Sous Chef |
-| Likes / Like action | Hands / Give Hands |
-| Notifications / Recreate | Tickets / Run It Back |
-| Future achievements / deferred Want to Cook | Stars / name undecided |
+| Cooked Together tagging | Tag a Sous Chef 🧑‍🍳 |
+| Likes / Like action | Hands 🙌 / Give Hands 🙌 |
+| Notifications / new notification / Recreate | Tickets 🎟️ / New Ticket / Run It Back (entry points hidden) |
+| Internal publish / external share | Post to Grub List / Share |
+| Cook from a Recipe | Rank My Version |
+| Delete (restrained) | 86 (Delete), 86 Dish/Recipe/Cook/Comment/Post; Delete Account stays conventional |
+| Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
 
 Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, New Version, Re-rank. Vocabulary does not authorize future features.
 
@@ -45,6 +48,12 @@ Before creating a selector, picker, sheet, popover, menu, confirmation, search/f
 ### Living Documentation
 
 Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release. Recipe estimate/quantity and ingredient-derived allergen limitations belong in appropriate Terms/disclaimer/safety coverage, not solely the Privacy Policy. Avoid repeated reader warnings; retain actionable safety, privacy and provenance information.
+
+Canonical document roles: `AGENTS.md` rules · `STAYGRUBBY_ARCHITECTURE.md` current product/technical truth and system maps · `UI_ARCHITECTURE.md` current design-system spec, UI defect queue and overhaul stages · `STAYGRUBBY_MASTER_ROADMAP.md` sequencing, deferred and rejected work · `V1_RELEASE_GATE.md` release requirements/state · `PERSONAL_COOKING_INTELLIGENCE.md` long-term intelligence direction and data inventory · `Website/README.md` website/Cloudflare deployment. Dated reviews are evidence, not current truth. Update canonical docs **during** meaningful stages as durable decisions/state change (architecture, schema, product decisions, shared UI patterns, privacy, deployment, testing, release state, roadmap movement), not only at the end; skip trivial implementation detail. Replace superseded current-state text rather than stacking new dated sections over it.
+
+### Per-cycle architecture check
+
+For every meaningful cycle briefly evaluate: **A** current requirements; **B** existing data reuse; **C** future intelligence value of data normal use creates; **D** whether new fields/relationships/indexes/history are genuinely justified now; **E** privacy/legal impact on collection, processing, visibility, retention or consent; **F** scalability and cost; **G** documentation/tests to update. Working functionality before speculative infrastructure; no speculative tables or fields. See [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md#3-per-cycle-architecture-checklist-permanent).
 
 ## Verification and owner acceptance
 
@@ -85,6 +94,8 @@ The explicit November 2 Gemini-first architecture supersedes historical lexical/
 Create coherent verified checkpoints, not knowingly broken intermediate commits unless explicitly necessary/documented. Review the complete staged inventory/diff; include intended new sources/assets/tests/docs/migrations, exclude unrelated changes and machine-local artifacts. Leave main clean after a completed cycle while preserving unrelated owner work; report any resulting dirty state honestly.
 
 Push normally when authorized/authenticated. If HTTPS authentication fails, preserve local commits, report HEAD and tell Guy to push through **GitHub Desktop**. Do not change credentials, authentication configuration or SSH as a workaround. No force push, amend/rewrite of published history without explicit permission.
+
+Production website publishes require authorization in the current cycle and use only `sh Website/deploy-production.sh` (full Worker + assets, then the live link gate). **Assets-only publishing is never a valid StayGrubby deployment**; see [Website/README.md](Website/README.md).
 
 Supabase authorization does not authorize **TestFlight uploads, App Store submissions, release publication or paid services**. Those require explicit current instructions. Do not change version/build numbers or begin distribution merely because feature verification passed.
 

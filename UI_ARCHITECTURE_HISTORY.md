@@ -1,0 +1,391 @@
+# UI architecture — historical record (October 5 – November 6, 2026)
+
+> **Historical evidence only.** This is the former `UI_ARCHITECTURE.md`, preserved verbatim below as of Build 4 (`c09c18e`). Its newest-first sections supersede one another and contain retired navigation, counts and gates. The current design-system specification is [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md); do not implement from this file without reconciling against it.
+
+# iOS 17+ compatibility — November 6, 2026
+
+Preserve the accepted screens and components across iOS 17+. `sgIndependentToolbarBackground` retains the accepted background treatment on iOS 26+, while earlier supported versions use their native toolbar appearance. Tab-bar visibility uses the older equivalent API. No screen duplication or redesign. V1 Recipe Creator is Gemini-only: no Apple Intelligence availability UI or device-dependent provider choice. Manual/deterministic entry, portrait, accessibility and light/dark support remain required. [Evidence](IOS_COMPATIBILITY_REVIEW.md).
+
+# V1 final UX corrections — November 6, 2026
+
+Kitchen Recipes adds native search and reuses Food Bible literal matching plus the shared authorized pagination loader. Share and overflow Recipe toolbar actions use adaptive StayGrubby red; inactive private Share stays secondary. Dish Recipe actions are compact Add Recipe / Link Existing Recipe beneath Recipe, stacking only for accessibility/narrow space. Send uses the canonical person row with multi-selection, selected count, explicit Send, success and partial-failure Retry Unsent; no chat or permission grant.
+
+New cooking requires name/date/valid default Course, not optional photo/title/notes/tags/Source. Label required identity/date and disable Continue for invalid draft. Generic import review belongs in a collapsed disclosure below content, with original text retained; do not repeat estimate paragraphs in metadata. Actual ingredient-specific safety/provenance remain. Normal Recipe sharing is physically accepted; preserve link/native-sheet architecture. [Current evidence](V1_RANKING_INTEGRITY_REVIEW.md).
+
+# V1 Product Closeout presentation — November 5, 2026
+
+This supersedes the Stage 5 preview/See All interaction below. My Kitchen prioritizes Dishes Ranked and Signature Dishes; a compact Recipes row opens a native authorized collection sheet using Food Bible cards/readers; an already presented social Kitchen uses its existing sheet navigation for that same collection. No separate large Recipe preview or cross-tab See All navigation remains. Current and post-pinned Recipe readers use one compact Share/Send/overflow action pattern, with explicit current-versus-pinned destination semantics. Dish Detail uses the same native back, compact toolbar Share and overflow pattern; Edit Cook/Re-rank are discoverable menu actions, not primary full-width buttons. Normal Recipe editing uses a compact Share with Sous Chefs toggle, no redundant generic allergen/sharing paragraphs. Preserve actionable safety, metadata, privacy, destructive confirmations and provenance.
+
+Show cook version labels only when meaningful: an intentional title or multiple versions (including meaningful later sequence numbers). Never decorate a lone untitled first cook with Version 1. This is presentation only. Recipe creation activity is visibly a Recipe, never a cook/rank/score; reuse person identity and Food Bible cards. Reuse Before Reinvention applies throughout. [Closeout evidence](V1_PRODUCT_CLOSEOUT_REVIEW.md).
+
+# V1 Stage 5 presentation supersession — November 5, 2026
+
+Reuse before reinvention remains the governing rule. Kitchen Recipes reuses Food Bible cards/photo/reader: a compact two-card preview, owner See All opens the actual Food Bible root, and other-profile See All lists only currently authorized owned Recipes. No bookmark collection or private-count/cook-data projection. All profile states use the existing account/scene refresh boundaries and concise retry/empty/loading patterns.
+
+Normal Recipe readers show written quantities plus serving scaling; As Written / US / Metric is intentionally hidden with infrastructure/tests retained post-V1. Settings has one offline-capable Privacy Policy destination and the public Support page; sign-out/deletion remain in Account & Sync. New-cook sharing wording includes New Versions, and Sous Chef removal uses the same relationship language. Advanced photography is post-V1; do not redesign the current gallery. [Stage 5 audit](NEXT_RELEASE_STAGE_5_REVIEW.md), [next release gate](V1_RELEASE_GATE.md).
+
+# Next-release Stage 4 Food Bible / Recipe contract — November 4, 2026
+
+Reuse before reinvention follows AGENTS.md: accepted controls first, generalize/shared components when semantics match, unique UI only for different behavior. Living documentation records permanent decisions here; dated reviews record executions.
+
+Food Bible and Grub Rank share `SGBrowseSortMenu`, browse tokens and native `SGSelectionSheet` chrome. Grub Rank keeps global rank plus Highest/Lowest Score, Newest/Oldest Cooked and A–Z/Z–A; both score directions respect the existing unlock gate. Recipe sorting uses actual Added timestamps/name and retains Recently Updated. Food Bible filters Course/Cuisine/Contains/Avoid/manual Source/Recipe-photo, with active counts, reset and local search composition. No Custom Tags, inferred Dietary or allergen-free promises.
+
+Recipe linking generalizes `DishSelectionView` into one searchable photographic list of all eligible versions through `CookVersionSelectionView`, reusing `CookVersionIdentity` with Detail version rows. Food photos/title/version/date and current selection remain compact and accessible. Reader distinguishes a current linked cook, retained legacy family and immutable Recipe-used snapshot. Recipe-owned photo wins; exact cook fallback never guesses another version. Recipe photo actions leave cook photos alone.
+
+Rank My Version stays primary. Compact native Recipe actions holds secondary management; sharing keeps accepted compact native behavior. Serving controls remain visible; unit-mode controls are hidden under the Stage 5 V1 freeze. Conversion is approximate, deterministic and read-only; method stays written. Shared manual Source fields/Cuisine picker avoid a second metadata interaction while preserving distinct ownership. Removed obvious helper paragraphs; privacy, provenance, ownership, necessary actionable safety and destructive warnings stay. Creator attribution belongs near the title; Contains/Possible and a compact safety disclosure belong after the method, before Source/provenance. Remove repeated estimate/accuracy paragraphs; use appropriate Terms/disclaimer/safety coverage rather than the Privacy Policy alone.
+
+Run It Back entry points are hidden; Shared Cooking and underlying history remain. Upright portrait/light/dark, smaller iPhone, Dynamic Type, native keyboard/sheet behavior and 44-point action targets remain required. This contract supersedes historical Dish-only cookbook/no-conversion descriptions below; those retain dated evidence. [Stage 4 evidence](NEXT_RELEASE_STAGE_4_REVIEW.md).
+
+# Next-release Stage 3 social interaction contract — November 4, 2026
+
+Stage 2 is OWNER ACCEPTED. Reuse `SocialPersonLabel` for avatar/display name/handle/status and `SocialPersonSelectionRow` for actual recipient/tag selection; keep the compact inline Tag avatars specialized. Search, native Done, selected accessibility state, 44-point controls and existing avatar transport remain canonical. Discovery is symmetric Sous Chefs/Requests, with no invented follower counts.
+
+Comments presents a native medium/large sheet (large at accessibility sizes), readable rows/stable timestamps, native overflow delete/report and a keyboard-aware bottom composer that leaves the list visible. Errors retain unsent text and expose manual recovery. Tickets shares identity/age/unread language while preserving the existing account-scoped activity coordinator. Send to Sous Chefs uses eligible existing-access recipients and explicit Send/success/retry, not chat.
+
+`SocialLinkShareAction` standardizes actual link actions using native ShareLink and square.and.arrow.up; native Kitchen anchoring remains intentional. Image exports use the existing native activity controller with the unchanged branded image plus an export-safe caption. Neither pointer sharing nor exports expose private notes/history. Existing overflow menus keep actions discoverable; duplicate long-press inventories/custom haptics add no clear benefit here. Upright portrait, light/dark, Dynamic Type and Reduce Motion remain required. [Stage 3 evidence](NEXT_RELEASE_STAGE_3_REVIEW.md).
+
+# Stage 2 owner-correction contract — November 3, 2026
+
+**Content first. Actions second. Explanation only when necessary. Prefer compact native controls over full-width UI when full-width emphasis is unnecessary.** This section supersedes the initial Stage 2 presentation below; evidence and owner recheck are recorded in [the Stage 2 review](NEXT_RELEASE_STAGE_2_REVIEW.md).
+
+Cook entry order is cover/photo placeholder → Dish Name → Version Title → Public Description → native Date Cooked → owner-private Dish Notes → Details → Tag a Sous Chef → compact Share with Sous Chefs toggle → retained private notes for this cook. Details is a native sheet with a quick native Course selection page and existing Cuisine, Source, Dietary and Contains selectors. New Version retains inherited Dish Cuisine/Source behavior. The outer value draft still controls save/cancel; Dish text and cook notes never merge. Existing safety/permission/recovery and legacy free-label explanations remain where required. Tagging keeps the accepted avatar row, search sheet and Done.
+
+Custom Tags are hidden throughout normal entry/detail/discovery, including search; the data model, old values, IDs, sync and backend compatibility remain intact. Halal is absent from selectable Dietary options; its stable code and historical values still round-trip through ordinary edits. These are scoped product decisions, not destructive migrations.
+
+My Kitchen keeps a centered compact identity and truthful mutual Sous Chefs count/control, with contextual Kitchen sharing in the toolbar. No Following/Followers values or model are invented. Signature Dishes keep three square photos at standard sizes; shared intrinsic title height aligns scores for one/two-line names. Accessibility sizes use wider horizontal cards and unrestricted titles. A compact share icon beside the heading invokes the unchanged gated export. Ranked-entry/Dish counts remain; Last Cooked is removed from presentation only.
+
+Grub List retains its accepted card/actions, with centered title/score alignment and authorized Course • Cuisine (omit missing values). Post age is Just now below one minute, whole minutes below an hour, hours below a day, days below seven days, then a localized calendar date (year when different). There is no second-by-second timer; ages change during normal view refreshes. Private metadata is never fetched to fill a missing label.
+
+Grub Rank's native Sort menu is read-only: Grub Rank (default), Score, Recently Cooked, Oldest, Alphabetical. Sorting follows existing search/filter/Top Version projection and retains true global ranks. Score uses the existing displayed decimal and is unavailable while locked; relocking resets Score sort to Grub Rank. Ties retain global order; unknown dates sort last in either date direction. No score/evidence/manual-order writes. Food Bible adopts the shared compact browse-control styling only; its existing search/filter/sort semantics remain.
+
+The four-tab native TabView stays authoritative. Explicit native tab-background visibility and bottom safe-area margins keep final content reachable; no custom tab-bar replacement/fixed height. Primary toolbar icons suppress shared capsule backgrounds with the supported ToolbarContent API. Maintain normally 44-point targets, upright portrait, light/dark readability, native keyboard Done, Dynamic Type, VoiceOver and Reduce Motion. Empty states provide concise recovery/next actions. Later secondary-screen and gallery work is not included.
+
+# Initial Stage 2 presentation — historical before owner corrections, November 3, 2026
+
+The four primary tabs reuse the compact official `SGPrimaryBrandTitle`. Grub List, Food Bible and My Kitchen use the native principal toolbar; Grub Rank retains its existing search/creation inset with the same wordmark and a contextual title. At accessibility sizes that identity stacks instead of compressing text. Secondary screens keep contextual native titles/back navigation.
+
+Cook entry leads with a 4:3 cover, Dish title, Public Description and lock-labeled Private Notes, then compact Course/Cuisine/Source selectors, Tag a Sous Chef and existing publishing controls. Dish text is saved atomically by the existing cook transaction; it applies across versions. Existing private **per-cook** notes, date, version title, tags/Contains and legacy metadata remain available separately. Native keyboard Done follows the existing Recipe Editor focus pattern for multiline entry. Recipe-origin prefills preserve the linked Dish's text. Cover replacement/removal preserves secondary media; a saved multi-photo version identifies its collection. Advanced gallery/crop controls remain post-V1.
+
+Tag a Sous Chef has one compact horizontal avatar row and a searchable native selection sheet with Done, pagination and the unchanged eight-current-friend limit. Selecting a result ends active search so native search chrome does not hide Done. Necessary invitation privacy details remain in an expandable disclosure. My Kitchen and authorized other-user profiles share `KitchenIdentityPresentation`; no private ranking projection is added to other profiles. The owner Sous Chefs count uses the existing mutual-friends page, with `+` when paginated rather than inventing an exact total or followers. Settings retains account/configuration; native profile overflow contains confirmed remove/block.
+
+Signature Dishes are three square photographic cards in one equal-width row at standard text sizes, with rank, title and gated semantic score. Accessibility sizes use a horizontal composition with readable wider cards rather than shrunken text. Existing global-entry selection, score lock, export and missing-photo behavior remain authoritative. Grub List leads with cook identity/title and a consistent 4:3 authorized cover/fallback, then description, existing Recipe/provenance/actions and Hands/Comments. Its compact score circle uses the existing semantic palette without `/10`; nil snapshots remain locked. Native action accessibility includes the score state. Exported/raster-preview scores remain brand red.
+
+Context menus were evaluated: existing discoverable native overflow menus already house secondary post/profile actions. No duplicate long-press action inventory or custom haptic system is added. Comments, discovery, Tickets, sharing repairs, Food Bible controls and full gallery management retain their later-stage scope. [Stage 2 evidence and owner review](NEXT_RELEASE_STAGE_2_REVIEW.md).
+
+# Next-release Stage 1 UI foundation — November 3, 2026
+
+**Content first. Actions second. Explanation only when necessary.** [Canonical next-release scope](NEXT_RELEASE_SPEC.md) defers full screen redesign/adoption. Preserve safety/privacy/permission/uncertainty/recovery/destructive text; remove redundant slogans per screen, never by global string deletion.
+
+| Primitive/pattern | Existing implementation to reuse |
+| --- | --- |
+| Type, spacing, corners, colors | `SGTheme.TypeRole`, `Space`, `Radius`, `Size`, adaptive `ColorToken`; semantic `ScoreColor` stays separate from fixed export red |
+| Buttons | `SGButtonStyle` prominent/secondary and native destructive roles; destructive secondary labels use adaptive destructive text, prominent backgrounds retain contrast-safe button tokens; `SGIconButton` keeps 44-point targets/Reduce Motion |
+| Lists/profile rows/cards | `SGEditorialList`, `SGDestinationLabel`, `sgCard`, existing avatars and native navigation links |
+| Header | `SGPrimaryBrandTitle(page:)` places the cropped official wordmark in a native principal toolbar, with contextual accessibility/navigation title and no extra safe-area bar. Food Bible is the scoped first adoption; search/Add Recipe and secondary contextual titles remain native. Other tabs adopt in later stages. |
+| Filters, menus, sheets | Existing chips/search/checklists, native Menu/confirmationDialog, NavigationStack sheets; feature owns query/draft state |
+| Empty/loading/error | `SGEmptyState`, ProgressView and contextual recovery actions; explain actual recovery/privacy ambiguity, not obvious button behavior |
+| Images | Existing cook/Recipe/avatar pipelines and official-wordmark fallback, shared radius tokens; six-photo data support does not add a gallery/crop UI yet |
+
+Portrait, Dynamic Type, VoiceOver page/action labels, light/dark contrast and Reduce Motion remain required. Logo dimensions stay compact; text is not shrunk to simulate accessibility support. The new owner-only Dish text editor is a scoped data entry surface, not the New Dish redesign; existing private per-cook notes remain separate.
+
+# Next-Version integrated presentation — November 2, 2026
+
+Four tabs remain Grub List / Grub Rank (initial) / Food Bible / My Kitchen. The fixed My Kitchen header now keeps Tickets beside Settings; the tab badge and Grub List bell use one foreground account-scoped unread state. Feed cards expose Recipe availability without requiring Post Detail. Recipe cook/copy/Run It Back actions precede long methods, with explicit private-copy/source/revision wording and common reader width. Social/cookbook no-photo states use a shared official-wordmark placeholder; existing photos, export layouts and score colors are unchanged.
+
+Visible read-only social surfaces refresh on bounded foreground activity updates; drafts/editors are never overwritten. Successful lists replace their rows after authorization, preserving Comments/modal anchors while loading. Errors/background clear unauthorized friend content. A failed cookbook refresh shows recovery rather than a false empty-library prompt. Own-profile links select the actual My Kitchen tab; post/current Recipe/pinned Recipe links present their authorized destination with a Done action, retained across the authentication gate.
+
+Review remains upright portrait, light/dark, Dynamic Type, VoiceOver labels/values, at least 44-point actions and Reduce Motion. No new animation or screen-level rotation workaround. [Current integration evidence](NEXT_VERSION_INTEGRATION_REVIEW.md) separates automated evidence from pending physical acceptance. Historical screen/test descriptions below remain dated.
+
+# Current Food Bible presentation — Architecture V2, October 28, 2026
+
+Food Bible keeps the existing four-tab shell and editorial components, now displaying independent Recipe cards keyed by Recipe UUID. Add Recipe offers Paste Recipe/Add Manually without Choose Dish. Dish-context creation and explicit link/unlink reuse the existing cooking objects. Recipe reader/editor adds optional Recipe photography, owner Version History/restore, Save as New Recipe and deterministic view-only serving adjustment; no major visual redesign or new social post type is included.
+
+Paste Recipe shows first-use external-AI disclosure before transmission, then remembers acknowledgement per account/device. Cancel/Add Manually never invokes the AI path. The accepted Creator/editor/allergen/reorder mechanics remain. Recipe Contains/Possible is primary ingredient-derived information; existing actual-cook assertions remain in cook-specific controls. Privacy/access, portrait/accessibility and semantic score/export rules are unchanged. See [current architecture](STAYGRUBBY_ARCHITECTURE.md), [V2 verification](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md) and [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md). Earlier checkpoint descriptions below retain their historical scope.
+
+---
+
+# Integrated presentation — October 22, 2026
+
+> Current-state entry point: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); future work: [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow/verification: [AGENTS.md](AGENTS.md). This file retains detailed UI contracts and dated checkpoint sections. Old review-pending and hidden-Feed statements in those sections are historical, not instructions to undo the current four-tab shell or repeat accepted reviews.
+
+Onboarding now uses the canonical wordmark and comparison explanation with reachable native Apple entry, phase-specific progress/retry and accessibility scrolling. AuthenticationGatePresentation supplies copy/actions only; AccountApplicationRoot and exact account-store readiness still authorize access.
+
+The native shell has four destinations: Grub List, Grub Rank (initial selection), Food Bible and My Kitchen. Grub Rank is the ranked photographic cooking record; Food Bible derives a personal cookbook from cooked Dishes with eligible saved Recipes; Want to Cook is deferred from V1 surfaces; its backend/domain/data remain dormant and preserved. There is no fifth tab or duplicate cooked-history database. My Kitchen leads with photo/name/@username, its authorized shared-post grid and restrained truthful Signature Dishes. Sous Chefs exposes connections, Find and Requests through a full-width explicit hit target. Settings uses grouped native rows, one Profile editor, Sharing Preferences, account/sync, safety, privacy/support and separated account actions. Posts open into an authorized detail view; description editing and destructive/safety actions use overflow. Personal Notes remain private and distinct from intentionally authored Post Descriptions. Authentication and owner-bound service contracts remain unchanged. The approved editorial design language remains documented in STAYGRUBBY_DESIGN_SYSTEM_REVIEW.md; current product corrections and verification are in STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md.
+
+Ranking results distinguish native semantic-colored scores/private rank/movement from the unchanged official-red rendered card. Shared native image-sheet completion provides Save Image feedback only for actual success, silent cancellation and explicit failure. Recoverable previews never resave ranking data. See V1_SHARING_ARCHITECTURE.md and V1_INTEGRATION_REVIEW.md. Default development is one primary workflow on main with one Simulator lane; future scope is canonical in STAYGRUBBY_MASTER_ROADMAP.md.
+
+# Current numerical score visibility
+
+Native numerical presentation now uses the reaction-conditioned `ScoreCalibration` transform over unchanged BT strengths. The exact formula, overlapping bands, initial/latest-reaction/legacy fallback and hosted publication mirror are documented in STAYGRUBBY_PRODUCT_STRUCTURE_SCORE_REVIEW.md. Calibration never sorts the ranking or changes comparison acquisition/evidence.
+
+ScoreUnlockPolicy is the single presentation gate over accepted local global-ranking bridges. Ten saved active eligible ranked entries reveal scores; each independent CookingAttempt/version counts once. Re-rank adds observations to the same entry and does not increase this count. Scores always calculate normally. Rankings/Detail/version rows/completion/accessibility and individual share models obey the gate; locked cards cannot render. The cream progress banner lives inside the Rankings scroll content. The first local crossing offers the fixed Top 3 composition through the common local renderer/native image sheet; account-scoped local presentation receipts do not enter the cooking graph. See V1_FINAL_REVISIONS_REVIEW.md for current-count relocking, restoration, privacy and multi-device semantics.
+
+# Current presentation — V1 branding and sharing
+
+Completed creation and completed saved re-ranking sessions present one celebration with an accessible private rank/movement summary and a preview of the reusable rendered share card. Dish Detail uses the same local renderer and native image share action. The official PNG and native light/dark/tinted app icon assets live in the asset catalog; fixed cream share exports are independent of phone appearance. Debug visual fixtures require an isolated store and media root and are absent from Release. See V1_SHARING_ARCHITECTURE.md and STAYGRUBBY_MASTER_ROADMAP.md. The physical photo-sync data-path test passed. The individual/Top 3 card designs, score gate and final workflow/presentation revisions passed physical review. The pre-alpha UI corrections retain that behavior; the combined V1 is checkpointed and 1.0 (1) uploaded Internal Only. Subsequent integrated presentation requires separate physical review.
+
+---
+
+# In-app numerical score colors
+
+In-app numerical scores use the centralized `SGTheme.ScoreColor` palette: displayed 1.0–4.9 muted coral, 5.0–7.5 orange, and 7.6–10.0 gold. Shared ScoreBadge covers ranking and Detail/version rows; the native completion score uses the same policy. Light/dark shades retain readable contrast on the warm neutral surfaces; scores use open typography rather than filled badges. This is presentation over the existing one-decimal string; it does not change score calculation, mapping, unlocking or stored values. General controls/progress keep the brand accent. Exported card scores, including the raster preview inside results, always keep fixed `SGTheme.Brand.red` and their approved layout/typography.
+
+# Current Phase 3D Part 2 media integration
+
+The existing Profile status/Retry now includes pending/failed photo backup, restore and cleanup. Debug fresh restore adds an actual recovered-photo count using isolated scratch files. Existing DishPhoto views reload when validated files arrive in their own account root; local photo layout/import/preview/replacement behavior is unchanged. No authentication, navigation, ranking, Source/tag/filter, portrait or social UI redesign. See MEDIA_SYNC_ARCHITECTURE.md and PHASE_3D_PHOTO_SYNC_REVIEW.md for validation and the passed physical-iPhone verification sequence.
+
+---
+
+# Current access boundary — Phase 3D Part 1
+
+Authenticated Profile now has a small cooking-sync status and Retry. Its Debug-only fresh-restore check uses a separate disposable store and requires matching local/cloud data; it never replaces the primary store or uploads. Incoming hydration waits for retained cooking/detail view lifetimes to end. Rankings rows, Source/tag/search semantics and portrait layouts are unchanged. See SYNC_ARCHITECTURE.md and PHASE_3D_SYNC_REVIEW.md for the structured-only scope and manual review.
+
+Historical Part 2C navigation contained only Rankings and Profile, with Rankings selected initially. Feed was intentionally hidden; reactivation depends on the planned Friends, privacy and moderation foundation in the canonical Master Roadmap. Its existing destination and tab identity remain in `ContentView` for re-enabling later; social framework code is preserved. This navigation cleanup does not change authentication, account initialization, or Debug development-library access.
+
+Production logged-out access is onboarding/authentication/setup only. Rankings, dish history/creation, comparisons, personal search/filter and Profile exist solely inside the authenticated ready account tree. Native Apple authentication belongs at the root. Sign Out closes that tree and returns to onboarding. New real accounts begin at the existing empty Rankings UI with Add Your First Dish, after clean account-scoped initialization; existing accounts restore their own graph. No sample content or guest adoption is used.
+
+Normal Debug also starts at onboarding. Explicit labeled development review and valid isolated UI-test fixtures are compile-time Debug-only and use demo/test stores without Auth/cloud. Release excludes those entry points. Account media inherits a dedicated root through all forms and components. The upright portrait and Dynamic Type design requirements remain unchanged.
+
+A physical iPhone Debug Demo Library may be empty; the preserved Simulator dataset is local development/demo data only and is never a real-account template. No automatic device seeding is needed. Read-only logged-out public browsing remains only a possible future feature. Real-device manual review confirmed native Apple authentication, empty new-account Rankings, Sign Out to onboarding, and stable account identity on repeated login.
+
+The design history below remains useful for existing cooking components; references to local guest access, optional Account/Profile sign-in or adoption are historical and superseded. See ACCOUNT_ARCHITECTURE.md and AUTHENTICATION_GATE_REVIEW.md for current behavior and validation.
+
+# StayGrubby UI architecture
+
+The active project, app target and shared scheme are `StayGrubby`; the canonical iPhone bundle ID is `com.guyrettig.StayGrubby`. The project rename does not change the Phase 2C UI. See `PROJECT_RENAME.md` for identity and simulator data preservation.
+
+Normal launches inherit the user's Dynamic Type setting without a size clamp. DEBUG review typography/appearance is scoped to an explicit isolated test-store UUID; UI tests terminate review processes and keep photos in the same temporary scope. See `UI_ENVIRONMENT_DIAGNOSIS.md` for the reproduced oversized-review-session issue, correction and regression coverage.
+
+Phase 2C extends the native local cooking shell with a compact StayGrubby visual language. Ranking math, evidence selection, persistence ownership, and score calculation remain unchanged. The Phase 2C section below records the earlier presentation; the preceding Phase 2A/2B sections record its foundation.
+
+## App shell and navigation
+
+`ContentView` owns four native tabs: Grub List, Grub Rank, Food Bible and My Kitchen. Grub Rank is selected initially and opens the single global cooking ranking. There is no ranking-list picker, list creation control, category ranking or separate version ranking. Each destination retains an independent navigation stack. Food Bible browses Dish-linked recipes with local search and a searchable photographic Dish chooser; My Kitchen shows identity, authorized social posts, compact Signature Dishes and Settings. Existing cooking forms remain modal. Native Apple entry/account readiness remain above this shell, and all Debug review stores/media remain isolated.
+
+## Design tokens
+
+`DesignSystem/StayGrubbyTheme.swift` is the small source of truth for semantic colors, spacing, corner radii, common image/tap sizes, and animation timing. Adaptive cream/charcoal surfaces and semantic labels support light and dark appearance. Change the app accent through the asset catalog; change layout rhythm or radii through `SGTheme` rather than editing every screen.
+
+Liquid Glass is reserved for interactive surfaces. The system tab bar provides the primary native glass navigation treatment on iOS 26, and content/action bars use quiet opaque surfaces. Food photos and content rows use opaque semantic surfaces rather than turning every card into glass.
+
+## Reusable components
+
+`DesignSystem/StayGrubbyComponents.swift` contains:
+
+- `DishPhoto`, which loads an optimized display image or thumbnail and supplies a consistent accessible placeholder.
+- `RankedDishRow`, which presents rank, thumbnail, identity, lightweight metadata, and score.
+- `ScoreBadge`, `TagChip`, `SourceSummary`, and `SGSectionHeader` for shared hierarchy and styling.
+
+`CookingPhotoEditor` owns photo-library selection, preview, replacement, removal, progress, and import errors. Domain writes still occur only when the enclosing cook form saves.
+
+## Local photo storage
+
+Each `CookingAttempt` owns an ordered `[CookingMedia]` relationship with cascade deletion. V1 creates at most one `CookingMedia` of type image, but the relationship, type code, and sort order provide a direct migration path to multiple images and video metadata.
+
+`LocalPhotoStore` keeps bytes outside SwiftData under Application Support/StayGrubbyMedia. SwiftData stores UUID-based relative filenames, dimensions, kind, order, and timestamps. Container paths are never persisted.
+
+On import, ImageIO reads the selected asset and applies its orientation while downsampling. It writes:
+
+- a display JPEG with a maximum long edge of 1,200 pixels, starting at quality 0.84 and reducing quality only when needed toward a soft 300 KB target;
+- a thumbnail JPEG with a maximum long edge of 360 pixels, starting at quality 0.76 and reducing quality only when needed toward a soft 60 KB target.
+
+The original library asset is not copied into StayGrubby. Already optimized files are used directly by lists, detail, and comparisons. A new file pair is written before a database replacement; the old pair is removed only after SwiftData saves. Failed saves remove the new pair and roll back the model context. Removing a photo or deleting its cook removes both files after the database transaction succeeds.
+
+These optimized files can later become upload inputs. A future multi-media migration can remove V1's one-image UI constraint while retaining current `CookingMedia` records and adding video-specific metadata or remote asset state.
+
+## Core screens
+
+- Rankings opens directly from its tab and uses the existing single global order and score cache. Phase 2B adds local discovery as described below.
+- Add Dish and New Version retain the existing ranking session and metadata form. Photo is optional. New Version inherits Dish metadata and Source but begins without an attempt photo.
+- Comparison shows large photos or accessible placeholders and never shows either item's numerical score. Undo, Too Tough, and Skip sit on a restrained glass action bar.
+- Dish Detail shows the selected version's photo, score, global rank, tags, Source, notes, date, and all versions derived from the existing global ranking. It does not create a second version-ranking model.
+- Edit supports add, replace, and remove photo alongside existing metadata, Source, tag, re-rank, and deletion behavior.
+
+## Accessibility and adaptation
+
+Controls use native buttons, pickers, forms, tabs, navigation, and photo picker behavior. Tap targets are at least 44 points where custom sizing is used. Photos announce either their dish context or a no-photo state. Ranking rows and comparison choices have complete labels. Scores, selection, and current-version state use text or symbols in addition to color. Layouts use Dynamic Type fonts and scrolling; Reduce Motion bypasses comparison selection animation.
+
+## Rankings discovery — Phase 2B
+
+`CookingDiscovery.entries` is a read-only projection over the existing global `RankingList.orderedItems`. A dictionary bridges ranked-item IDs to queried CookingAttempts, replacing the previous per-item linear lookup. It evaluates structured selections and text against each attempt and retains the original one-based global rank. Rows keep the same score cache, thumbnail component, identity, and detail destination. A filtered result at global rank 7 still shows **7**, and the result count says “Global ranks”; no local renumbering or alternate sorting is introduced.
+
+Search uses `TagNormalization.key` for both query and field values: trim/collapse whitespace, fold case and character width, then match a contiguous substring in any one field. Searchable fields are Dish name, version title (or default “Version N”), category label, custom-tag labels, Dietary labels, and Allergy labels. Notes, Source, dates, IDs, and scores are not indexed. Multiple versions of a Dish can match independently. Custom tags remain searchable text and do not become filter options.
+
+`CookingFilters` holds one optional canonical Category, a set of canonical Dietary values, and a separate set of canonical Allergy values. All selected groups AND together with search; values within Dietary or Allergy OR together. An empty group imposes no restriction. `CookingFilterView` uses native Picker/Toggle controls and edits the Rankings-owned binding immediately; Done closes the sheet. Clear Filters resets every structured selection, retaining the query. Active chips remove just one selection; the button announces its active selection count. The controls remain in the list while native search is active because iOS can hide navigation toolbars during search.
+
+Query and filter selections are `@State` in `CookingRankingView`, survive detail navigation and Add/New Version/Edit/Re-rank sheets, and reset on app relaunch. Adding a cook preserves discovery state: a new item can remain hidden if it does not match. Editing metadata updates the projection through SwiftData observation; no persisted filter models, schema changes, ranking writes, or calls to recompute are involved. Delete and Re-rank continue using their existing global-domain services, after which discovery reads the new global order.
+
+Empty states distinguish an empty library (“Your cooking, ranked” with Add Your First Dish), search with no matches (the normalized query and Clear Search), and filter/search combinations with no matches (Clear Filters and Clear Search where applicable). No fixture data is added to production empty states.
+
+The native search field has a descriptive prompt, native clearing and submit behavior, and interactive keyboard dismissal while scrolling. Filters use native accessible selected/on-off states, labeled removal buttons, 44-point custom tap targets, semantic colors, Dynamic Type, and scrolling. Creation and filter/reset controls stack vertically at accessibility text sizes so their labels remain readable. Empty-state action identifiers are attached to individual buttons rather than their container, since SwiftUI can propagate a container identifier to its children. No new animation is required, so Reduce Motion has no extra transition to suppress.
+
+Discovery does one dictionary build and one pass over globally ordered items (plus the existing O(n log n) ordering). It reads text/tag metadata only; it never loads photos or runs inference. List rows retain attempt UUIDs and request thumbnails. `DishPhoto` retains its decoded image in local state and reloads only when its media ID/filename, size choice, or prepared data changes, so an unchanged row does not reread/decode its photo on every keystroke. Review fixtures are DEBUG-only, seeded only when both a valid isolated-store token and `--discovery-fixture` are present; they never seed the real default store.
+
+## Deliberately deferred
+
+- Alternate sorting and an All / Dishes / Versions control (neither is part of local V1).
+- User-selectable theme palettes.
+- Camera capture and multiple-media editing.
+- Feed, social profiles, public content, guest adoption and cloud cooking sync. Phase 3C adds only optional native authentication/account resolution; cooking still uses the guest container.
+- Recipe UI and cookbook-provider integration.
+
+## Phase 2B validation
+
+Validated on **October 5, 2026**, iPhone 17 / iOS 26.5 Simulator. The final complete scheme passed **66 tests / 83 parameterized and configuration executions**, with zero failures, expected failures, or skips. Serial execution (`-parallel-testing-enabled NO`) avoids the previously observed simulator-clone failures. The final build reported no warnings or errors and launched directly into Rankings against the real saved store.
+
+- `CookingDiscoveryTests` adds 12 test functions covering normalized dish/version/tag search, each structured filter, AND/OR semantics, clearing, empty results, original global order/ranks/scores, unchanged IDs/uncertainty/diagnostics/evidence, creation and separate versions, metadata edits, re-ranking/deletion, Source retention, and photo/no-photo references. The 500-attempt workload completed 20 discovery evaluations in approximately 0.34 seconds on this simulator; this is a local measurement, not a universal performance guarantee.
+- Four `CookingDiscoveryUITests` cover query entry/clearing, each filter group, combined selections, active feedback, individual removal, separate clear actions, empty-state recovery, detail/back state retention, live edit updates with unchanged item ID/score, creation-form navigation from filtered results, and light appearance at accessibility Dynamic Type size. Existing cooking, Source, comparison-photo, and launch tests also remain green. Known simulator event delivery is handled with state predicates and taps targeted at the actual switch control.
+- Captured simulator screens were visually reviewed for full ranking, matches/no matches, each filter group, combined search/filters, clearing, detail navigation, New Dish/New Version with an existing ranking, light/dark appearance, and larger text. Creation and filter/reset labels remain readable at accessibility sizes. Dense row labels/tags at those sizes are retained in the Phase 2C handoff.
+- A consistent SQLite checkpoint was created before changes under the ignored `.local-backups/phase2b-20261005/` directory. Post-suite and post-launch semantic hashes exactly match it: **1 RankingList, 14 RankedItems, 34 Comparisons, 14 Dishes, 14 CookingAttempts, 1 CookingLibrary, 0 CookingMedia**, plus unchanged Source/tag records. IDs, scores, strengths, uncertainties, diagnostic bytes, evidence, timestamps, and relationships are preserved. No schema migration, reset, restore, or new global ranking was required.
+
+## Phase 2A validation
+
+Validated on **October 5, 2026**, using an iPhone 17 / iOS 26.5 Simulator:
+
+- The final approved complete test suite passed: 50 tests, 63 parameterized/configuration executions, zero failures, and zero skips.
+- `CookingMediaTests` verifies display/thumbnail dimensions, disk-backed persistence, replacement and removal without ranking-identity or evidence changes, deletion cleanup, the no-photo path, and New Version media ownership.
+- `CookingUITests` covers the Add, Comparison, Rankings, and Detail screens in the complete cooking workflow. The workflow also passed with an accessibility Dynamic Type size. Xcode's launch matrix exercises light and dark appearances; iPhone layout review targets upright portrait only.
+- The final app build launched successfully against the saved simulator store. A pre-change SQLite checkpoint and post-launch comparison matched 1 RankingList, 14 RankedItems, 34 Comparisons, 14 Dishes, and 14 CookingAttempts exactly on semantic fields, including IDs, scores, uncertainty, diagnostic data, evidence, timestamps, and relationships. The additive migration produced zero `CookingMedia` rows, as expected, and did not reset or replace the store.
+- Final visual inspection used the same saved store and confirmed the three-tab shell with Rankings selected and all 14 existing ranked items present.
+
+The Phase 2A review pass removed the obsolete generic ranking-list UI. Focused simulator fixtures cover photo/photo, photo/placeholder, placeholder/photo, and placeholder/placeholder comparisons with portrait-shaped source media and unequal title lengths. Every fixture uses two explicitly equal square frames, aspect-fill cropping, a centered OR separator, and constrained dish/version labels; dark and light appearances were inspected.
+
+## Phase 2C visual architecture
+
+Phase 2C gives the local product a compact, food-first presentation. The root ranking opens directly into the existing global cooking order. Feature views own navigation and value state; the design system owns appearance. Ranking mathematics, evidence selection, score mapping, identity and persistence schema remain unchanged. The polish pass adds Contains search and changes the earlier Allergy discovery group into Avoid exclusion.
+
+### Theme and components
+
+`SGTheme` defines adaptive charcoal/ivory backgrounds, opaque content surfaces, secondary surfaces, primary/secondary text, accent, selection and destructive roles; spacing, radii, image dimensions, tap targets, typography, and motion. The accent still comes from the asset catalog. Typography uses Dynamic Type roles, with rounded identity/title/score roles. `SGButtonStyle` provides primary and secondary actions. Content remains opaque; the native bottom tab bar provides restrained system Liquid Glass. No decorative blur is applied to food or ranking rows.
+
+`StayGrubbyHeader`, `SGIconButton`, `SGCreationChoices`, `SGSelectionRow`, `SGFormSection`, `DishPhoto`, `ScoreBadge`, `TagChip`, and `SourceSummary` are shared presentation building blocks. Future colors, font roles, control language, radii, spacing, press feedback and photo/score treatment can be changed centrally without changing the feature services. This is a small application design system, not a generic theme framework.
+
+### Header, search and creation
+
+The Rankings root hides its native navigation bar and installs a safe-area header: circular creation control on the left, centered StayGrubby/page identity, search on the right. Detail destinations restore native navigation and back behavior. Profile and the retained Feed destination use the same identity component but expose no pretend search or social creation actions. That two-tab shell and centered header are historical; the current five-tab shell and left-aligned Grub Rank header supersede them.
+
+Search takes over the header with a native `TextField`, submit/keyboard dismissal, independent clear action and Done. Done collapses the header without clearing the query; reopening restores it. Query and filters remain Rankings-owned state and survive details and creation/edit sheets. Search presentation only forwards the existing query into `CookingDiscovery`; normalization, searchable fields, order and scores are unchanged. Custom tags remain searchable, not structured filters.
+
+The + reveals an inline, styled pair of New Dish/New Version buttons with native interaction and accessibility. The reveal closes on route selection or search expansion; it can be collapsed by tapping + again. New Version remains disabled without eligible saved dishes. Dish selection still includes eligible dishes independently of discovery filters. No permanent large creation buttons occupy ranking content.
+
+### Rankings and filters
+
+Rows show exactly Dish title, Version label, Course, rank, square thumbnail/placeholder, and the shared score badge. Tags, Source and notes are absent from rows and remain available in Detail/search/filters. Rows preserve stable cook IDs and original global ranks. Normal titles/versions wrap up to two lines rather than competing with multiple pills. At accessibility sizes the photo/rank/score line sits above unrestricted identity text. A centered maximum content width and wrapping identity text support the upright portrait layout.
+
+Course, Dietary and Avoid controls sit in a compact horizontal strip below the header. Selected Course shows its label; multi-select groups show counts and an accessible selection count. Each opens just its own scrolling selection sheet. Native buttons expose checkmarks and selected values; selections update immediately and can be unchecked. Course remains single-select, Dietary matches any selected value, Avoid excludes cooks containing any selected allergen, and groups/search combine with AND. The independent reset button is outside the scrolling strip and appears only with structured selections. It never clears search. No-result actions retain separate search/filter recovery paths.
+
+### Comparison
+
+A receding focus background, centered preference prompt, two square choices and nearby Undo/Too Tough/Skip form one compact interaction. Choices show Dish and Version only, never numerical scores. Both photo and placeholder use the same explicit square dimensions and aspect-fill clipping; OR is centered between the photo areas. Upright portrait uses centrally limited image sizes; content scrolls when height is limited. Accessibility sizes stack the choices with OR between them so full labels can grow. Answer selection has touch-driven press feedback and a single haptic. All answers reach the existing session immediately, without an animation delay or queued answer; Reduce Motion removes spatial feedback. Existing callbacks alone change the ranking session.
+
+### Detail and forms
+
+Detail starts with a hero photo, or a compact placeholder when absent, then Dish/Version, score/global rank, Edit/Re-rank, Course/date/tags, Source, Notes and Versions. Tags wrap into an adaptive grid when they do not fit on one line, instead of truncating. Version rows show identity/date/rank/score, an optional thumbnail, current indication or a chevron, and remain navigable. New Version stays in the Versions section.
+
+Delete is in the toolbar overflow menu, marked destructive. It always opens a separate native “Delete this cook?” alert with visible Cancel and destructive Delete Cook. An alert is intentional: iOS 26 can present a confirmation dialog as a popover and suppress its cancel-role button. The existing cooking service handles evidence/recomputation, final-Dish and media cleanup; the redesign introduces no new deletion path.
+
+Add/New Version/Edit use a scrolling photo editor and reusable opaque sections. Dish name/Source are explicitly shared Dish information; Course, Version, cooked date, Dietary/Contains, custom tags and notes describe this cook. Course stays a cook snapshot initialized from the Dish default. Dietary uses a compact draft selection sheet; Contains uses its own presence selector, sharing canonical allergen choices with Avoid while keeping the opposite selection semantics separate. Custom tags use a secondary disclosure. Continue/Save are clear full-width safe-area actions and remain reachable above the keyboard. Draft cancellation still writes nothing; New Version inherits Dish name/default Course/Source and starts without a photo.
+
+Source is a six-choice optional editor backed by `SourceChoice` and `CookingProductOptions`. Online asks only for the original URL; Cookbook/Restaurant ask only for a name; My Own needs no fields, Friend/Family an optional name, Other short attribution. No lookup, metadata scraping, canonical catalog or Recipe is implemented. Legacy metadata stays in the existing draft/model and remains readable in Detail. See `COOKING_MODEL.md` for compatibility.
+
+### iPhone orientation policy
+
+StayGrubby on iPhone supports **upright portrait only**. Landscape left, landscape right and upside-down portrait are intentionally unsupported. Screens and reusable components must be designed and reviewed in normal upright portrait, including scrolling content, keyboard/safe-area behavior, accessibility and Dynamic Type. Large text and both appearances remain required within portrait. No iPad layout work is part of this decision.
+
+The app target's generated Info.plist uses Xcode's `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait` in both Debug and Release, producing `UISupportedInterfaceOrientations~iphone` with exactly one value. iOS enforces the supported orientation through application configuration; there are no per-screen rotation overrides or custom orientation locks. Existing iPad settings remain outside this pass.
+
+### Accessibility and responsive behavior
+
+Native navigation, tabs, sheets, text input, date/course pickers, menus and photo selection preserve platform behavior. Custom actions use minimum 44-point targets, selected text/checkmarks and complete VoiceOver labels. Search/filter clearing stays independent. Semantic adaptive colors support both appearances. Large text stacks ranking identities, comparison choices, actions when required and version identity. Long Detail labels have unrestricted wrapping. Scroll views and safe-area actions prevent bottom-tab/keyboard overlap. Reduce Motion removes reveal/search/answer animation and press scaling; a DEBUG-only test hook exercises this path without overriding production accessibility settings.
+
+### Phase 2C verification
+
+Validated on **October 5, 2026**, using iPhone 17 / iOS 26.5 Simulator. The complete scheme passed **70 tests / 93 parameterized and configuration executions**, with zero failures, expected failures or skips. This includes 59 Swift Testing functions and 14 UI/configuration executions. Serial execution avoids simulator-clone instability. No ranking/domain or persistence implementation changed.
+
+- Existing discovery, cooking creation/version/edit/re-rank/relaunch/deletion, Source, photo geometry and launch tests were adapted to the new controls while retaining product assertions. Added Source compatibility coverage for all seven stored types and original URLs, plus detail/version/long-name/accessibility forms and Skip/Too Tough/Undo review tests. Deletion cancellation and confirmed cleanup both pass. Large-text launch arguments apply UIKit's content-size category to sheets as well as the root; the DEBUG motion hook combines with, rather than suppressing, the device preference.
+- Captures from the successful full suite were reviewed for normal Rankings, active search, combined filters, creation reveal, every photo/placeholder comparison, detail with/without media, Add/New Version/Edit, simplified Source, light/dark and accessibility sizes. Photos remain clipped inside their intended frames. Large identities wrap; forms, comparisons and actions scroll or stack as required. VoiceOver labels/selection values were inspected through XCTest; a physical-device VoiceOver walkthrough remains part of human review.
+- The earlier landscape requirement was superseded on October 7, 2026 by the explicit iPhone upright-portrait-only product decision. Landscape and upside-down portrait are intentionally unsupported.
+- The saved development store exactly matches the pre-change semantic checkpoint: **1 RankingList, 14 RankedItems, 34 Comparisons, 14 Dishes, 14 CookingAttempts, 1 CookingLibrary, 5 CookingTags and 5 tag relationships, 0 DishSources, 0 CookingMedia**. IDs, names, dates, scores/strengths/uncertainty, diagnostics, evidence and relationships match. No duplicate global ranking, store reset or fixture leakage occurred. Legacy Source safety is independently covered with populated isolated stores.
+- Build output contains only the toolchain's unused App Intents metadata notices. Existing disk-test cleanup emits SQLite unlinked-temporary-file diagnostics; those paths are isolated test stores and do not include the saved default store. All corresponding persistence assertions pass.
+
+Review captures and the exact changed-file inventory are retained under the ignored `.local-backups/phase2c-20261005/review/` directory; the semantic checkpoint and verification hashes are alongside it. Phase 2C remains uncommitted pending manual product approval. The polish verification below supersedes this historical verification report. No Phase 2D or remote/social work is included.
+
+## Phase 2C product polish
+
+- Creation now automatically finalizes a complete ranking session through the existing transaction. CookingRankingResultView receives an already persisted CookingAttempt, shows its Dish/Version, optional local hero, shared ScoreBadge, and authoritative global rank. Its accessible X closes the sheet; Rankings observes the saved models immediately. The presentation has no second save decision and uses an opacity transition only when Reduce Motion permits it. Failed persistence offers retry/cancel without losing the draft.
+- DishSelectionView presents an always-visible SGSearchField for New Version, using normalized DishSelectionSearch filtering independent of discovery filters. Compact rows show the parent Dish name, version count and available local thumbnail. Empty results and an accessible clear action support longer libraries. Selection routes into the existing version transaction with the selected Dish.
+- SGHeroMedia is reusable by Detail and results. A lightweight LinearGradient leaves the upper 55% of a photo unobscured, then blends its bottom into the semantic page background in either appearance. No blur, extra compositing group, hard-coded black or storage changes. Missing photos retain the compact placeholder. Scroll/safe-area behavior and wrapping content support large text.
+- ContainsSelector and SGAllergenChoices share centralized canonical presence options with the Avoid discovery sheet. Form Contains selection is deliberately separate from discovery exclusion. Legacy Free claims appear separately in Edit/Detail and require explicit removal. Avoid supports independent clearing and explanatory safety copy; root rank order and numbers remain unchanged.
+
+### Product polish verification — October 6, 2026
+
+The complete scheme ran serially on iPhone 17 / iOS 26.5 Simulator: **76 tests / 99 configured executions; 75 tests / 98 executions passed, one failed, zero skipped or expected failures** (`/private/tmp/grub-polish-full.xcresult`). All 62 unit-test functions / 82 parameterized executions passed. UI results were 13 of 14 functions / 16 of 17 configuration executions passing. Build and normal saved-store launch succeeded.
+
+All three new PolishUITests passed in the complete run, including automatic persistence before result close/relaunch, abandonment, Contains edit/reload, Avoid ANY exclusion and independent clearing, normalized parent search, correct version ownership, nested-version result return to root Rankings, and photo/no-photo detail in light/dark at normal/accessibility sizes with Reduce Motion. All nine presence options pass disk persistence tests alongside unchanged legacy Free semantics. Existing cooking lifecycle, Source, discovery, comparison-square and ranking simulation assertions pass. Test helpers scroll a metadata selector clear of the pinned footer before tapping; they do not remove product assertions.
+
+**Historical orientation result, superseded October 7, 2026:** The sole failed check in this earlier run expected a landscape window. That product requirement is obsolete. The review test now asserts upright portrait geometry while retaining Skip/Undo/Too Tough, comparison-square and accessibility checks. AppConfigurationTests verifies the generated iPhone orientation array from the built application bundle.
+
+Thirteen polish captures were inspected for parent search, hero media and saved result across appearances/text sizes. Captures and the full 45-file working-tree inventory are in ignored `.local-backups/polish-20261005/review/`. The final saved-store comparison after tests and normal launch confirms **one global RankingList, 12 Dishes, 15 CookingAttempts/RankedItems, 356 Comparisons, 10 Sources, zero media**. All non-allergen fields/relations, ranking metrics, evidence and schema exactly match the pre-polish backup. Only the explicitly authorized disposable fixture allergen metadata changed; details are in COOKING_MODEL.md. No test fixture leaked into the saved library. No commit or push was performed.
+
+### Final upright-portrait verification — October 7, 2026
+
+The complete existing scheme passed on iPhone 17 / iOS 26.5 Simulator: **77 tests / 98 configured executions, zero failures, unexpected failures, expected failures or skips** (`/private/tmp/grub-portrait-final-20261007.xcresult`). This includes 63 unit functions / 83 parameterized executions and 14 UI functions / 15 appearance/configuration executions. Xcode's launch matrix now runs the two supported upright-portrait appearance configurations instead of the earlier four portrait/landscape configurations. No test function was removed or skipped.
+
+The obsolete landscape-window assertion was replaced by upright portrait device/window assertions in the existing comparison review. Skip/Undo/Too Tough, equal-square geometry, scrolling action reachability, large-text and appearance checks remain. AppConfigurationTests additionally passes against the generated app bundle's one-value iPhone orientation array. Effective Release settings independently confirm the same sole upright portrait value. Build and normal saved-store launch both succeeded; the app was left on Rankings for manual UI approval.
+
+After tests and normal launch, a consistent pre-pass SQLite checkpoint matches every saved entity's semantic fields and relationships, including all Contains/Dietary/custom tag rows and memberships, Dish/Source/cook/item identities, scores/strengths/uncertainty, diagnostics, dates and comparison evidence. Counts remain **1 RankingList, 1 CookingLibrary, 12 Dishes, 15 CookingAttempts, 15 RankedItems, 356 Comparisons, 10 Sources, 21 tags / 48 memberships (16 Contains memberships), zero media**. Schema and SQLite integrity checks pass. No fixture data entered the saved development store.
+
+This final pass changed only the app-target iPhone orientation setting in Debug/Release, AppConfigurationTests.swift, the obsolete assertion/capture label in Phase2CReviewUITests.swift, and orientation/verification documentation in this file and COOKING_MODEL.md. All preceding Phase 2C implementation files were preserved byte-for-byte. `git diff --check` passed. Verification summaries, exact file inventory and the checkpoint are retained under ignored `.local-backups/portrait-20261007/`. There are no remaining automated-verification blockers; Phase 2C remains uncommitted and unpushed pending final manual UI approval.
+
+## Phase 3B persistence boundary
+
+The current guest UI, upright portrait configuration and navigation are unchanged. App startup now explicitly chooses the guest boundary. Future account sessions are separate containers and cannot run Home's normal initialization before restoration (or a verified-empty authorization) succeeds. Incoming full snapshots must be deferred while creation/re-ranking drafts are active; no account UI or active cloud worker is mounted in Phase 3B. The selected session also exposes an account-specific media root for future mounting without changing current guest photos. See SYNC_ARCHITECTURE.md.
+
+## Phase 3C Part 2 account entry
+
+The Profile tab hosts a lightweight Account screen with Apple’s native Sign in with Apple button, loading/setup/retry/connected states, local sign-out and a return-to-guest-Rankings action. Existing cooking navigation and the portrait-upright requirement are unchanged. The screen supports Dynamic Type in portrait. Successful account setup does not mount/initialize an account library or move/upload guest dishes or photos. Root restoration runs alongside guest presentation; isolated review stores skip real Keychain restoration. See ACCOUNT_ARCHITECTURE.md and NATIVE_APPLE_SIGN_IN_REVIEW.md.
+
+## Final Core App V1 presentation revisions
+
+Re-rank uses `CookingReRankingWorkflow` to create the unchanged normal `RankingEngine` with the existing item ID and current ordering excluding that item. It begins with `InitialReactionView`, uses the same `ComparisonView`, Skip/Too Tough/Undo and normal stopping rules, and automatically commits through `CookingStore.rerank` → `RankingStore.record`. The reaction still guides acquisition without fabricating comparisons. A completed re-rank also atomically records the latest semantic assessment in existing diagnostic JSON for ScoreCalibration; cancelled/incomplete sessions leave it unchanged. Ranking/order fitting is unchanged. Historical observations/timestamps are preserved, fresh evidence is appended, and no Dish/version/item is created. A before-commit snapshot supports truthful movement and new-#1 presentation. Cancel writes nothing; save errors retain retry/cancel as an exceptional recovery state. Navigation defers remote reconciliation through the existing lease.
+
+Top Version is the local default; All Versions shows every eligible ranked attempt. Search and filters first select matching eligible entries, then Top Version retains the highest globally ranked matching version per Dish. This lets a search/filter find a lower version when its higher sibling does not match. Each row keeps its true global rank, including gaps. This grouping never changes unlock counting, card Top 3, evidence, scores or order. The preference is local UserDefaults; isolated Debug fixtures use separate suites.
+
+Detail uses one same-family Edit Cook / Re-rank / Share action row at normal text sizes, with a readable vertical stack at accessibility sizes. Locked Share retains its lock and explanation. Profile permanently offers current Top 3 sharing after unlock. Normal Top 3 has no milestone pill; the first-unlock card alone may show SCORES UNLOCKED. A truthful new-#1 result offers optional Updated Top 3 while preserving the primary individual result/share action.
+
+`SGTheme.ColorToken.accent` uses readable red appearance variants, with a darker red filled-button token for white-text contrast. The app AccentColor asset is also red. Export/identity colors remain unchanged. The unlock bar uses an explicit shape-based ProgressViewStyle with the official Brand.red fill and neutral track, avoiding the system dark-mode monochrome substitution. Native Apple authorization and share-sheet semantics retain their own system appearance.
+
+## Dish-linked Food Bible, recipes and Tickets
+
+Food Bible is an editorial photo cookbook derived from existing cooked Dish identities and an account-owned `dish_recipes` relationship. Compact authorized search summaries are paged 50 at a time, then searched locally by Dish/Recipe title, ingredients, cuisine and recipe attribution; Course/Cuisine filters and recent/A–Z sorting are local. No Recipe body or revision history is fetched per card. Local thumbnail loading reuses existing cooking media; no new photo bucket or duplication. Grub Rank remains cooked history and the initial tab. Tickets / Want to Cook is intentionally absent from normal V1 navigation/actions. Its tables, data, services and dormant view remain intact for a later phase.
+
+Dish Detail offers Add Recipe or View Recipe and a safe existing-recipe association path. Both Dish Detail and cookbook open the same revision-checked Recipe reader/editor. Removing the link only removes derived membership; deleting a Recipe cascades its links and Tickets, preserving cooking history and immutable cook snapshots. Unlinked legacy/standalone Recipes remain accessible separately, never automatically become cookbook entries.
+
+The manual value-draft editor uses one natural ingredient line as its primary entry, backed by a local deterministic IngredientParser and exact rational quantity formatter. Original lines stay in editor-only draft state; unchanged legacy/structured rows are not reparsed. A section-owned native text field keeps its first responder across Return, with a secondary Edit Details correction sheet. Structured ingredient wire fields and the Recipe save API stay unchanged. Ordered components, multiline steps, dedicated accessible row/section action menus, movement between sections, intentional deletion confirmation, metadata and explicit recipe-sharing choice remain available. One unnamed component stays visually simple. The reader uses portrait hero photography, useful servings/time metadata, separate Ingredients and Method hierarchies, readable exact quantities and continuous numbered steps. Dirty drafts require an explicit discard alert; swipe dismissal cannot silently discard them. The already-open owner Recipe remains readable after a network-only failure; shared Recipe access is reauthorized. Cooking notes are never copied; recipe tips are explicitly part of the recipe sharing boundary. No drag/drop requirement, timers, conversions or second sync engine was added. Whole-recipe import is a separate reviewed-draft entry point described below.
+
+Recipes remain online and revision checked, as before this phase; failed saves retain the draft. Existing offline private cooking remains available. Historical Recipe snapshots can be viewed only when fetched under the existing owner-scoped transport; no new offline Recipe cache is claimed. See STAYGRUBBY_FOOD_BIBLE_FOUNDATION_REVIEW.md for semantics, limits and verification.
+
+App-wide profile links, account readiness, Settings, Sous Chefs, upright portrait, Dynamic Type, restrained motion and existing ownership fences remain intact. No public Recipe URLs or new distribution is introduced.
+
+Current UX 2.0 implementation, Ticket restoration path, Universal Link investigation and physical gates: [STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md](STAYGRUBBY_FOOD_BIBLE_UX_2_REVIEW.md).
+
+Natural ingredient grammar, raw-input scope, native keyboard handling, persistence/search checks and owner acceptance: [STAYGRUBBY_INGREDIENT_ENTRY_REVIEW.md](STAYGRUBBY_INGREDIENT_ENTRY_REVIEW.md). Physical Universal Links remain a confirmed owner-reported release issue and are explicitly deferred during this ingredient-entry cycle.
+
+
+## Bulk ingredients and Recipe Intelligence V1
+
+Food Bible Add Recipe presents Import Recipe / Add Manually, then the existing cooked-Dish picker. The authoritative Dish/Recipe link is checked before opening import: an existing Recipe opens normally and is never silently replaced. A different extracted Recipe title never renames or duplicates the Dish.
+
+Each Recipe Editor section has Paste Ingredients, opening a large multiline sheet with native text selection, explicit Format Ingredients and dirty-cancel protection. Conservative bullet/number cleanup precedes the accepted IngredientParser. Formatting is local/offline, keeps editor-only originals, and appends only to the selected component. It respects existing Recipe storage limits. The single-line Return behavior and Edit Details stay available; the old dedicated keyboard Paste button is removed, while normal native Paste remains available.
+
+Whole-recipe import uses Recipe Creator: preserve the user's food, construct its cookbook document intelligently. Cloud Formatting is the standard explicitly consented path, with manual creation/paste always available. Apple Foundation Models remain dormant in normal Recipe creation for future model improvements; complex input is never routed through them. The existing RecipeDraft/editor and versioned wire compatibility remain; contract 3 adds cookbook editing and metadata honesty while older clients retain their contract. One inference call recognizes preparations, reorders dependency-driven assembly, consolidates redundant unmeasured ingredients without losing measured allocations, and writes professional steps. Source/qualifier/quantity guards remain; estimates cannot introduce unsupported procedural ingredients, amounts, temperatures or durations. The validator is bounded evidence checking, not proof of arbitrary language or culinary judgment.
+
+Creator metadata distinguishes provided/derived/estimated/unknown yield, prep/cook/elapsed time and canonical cuisine. Conservative useful estimates are editable; explicit overall values win, parallel workflow is respected and unknown totals stay unknown. Optional Recipe JSON stores reviewed origins, elapsed time and ingredient-based allergen information; legacy content/revisions remain compatible. Native allergen rules use existing nine codes, possible/label review and explicit no-guarantee language, never religious certification or automatic Dish/attempt tag projection. Recipe owns ingredient/method-dependent metadata; Dish identity/defaults and actual cook tags remain separate. The independent-Recipe architecture is audited/recommended, not implemented. Mandatory review, original text and explicit revision-checked Save remain. Import itself does not save. See [RECIPE_CREATOR_REVIEW.md](RECIPE_CREATOR_REVIEW.md) for the ownership audit and observed on-device limitations.
+
+Gemini uses only server secrets and a fixed model/endpoint, active-account/session authorization, a durable short burst-abuse counter, bounded input/output and a timeout. Cloud permission defaults off for every import. A missing server key fails closed. The owner confirmed a dedicated unbilled Google project; there is no expiration date or recurring secret renewal. There is no StayGrubby daily/monthly allowance; only a short authenticated burst guard remains. Provider 429 shows a friendly Cloud AI cooldown with manual entry/paste and later retry available; Apple is independent and no automatic cloud retry or paid mode exists. Safe stage/status logs and Debug-only Settings → Developer → Recipe Intelligence diagnostics contain no raw text, provider messages or credentials. The Google output grammar omits nested array-count constraints to avoid schema-compiler rejection; server and client validation retain all component/ingredient/step caps. Real-account tiny import is verified through Google/function HTTP 200 and editor presentation. Original text is retained through failures, cancellation and backgrounding in the current editing session, not guaranteed after process termination. Manual continuation keeps source text editable. All provider fixtures require Debug plus an isolated UI-test store; Release contains no provider fixture bypass.
+
+Recipe allergens use the existing `SGAllergenChoices` / shared Contains selector interaction for detected Contains and Possible selections, not per-allergen tri-state Pickers. Recipe-specific bindings preserve ownership and disjoint selections; reordering alone never regenerates or overwrites reviewed labels. The old cook selector remains until the planned metadata migration.
+
+Ingredient and method Reorder actions finish text editing and open a native table ordering sheet. Real handles move stable-ID rows within/between components; no deletion, copying or external drop path exists there. The accepted main editor and accessible Move Up/Down/Move To menus remain. Array order is canonicalized only through normal Save; cancelled drags do not mutate it. This is a mechanical correction, not the deferred Recipe UI redesign.
+
+Current four-dimension cookbook/phased/negative/server-to-Swift/UI evidence and the one final owner test: [RECIPE_CREATOR_REFINEMENT_REVIEW.md](RECIPE_CREATOR_REFINEMENT_REVIEW.md). Style rules: [RECIPE_STYLE_GUIDE.md](RECIPE_STYLE_GUIDE.md). Earlier [Creator ownership audit](RECIPE_CREATOR_REVIEW.md), [editorial/v11 acceptance](RECIPE_ENGINE_ACCEPTANCE.md) and [failure investigation](STAYGRUBBY_RECIPE_IMPORT_FAILURE_REVIEW.md) remain historical. Universal Links and remaining UGC release hardening remain deferred.

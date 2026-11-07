@@ -1,21 +1,32 @@
 # StayGrubby
 
-Native iPhone cooking, comparison ranking, personal recipes and intentionally shared social activity. Official identity: **#stayGRUBBY**.
+Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bible) and intentionally shared social activity. Official identity: **#stayGRUBBY**.
 
-Start with these three sources:
+**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). Next: the system-wide UI overhaul (Stages A–G) → V1 Release Gate → Release Candidate → App Store V1.
 
-1. [AGENTS.md](AGENTS.md) — permanent development rules: **how to work**.
-2. [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) — accepted current product and architecture: **what exists**.
-3. [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md) — current/next/later/release: **what comes next**.
+## Read first
 
-The architecture overview indexes task-specific domain documents. Dated review files retain implementation/test/deployment evidence; they are not a competing current roadmap or instruction system. Future prompts need only name the cycle, unique requirements and acceptance criteria, referencing the three sources above.
+| Document | Answers |
+| --- | --- |
+| [AGENTS.md](AGENTS.md) | How to work: rules, vocabulary, protected systems, verification, Git/deployment |
+| [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) | What exists now: product, Build 4 state, system map, ranking, Recipes, sync/photos, Supabase, social, links/website, privacy, fixtures |
+| [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md) | What comes next: NOW / NEXT / THEN / post-V1 / long term / rejected |
 
-Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. Minimum target is iOS 17.0 on iPhone, upright portrait only. Do not reset data to build or review the app. See the architecture overview for account/development isolation and existing verification tools.
+## Then, by task
 
-Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini is the only active V1 AI provider; it constructs content, the app validates structure, and the user reviews before Save. Manual creation and deterministic ingredient entry remain independent. [Style guidance](RECIPE_STYLE_GUIDE.md) is content guidance, not a source vocabulary gate.
+| Document | Purpose |
+| --- | --- |
+| [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul Stages A–G |
+| [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md) | V1 release requirements and state |
+| [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
+| [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |
+| [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md), [DevelopmentTools/README.md](DevelopmentTools/README.md) | Backend tooling, hosted deployment history, development tools |
+| Domain specs | [COOKING_MODEL.md](COOKING_MODEL.md), [RANKING_MODEL.md](RANKING_MODEL.md), [ACCOUNT_ARCHITECTURE.md](ACCOUNT_ARCHITECTURE.md), [SYNC_ARCHITECTURE.md](SYNC_ARCHITECTURE.md), [MEDIA_SYNC_ARCHITECTURE.md](MEDIA_SYNC_ARCHITECTURE.md), [SOCIAL_ARCHITECTURE.md](SOCIAL_ARCHITECTURE.md), [V1_SHARING_ARCHITECTURE.md](V1_SHARING_ARCHITECTURE.md), [RECIPE_STYLE_GUIDE.md](RECIPE_STYLE_GUIDE.md) |
 
-Current Next-Version social, notification, sharing-link and presentation integration: [evidence and owner acceptance](NEXT_VERSION_INTEGRATION_REVIEW.md).
+All other `*_REVIEW.md` files, [NEXT_RELEASE_SPEC.md](NEXT_RELEASE_SPEC.md) and [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) are dated evidence. They are not a competing roadmap or instruction system, and their pending gates/counts are not current. Future prompts need only name the cycle, its unique requirements and acceptance criteria.
 
-Next release: [approved staged specification](NEXT_RELEASE_SPEC.md), [Stage 1 foundation evidence](NEXT_RELEASE_STAGE_1_REVIEW.md), [Stage 2 core UI evidence](NEXT_RELEASE_STAGE_2_REVIEW.md), [Stage 3 social/sharing evidence](NEXT_RELEASE_STAGE_3_REVIEW.md), [Stage 4 Food Bible/Recipe and owner-correction evidence](NEXT_RELEASE_STAGE_4_REVIEW.md).
+## Build
 
-Current V1 closeout: [Stage 5 final product polish](NEXT_RELEASE_STAGE_5_REVIEW.md) → [V1 Product Closeout](V1_PRODUCT_CLOSEOUT_REVIEW.md) → [V1 Release Gate](V1_RELEASE_GATE.md) → Release Candidate → App Store V1. Photography enhancements and Recipe unit conversion are post-V1; no distribution is authorized by a development checkpoint.
+Open `StayGrubby.xcodeproj`, scheme `StayGrubby`. iOS 17.0 minimum, iPhone upright portrait only. Do not reset data to build or review; Debug review fixtures require an isolated `--ui-test-store <UUID>` (see [fixture rules](STAYGRUBBY_ARCHITECTURE.md#debug-fixtures-and-test-safety)).
+
+Recipe Creator uses the [Gemini-first boundary](STAYGRUBBY_ARCHITECTURE.md#recipe-creator--gemini-first-contract-4): Gemini is the only V1 AI provider; the app validates structure and the user reviews before Save. The production website is deployed only with `sh Website/deploy-production.sh`; assets-only publishing is invalid. No distribution is authorized by a development checkpoint.

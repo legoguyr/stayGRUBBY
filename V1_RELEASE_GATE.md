@@ -1,6 +1,6 @@
 # StayGrubby V1 Release Gate
 
-Canonical next-cycle checklist — November 5, 2026. Stage 5 plus its focused owner-feedback Product Closeout is the final normal product work. This gate authorizes no submission, upload, credential change, paid service or destructive real-account test. Record evidence/owner decisions here during the separately requested gate; unchecked items are not compliance claims.
+Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e`). Sequence: Build 4 (complete) → system-wide UI overhaul Stages A–G → **this gate** → Release Candidate → App Store V1 ([roadmap](STAYGRUBBY_MASTER_ROADMAP.md)). The UI overhaul is the last normal product work before this gate; Discover, Personal Cooking Intelligence, Want to Cook and Collections are not V1 requirements. This gate authorizes no submission, upload, credential change, paid service or destructive real-account test. Record evidence/owner decisions here during the separately requested gate; unchecked items are not compliance claims.
 
 ## Hard V1 blockers / required gate evidence
 
@@ -16,6 +16,9 @@ Canonical next-cycle checklist — November 5, 2026. Stage 5 plus its focused ow
 - [ ] Complete age-rating/social-media/UGC considerations using current platform requirements during the gate.
 - [ ] Verify Sign in with Apple, account readiness/sign-out, offline ready-account behavior and App Review access strategy. Automated fixtures cannot establish physical Apple authorization.
 - [ ] Disposition existing security advisories, including the leaked-password linter warning against the intended Apple-only Auth configuration. Do not change Auth settings merely to suppress a warning.
+- [ ] Review the production `development-test-session` Edge Function (v1, administrator-proof gated, JWT on): keep with documented justification or remove under separate authorization before public release.
+- [ ] Grub Rank score/order semantic consistency investigation concluded and its owner-approved presentation implemented (no ranking math change without explicit reopening). See [architecture](STAYGRUBBY_ARCHITECTURE.md#ranking--protected).
+- [ ] At release, switch `Website/distribution.json` to the verified App Store listing and deploy only through `sh Website/deploy-production.sh` with its live gate passing.
 - [ ] Production configuration/signing/entitlements/portrait identity, iOS 17+ physical smoke and retirement of incompatible historical TestFlight builds where needed, client-safe configuration, secrets/local-artifact scan and no Release development bypass.
 - [ ] One release-candidate regression/crash review proportionate to final changes, including real-device photos/auth/sync/sharing/accessibility where needed; resolve actual blockers without reopening frozen systems.
 - [ ] Prepare and owner-approve a release TestFlight candidate; obtain owner approval before archive/build-number changes/upload/distribution.
@@ -31,6 +34,7 @@ Canonical next-cycle checklist — November 5, 2026. Stage 5 plus its focused ow
 
 - Crop/reposition/advanced galleries/editing and optional photography improvements; existing upload/ownership/multi-photo/sync/restore remain V1.
 - Recipe Unit Conversion improvements (controls hidden), Saved Recipes/bookmarks (name TBD), privacy-aware Recipe Social History/Made X times, Run It Back redesign and broader Source integrations.
+- Want to Cook, Collections / Cooking Series, Stars, Personal Cooking Intelligence (Flavor/Ability Profiles), Discover, rich external link previews and meal planning (dormant).
 - Public discovery/feed, optional Contacts, referral/invite analytics, five-tier referral progression/rewards, manual entitlements/tester tooling, broader admin/follower/push/community/creator systems and monetization.
 - A referral counts only after an attributed genuinely new successful signup. Core functionality cannot require recruiting friends. Rewards are undecided; no AI daily allowance, billing or paid-provider setup is introduced by this roadmap.
 
