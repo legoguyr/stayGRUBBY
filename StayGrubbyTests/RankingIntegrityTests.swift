@@ -56,6 +56,37 @@ import Testing
         }
     }
 
+    @Test(arguments: [10, 50])
+    func tiedCorrectiveSessionStopsRecyclingTheSamePair(count: Int) throws {
+        let ids = (1...count).map(id)
+        let ordinal = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1, $0) })
+        var observations: [RankingObservation] = []
+        for a in ids.indices {
+            for offset in [1, 2, 7, count / 3, count / 2] {
+                let b = (a + offset) % count
+                observations.append(.init(id: id(10_000 + observations.count), evidence: .init(
+                    first: ids[a], second: ids[b], outcome: a / 3 == b / 3 ? 0.5 : (a < b ? 1 : 0))))
+            }
+        }
+        let context = try RankingContext(currentIDs: ids, observations: observations)
+        let baseline = context.analyze()
+        let ordered = ids.sorted {
+            let a = (baseline.estimates[$0]!.strength * 1e7).rounded()
+            let b = (baseline.estimates[$1]!.strength * 1e7).rounded()
+            return a == b ? ordinal[$0]! < ordinal[$1]! : a > b
+        }
+        let target = id(count + 1), truth = count == 10 ? 7 : count
+        var session = RankingEngine(itemID: target, orderedIDs: ordered, reaction: .fine, context: context)
+        try complete(&session) { opponent, _ in
+            let old = ordinal[opponent]!
+            let actual = old >= truth ? old + 1 : old
+            return abs(actual - truth) <= 2 ? .tooTough : (actual > truth ? .newItem : .existingItem)
+        }
+        #expect(session.answers.count < 64)
+        #expect(Dictionary(grouping: session.answers, by: \.opponent).values.allSatisfy { $0.count <= 2 })
+        #expect(abs(position(target, in: context.analyze(adding: session.evidence, newItem: target)) - (truth + 1)) <= 3)
+    }
+
     @Test(arguments: [15, 40, 100], [0, 1, 2, 3, 4, 5])
     func initialRankingUsesTheSameGlobalModel(count: Int, scenario: Int) throws {
         let baseline = try context(count, repeats: 2), target = id(1_000)

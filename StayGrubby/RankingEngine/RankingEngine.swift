@@ -104,11 +104,16 @@ nonisolated struct RankingEngine {
     private var correctiveCandidate: (id: UUID, information: Double)? {
         guard context != nil, let fitted, fitted.diagnostics.converged else { return nil }
         let skipped = Set(answers.filter { $0.answer == .skip }.map(\.opponent))
+        // Tied placement can repeatedly select one corrective pair even when
+        // repeated evidence stops changing placement. Decisive sessions still
+        // allow the repeated evidence needed to move through dense history.
+        let hasTie = answers.contains { $0.answer == .tooTough }
+        let observationsByOpponent = Dictionary(grouping: answers.filter { $0.answer != .skip }, by: \.opponent)
         let probabilities = placementProbabilities
         var candidates: [(UUID, Double)] = [], cumulative = 0.0
         for (index, id) in orderedIDs.enumerated() {
             cumulative += probabilities[index]
-            guard !skipped.contains(id), let relationship = fitted.relationship(itemID, id), relationship.informationGainBits >= 0.01 else { continue }
+            guard !skipped.contains(id), !hasTie || (observationsByOpponent[id]?.count ?? 0) < 2, let relationship = fitted.relationship(itemID, id), relationship.informationGainBits >= 0.01 else { continue }
             let p = BradleyTerryModel.logistic(relationship.strengthDifference)
             candidates.append((id, abs(cumulative - p) * relationship.informationGainBits))
         }
