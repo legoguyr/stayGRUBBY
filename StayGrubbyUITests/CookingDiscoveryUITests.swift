@@ -58,13 +58,18 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
 
     @MainActor private func select(_ option: XCUIElement, in app: XCUIApplication) {
         reach(option, in: app)
-        if option.value as? String == "Selected" { return }
-        option.tap()
+        // A group sheet still settling its detent after a scroll can drop one tap;
+        // retry only while unselected (Course is single-select and a second tap clears it).
+        for _ in 0..<3 {
+            if option.value as? String == "Selected" { return }
+            option.tap()
+            if wait("value == 'Selected'", on: option, timeout: 3) { return }
+        }
         XCTAssertTrue(wait("value == 'Selected'", on: option))
     }
 
     @MainActor private func filters(_ group: String, in app: XCUIApplication) {
-        // Stage B: one Filters entry; each group is a row that pushes its options.
+        // Each Grub Rank filter group has its own chip that opens it directly.
         app.openRankingFilterGroup(group)
         XCTAssertTrue(app.buttons["filters-done"].firstMatch.waitForExistence(timeout: 10))
     }
@@ -83,7 +88,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
             if done.waitForNonExistence(timeout: 3) { break }
         }
         XCTAssertTrue(done.waitForNonExistence(timeout: 10), "The filter sheet must actually close")
-        XCTAssertTrue(app.buttons["ranking-filters"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["ranking-filter-course"].waitForExistence(timeout: 10))
     }
 
     @MainActor private func capture(_ name: String, app: XCUIApplication) {

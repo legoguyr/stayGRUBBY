@@ -43,32 +43,29 @@ extension XCUIApplication {
         XCTFail("Creation choices did not appear")
     }
     /// Older version-specific regressions exercise the complete ranking view.
-    /// Stage B moved Top Version / All Versions into the Sort & View menu.
+    /// Owner-revised Stage B: Top Version / All Versions is the Show All Versions switch.
     @MainActor func showAllVersions() { setRankingDisplay(allVersions: true) }
+    @MainActor var allVersionsSwitch: XCUIElement { switches["rankings-show-all-versions"] }
     @MainActor func setRankingDisplay(allVersions: Bool) {
-        let sort = buttons["ranking-sort"]
-        XCTAssertTrue(sort.waitForExistence(timeout: 15))
-        let showing = { (sort.value as? String ?? "").contains("All Versions") == allVersions }
-        if showing() { return }
-        let item = buttons[allVersions ? "rankings-display-all" : "rankings-display-top"]
+        let toggle = allVersionsSwitch
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        let wanted = allVersions ? "1" : "0"
         for _ in 0..<3 {
-            sort.tap()
-            if item.waitForExistence(timeout: 3) { item.tap(); break }
+            if toggle.value as? String == wanted { break }
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+            let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", wanted), object: toggle)
+            if XCTWaiter.wait(for: [changed], timeout: 3) == .completed { break }
             activate()
         }
-        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: allVersions ? "value CONTAINS 'All Versions'" : "NOT (value CONTAINS 'All Versions')"), object: sort)
-        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed, "Ranking view must actually change")
+        XCTAssertEqual(toggle.value as? String, wanted, "Ranking view must actually change")
     }
-    @MainActor var showsAllVersions: Bool { (buttons["ranking-sort"].value as? String ?? "").contains("All Versions") }
-    /// Stage B Grub Rank: one Filters sheet whose group rows push their options.
+    @MainActor var showsAllVersions: Bool { allVersionsSwitch.value as? String == "1" }
+    /// Grub Rank: each filter group has its own chip that opens that group directly.
     @MainActor func openRankingFilterGroup(_ group: String) {
-        let link = buttons["ranking-filter-\(group)"]
-        if !link.exists {
-            let open = buttons["ranking-filters"]
-            XCTAssertTrue(open.waitForExistence(timeout: 10))
-            for _ in 0..<3 { open.tap(); if link.waitForExistence(timeout: 3) { break }; activate() }
-        }
-        XCTAssertTrue(link.waitForExistence(timeout: 10)); link.tap()
+        let chip = buttons["ranking-filter-\(group)"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        let done = buttons["filters-done"].firstMatch
+        for _ in 0..<3 { chip.tap(); if done.waitForExistence(timeout: 3) { break }; activate() }
     }
     @MainActor func closeRankingFilters() {
         let done = buttons["filters-done"].firstMatch
@@ -85,15 +82,11 @@ extension XCUIApplication {
         }
         XCTAssertTrue(link.waitForExistence(timeout: 10)); link.tap()
     }
-    /// Reads a group's summary row ("Course, 1 active selections") without leaving it open.
+    /// Reads a group's chip label ("Course, 1 active").
     @MainActor func rankingFilterLabel(_ group: String) -> String {
-        let open = buttons["ranking-filters"]
-        XCTAssertTrue(open.waitForExistence(timeout: 10)); open.tap()
-        let link = buttons["ranking-filter-\(group)"]
-        XCTAssertTrue(link.waitForExistence(timeout: 10))
-        let label = link.label
-        closeRankingFilters()
-        return label
+        let chip = buttons["ranking-filter-\(group)"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        return chip.label
     }
     @MainActor func revealSearch() {
         if rankingSearchField.exists { return }

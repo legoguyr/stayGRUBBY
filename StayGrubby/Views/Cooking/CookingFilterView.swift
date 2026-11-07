@@ -26,54 +26,44 @@ extension CookingFilters {
     var activeCount: Int { CookingFilterGroup.allCases.reduce(0) { $0 + $1.count(in: self) } }
 }
 
-/// Grub Rank's single Filters sheet. Each group keeps its existing semantics:
-/// Course single-select, Cuisine single-select, Dietary matches any, Avoid excludes any.
-struct CookingFiltersSheet: View {
+/// One Grub Rank filter group, opened directly from its chip. Each group keeps its
+/// existing semantics: Course and Cuisine single-select, Dietary matches any, Avoid excludes any.
+struct CookingFilterGroupSheet: View {
     @Binding var filters: CookingFilters
+    let group: CookingFilterGroup
     @Query private var dishes: [Dish]
-    private var cuisineLabel: String? {
-        guard let id = filters.cuisineID else { return nil }
-        return CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == id }?.label
-    }
-
     var body: some View {
-        SGFilterSheet(isActive: filters.isActive, clear: { filters = CookingFilters() }) {
-            ForEach(CookingFilterGroup.allCases) { group in
-                SGFilterGroupLink(title: group.title, summary: summary(group), count: group.count(in: filters),
-                                  identifier: "ranking-filter-\(group.rawValue)") {
-                    page(group)
+        SGFilterGroupSheet {
+            if group == .cuisine {
+                CuisineOptions(selection: Binding(
+                    get: { CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == filters.cuisineID } },
+                    set: { filters.cuisineID = $0?.id }), allowsCreation: false)
+            } else {
+                SGFilterGroupPage(title: group.title, isActive: group.count(in: filters) > 0,
+                                  clear: clear, clearIdentifier: group == .avoid ? "clear-avoid" : "filter-group-clear") {
+                    CookingFilterOptions(filters: $filters, group: group)
                 }
             }
-            Text("Groups and search must all match. Ranks stay global.")
-                .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading).padding(.top, SGTheme.Space.small)
         }
     }
-    private func summary(_ group: CookingFilterGroup) -> String? {
-        switch group {
-        case .course: filters.category?.label
-        case .cuisine: cuisineLabel
-        case .dietary, .avoid: nil
-        }
-    }
-    @ViewBuilder private func page(_ group: CookingFilterGroup) -> some View {
-        if group == .cuisine {
-            CuisineOptions(selection: Binding(
-                get: { CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == filters.cuisineID } },
-                set: { filters.cuisineID = $0?.id }), allowsCreation: false)
-        } else {
-            SGFilterGroupPage(title: group.title, isActive: group.count(in: filters) > 0,
-                              clear: { clear(group) }, clearIdentifier: group == .avoid ? "clear-avoid" : "filter-group-clear") {
-                CookingFilterOptions(filters: $filters, group: group)
-            }
-        }
-    }
-    private func clear(_ group: CookingFilterGroup) {
+    private func clear() {
         switch group {
         case .course: filters.category = nil
         case .cuisine: filters.cuisineID = nil
         case .dietary: filters.dietary = []
         case .avoid: filters.avoidedAllergens = []
+        }
+    }
+}
+
+extension CookingFilterGroup {
+    /// Spoken value for the group's chip; visible chips show title + count only.
+    func summary(in filters: CookingFilters, dishes: [Dish]) -> String? {
+        switch self {
+        case .course: filters.category?.label
+        case .cuisine: filters.cuisineID.flatMap { id in CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == id }?.label }
+        case .dietary: filters.dietary.isEmpty ? nil : CookingProductOptions.dietary.filter(filters.dietary.contains).map(\.label).joined(separator: ", ")
+        case .avoid: filters.avoidedAllergens.isEmpty ? nil : CookingProductOptions.allergens.filter(filters.avoidedAllergens.contains).map(\.label).joined(separator: ", ")
         }
     }
 }
@@ -93,12 +83,7 @@ struct CookingFilterOptions: View {
                 }.accessibilityIdentifier("filter-course-\(course.rawValue)")
             }
         case .dietary:
-            ForEach(CookingProductOptions.dietary) { tag in
-                SGSelectionRow(title: tag.label, selected: filters.dietary.contains(tag)) {
-                    if filters.dietary.contains(tag) { filters.dietary.remove(tag) }
-                    else { filters.dietary.insert(tag) }
-                }.accessibilityIdentifier("filter-dietary-\(tag.rawValue)")
-            }
+            DietaryChoices(selection: $filters.dietary)
             SGOptionNote("Shows cooks with any selected label.")
         case .avoid:
             SGAllergenChoices(selection: $filters.avoidedAllergens, identifierPrefix: "filter-avoid")
@@ -107,28 +92,27 @@ struct CookingFilterOptions: View {
     }
 }
 
-/// Editing a cook's Dietary labels. Same canonical options as the filter, but editing
-/// language: these describe the cook; they do not search anything.
-struct DietarySelector: View {
+/// Dietary options in two alphabetical groups. Shared by the Grub Rank filter and
+/// cook editing; identifiers are stable for UI automation.
+struct DietaryChoices: View {
     @Binding var selection: Set<DietaryTag>
     var body: some View {
-        SGOptionSheet(title: "Dietary", doneIdentifier: "dietary-done") {
-            ForEach(CookingProductOptions.dietary) { tag in
-                SGSelectionRow(title: tag.label, selected: selection.contains(tag)) {
-                    if selection.contains(tag) { selection.remove(tag) } else { selection.insert(tag) }
-                }.accessibilityIdentifier("filter-dietary-\(tag.rawValue)")
-            }
-            SGOptionNote("Your own labels for this cook. Not a certification or allergy guarantee.")
-        }
+        SGOptionGroupLabel("Diet")
+        ForEach(CookingProductOptions.diets) { row($0) }
+        SGOptionGroupLabel("Certification")
+        ForEach(CookingProductOptions.certifications) { row($0) }
+    }
+    private func row(_ tag: DietaryTag) -> some View {
+        SGSelectionRow(title: tag.label, selected: selection.contains(tag)) {
+            if selection.contains(tag) { selection.remove(tag) } else { selection.insert(tag) }
+        }.accessibilityIdentifier("filter-dietary-\(tag.rawValue)")
     }
 }
 
-/// Short secondary note under an option list.
-struct SGOptionNote: View {
-    let text: String
-    init(_ text: String) { self.text = text }
+/// Editing a cook's Dietary labels. Same canonical options as the filter.
+struct DietarySelector: View {
+    @Binding var selection: Set<DietaryTag>
     var body: some View {
-        Text(text).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, SGTheme.Space.small)
+        SGOptionSheet(title: "Dietary", doneIdentifier: "dietary-done") { DietaryChoices(selection: $selection) }
     }
 }

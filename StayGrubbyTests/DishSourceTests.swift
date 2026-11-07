@@ -254,7 +254,7 @@ struct SourceCompatibilityTests {
     @Test func simplifiedSourceOptionsAndOriginalURLsPersistWithoutRankingChanges() throws {
         #expect(CookingProductOptions.sources.map(\.label) == ["My Own", "Online", "Cookbook", "Restaurant", "Friend / Family", "Other"])
         #expect(CookingProductOptions.courses == DishCategory.allCases)
-        #expect(CookingProductOptions.dietary == DietaryTag.allCases)
+        #expect(Set(CookingProductOptions.dietary) == Set(DietaryTag.allCases))
         #expect(CookingProductOptions.allergens == Allergen.allCases)
         let container = try ModelContainer(for: AppPersistence.schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
         let context = ModelContext(container); let list = try CookingStore.prepare(context: context)

@@ -20,7 +20,9 @@ import Testing
         #expect(Set(ids).isSubset(of: Set(cook.tags.map(\.persistentModelID))))
         #expect(cook.notes == "Private cook note" && cook.dish?.privateNotes == "Owner-only Dish note")
         #expect(cook.dish?.publicDescription == "Public description")
-        #expect(!CookingProductOptions.dietary.contains(.halal))
+        // Owner revision Nov 7, 2026: Halal is offered again, under Certification.
+        #expect(CookingProductOptions.certifications.map(\.label) == ["Halal", "Kosher"])
+        #expect(CookingProductOptions.diets.map(\.label) == ["Dairy-Free", "Gluten-Free", "Vegan", "Vegetarian"])
         #expect(DietaryTag(rawValue: "halal") == .halal)
         #expect(CookingDiscovery.entries(in: f.list, attempts: f.cooks, query: "Legacy custom label").isEmpty)
         let after = try CookingGraphExport.snapshot(context: f.context)

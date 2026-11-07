@@ -55,7 +55,7 @@ final class PolishUITests: StayGrubbyUITestCase {
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(); app.launchArguments = ["--ui-test-store", UUID().uuidString, "--test-reduce-motion"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        // Stage B: an empty library has no Sort & View control; this flow ranks a single cook.
+        // Stage B: an empty library has no Sort control; this flow ranks a single cook.
         XCTAssertFalse(app.buttons["ranking-sort"].exists)
         app.revealCreation(); tap(app.buttons["new-dish"], app: app)
         tap(app.textFields["dish-name"], app: app); app.textFields["dish-name"].typeText("Canceled Soup\n")

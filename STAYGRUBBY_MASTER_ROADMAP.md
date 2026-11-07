@@ -17,7 +17,7 @@ A true consolidation of shared components and patterns, not per-screen polish, a
 | Stage | Scope |
 | --- | --- |
 | A — Foundations | **Implemented Nov 7 — owner accepted.** Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
-| B — Pickers / Search / Filtering | **Implemented Nov 7 — owner physical acceptance pending.** Selectors, filter bars, search |
+| B — Pickers / Search / Filtering | **Implemented Nov 7, revised after owner review the same day — owner physical acceptance pending.** Direct Grub Rank filter chips, separate Sort, All Versions toggle, Photo filter removed, Dietary groups with Halal restored, search |
 | C — Sharing | Post to Grub List vs external Share; one Share action with image + short `#stayGRUBBY` message + exact link |
 | D — Detail screens | Dish / Recipe Detail |
 | E — Social / Kitchens | Grub List, Tickets relocated to Grub List, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards |
@@ -25,6 +25,8 @@ A true consolidation of shared components and patterns, not per-screen polish, a
 | G — Copy / Celebrations / Final consolidation | Copy purge, ranking results and celebrations, accessibility/consistency |
 
 **Required pre-V1 investigation — Grub Rank score/order semantic consistency.** Displayed score is reaction-banded while order is Bradley–Terry strength, so a lower-ranked entry can show a higher score (observed #9 · 2.6 above #11 · 7.6). Investigate how to keep score and order understandable while preserving all evidence, history, re-rank behavior, calibration and uncertainty. Investigation first; any math/calibration change needs explicit owner reopening. It must conclude before Stage G finalizes result/celebration presentation. [Mechanism](STAYGRUBBY_ARCHITECTURE.md#ranking--protected).
+
+**Required before Stage F — Dish + Recipe metadata ownership checkpoint.** Owner review of Stage B found that some food metadata edited while ranking a cook (Cuisine, Source, Dietary/Certification, Contains) may belong to the Recipe/food identity rather than the ranked cook. Decide placement and inheritance as part of the Dish + Recipe / Personal Cooking Intelligence architecture checkpoint before redesigning editors; no new metadata fields or dependencies until then. [Input](PERSONAL_COOKING_INTELLIGENCE.md#5-approved-future-concepts-not-implemented).
 
 Each stage: implement → focused verification → owner acceptance where needed → update canonical docs as decisions become durable.
 
@@ -85,7 +87,7 @@ Do not resurrect without an explicit owner decision:
 - Making general photo buckets public for link previews
 - Algorithmic ordering of the current Grub List
 
-Hidden but retained (not rejected): Custom Tags, Halal Dietary option, Run It Back entry points, unit-conversion controls, dormant Want to Cook storage.
+Hidden but retained (not rejected): Custom Tags, Run It Back entry points, unit-conversion controls, dormant Want to Cook storage.
 
 ## Evidence and document ownership
 

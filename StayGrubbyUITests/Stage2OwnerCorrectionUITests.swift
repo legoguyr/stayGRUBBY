@@ -55,7 +55,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         app.buttons["dish-source-type"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["source-choice-myOwn"].waitForExistence(timeout: 5)); app.buttons["source-choice-myOwn"].press(forDuration: 0.2)
         app.buttons["cook-dietary"].press(forDuration: 0.2)
-        XCTAssertTrue(app.buttons["filter-dietary-vegetarian"].waitForExistence(timeout: 5)); XCTAssertFalse(app.buttons["filter-dietary-halal"].exists)
+        XCTAssertTrue(app.buttons["filter-dietary-vegetarian"].waitForExistence(timeout: 5)); XCTAssertTrue(app.buttons["filter-dietary-halal"].exists)
         app.buttons["filter-dietary-vegetarian"].press(forDuration: 0.2); app.buttons["dietary-done"].press(forDuration: 0.2)
         app.buttons["cook-contains"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["contains-milk"].waitForExistence(timeout: 5)); app.buttons["contains-milk"].press(forDuration: 0.2); app.buttons["contains-done"].press(forDuration: 0.2)

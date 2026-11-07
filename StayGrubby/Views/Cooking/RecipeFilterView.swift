@@ -1,22 +1,18 @@
 import SwiftUI
 
-/// Food Bible's single Filters sheet; Photo lives here rather than in the header.
+/// Food Bible's single Filters sheet.
 struct RecipeFiltersSheet: View {
     @Binding var filters: RecipeFilters
     let entries: [CookbookEntry]
     var body: some View {
         SGFilterSheet(isActive: filters.isActive, clear: { filters = RecipeFilters() }, clearIdentifier: "bible-filters-clear-all") {
             ForEach(RecipeFilterGroup.allCases) { group in
-                SGFilterGroupLink(title: group.rawValue, summary: summary(group), count: filters.count(group),
+                SGFilterGroupLink(title: group.rawValue, count: filters.count(group),
                                   identifier: "bible-filter-\(group.rawValue.lowercased())") {
                     RecipeFilterView(filters: $filters, group: group, entries: entries)
                 }
             }
         }
-    }
-    private func summary(_ group: RecipeFilterGroup) -> String? {
-        guard group == .photo, let photo = filters.photo else { return nil }
-        return photo ? "Recipe photo" : "No Recipe photo"
     }
 }
 
@@ -39,10 +35,6 @@ struct RecipeFilterView: View {
             case .contains, .avoid:
                 SGAllergenChoices(selection: allergenSelection, identifierPrefix: group == .contains ? "bible-contains" : "bible-avoid")
                 SGOptionNote(group == .avoid ? "Excludes listed Contains or Possible matches. Missing information is not an allergen-free guarantee." : RecipeAllergenAssessment.safetyText)
-            case .photo:
-                SGSelectionRow(title: "Any photo", selected: filters.photo == nil) { filters.photo = nil }
-                SGSelectionRow(title: "Recipe photo", selected: filters.photo == true) { filters.photo = true }
-                SGSelectionRow(title: "No Recipe photo", selected: filters.photo == false) { filters.photo = false }
             }
         }
     }
@@ -59,6 +51,6 @@ struct RecipeFilterView: View {
         }.accessibilityIdentifier("bible-filter-option-\(id)")
     }
     private func clear() {
-        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = []; case .photo: filters.photo = nil }
+        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = [] }
     }
 }

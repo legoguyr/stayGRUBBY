@@ -14,7 +14,7 @@ struct CookingRankingView: View {
     @State private var searchText = ""
     @State private var sort = CookingBrowseSort.grubRank
     @State private var filters = CookingFilters()
-    @State private var showingFilters = false
+    @State private var filterGroup: CookingFilterGroup?
     @State private var searching = false
     @State private var creationExpanded = false
     @Environment(\.sgReduceMotion) private var reduceMotion
@@ -87,7 +87,7 @@ struct CookingRankingView: View {
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .scrollDismissesKeyboard(.interactively)
-        .sheet(isPresented: $showingFilters) { CookingFiltersSheet(filters: $filters) }
+        .sheet(item: $filterGroup) { CookingFilterGroupSheet(filters: $filters, group: $0) }
         .sheet(isPresented: $newDish) { AddCookingView(list: list) }
         .sheet(item: $selectedDish) { AddCookingView(list: list, dish: $0) }
         .sheet(isPresented: $choosingDish, onDismiss: {
@@ -106,35 +106,52 @@ struct CookingRankingView: View {
 
     private var displayMode: RankingsDisplayMode { RankingsDisplayMode(rawValue: displayPreference) ?? .topVersion }
 
-    /// Row 2 of the Grub Rank header: one Filters entry, one Sort & View menu, and a
-    /// clear action only while filters are active.
+    /// Grub Rank browse controls: one even row of direct filter groups, then Sort, the
+    /// Show All Versions switch and a clear action only while filters are active.
+    /// At large text sizes each row wraps instead of clipping.
     private var browseControls: some View {
-        HStack(spacing: SGTheme.Space.xSmall) {
-            SGFilterButton(count: filters.activeCount, identifier: "ranking-filters") { showingFilters = true }
-            SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
-                             disabled: { $0.needsScores && !scores.isUnlocked },
-                             active: sort != .grubRank || displayMode != .topVersion, identifier: "ranking-sort",
-                             label: sortLabel) {
-                Section("Show") {
-                    ForEach(RankingsDisplayMode.allCases) { mode in
-                        Button { displayPreference = mode.rawValue } label: {
-                            if mode == displayMode { Label(mode.rawValue, systemImage: "checkmark") } else { Text(mode.rawValue) }
-                        }.accessibilityIdentifier("rankings-display-\(mode == .topVersion ? "top" : "all")")
-                    }
+        VStack(spacing: SGTheme.Space.xSmall) {
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SGTheme.Space.xSmall) { filterChips(CookingFilterGroup.allCases) }
+                VStack(spacing: SGTheme.Space.xSmall) {
+                    HStack(spacing: SGTheme.Space.xSmall) { filterChips([.course, .cuisine]) }
+                    HStack(spacing: SGTheme.Space.xSmall) { filterChips([.dietary, .avoid]) }
                 }
             }
-            Spacer(minLength: 0)
-            if filters.isActive {
-                SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
-                    .accessibilityIdentifier("clear-filters")
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); versionsToggle; clearFilters }
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); clearFilters }
+                    versionsToggle
+                }
             }
         }
         .padding(.horizontal, SGTheme.Space.medium)
         .accessibilityElement(children: .contain).accessibilityIdentifier("filter-strip")
     }
-    /// Names the current order, plus the view only when it differs from the default.
-    private var sortLabel: String {
-        displayMode == .allVersions ? "\(sort.rawValue) · All Versions" : sort.rawValue
+    private func filterChips(_ groups: [CookingFilterGroup]) -> some View {
+        ForEach(groups) { group in
+            SGFilterChip(title: group.title, count: group.count(in: filters), summary: group.summary(in: filters, dishes: dishes),
+                         identifier: "ranking-filter-\(group.rawValue)") { filterGroup = group }
+        }
+    }
+    private var sortMenu: some View {
+        SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
+                         disabled: { $0.needsScores && !scores.isUnlocked },
+                         active: sort != .grubRank, identifier: "ranking-sort", label: sort.rawValue)
+    }
+    /// Presentation only: Off = Top Version, On = All Versions (same stored preference).
+    private var versionsToggle: some View {
+        SGBrowseToggle(title: "All Versions", isOn: Binding(
+            get: { displayMode == .allVersions },
+            set: { displayPreference = ($0 ? RankingsDisplayMode.allVersions : .topVersion).rawValue }),
+                       identifier: "rankings-show-all-versions", spokenTitle: "Show All Versions")
+    }
+    @ViewBuilder private var clearFilters: some View {
+        if filters.isActive {
+            SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
+                .accessibilityIdentifier("clear-filters")
+        }
     }
 
     private var noResults: some View {

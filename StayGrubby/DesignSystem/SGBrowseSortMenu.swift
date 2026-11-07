@@ -1,14 +1,14 @@
 import SwiftUI
 
-// Stage B browsing grammar (Grub Rank, Food Bible):
-//   row 1  identity / search
-//   row 2  [Filters n]  [Sort & View]  [clear]
-// One Filter entry opens `SGFilterSheet`; each group drills into an `SGOptionList`.
-// Sort and view mode share one native menu. Features own state and semantics.
+// Stage B browsing grammar (owner-revised November 7, 2026):
+//   Grub Rank  header · [Course][Cuisine][Dietary][Avoid] · [Sort] … [All Versions ⏽] [clear]
+//   Food Bible search · [Filters n] [Sort] [clear]   (more groups than fit one even row)
+// Few common groups get direct, equal-width `SGFilterChip`s that each open one
+// `SGFilterGroupSheet`; larger sets use one `SGFilterSheet`. Sort is its own compact
+// native menu. Features own state and semantics.
 
-/// One native menu for read-only ordering, optionally preceded by a view section
-/// (e.g. Top Version / All Versions). The label names the current choice.
-struct SGBrowseSortMenu<Option: Hashable & Identifiable, Extra: View>: View {
+/// One native menu for read-only ordering. The label names the current choice.
+struct SGBrowseSortMenu<Option: Hashable & Identifiable>: View {
     let options: [Option]
     @Binding var selection: Option
     var title: (Option) -> String
@@ -17,11 +17,9 @@ struct SGBrowseSortMenu<Option: Hashable & Identifiable, Extra: View>: View {
     var identifier: String
     /// Text shown in the control; defaults to "Sort".
     var label: String? = nil
-    @ViewBuilder var leadingSections: Extra
 
     var body: some View {
         Menu {
-            leadingSections
             Section("Sort by") {
                 ForEach(options) { option in
                     Button { selection = option } label: {
@@ -35,11 +33,60 @@ struct SGBrowseSortMenu<Option: Hashable & Identifiable, Extra: View>: View {
             .accessibilityIdentifier(identifier)
     }
 }
-extension SGBrowseSortMenu where Extra == EmptyView {
-    init(options: [Option], selection: Binding<Option>, title: @escaping (Option) -> String,
-         disabled: @escaping (Option) -> Bool = { _ in false }, active: Bool = false, identifier: String, label: String? = nil) {
-        self.init(options: options, selection: selection, title: title, disabled: disabled, active: active,
-                  identifier: identifier, label: label) { EmptyView() }
+
+/// A direct filter-group control: equal width within its row, group title plus the
+/// active count (same "Filters 2" convention), opening that group's sheet.
+struct SGFilterChip: View {
+    let title: String
+    let count: Int
+    var summary: String? = nil
+    var identifier: String
+    let action: () -> Void
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: SGTheme.Space.hairline) {
+                Text(count > 0 ? "\(title) \(count)" : title).lineLimit(1).fixedSize()
+                Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).accessibilityHidden(true)
+            }
+            .font(SGTheme.TypeRole.secondary.weight(.medium))
+            .foregroundStyle(count > 0 ? SGTheme.ColorToken.accent : SGTheme.ColorToken.primaryText)
+            .padding(.horizontal, SGTheme.Space.small)
+            .frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap)
+            .background(count > 0 ? SGTheme.ColorToken.selected : SGTheme.ColorToken.surface, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain).accessibilityIdentifier(identifier)
+        .accessibilityLabel(count > 0 ? "\(title), \(count) active" : title)
+        .accessibilityValue(summary ?? (count > 0 ? "\(count) selected" : "Any"))
+    }
+}
+
+/// A browse-mode switch styled like the other controls (e.g. Show All Versions).
+struct SGBrowseToggle: View {
+    let title: String
+    @Binding var isOn: Bool
+    var identifier: String
+    /// Fuller spoken name when the visible title is shortened for width.
+    var spokenTitle: String? = nil
+    var body: some View {
+        Toggle(isOn: $isOn) { Text(title).font(SGTheme.TypeRole.secondary.weight(.medium)).lineLimit(1).fixedSize() }
+            .toggleStyle(.switch).tint(SGTheme.ColorToken.accent).fixedSize()
+            .padding(.leading, SGTheme.Space.medium).padding(.trailing, SGTheme.Space.xSmall)
+            .frame(minHeight: SGTheme.Size.minimumTap)
+            .background(SGTheme.ColorToken.surface, in: Capsule())
+            .accessibilityLabel(spokenTitle ?? title).accessibilityIdentifier(identifier)
+    }
+}
+
+/// One filter group presented on its own (from an `SGFilterChip`). Pushed-page
+/// chrome is shared with `SGFilterSheet`, so Clear/Done behave identically.
+struct SGFilterGroupSheet<Content: View>: View {
+    @ViewBuilder var content: Content
+    @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack { content }
+            .environment(\.sgCloseFilterSheet, { dismiss() })
+            .presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
     }
 }
 
@@ -65,6 +112,27 @@ struct SGOptionList<Content: View>: View {
     var body: some View {
         ScrollView { VStack(spacing: SGTheme.Space.xSmall) { content }.padding(SGTheme.Space.margin) }
             .background(SGTheme.ColorToken.background)
+    }
+}
+
+/// Short secondary note under an option list.
+struct SGOptionNote: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading).padding(.top, SGTheme.Space.small)
+    }
+}
+
+/// A quiet heading that separates groups inside one option list (Diet / Certification).
+struct SGOptionGroupLabel: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+    var body: some View {
+        Text(text).font(SGTheme.TypeRole.secondary.weight(.semibold)).foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, SGTheme.Space.small).accessibilityAddTraits(.isHeader)
     }
 }
 

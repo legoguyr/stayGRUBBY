@@ -17,7 +17,6 @@ final class CookingUITests: StayGrubbyUITestCase {
         }
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        app.showAllVersions()
 
         func tap(_ button: XCUIElement) {
             XCTAssertTrue(button.waitForExistence(timeout: 15))
@@ -97,6 +96,8 @@ final class CookingUITests: StayGrubbyUITestCase {
         finishRank("Salmon — First cook", comparisons: false)
         capture("Rankings")
         XCTAssertTrue(row("Salmon — First cook").waitForExistence(timeout: 15))
+        // An empty library shows no browse controls, so choose All Versions once a cook exists.
+        app.showAllVersions()
 
         app.revealCreation()
         tap(app.buttons["new-version"])

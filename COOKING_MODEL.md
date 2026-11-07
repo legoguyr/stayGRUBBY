@@ -10,7 +10,7 @@ Phase 1 adds local cooking metadata around the existing generic ranking system. 
 
 Cook entry consolidates Course, Cuisine, Source, Dietary and Contains in a native Details sheet. Version Title follows Dish Name; Date Cooked sits between Public Description and Private Notes. Dish-level public/private text and existing per-cook notes retain distinct ownership. The outer draft/save transaction is unchanged.
 
-Custom Tags are hidden from normal entry/detail/search; their stored values, stable IDs/memberships and sync/backend compatibility survive ordinary edits. Halal is hidden from Dietary selection without removing its enum code or historical values. Grub Rank offers read-only Grub Rank/Score/Recently Cooked/Oldest/Alphabetical order after the existing filter/version projection; global rank labels and evidence remain authoritative. Score order obeys the unlock gate; unknown dates sort last. No persistence schema or ranking changes.
+Custom Tags are hidden from normal entry/detail/search; their stored values, stable IDs/memberships and sync/backend compatibility survive ordinary edits. Dietary selection shows Diet and Certification groups (Halal restored November 7, 2026); enum codes and historical values are unchanged. Grub Rank offers read-only Grub Rank/Score/Recently Cooked/Oldest/Alphabetical order after the existing filter/version projection; global rank labels and evidence remain authoritative. Score order obeys the unlock gate; unknown dates sort last. No persistence schema or ranking changes.
 
 ## Current Stage 1 Dish text/photo foundation
 
@@ -40,7 +40,7 @@ SwiftData references are optional to support nullification and additive migratio
 
 `DishCategory` is the controlled Course list (the persisted category property/code is retained): Main, Appetizer, Side, Soup, Salad, Pasta/Noodles, Sandwich, Breakfast/Brunch, Snack, Dessert, Baked Good, Sauce/Condiment, Drink, Other. Persisted raw codes are stable and separate from labels. The dish default initializes each new version; changing a cook's category changes only its snapshot. Phase 1 does not expose a separate default-category editor.
 
-Selectable Dietary: Kosher, Vegetarian, Vegan, Dairy-Free, Gluten-Free. Historical Halal values remain storage-compatible and are not removed by ordinary editing.
+Selectable Dietary, alphabetical within groups — Diet: Dairy-Free, Gluten-Free, Vegan, Vegetarian; Certification: Halal, Kosher. User-selected labels only; never inferred. Stored codes and order are unchanged.
 
 Legacy Free labels (compatibility only): Peanut-Free, Tree-Nut-Free, Sesame-Free, Milk-Free, Egg-Free, Wheat-Free, Soy-Free, Fish-Free, Shellfish-Free. These are user-entered labels, never a safety certification.
 

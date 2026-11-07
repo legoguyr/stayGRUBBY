@@ -4,7 +4,15 @@ import Foundation
 nonisolated enum CookingProductOptions {
     static let courseTitle = "Course"
     static let courses = DishCategory.allCases
-    static let dietary = DietaryTag.allCases.filter { $0 != .halal }
+    /// User-facing Dietary choices, each group alphabetical. Presentation only:
+    /// persisted DietaryTag codes and their stored order are unchanged.
+    static let diets = alphabetical(DietaryTag.allCases.filter { !certificationTags.contains($0) })
+    static let certifications = alphabetical(DietaryTag.allCases.filter { certificationTags.contains($0) })
+    static let dietary = diets + certifications
+    private static let certificationTags: Set<DietaryTag> = [.kosher, .halal]
+    private static func alphabetical(_ tags: [DietaryTag]) -> [DietaryTag] {
+        tags.sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
+    }
     static let allergens = Allergen.allCases
     static let allergenSafetyText = "Based on the allergens you’ve marked. Not marked contains does not mean allergen-free. Always verify ingredients for allergy safety."
     static let sources = SourceChoice.allCases
