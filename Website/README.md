@@ -52,3 +52,11 @@ Always deploy with `--config Website/wrangler.jsonc`. Never publish this site as
 ## November 5 Stage 5 hosted regression closeout
 
 The whole-app audit found active assets-only version `a53e89dd-e0fc-4f7c-a8eb-3961e287886d` had again displaced the accepted handler/binding/Worker-first configuration, yielding empty 404s for valid shared pointers. Restored the unchanged router and byte-identical eight-file asset manifest as **`19b93d04-f64d-4aa1-988c-2877aa5d2ac9`**; no static asset bytes, private data, DNS or credentials changed. All 22 actual public GET/HEAD checks pass, with exact AASA, direct inline fallback HTML, Privacy/Support and disabled workers.dev/previews confirmed. Every future website publish must retain the router and pass the live guard; an assets-only publish is not a valid StayGrubby deployment. [Stage 5 evidence](../NEXT_RELEASE_STAGE_5_REVIEW.md).
+
+## Functional beta acquisition
+
+The deployed Worker serves `/beta` and embeds the same acquisition action on generic profile, post and Recipe fallbacks. `distribution.json` controls the Apple destination for all of them. When the verified App Store listing is available, switch that one value and deploy the full Worker plus assets. AASA and canonical paths stay unchanged. No public content is fetched.
+
+The optional `?ref=<opaque token>` is 16–64 ASCII letters, digits, underscores or hyphens. A single valid value travels in the explicit Open StayGrubby URL; invalid or duplicate values are ignored. TestFlight receives the verified invitation URL alone. After installation, reopen the original shared link to recover the intended destination and any referral metadata. Attribution at signup requires future work.
+
+Active Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` restored the ASSETS binding and preserved the already-hosted static bytes, including the current Privacy page. The live guard covers direct beta, existing destinations, valid and malformed referral metadata, Privacy/Support, and both association paths.

@@ -77,8 +77,8 @@ def build(output, distribution=None):
     if unexpected:
         raise ValueError("Refusing to publish unexpected files: " + ", ".join(sorted(unexpected)))
     (output / "assets").mkdir(exist_ok=True)
-    configured = json.loads((ROOT / "Website/distribution.json").read_text())
-    destination = distribution_url(distribution if distribution is not None else configured.get("url"))
+    # The Worker owns acquisition configuration for canonical links and /beta.
+    destination = distribution_url(distribution)
     cta = ('<a class="button" href="' + html.escape(destination, quote=True) + '">Get StayGrubby</a>') if destination else '<p>External beta access is not open yet. Ask the person who shared this link for access.</p>'
     kitchen = '<article class="policy"><p class="eyebrow">#stayGRUBBY</p><h1>A Kitchen is waiting in StayGrubby.</h1><p>Open this link on your iPhone with StayGrubby installed. Profiles are viewed only inside the app, after sign-in and privacy checks.</p>' + cta + '<p>If the app is already installed, open the original shared link from Messages or Mail. You can also press and hold it and choose Open in StayGrubby when iOS offers that action.</p></article>'
     (output / "kitchen.html").write_text(page("Open a Kitchen — StayGrubby", "/kitchen", kitchen, "reading").replace("<title>", '<meta name="robots" content="noindex,nofollow"><title>', 1), encoding="utf-8")

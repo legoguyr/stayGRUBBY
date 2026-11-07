@@ -43,7 +43,7 @@ class SiteTests(unittest.TestCase):
         config = json.loads((Path(__file__).parent / 'wrangler.jsonc').read_text())
         self.assertEqual(config['name'], 'staygrubby')
         self.assertEqual(config['assets']['directory'], './public')
-        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/privacy', '/support', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
+        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/beta', '/privacy', '/support', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
         self.assertEqual(config['main'],'link-worker.mjs')
         self.assertEqual(config['assets']['binding'],'ASSETS')
         self.assertEqual(config['assets']['html_handling'], 'none')

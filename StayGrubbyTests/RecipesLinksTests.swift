@@ -14,6 +14,23 @@ import Testing
         #expect(AppRoute.profileURL(username: "friendly_cook") == good)
         #expect(AppRoute.profileURL(username: "../private") == nil)
     }
+    @Test func referralIsOptionalBoundedAndIndependentOfDestination() throws {
+        let id = UUID(), token = "abcde_01234567890"
+        let url = AppRoute.recipeURL(id, referral: token)
+        #expect(AppRoute(url: url) == .recipe(id))
+        #expect(AppRoute.referral(from: url) == token)
+        let base = AppRoute.recipeURL(id)
+        for suffix in ["?ref=bad", "?ref=%22%3E", "?ref=\(token)&ref=\(token)"] {
+            let malformed = try #require(URL(string: base.absoluteString + suffix))
+            #expect(AppRoute(url: malformed) == .recipe(id))
+            #expect(AppRoute.referral(from: malformed) == nil)
+        }
+        let router = AppLinkRouter()
+        router.receive(url)
+        #expect(router.pending == .recipe(id) && router.pendingReferral == token)
+        router.receive(base)
+        #expect(router.pending == .recipe(id) && router.pendingReferral == nil)
+    }
     @Test func sharedDestinationsRoundTripThroughHTTPSAndExplicitAppOpen() throws {
         let id = UUID()
         let cases: [(URL, AppRoute)] = [(AppRoute.postURL(id), .post(id)), (AppRoute.recipeURL(id), .recipe(id)), (AppRoute.sharedRecipeURL(postID: id), .sharedRecipe(id))]

@@ -14,7 +14,7 @@ nonisolated enum AppRoute: Equatable, Identifiable, Sendable {
     init(url: URL) {
         guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
               (parts.scheme == "https" && parts.host == "staygrubby.com") || (parts.scheme == "staygrubby" && parts.host == "open"),
-              parts.user == nil, parts.password == nil, parts.port == nil, parts.query == nil, parts.fragment == nil else { self = .invalid; return }
+              parts.user == nil, parts.password == nil, parts.port == nil, (parts.queryItems ?? []).allSatisfy({ $0.name == "ref" }), parts.fragment == nil else { self = .invalid; return }
         // Decode ordinary URL escaping, then validate the complete route. No open redirects or private paths.
         let path = parts.path
         if path.hasPrefix("/@") {
@@ -29,19 +29,40 @@ nonisolated enum AppRoute: Equatable, Identifiable, Sendable {
         else if pieces.count == 4 && pieces[1] == "p" && pieces[3] == "recipe" { self = .sharedRecipe(uuid) }
         else { self = .invalid }
     }
-    static func profileURL(username: String) -> URL? {
+    static func profileURL(username: String, referral: String? = nil) -> URL? {
         guard SocialIdentityRules.valid(name: "Cook", username: username), username == SocialIdentityRules.username(username) else { return nil }
-        return URL(string: "https://staygrubby.com/@" + username)
+        return sharedURL(path: "/@" + username, referral: referral)
     }
-    static func postURL(_ id: UUID) -> URL { URL(string: "https://staygrubby.com/p/" + id.uuidString.lowercased())! }
-    static func recipeURL(_ id: UUID) -> URL { URL(string: "https://staygrubby.com/r/" + id.uuidString.lowercased())! }
-    static func sharedRecipeURL(postID: UUID) -> URL { URL(string: postURL(postID).absoluteString + "/recipe")! }
+    static func postURL(_ id: UUID, referral: String? = nil) -> URL { sharedURL(path: "/p/" + id.uuidString.lowercased(), referral: referral) }
+    static func recipeURL(_ id: UUID, referral: String? = nil) -> URL { sharedURL(path: "/r/" + id.uuidString.lowercased(), referral: referral) }
+    static func sharedRecipeURL(postID: UUID, referral: String? = nil) -> URL {
+        sharedURL(path: "/p/" + postID.uuidString.lowercased() + "/recipe", referral: referral)
+    }
+
+    static func referral(from url: URL) -> String? {
+        guard AppRoute(url: url) != .invalid else { return nil }
+        let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        guard items.count == 1, let value = items.first?.value, validReferral(value) else { return nil }
+        return value
+    }
+    private static func validReferral(_ value: String) -> Bool {
+        (16...64).contains(value.utf8.count) && value.utf8.allSatisfy {
+            (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || $0 == 45 || $0 == 95
+        }
+    }
+    private static func sharedURL(path: String, referral: String?) -> URL {
+        var parts = URLComponents()
+        parts.scheme = "https"; parts.host = "staygrubby.com"; parts.path = path
+        if let referral, validReferral(referral) { parts.queryItems = [URLQueryItem(name: "ref", value: referral)] }
+        return parts.url!
+    }
 }
 @MainActor @Observable final class AppLinkRouter {
-    var pending: AppRoute?
+    var pending: AppRoute? { didSet { if pending == nil { pendingReferral = nil } } }
+    private(set) var pendingReferral: String?
     private(set) var ownKitchenRequests = 0
-    func openOwnKitchen() { pending = nil; ownKitchenRequests += 1 }
-    func receive(_ url: URL) { pending = AppRoute(url: url) }
+    func openOwnKitchen() { pending = nil; pendingReferral = nil; ownKitchenRequests += 1 }
+    func receive(_ url: URL) { pendingReferral = AppRoute.referral(from: url); pending = AppRoute(url: url) }
 }
 struct AppLinkPresentation: ViewModifier {
     @Environment(AppLinkRouter.self) private var router

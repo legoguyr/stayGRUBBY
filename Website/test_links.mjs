@@ -28,3 +28,23 @@ test('root explicitly serves index without HTML canonicalization',async()=>{
  let seen;const r=await worker.fetch(new Request('https://staygrubby.com/'),{ASSETS:{fetch:async request=>{seen=new URL(request.url).pathname;return new Response('home')}}});
  assert.equal(r.status,200);assert.equal(seen,'/index.html');assert.equal(await r.text(),'home');
 });
+
+test('beta and private pointers offer the verified Apple invitation without a redirect', async () => {
+ for (const path of ['/beta','/@friendly_cook','/p/'+id,'/p/'+id+'/recipe','/r/'+id]) {
+  const response = await worker.fetch(new Request('https://staygrubby.com'+path),{});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('location'),null);
+  const html=await response.text();
+  assert.match(html,/Join StayGrubby Beta/);
+  assert.match(html,/https:\/\/testflight\.apple\.com\/join\/JWckxC4r/);
+  assert.doesNotMatch(html,/<script|supabase|private-notes/i);
+ }
+});
+test('referral is bounded, optional and only carried to the same native destination', () => {
+ const base='https://staygrubby.com/r/'+id;
+ const native='staygrubby://open/r/'+id;
+ assert.equal(destination(new URL(base+'?ref=Abcd_01234567890')),native+'?ref=Abcd_01234567890');
+ assert.equal(destination(new URL(base+'?ref=%22%3Ebad')),native);
+ assert.equal(destination(new URL(base+'?ref=Abcd_01234567890&ref=Abcd_01234567890')),native);
+ assert.equal(destination(new URL(base+'?ref=Abcd_01234567890&redirect=bad')),null);
+});

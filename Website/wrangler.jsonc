@@ -15,6 +15,7 @@
       "/p/*",
       "/r/*",
       "/kitchen",
+      "/beta",
       "/privacy",
       "/support",
       "/.well-known/apple-app-site-association",

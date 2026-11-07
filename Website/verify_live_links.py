@@ -8,10 +8,10 @@ import tempfile
 
 def verify():
     uid = "11111111-1111-4111-8111-111111111111"
-    paths = ["/@review_cook", "/%40review_cook", f"/r/{uid}", f"/p/{uid}", f"/p/{uid}/recipe"]
+    paths = ["/@review_cook", "/%40review_cook", f"/r/{uid}", f"/p/{uid}", f"/p/{uid}/recipe", f"/r/{uid}?ref=beta_sample_123456", f"/r/{uid}?ref=%22%3Ebad"]
     evidence = []
     with tempfile.TemporaryDirectory(prefix="staygrubby-public-http-") as tmp:
-        for path in paths + ["/r/bad", "/", "/privacy", "/support", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
+        for path in paths + ["/beta", "/r/bad", "/", "/privacy", "/support", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
             for method in ["GET", "HEAD"]:
                 header, body = Path(tmp)/"headers", Path(tmp)/"body"
                 args = ["curl", "-sS", "--connect-timeout", "8", "--max-time", "20", "--dump-header", str(header), "--output", str(body),
@@ -25,16 +25,20 @@ def verify():
                 assert "location" not in headers and "attachment" not in headers.get("content-disposition", "").lower(), (path, method)
                 association = "apple-app-site-association" in path
                 assert headers.get("content-type", "").startswith("application/json" if association else "text/html"), (path, method, headers.get("content-type"))
-                if path in paths or path == "/r/bad":
+                if path in paths or path in ("/r/bad", "/beta"):
                     assert headers.get("content-disposition") == "inline"
                     assert headers.get("cache-control") == "no-store"
                 if method == "GET":
                     data = body.read_bytes()
                     if association:
                         assert json.loads(data) == json.loads((Path(__file__).parent/"association.json").read_text())
-                    elif path in paths:
+                    elif path in paths or path == "/beta":
                         html = data.decode()
-                        assert "Open StayGrubby" in html and "staygrubby://open" in html
+                        if path in paths: assert "Open StayGrubby" in html and "staygrubby://open" in html
+                        distribution = json.loads((Path(__file__).parent/"distribution.json").read_text())["url"]
+                        assert distribution in html and ("Join StayGrubby Beta" in html or "Download StayGrubby" in html)
+                        if "beta_sample_123456" in path: assert "?ref=beta_sample_123456" in html
+                        if "%22%3Ebad" in path: assert "%22%3Ebad" not in html
                         assert "<script" not in html and "supabase" not in html.lower()
                     evidence.append({"path":path,"status":status,"type":headers.get("content-type"),"disposition":headers.get("content-disposition"),"sha256":hashlib.sha256(data).hexdigest()})
     return evidence
