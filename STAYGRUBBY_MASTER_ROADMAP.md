@@ -16,8 +16,8 @@ A true consolidation of shared components and patterns, not per-screen polish, a
 
 | Stage | Scope |
 | --- | --- |
-| A — Foundations | **Implemented Nov 7 — owner physical acceptance pending.** Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
-| B — Pickers / Search / Filtering | Selectors, filter bars, search |
+| A — Foundations | **Implemented Nov 7 — owner accepted.** Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
+| B — Pickers / Search / Filtering | **Implemented Nov 7 — owner physical acceptance pending.** Selectors, filter bars, search |
 | C — Sharing | Post to Grub List vs external Share; one Share action with image + short `#stayGRUBBY` message + exact link |
 | D — Detail screens | Dish / Recipe Detail |
 | E — Social / Kitchens | Grub List, Tickets relocated to Grub List, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards |

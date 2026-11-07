@@ -56,9 +56,7 @@ struct CookingDetailsSheet: View {
                 }
                 .sheet(isPresented: $cuisine) { CuisinePicker(selection: $draft.cuisine) }
                 .sheet(isPresented: $source) { DishSourceEditor(source: $draft.source) }
-                .sheet(isPresented: $dietary) {
-                    CookingFilterView(filters: Binding(get: { CookingFilters(dietary: draft.dietary) }, set: { draft.dietary = $0.dietary }), group: .dietary)
-                }
+                .sheet(isPresented: $dietary) { DietarySelector(selection: $draft.dietary) }
                 .sheet(isPresented: $contains) { ContainsSelector(selection: $draft.contains) }
         }
     }
@@ -69,10 +67,10 @@ struct CookingDetailsSheet: View {
     }
     private func metadataLabel(_ title: String, value: String) -> some View {
         HStack {
-            Text(title).foregroundStyle(SGTheme.ColorToken.accent)
+            Text(title).foregroundStyle(SGTheme.ColorToken.primaryText)
             Spacer()
             Text(value.isEmpty ? "None" : value).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent)
+            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary).accessibilityHidden(true)
         }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
     }
 }

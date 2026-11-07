@@ -64,12 +64,9 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
     }
 
     @MainActor private func filters(_ group: String, in app: XCUIApplication) {
-        let button = app.buttons["ranking-filter-\(group)"]
-        for _ in 0..<4 {
-            if button.exists && button.isHittable { break }
-            app.scrollViews["filter-strip"].swipeLeft()
-        }
-        transition(button, to: app.buttons["filters-done"], in: app)
+        // Stage B: one Filters entry; each group is a row that pushes its options.
+        app.openRankingFilterGroup(group)
+        XCTAssertTrue(app.buttons["filters-done"].firstMatch.waitForExistence(timeout: 10))
     }
 
     @MainActor private func doneFilters(in app: XCUIApplication) {
@@ -86,7 +83,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
             if done.waitForNonExistence(timeout: 3) { break }
         }
         XCTAssertTrue(done.waitForNonExistence(timeout: 10), "The filter sheet must actually close")
-        XCTAssertTrue(app.buttons["ranking-filter-course"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["ranking-filters"].waitForExistence(timeout: 10))
     }
 
     @MainActor private func capture(_ name: String, app: XCUIApplication) {
@@ -115,9 +112,9 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         XCTAssertTrue(golden.waitForExistence(timeout: 10))
         XCTAssertTrue(golden.label.hasPrefix("Rank 2,"))
         XCTAssertFalse(row("Smoky Sunday", in: app).exists)
-        XCTAssertTrue(app.buttons["ranking-filter-course"].label.contains("1 active"))
-        XCTAssertTrue(app.buttons["ranking-filter-dietary"].label.contains("1 active"))
-        XCTAssertTrue(app.buttons["ranking-filter-avoid"].label.contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("course").contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("dietary").contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("avoid").contains("1 active"))
         capture("Combined result Dark", app: app)
 
         transition(golden, to: app.navigationBars["Dish Details"], in: app)
@@ -186,7 +183,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         transition(app.navigationBars.buttons.firstMatch, to: app.rankingSearchField, in: app)
         XCTAssertEqual(app.rankingSearchField.value as? String, "Golden")
         XCTAssertTrue(app.staticTexts["No filter matches"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["ranking-filter-dietary"].label.contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("dietary").contains("1 active"))
         transition(app.buttons["clear-search"], to: app.buttons[oldID], in: app)
         let updated = app.buttons[oldID]
         XCTAssertTrue(updated.label.contains("Crispy"))
@@ -208,7 +205,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         transition(app.buttons["new-dish"], to: app.textFields["dish-name"], in: app)
         capture("New Dish with existing filtered ranking", app: app)
         transition(app.buttons["Cancel"], to: row("Apple Cake", in: app), in: app)
-        XCTAssertTrue(app.buttons["ranking-filter-course"].label.contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("course").contains("1 active"))
         app.revealCreation()
         transition(app.buttons["new-version"], to: app.buttons["choose-dish-Harissa Chicken"], in: app)
         transition(app.buttons["choose-dish-Harissa Chicken"], to: app.staticTexts["inherited-dish-name"], in: app)

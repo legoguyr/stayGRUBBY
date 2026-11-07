@@ -1,6 +1,6 @@
 # StayGrubby UI architecture — current design-system specification
 
-**Canonical current UI truth — reconciled November 7, 2026 at Build 4 (`c09c18e`); UI overhaul Stage A foundation added November 7, 2026.** This file states how StayGrubby screens look and behave *now*, the rules every UI change follows, and the queued work for the system-wide UI overhaul. It replaces the former newest-first stack of dated sections, which is preserved verbatim in [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) as evidence. Product/technical architecture lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); sequencing in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow rules in [AGENTS.md](AGENTS.md).
+**Canonical current UI truth — reconciled November 7, 2026 at Build 4 (`c09c18e`); UI overhaul Stage A foundation and Stage B browsing/selection added November 7, 2026.** This file states how StayGrubby screens look and behave *now*, the rules every UI change follows, and the queued work for the system-wide UI overhaul. It replaces the former newest-first stack of dated sections, which is preserved verbatim in [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) as evidence. Product/technical architecture lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md); sequencing in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md); workflow rules in [AGENTS.md](AGENTS.md).
 
 Status words: **Implemented** (in Build 4 source), **Decided** (owner decision not yet implemented), **Planned** (overhaul work), **Known defect** (observed, not yet fixed).
 
@@ -62,13 +62,13 @@ Source of truth: `StayGrubby/DesignSystem/StayGrubbyTheme.swift` (`SGTheme`). Ch
 | Header/titles | `SGPrimaryBrandTitle(page:)` in the native principal toolbar; `StayGrubbyHeader` for the Grub Rank search/creation inset |
 | Creation | `SGCreationChoices` (New Dish / New Version reveal) |
 | Lists/rows/cards | `SGEditorialList`, `SGDestinationLabel`, `sgCard`, `RankedDishRow`, `SignatureRankHero`, `SGSelectionRow`, `SGFormSection` |
-| Selection sheets | `SGSelectionSheet`; `CookVersionSelectionView` / `CookVersionIdentity`; `SocialPersonLabel` + `SocialPersonSelectionRow` |
-| Browse controls | `SGBrowseSortMenu`, `SGBrowseControlLabel` (shared by Grub Rank and Food Bible) |
+| Option lists / sheets | `SGOptionList` (non-lazy scrolling rows), `SGOptionSheet` (standalone editing sheet with Done), `SGSelectionRow`, `SGOptionNote`; `DietarySelector`, `SGAllergenSelector` (Contains), `CuisinePicker` / `CuisineOptions`; `CookVersionSelectionView` / `CookVersionIdentity`; `SocialPersonLabel` + `SocialPersonSelectionRow` for people — see 5.4 |
+| Browse controls | `SGSearchField`, `SGFilterButton`, `SGFilterSheet` + `SGFilterGroupLink` + `SGFilterGroupPage`, `SGBrowseSortMenu` (sort + optional view section), `SGBrowseControlLabel` — see 5.4 |
 | Photos (loading) | `DishPhoto`, `RecipePhoto`, `SocialPhoto` load bytes; `SGHeroMedia` (Dish/Signature hero fade); `CookingPhotoEditor` |
 | Tags/allergens | `TagChip`, `SourceSummary`, `SGAllergenChoices` / Contains selector |
 | Sharing | `SocialLinkShareAction` (compact = toolbar utility), native activity controller for rendered exports |
 
-Retired in Stage A: `SGFoodPlaceholder` (→ `SGPhotoPlaceholder`), unused `SGEmptyState` (→ `SGContentState`), per-screen score text/medallion code (→ `SGScore`).
+Retired in Stage B: `SGSelectionSheet` (→ `SGOptionSheet` / `SGFilterGroupPage`), per-group filter chips on Grub Rank and Food Bible, the Grub Rank Top Version / All Versions segmented control. Retired in Stage A: `SGFoodPlaceholder` (→ `SGPhotoPlaceholder`), unused `SGEmptyState` (→ `SGContentState`), per-screen score text/medallion code (→ `SGScore`).
 
 ### 5.1 Photo roles
 
@@ -81,7 +81,7 @@ Retired in Stage A: `SGFoodPlaceholder` (→ `SGPhotoPlaceholder`), unused `SGEm
 | `.cookbook` | 0.9 portrait, flexible width | 12 | Food Bible grid |
 | `.hero` | full width × 260 pt | 18 | Recipe reader, shared Recipe reader, Recipe history (Dish hero uses `SGHeroMedia` with the same corner) |
 
-Flexible roles size a clear aspect box first, so loading never shifts layout. **Placeholder language:** warm `elevatedSurface` plus a monochrome `#stayGRUBBY` mark in `placeholderMark` (≈44% width in small frames, ≈28% capped at 104 pt in large ones; frames under 64 pt show the surface only). It stays recognizable without turning a screen of missing photos into a wall of red logos. The full-color wordmark is for identity (headers, share cards). No synthetic food imagery. Placeholders are decorative (`accessibilityHidden`); the photo view owns the label ("No photo for …").
+Flexible roles size a clear aspect box first, so loading never shifts layout. **Placeholder language:** warm `elevatedSurface` plus a monochrome `#stayGRUBBY` mark in `placeholderMark` (mark width = 55% of the frame's short side, capped at 104 pt, so wide/short frames stay quiet; frames under 64 pt show the surface only). It stays recognizable without turning a screen of missing photos into a wall of red logos. The full-color wordmark is for identity (headers, share cards). No synthetic food imagery. Placeholders are decorative (`accessibilityHidden`); the photo view owns the label ("No photo for …").
 
 ### 5.2 Score roles
 
@@ -95,9 +95,24 @@ Flexible roles size a clear aspect box first, so loading never shifts layout. **
 - Overflow menus keep native destructive roles for 86 actions.
 - Action roles: primary `SGButtonStyle(prominent: true)` (one per region) · secondary `SGButtonStyle()` · compact utility `SGButtonStyle(compact: true)` or a native text button · toolbar as above · destructive native role · list rows `SGRowButtonStyle`. Native controls stay native where appropriate; targets stay ≥ 44 pt.
 
+### 5.4 Search, filter, sort and selection (Stage B)
+
+**Library screens (Grub Rank, Food Bible) use at most two control rows before content:**
+
+1. Identity/search row. Grub Rank: wordmark, search button, + (the search button swaps the row for `SGSearchField` + Done). Food Bible: always-visible `SGSearchField` (it is search-led).
+2. Browse row: `SGFilterButton` ("Filters" / "Filters n", accent when active) · `SGBrowseSortMenu` labelled with the current order (and the view when it is not the default) · an `xmark` clear button only while filters are active.
+
+An empty library shows no browse row (and Grub Rank no search button). The "n of N · Global ranks" result line is the first line of content, not pinned chrome.
+
+- **Search:** `SGSearchField` is the one field for library screens and in-sheet lists (New Version Dish choice, Recipe filter values, Find Sous Chefs): magnifier, plain field, clear button, search return key, autocorrection off. Lists inside navigation that already use native `.searchable` (Cuisine, Send to Sous Chefs, Kitchen Recipes) keep it. Do not add search where a list is short.
+- **Filters:** one entry opens `SGFilterSheet` — a root list of groups (`SGFilterGroupLink`: title, current summary or "Any"/"n selected", native disclosure). Each group pushes an `SGFilterGroupPage` (options, Clear for that group, Done that closes the whole sheet). The root has Clear All and Done. Every capability survives: Grub Rank Course/Cuisine/Dietary/Avoid; Food Bible Course/Cuisine/Contains/Avoid/Source/Photo (Photo lives only in the sheet). Grub Rank has no photo filter (none existed; not added).
+- **Sort:** a native `Menu`, sections "Show" (when the screen has a view mode) then "Sort by", checkmark on the current choice, score orders disabled while locked. Grub Rank's Top Version / All Versions lives in "Show"; the preference stays local.
+- **Selection rows:** `SGSelectionRow` (title + check circle, selected surface, `isSelected` trait). Editing a cook's attributes (Dietary, Contains) uses `SGOptionSheet` with editing language ("Your own labels for this cook…"), never filter wording; filters use filter language ("Shows cooks with any selected label"). Same canonical options and stored values in both.
+- **Picker entry rows** in editors (Details: Cuisine, Source, Dietary, Contains) use neutral title, secondary value and quiet chevron, matching native `navigationLink` pickers — not accent-red labels.
+
 ## 6. Screen contracts (Implemented unless marked)
 
-**Grub Rank.** Single global ranking; rows show rank, square photo/placeholder, Dish, meaningful version label, Course and gated score. Search plus Course / Dietary / Avoid filters compose with AND; filters never renumber (rows keep true global rank, gaps allowed). Top Version (default) / All Versions projection. Read-only Sort menu: Grub Rank (default), Score (unavailable while locked; relock resets), Recently Cooked, Oldest, Alphabetical. Cream unlock-progress banner inside scroll content until 10 eligible entries. #1 uses the hero treatment.
+**Grub Rank.** Single global ranking; rows show rank, square photo/placeholder, Dish, meaningful version label, Course and gated score. Header: identity/search row, then Filters · Sort & View (5.4). Search plus Course / Cuisine / Dietary / Avoid filters compose with AND; filters never renumber (rows keep true global rank, gaps allowed). Top Version (default) / All Versions in the Sort & View menu's Show section. Read-only Sort: Grub Rank (default), Highest/Lowest Score (unavailable while locked; relock resets), Newest/Oldest Cooked, A–Z/Z–A. Cream unlock-progress banner inside scroll content until 10 eligible entries. #1 uses the hero treatment.
 
 **Comparison and ranking flow (protected).** Initial Reaction (Liked / It was fine / Didn't like) → two equal square choices with centered OR, Dish/version only, never scores → Undo / Too Tough / Skip. Single haptic, immediate answer, accessibility stacking. Re-rank reuses the same flow. Result screen shows the persisted cook, private rank/movement and the rendered share-card preview; first unlock offers the Top 3 card.
 
@@ -105,7 +120,7 @@ Flexible roles size a clear aspect box first, so loading never shifts layout. **
 
 **Dish Detail.** Native back + compact Share + overflow (Edit Cook, Re-rank, post sharing, 86). Hero photo, identity, score/rank, metadata, Recipe relationship row, Versions. Lone untitled cook shows no "Version 1".
 
-**Food Bible.** Recipe cards keyed by Recipe UUID; search, Filter sheet (Course, Cuisine, Contains, Avoid, Source, Recipe photo — the photo filter stays inside the Filter sheet), directional sort. Add Recipe → Paste Recipe / Add Manually. Recipe Detail: creator near title, Rank My Version primary, servings scaling, Ingredients/Method typography, Contains/Possible after method, compact safety disclosure, provenance last; Share/Send/overflow toolbar. Unit-conversion controls hidden.
+**Food Bible.** Recipe cards keyed by Recipe UUID; search field, then Filters · Sort (5.4); Filters sheet groups Course, Cuisine, Contains, Avoid, Source, Photo; directional sort. Add Recipe → Paste Recipe / Add Manually. Recipe Detail: creator near title, Rank My Version primary, servings scaling, Ingredients/Method typography, Contains/Possible after method, compact safety disclosure, provenance last; Share/Send/overflow toolbar. Unit-conversion controls hidden.
 
 **Grub List.** Chronological, current Sous Chefs only. Card: person identity → title → 4:3 photo/fallback → description → Recipe availability → Hands 🙌 / Comments. Compact semantic score circle when unlocked. Stable post ages (calendar date after seven days). Recipe creation activity is visibly a Recipe, never a cook/score. Comments: detented sheet, keyboard-aware composer, overflow Delete/Report.
 
@@ -127,8 +142,8 @@ A true consolidation across screens, not per-screen polish. Candidate shared sys
 
 | Stage | Scope |
 | --- | --- |
-| A — Foundations | **Implemented November 7, 2026 — automated + Simulator checks passed, owner physical acceptance pending.** Tokens/accent rule, photo roles + placeholder, score roles, section/content states, toolbar/row action styles, foundational defects |
-| B — Pickers / Search / Filtering | Consolidate selectors, filter bars, search patterns (Grub Rank, Food Bible, Kitchen, people) |
+| A — Foundations | **Implemented November 7, 2026 — owner accepted.** Tokens/accent rule, photo roles + placeholder, score roles, section/content states, toolbar/row action styles, foundational defects |
+| B — Pickers / Search / Filtering | **Implemented November 7, 2026 — automated + Simulator checks passed, owner physical acceptance pending.** Two-row library headers, one Filters sheet, Sort & View menu, shared search field, option sheets, Dietary editor |
 | C — Sharing | Separate Post to Grub List from external Share; one Share action (image + short `#stayGRUBBY` message + exact link); composer simplification |
 | D — Detail screens | Dish Detail / Recipe Detail consolidation |
 | E — Social / Kitchens | Grub List, Tickets relocation, My Kitchen stats, Sous Chef Kitchen, Sous Chefs, Requests |
@@ -150,9 +165,9 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 | ~~Sous Chef Kitchen Recipes row shows two chevrons~~ | Fixed in A |
 | Add Recipe → Add Manually shows both Back and Cancel (nested navigation) | F |
 | Keyboard Done pill overlaps the Comment Send button and New Dish Continue bar (iOS 26) | A / F |
-| Grub Rank Avoid chip clipped | B |
-| Empty Grub Rank still shows segmented control and filters | B |
-| Dietary editor reuses filter view and shows filter helper text | B / F |
+| ~~Grub Rank Avoid chip clipped~~ (chips replaced by the Filters sheet) | Fixed in B |
+| ~~Empty Grub Rank still shows segmented control and filters~~ | Fixed in B |
+| ~~Dietary editor reuses filter view and shows filter helper text~~ (`DietarySelector`) | Fixed in B |
 | ~~Raw Account ID shown in Account & Sync~~ (now Debug-only diagnostics) | Fixed in A |
 | Unnecessary "0 New Tickets" state | E |
 | ~~Dark-mode unlock-banner treatment~~ (adaptive surface/text/track) | Fixed in A |
@@ -181,3 +196,5 @@ Comparison screen; Initial Reaction; re-rank reuse of the ranking flow; #1 hero;
 Follow AGENTS.md: build, directly affected UI tests and focused Simulator inspection in light/dark and at an accessibility text size for small UI; targeted Simulator flow verification for navigation/flow changes. Debug review fixtures require `--ui-test-store <UUID>` (isolated store and media root) and are compile-time excluded from Release; see [fixture rules](STAYGRUBBY_ARCHITECTURE.md#debug-fixtures-and-test-safety).
 
 **Stage A verification (November 7, 2026).** Debug build; 20 focused UI tests passed (score unlock, Kitchen/Account, Signature alignment, Tickets read-all, Food Bible empty state, Recipe share/Send, Dish Detail actions, re-rank result); full unit suite 390/396 with 6 failures that are pre-existing or order-dependent (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)). Simulator review of Grub Rank, Dish Detail, Food Bible, Recipe Detail, Grub List, Tickets and My Kitchen in light and dark, locked and unlocked scores, missing photos, and accessibility text size.
+
+**Stage B verification (November 7, 2026).** Debug build; unit suite unchanged from the documented baseline (390/396). UI: 29 affected tests run after updating them to the new Filters sheet / Sort & View structure (no assertion removed; group-count checks now read the sheet rows); 24 pass, including: discovery search/filter/creation, Polish result + Avoid flows, score calibration, review-environment sheet scaling, Signature and browse controls, Food Bible filters/sorting, display-mode persistence, large-type branding. Five failures are pre-existing (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)); the Cuisine filter path they cannot reach was verified by hand. Simulator: Grub Rank populated/locked/empty, Filters sheet and group pages, active filters, Sort & View, search, All Versions, Food Bible + Filters, Details → Dietary editor, light/dark, accessibility text size.

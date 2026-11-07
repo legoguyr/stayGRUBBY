@@ -176,19 +176,39 @@ struct SGHeroMedia: View {
     }
 }
 
+/// The one StayGrubby search field for library screens (Grub Rank, Food Bible, New Version
+/// Dish choice): magnifier, plain field, clear button, search return key. Pickers and people
+/// lists inside navigation use native `.searchable` instead.
 struct SGSearchField: View {
     let placeholder: String
     @Binding var text: String
     let identifier: String
+    var clearIdentifier: String? = nil
+    var accessibilityLabel: String? = nil
+    /// Focus when shown (e.g. after tapping a search button).
+    var autoFocus = false
+    @FocusState private var focused: Bool
     var body: some View {
         HStack(spacing: SGTheme.Space.small) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary).accessibilityHidden(true)
-            TextField(placeholder, text: $text).submitLabel(.search).accessibilityIdentifier(identifier)
+            TextField(placeholder, text: $text)
+                .font(SGTheme.TypeRole.body)
+                .focused($focused).submitLabel(.search).onSubmit { focused = false }
+                .autocorrectionDisabled()
+                .accessibilityLabel(accessibilityLabel ?? placeholder)
+                .accessibilityIdentifier(identifier)
             if !text.isEmpty {
-                SGIconButton(title: "Clear search", symbol: "xmark.circle.fill") { text = "" }
-                    .accessibilityIdentifier("\(identifier)-clear")
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                        .frame(minWidth: SGTheme.Size.minimumTap, minHeight: SGTheme.Size.minimumTap)
+                }.buttonStyle(.plain).accessibilityLabel("Clear search")
+                    .accessibilityIdentifier(clearIdentifier ?? "\(identifier)-clear")
             }
-        }.sgField()
+        }
+        .padding(.leading, SGTheme.Space.small)
+        .frame(minHeight: SGTheme.Size.minimumTap)
+        .background(SGTheme.ColorToken.elevatedSurface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.field))
+        .onAppear { if autoFocus { focused = true } }
     }
 }
 

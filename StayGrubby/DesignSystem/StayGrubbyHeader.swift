@@ -7,7 +7,6 @@ struct StayGrubbyHeader: View {
     var onSearch: (() -> Void)?
     @Binding var searchText: String
     @Binding var searching: Bool
-    @FocusState private var searchFocused: Bool
     @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(\.sgReduceMotion) private var reduceMotion
 
@@ -15,25 +14,13 @@ struct StayGrubbyHeader: View {
         Group {
             if searching {
                 HStack(spacing: SGTheme.Space.xSmall) {
-                    HStack(spacing: SGTheme.Space.xSmall) {
-                        Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                        TextField("Search dishes and versions", text: $searchText)
-                            .font(SGTheme.TypeRole.body)
-                            .focused($searchFocused).submitLabel(.search)
-                            .onSubmit { searchFocused = false }
-                            .autocorrectionDisabled()
-                            .accessibilityIdentifier("ranking-search-field")
-                        if !searchText.isEmpty {
-                            SGIconButton(title: "Clear Search", symbol: "xmark.circle.fill") { searchText = "" }
-                                .accessibilityIdentifier("header-clear-search")
-                        }
-                    }.sgField()
-                    Button("Done") { animate { searching = false }; searchFocused = false }
+                    SGSearchField(placeholder: "Search dishes and versions", text: $searchText,
+                                  identifier: "ranking-search-field", clearIdentifier: "header-clear-search", autoFocus: true)
+                    Button("Done") { animate { searching = false } }
                         .font(SGTheme.TypeRole.body.weight(.semibold))
                         .frame(minHeight: SGTheme.Size.minimumTap)
                         .accessibilityIdentifier("search-done")
                 }
-                .onAppear { searchFocused = true }
                 .transition(.opacity)
             } else {
                 HStack(alignment: .center, spacing: SGTheme.Space.small) {

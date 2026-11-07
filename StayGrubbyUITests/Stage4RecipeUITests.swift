@@ -23,12 +23,12 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
     }
     @MainActor func testFiltersComposeResetAndDirectionalSorting() throws {
         let app = launch(["--test-light"])
-        app.buttons["bible-filter-course"].tap()
+        app.openBibleFilterGroup("course")
         XCTAssertTrue(app.buttons["bible-filter-option-soup"].waitForExistence(timeout: 5)); app.buttons["bible-filter-option-soup"].tap(); app.buttons["filters-done"].tap()
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'"))
         XCTAssertEqual(rows.count, 1); XCTAssertTrue(rows.firstMatch.label.contains("Lemon Soup"))
-        app.buttons["bible-filter-contains"].tap(); app.buttons["bible-contains-milk"].tap(); app.buttons["filters-done"].tap()
-        XCTAssertTrue(app.staticTexts["No matching recipes"].waitForExistence(timeout: 5))
+        app.openBibleFilterGroup("contains"); app.buttons["bible-contains-milk"].tap(); app.buttons["filters-done"].tap()
+        XCTAssertTrue(app.staticTexts["No matching Recipes"].waitForExistence(timeout: 5))
         app.buttons["bible-clear-filters"].tap(); XCTAssertEqual(rows.count, 2)
         let search = app.textFields["bible-search"]; search.tap(); search.typeText("lemon\n")
         XCTAssertEqual(rows.count, 1); app.buttons["bible-search-clear"].tap()
@@ -74,7 +74,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
     }
     @MainActor func testAccessibleRecipeMenuAndFilters() throws {
         let app = launch(["--test-light", "--test-large-type"])
-        app.buttons["bible-filter-course"].tap(); XCTAssertTrue(app.buttons["bible-filter-option-soup"].waitForExistence(timeout: 5))
+        app.openBibleFilterGroup("course"); XCTAssertTrue(app.buttons["bible-filter-option-soup"].waitForExistence(timeout: 5))
         app.buttons["bible-filter-option-soup"].tap(); app.buttons["filters-done"].tap()
         recipe("Lemon Soup", app); action("recipe-edit", app)
         XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout: 5))

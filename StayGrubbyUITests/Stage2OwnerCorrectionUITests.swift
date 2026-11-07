@@ -56,7 +56,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["source-choice-myOwn"].waitForExistence(timeout: 5)); app.buttons["source-choice-myOwn"].press(forDuration: 0.2)
         app.buttons["cook-dietary"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["filter-dietary-vegetarian"].waitForExistence(timeout: 5)); XCTAssertFalse(app.buttons["filter-dietary-halal"].exists)
-        app.buttons["filter-dietary-vegetarian"].press(forDuration: 0.2); app.buttons["filters-done"].press(forDuration: 0.2)
+        app.buttons["filter-dietary-vegetarian"].press(forDuration: 0.2); app.buttons["dietary-done"].press(forDuration: 0.2)
         app.buttons["cook-contains"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["contains-milk"].waitForExistence(timeout: 5)); app.buttons["contains-milk"].press(forDuration: 0.2); app.buttons["contains-done"].press(forDuration: 0.2)
         shot("Owner corrections consolidated Details", app); app.closeCookingDetails()
@@ -82,7 +82,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             app.buttons["ranking-sort"].press(forDuration: 0.2)
             XCTAssertTrue(app.buttons["A–Z"].waitForExistence(timeout: 5)); app.buttons["A–Z"].tap()
             XCTAssertTrue(app.buttons["ranking-sort"].label.contains("A–Z"))
-            app.buttons["ranking-filter-course"].tap(); XCTAssertTrue(app.buttons["filter-course-main"].waitForExistence(timeout: 5)); app.buttons["filter-course-main"].tap(); app.buttons["filters-done"].tap()
+            app.openRankingFilterGroup("course"); XCTAssertTrue(app.buttons["filter-course-main"].waitForExistence(timeout: 5)); app.buttons["filter-course-main"].tap(); app.buttons["filters-done"].tap()
             app.buttons["clear-filters"].tap(); shot("Owner corrections browse controls \(appearance)", app)
             tab("My Kitchen", app)
             XCTAssertTrue(app.buttons["share-my-kitchen"].waitForExistence(timeout: 8)); XCTAssertLessThan(app.buttons["share-my-kitchen"].frame.width, 100)
@@ -107,7 +107,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             for _ in 0..<4 { if comments.isHittable && comments.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
             XCTAssertTrue(comments.isHittable); comments.press(forDuration: 0.2); XCTAssertTrue(app.navigationBars["Comments"].waitForExistence(timeout: 5)); app.buttons["Done"].tap()
             tab("Food Bible", app)
-            XCTAssertTrue(app.buttons["bible-filter-course"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
+            XCTAssertTrue(app.buttons["bible-filters-open"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
             let count = app.staticTexts["bible-count"]
             for _ in 0..<5 { if count.isHittable && count.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.scrollViews["bible-scroll"].swipeUp() }
             XCTAssertTrue(count.isHittable); XCTAssertLessThanOrEqual(count.frame.maxY, app.tabBars.firstMatch.frame.minY)

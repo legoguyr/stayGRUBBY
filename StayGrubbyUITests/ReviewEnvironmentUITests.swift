@@ -4,21 +4,14 @@ final class ReviewEnvironmentUITests: StayGrubbyUITestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
     @MainActor private func avoidLabelHeight(_ app: XCUIApplication) -> CGFloat {
-        let button = app.buttons["ranking-filter-avoid"]
-        for _ in 0..<4 {
-            if button.exists && button.isHittable && app.windows.firstMatch.frame.contains(button.frame) { break }
-            app.scrollViews["filter-strip"].swipeLeft()
-        }
-        XCTAssertTrue(button.waitForExistence(timeout: 10))
-        button.tap()
-        if !app.buttons["filters-done"].waitForExistence(timeout: 3), button.isHittable { button.tap() }
-        XCTAssertTrue(app.buttons["filters-done"].waitForExistence(timeout: 10))
+        app.openRankingFilterGroup("avoid")
+        XCTAssertTrue(app.buttons["filters-done"].firstMatch.waitForExistence(timeout: 10))
         let milk = app.buttons["filter-avoid-milk"]
         XCTAssertTrue(milk.waitForExistence(timeout: 10))
         let label = milk.staticTexts.firstMatch
         XCTAssertTrue(label.exists)
         let height = label.frame.height
-        app.buttons["filters-done"].tap()
+        app.closeRankingFilters()
         return height
     }
 

@@ -54,19 +54,19 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
     }
     @MainActor func testDisplayModesKeepGlobalRanksAndPersistWithoutChangingUnlockProgress() {
         let app = launch(9)
-        XCTAssertTrue(app.buttons["Top Version"].isSelected)
+        XCTAssertFalse(app.showsAllVersions)
         let hidden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
         XCTAssertFalse(hidden.exists)
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 3,'")).firstMatch.exists)
         let banner = app.descendants(matching: .any)["score-unlock-banner"]
         XCTAssertTrue(banner.label.contains("9 / 10")); capture("Top Version red locked dark", app)
-        transition(app.buttons["All Versions"], to: hidden, app)
+        app.setRankingDisplay(allVersions: true); XCTAssertTrue(hidden.waitForExistence(timeout: 15))
         XCTAssertTrue(hidden.label.contains("Version 1") && hidden.label.contains("score locked"))
         XCTAssertTrue(banner.label.contains("9 / 10")); capture("All Versions true global ranks", app)
         app.terminate(); app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.buttons["All Versions"].isSelected && hidden.exists)
-        tap(app.buttons["Top Version"], app)
+        XCTAssertTrue(app.showsAllVersions && hidden.exists)
+        app.setRankingDisplay(allVersions: false)
         XCTAssertFalse(hidden.exists)
     }
     @MainActor func testFreshRerankReactionControlsAutomaticResultAndProfileTopThree() {
@@ -169,7 +169,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
         let golden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Golden sear'")).firstMatch
         XCTAssertFalse(golden.exists)
-        transition(app.buttons["ranking-filter-dietary"], to: app.buttons["filters-done"], app)
+        app.openRankingFilterGroup("dietary"); XCTAssertTrue(app.buttons["filters-done"].firstMatch.waitForExistence(timeout: 15))
         let kosher = app.buttons["filter-dietary-kosher"]
         tap(kosher, app)
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Selected'"), object: kosher)
@@ -178,13 +178,13 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         }
         let confirmed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Selected'"), object: kosher)
         XCTAssertEqual(XCTWaiter.wait(for: [confirmed], timeout: 10), .completed)
-        tap(app.buttons["filters-done"], app)
+        app.closeRankingFilters()
         XCTAssertTrue(golden.waitForExistence(timeout: 10))
         XCTAssertTrue(golden.label.hasPrefix("Rank 2,") && golden.label.contains("score locked"))
         app.showAllVersions()
         XCTAssertTrue(golden.exists)
         tap(app.buttons["clear-filters"], app)
-        tap(app.buttons["Top Version"], app)
+        app.setRankingDisplay(allVersions: false)
         XCTAssertFalse(golden.exists)
         app.revealSearch()
         let field = app.rankingSearchField

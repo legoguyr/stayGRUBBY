@@ -1,8 +1,24 @@
 import SwiftUI
 import SwiftData
 
+/// Standalone Cuisine choice for editors (sheet with Cancel).
 struct CuisinePicker: View {
+    @Binding var selection: Cuisine?
+    var allowsCreation = true
     @Environment(\.dismiss) private var dismiss
+    var body: some View {
+        NavigationStack {
+            CuisineOptions(selection: $selection, allowsCreation: allowsCreation)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+        }
+    }
+}
+
+/// Searchable Cuisine list shared by editors and the Grub Rank Filters sheet. Choosing
+/// dismisses its container: closes a standalone sheet, or pops back to the filter list.
+struct CuisineOptions: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.sgCloseFilterSheet) private var closeFilters
     @Query private var dishes: [Dish]
     @Binding var selection: Cuisine?
     var allowsCreation = true
@@ -17,7 +33,6 @@ struct CuisinePicker: View {
         return all.filter { CuisineCatalog.key($0.label).contains(key) || $0.id == exact?.id }
     }
     var body: some View {
-        NavigationStack {
             List {
                 Button(allowsCreation ? "No cuisine" : "All cuisines") { choose(nil) }
                     .accessibilityIdentifier("cuisine-clear")
@@ -45,8 +60,11 @@ struct CuisinePicker: View {
             .searchable(text: $search, prompt: "Search cuisines")
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Cuisine").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        }
+            .toolbar {
+                if let closeFilters {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done", action: closeFilters).accessibilityIdentifier("filters-done") }
+                }
+            }
     }
     private func choose(_ cuisine: Cuisine?) { selection = cuisine; dismiss() }
 }

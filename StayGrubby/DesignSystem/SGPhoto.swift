@@ -77,7 +77,8 @@ struct SGPhotoPlaceholder: View {
                 if side >= 64, let mark = OfficialBrandWordmark.image {
                     Image(uiImage: mark).renderingMode(.template).resizable().scaledToFit()
                         .foregroundStyle(SGTheme.ColorToken.placeholderMark)
-                        .frame(width: side < 140 ? geometry.size.width * 0.44 : min(geometry.size.width * 0.28, 104))
+                        // Size from the short side so wide, short frames (editor strips) stay quiet too.
+                        .frame(width: min(side * 0.55, 104))
                 }
             }.frame(width: geometry.size.width, height: geometry.size.height)
         }.accessibilityHidden(true)

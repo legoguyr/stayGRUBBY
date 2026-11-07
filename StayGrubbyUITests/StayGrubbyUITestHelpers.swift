@@ -43,18 +43,57 @@ extension XCUIApplication {
         XCTFail("Creation choices did not appear")
     }
     /// Older version-specific regressions exercise the complete ranking view.
-    /// Verify the actual local presentation preference before querying siblings.
-    @MainActor func showAllVersions() {
-        let control = buttons["All Versions"]
-        XCTAssertTrue(control.waitForExistence(timeout: 15))
-        for _ in 0..<2 {
-            if control.isSelected { return }
-            control.tap()
-            let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: control)
-            if XCTWaiter.wait(for: [selected], timeout: 3) == .completed { return }
+    /// Stage B moved Top Version / All Versions into the Sort & View menu.
+    @MainActor func showAllVersions() { setRankingDisplay(allVersions: true) }
+    @MainActor func setRankingDisplay(allVersions: Bool) {
+        let sort = buttons["ranking-sort"]
+        XCTAssertTrue(sort.waitForExistence(timeout: 15))
+        let showing = { (sort.value as? String ?? "").contains("All Versions") == allVersions }
+        if showing() { return }
+        let item = buttons[allVersions ? "rankings-display-all" : "rankings-display-top"]
+        for _ in 0..<3 {
+            sort.tap()
+            if item.waitForExistence(timeout: 3) { item.tap(); break }
             activate()
         }
-        XCTAssertTrue(control.isSelected, "All Versions must actually be selected")
+        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: allVersions ? "value CONTAINS 'All Versions'" : "NOT (value CONTAINS 'All Versions')"), object: sort)
+        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 5), .completed, "Ranking view must actually change")
+    }
+    @MainActor var showsAllVersions: Bool { (buttons["ranking-sort"].value as? String ?? "").contains("All Versions") }
+    /// Stage B Grub Rank: one Filters sheet whose group rows push their options.
+    @MainActor func openRankingFilterGroup(_ group: String) {
+        let link = buttons["ranking-filter-\(group)"]
+        if !link.exists {
+            let open = buttons["ranking-filters"]
+            XCTAssertTrue(open.waitForExistence(timeout: 10))
+            for _ in 0..<3 { open.tap(); if link.waitForExistence(timeout: 3) { break }; activate() }
+        }
+        XCTAssertTrue(link.waitForExistence(timeout: 10)); link.tap()
+    }
+    @MainActor func closeRankingFilters() {
+        let done = buttons["filters-done"].firstMatch
+        for _ in 0..<3 { if !done.exists { break }; done.tap(); if done.waitForNonExistence(timeout: 3) { break } }
+        XCTAssertTrue(buttons["filters-done"].waitForNonExistence(timeout: 10), "The Filters sheet must actually close")
+    }
+    /// Food Bible uses the same Filters sheet pattern.
+    @MainActor func openBibleFilterGroup(_ group: String) {
+        let link = buttons["bible-filter-\(group)"]
+        if !link.exists {
+            let open = buttons["bible-filters-open"]
+            XCTAssertTrue(open.waitForExistence(timeout: 10))
+            for _ in 0..<3 { open.tap(); if link.waitForExistence(timeout: 3) { break }; activate() }
+        }
+        XCTAssertTrue(link.waitForExistence(timeout: 10)); link.tap()
+    }
+    /// Reads a group's summary row ("Course, 1 active selections") without leaving it open.
+    @MainActor func rankingFilterLabel(_ group: String) -> String {
+        let open = buttons["ranking-filters"]
+        XCTAssertTrue(open.waitForExistence(timeout: 10)); open.tap()
+        let link = buttons["ranking-filter-\(group)"]
+        XCTAssertTrue(link.waitForExistence(timeout: 10))
+        let label = link.label
+        closeRankingFilters()
+        return label
     }
     @MainActor func revealSearch() {
         if rankingSearchField.exists { return }

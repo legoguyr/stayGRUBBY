@@ -14,7 +14,7 @@ struct CookingRankingView: View {
     @State private var searchText = ""
     @State private var sort = CookingBrowseSort.grubRank
     @State private var filters = CookingFilters()
-    @State private var filterGroup: CookingFilterGroup?
+    @State private var showingFilters = false
     @State private var searching = false
     @State private var creationExpanded = false
     @Environment(\.sgReduceMotion) private var reduceMotion
@@ -30,6 +30,13 @@ struct CookingRankingView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if !scores.isUnlocked { ScoreUnlockProgressBanner(state: scores) }
+                if !list.items.isEmpty && (hasSearch || filters.isActive) {
+                    Text("\(entries.count) of \(eligible.count) ranked cooks · Global ranks")
+                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, SGTheme.Space.xSmall)
+                        .accessibilityIdentifier("discovery-result-count")
+                }
                 if list.items.isEmpty {
                     ContentUnavailableView {
                         Label("No dishes yet", systemImage: "chart.bar").accessibilityIdentifier("ranking-empty-title")
@@ -65,7 +72,7 @@ struct CookingRankingView: View {
             VStack(spacing: SGTheme.Space.xSmall) {
                 StayGrubbyHeader(page: "Rankings", onCreate: {
                     withAnimation(reduceMotion ? nil : SGTheme.Motion.quick) { creationExpanded.toggle() }
-                }, onSearch: { creationExpanded = false }, searchText: $searchText, searching: $searching)
+                }, onSearch: list.items.isEmpty ? nil : { creationExpanded = false }, searchText: $searchText, searching: $searching)
                 if creationExpanded {
                     SGCreationChoices(canCreateVersion: !eligibleDishes.isEmpty, newDish: {
                         creationExpanded = false; newDish = true
@@ -74,29 +81,13 @@ struct CookingRankingView: View {
                     })
                     .transition(.opacity)
                 }
-                Picker("Ranking display", selection: $displayPreference) {
-                    ForEach(RankingsDisplayMode.allCases) { Text($0.rawValue).tag($0.rawValue) }
-                }.pickerStyle(.segmented).padding(.horizontal, SGTheme.Space.medium)
-                    .accessibilityIdentifier("rankings-display-mode")
-                filterControls
-                if !list.items.isEmpty && (hasSearch || filters.isActive) {
-                    Text("\(entries.count) of \(eligible.count) ranked cooks · Global ranks")
-                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, SGTheme.Space.medium)
-                        .accessibilityIdentifier("discovery-result-count")
-                }
+                // An empty library has nothing to browse: no filter/sort/view controls.
+                if !list.items.isEmpty { browseControls }
             }.padding(.bottom, SGTheme.Space.xSmall).background(SGTheme.ColorToken.background)
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .scrollDismissesKeyboard(.interactively)
-        .sheet(item: $filterGroup) { group in
-            if group == .cuisine {
-                CuisinePicker(selection: Binding(
-                    get: { CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == filters.cuisineID } },
-                    set: { filters.cuisineID = $0?.id }), allowsCreation: false)
-            } else { CookingFilterView(filters: $filters, group: group) }
-        }
+        .sheet(isPresented: $showingFilters) { CookingFiltersSheet(filters: $filters) }
         .sheet(isPresented: $newDish) { AddCookingView(list: list) }
         .sheet(item: $selectedDish) { AddCookingView(list: list, dish: $0) }
         .sheet(isPresented: $choosingDish, onDismiss: {
@@ -113,32 +104,37 @@ struct CookingRankingView: View {
         return "Rank \(entry.globalRank), \(entry.attempt.displayName), \(detail)"
     }
 
-    private var filterControls: some View {
+    private var displayMode: RankingsDisplayMode { RankingsDisplayMode(rawValue: displayPreference) ?? .topVersion }
+
+    /// Row 2 of the Grub Rank header: one Filters entry, one Sort & View menu, and a
+    /// clear action only while filters are active.
+    private var browseControls: some View {
         HStack(spacing: SGTheme.Space.xSmall) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: SGTheme.Space.xSmall) {
-                    filterButton(.course, detail: filters.category?.label, count: filters.category == nil ? 0 : 1)
-                    filterButton(.cuisine, detail: dishes.compactMap(\.cuisine).first { $0.id == filters.cuisineID }?.label, count: filters.cuisineID == nil ? 0 : 1)
-                    filterButton(.dietary, count: filters.dietary.count)
-                    filterButton(.avoid, count: filters.avoidedAllergens.count)
-                }
-            }.accessibilityIdentifier("filter-strip")
+            SGFilterButton(count: filters.activeCount, identifier: "ranking-filters") { showingFilters = true }
             SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
-                             disabled: { $0.needsScores && !scores.isUnlocked }, active: sort != .grubRank, identifier: "ranking-sort")
+                             disabled: { $0.needsScores && !scores.isUnlocked },
+                             active: sort != .grubRank || displayMode != .topVersion, identifier: "ranking-sort",
+                             label: sortLabel) {
+                Section("Show") {
+                    ForEach(RankingsDisplayMode.allCases) { mode in
+                        Button { displayPreference = mode.rawValue } label: {
+                            if mode == displayMode { Label(mode.rawValue, systemImage: "checkmark") } else { Text(mode.rawValue) }
+                        }.accessibilityIdentifier("rankings-display-\(mode == .topVersion ? "top" : "all")")
+                    }
+                }
+            }
+            Spacer(minLength: 0)
             if filters.isActive {
                 SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
                     .accessibilityIdentifier("clear-filters")
             }
-        }.padding(.horizontal, SGTheme.Space.medium)
-    }
-
-    private func filterButton(_ group: CookingFilterGroup, detail: String? = nil, count: Int) -> some View {
-        Button { filterGroup = group } label: {
-            SGBrowseControlLabel(title: detail ?? (count > 0 ? "\(group.title) \(count)" : group.title), symbol: "chevron.down", active: count > 0)
         }
-        .buttonStyle(.plain).accessibilityIdentifier("ranking-filter-\(group.rawValue)")
-        .accessibilityLabel("\(group.title), \(count) active selections")
-        .accessibilityHint("Choose or remove \(group.title.lowercased()) filters")
+        .padding(.horizontal, SGTheme.Space.medium)
+        .accessibilityElement(children: .contain).accessibilityIdentifier("filter-strip")
+    }
+    /// Names the current order, plus the view only when it differs from the default.
+    private var sortLabel: String {
+        displayMode == .allVersions ? "\(sort.rawValue) · All Versions" : sort.rawValue
     }
 
     private var noResults: some View {

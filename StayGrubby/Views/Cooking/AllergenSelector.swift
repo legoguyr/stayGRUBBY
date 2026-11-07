@@ -24,25 +24,14 @@ struct ContainsSelector: View {
 /// Shared, approved checkmark interaction. The caller owns the labels and data;
 /// Recipe selections do not mutate cooking-attempt tags.
 struct SGAllergenSelector: View {
-    @Environment(\.dismiss) private var dismiss
     @Binding var selection: Set<Allergen>
     let title: String
     let identifierPrefix: String
     let help: String
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: SGTheme.Space.xSmall) {
-                    SGAllergenChoices(selection: $selection, identifierPrefix: identifierPrefix)
-                    Text(help).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }.padding(SGTheme.Space.medium)
-            }
-            .background(SGTheme.ColorToken.background)
-            .navigationTitle(title).navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) {
-                Button("Done") { dismiss() }.accessibilityIdentifier("\(identifierPrefix)-done")
-            } }
-        }.presentationDetents([.medium, .large]).presentationDragIndicator(.visible)
+        SGOptionSheet(title: title, doneIdentifier: "\(identifierPrefix)-done") {
+            SGAllergenChoices(selection: $selection, identifierPrefix: identifierPrefix)
+            SGOptionNote(help)
+        }
     }
 }

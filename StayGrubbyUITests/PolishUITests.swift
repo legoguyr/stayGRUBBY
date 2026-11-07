@@ -55,7 +55,8 @@ final class PolishUITests: StayGrubbyUITestCase {
         XCUIDevice.shared.orientation = .portrait
         let app = XCUIApplication(); app.launchArguments = ["--ui-test-store", UUID().uuidString, "--test-reduce-motion"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-            app.showAllVersions()
+        // Stage B: an empty library has no Sort & View control; this flow ranks a single cook.
+        XCTAssertFalse(app.buttons["ranking-sort"].exists)
         app.revealCreation(); tap(app.buttons["new-dish"], app: app)
         tap(app.textFields["dish-name"], app: app); app.textFields["dish-name"].typeText("Canceled Soup\n")
         tap(app.buttons["Continue"], app: app); tap(app.buttons["Cancel"], app: app)
@@ -101,7 +102,7 @@ final class PolishUITests: StayGrubbyUITestCase {
         XCTAssertEqual(app.buttons["contains-wheat"].value as? String, "Selected")
         closeContains(app: app); tap(app.buttons["Cancel"], app: app)
         tap(app.navigationBars.buttons.firstMatch, app: app)
-        tap(app.buttons["ranking-filter-avoid"], app: app)
+        app.openRankingFilterGroup("avoid")
         XCTAssertTrue(app.staticTexts["allergen-safety"].exists)
         tap(app.buttons["filter-avoid-milk"], app: app); tap(app.buttons["filter-avoid-sesame"], app: app)
         tap(app.buttons["filters-done"], app: app)
@@ -110,12 +111,12 @@ final class PolishUITests: StayGrubbyUITestCase {
         XCTAssertFalse(row("Sea Bass", app: app).exists)
         XCTAssertTrue(row("Lemon Pasta", app: app).label.hasPrefix("Rank 4,"))
         XCTAssertTrue(row("Apple Cake", app: app).label.hasPrefix("Rank 5,"))
-        tap(app.buttons["ranking-filter-course"], app: app); tap(app.buttons["filter-course-main"], app: app)
+        app.openRankingFilterGroup("course"); tap(app.buttons["filter-course-main"], app: app)
         tap(app.buttons["filters-done"], app: app)
         XCTAssertTrue(app.staticTexts["No filter matches"].exists)
-        tap(app.buttons["ranking-filter-avoid"], app: app); tap(app.buttons["clear-avoid"], app: app)
+        app.openRankingFilterGroup("avoid"); tap(app.buttons["clear-avoid"], app: app)
         tap(app.buttons["filters-done"], app: app)
-        XCTAssertTrue(app.buttons["ranking-filter-course"].label.contains("1 active"))
+        XCTAssertTrue(app.rankingFilterLabel("course").contains("1 active"))
         XCTAssertTrue(row("Golden sear", app: app).label.hasPrefix("Rank 2,"))
         XCTAssertFalse(row("Apple Cake", app: app).exists)
     }

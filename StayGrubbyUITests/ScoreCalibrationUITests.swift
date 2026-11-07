@@ -20,7 +20,7 @@ final class ScoreCalibrationUITests: StayGrubbyUITestCase {
             let lowerScore = lowerLabel.components(separatedBy: "score ").last!.components(separatedBy: ",").first!
             let lowerID = rows.element(boundBy: 2).identifier
             let lower = app.buttons[lowerID]
-            let ceiling = app.scrollViews["filter-strip"].frame.maxY + 8
+            let ceiling = app.descendants(matching: .any)["filter-strip"].frame.maxY + 8
             let floor = app.tabBars.firstMatch.frame.minY - 8
             for _ in 0..<8 {
                 if lower.isHittable && lower.frame.minY >= ceiling && lower.frame.maxY <= floor { break }

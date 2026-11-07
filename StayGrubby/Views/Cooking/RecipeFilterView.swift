@@ -1,12 +1,33 @@
 import SwiftUI
 
+/// Food Bible's single Filters sheet; Photo lives here rather than in the header.
+struct RecipeFiltersSheet: View {
+    @Binding var filters: RecipeFilters
+    let entries: [CookbookEntry]
+    var body: some View {
+        SGFilterSheet(isActive: filters.isActive, clear: { filters = RecipeFilters() }, clearIdentifier: "bible-filters-clear-all") {
+            ForEach(RecipeFilterGroup.allCases) { group in
+                SGFilterGroupLink(title: group.rawValue, summary: summary(group), count: filters.count(group),
+                                  identifier: "bible-filter-\(group.rawValue.lowercased())") {
+                    RecipeFilterView(filters: $filters, group: group, entries: entries)
+                }
+            }
+        }
+    }
+    private func summary(_ group: RecipeFilterGroup) -> String? {
+        guard group == .photo, let photo = filters.photo else { return nil }
+        return photo ? "Recipe photo" : "No Recipe photo"
+    }
+}
+
+/// One Recipe filter group, pushed from `RecipeFiltersSheet`.
 struct RecipeFilterView: View {
     @Binding var filters: RecipeFilters
     let group: RecipeFilterGroup
     let entries: [CookbookEntry]
     @State private var search = ""
     var body: some View {
-        SGSelectionSheet(title: group.rawValue) {
+        SGFilterGroupPage(title: group.rawValue, isActive: filters.count(group) > 0, clear: clear, clearIdentifier: "bible-filter-clear") {
             switch group {
             case .course:
                 option("Not specified", RecipeFilters.unspecified, $filters.courses)
@@ -17,14 +38,12 @@ struct RecipeFilterView: View {
                 ForEach(values.filter { CookbookSearch.matches($0, query: search) }, id: \.self) { option($0, $0, selection) }
             case .contains, .avoid:
                 SGAllergenChoices(selection: allergenSelection, identifierPrefix: group == .contains ? "bible-contains" : "bible-avoid")
-                Text(group == .avoid ? "Excludes listed Contains or Possible matches. Missing information is not an allergen-free guarantee." : RecipeAllergenAssessment.safetyText)
-                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                SGOptionNote(group == .avoid ? "Excludes listed Contains or Possible matches. Missing information is not an allergen-free guarantee." : RecipeAllergenAssessment.safetyText)
             case .photo:
                 SGSelectionRow(title: "Any photo", selected: filters.photo == nil) { filters.photo = nil }
                 SGSelectionRow(title: "Recipe photo", selected: filters.photo == true) { filters.photo = true }
                 SGSelectionRow(title: "No Recipe photo", selected: filters.photo == false) { filters.photo = false }
             }
-            Button("Clear \(group.rawValue)") { clear() }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-filter-clear")
         }
     }
     private var selection: Binding<Set<String>> { group == .cuisine ? $filters.cuisines : $filters.sources }

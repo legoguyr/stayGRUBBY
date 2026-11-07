@@ -12,13 +12,12 @@ struct FoodBibleView: View {
     @State private var query = ""
     @State private var filters = RecipeFilters()
     @State private var sort = RecipeBrowseSort.updated
-    @State private var filterGroup: RecipeFilterGroup?
+    @State private var showingFilters = false
     @State private var loading = true
     @State private var failed = false
     @State private var generation = UUID()
     @State private var choosing = false
     @State private var selected: CookbookRoute?
-    @FocusState private var searching: Bool
     private var visible: [CookbookEntry] { filters.entries(entries, query: query, sort: sort) }
     private var dishLookup: [UUID: Dish] { Dictionary(uniqueKeysWithValues: dishes.map { ($0.id,$0) }) }
     var body: some View {
@@ -56,33 +55,26 @@ struct FoodBibleView: View {
             .task { await load() }.refreshable { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
-            .sheet(item: $filterGroup) { RecipeFilterView(filters: $filters, group: $0, entries: entries) }
+            .sheet(isPresented: $showingFilters) { RecipeFiltersSheet(filters: $filters, entries: entries) }
             .sheet(isPresented: $choosing) { RecipeCreationChoice(entries: entries) }
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
+    /// Same two-row grammar as Grub Rank: search, then Filters + Sort (+ clear).
     private var searchHeader: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
-            HStack(spacing: SGTheme.Space.small) {
-                Image(systemName: "magnifyingglass").accessibilityHidden(true)
-                TextField("Dish, ingredient, cuisine…", text: $query).accessibilityLabel("Search your cookbook").accessibilityIdentifier("bible-search").focused($searching).submitLabel(.search).onSubmit { searching = false }
-                if !query.isEmpty { Button("Clear search", systemImage: "xmark.circle.fill") { query = "" }.labelStyle(.iconOnly).frame(minWidth: 44, minHeight: 44).accessibilityIdentifier("bible-search-clear") }
-            }.sgField()
+        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            SGSearchField(placeholder: "Dish, ingredient, cuisine…", text: $query, identifier: "bible-search",
+                          clearIdentifier: "bible-search-clear", accessibilityLabel: "Search your cookbook")
             HStack(spacing: SGTheme.Space.xSmall) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: SGTheme.Space.xSmall) {
-                        ForEach(RecipeFilterGroup.allCases) { group in
-                            let count = filters.count(group)
-                            Button { searching = false; filterGroup = group } label: {
-                                SGBrowseControlLabel(title: group.rawValue + (count > 0 ? " \(count)" : ""), symbol: "chevron.down", active: count > 0)
-                            }.buttonStyle(.plain).accessibilityLabel("\(group.rawValue), \(count) active selections").accessibilityIdentifier("bible-filter-\(group.rawValue.lowercased())")
-                        }
-                    }
-                }.accessibilityIdentifier("bible-filters")
-                SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue }, active: sort != .updated, identifier: "bible-sort")
+                SGFilterButton(count: RecipeFilterGroup.allCases.reduce(0) { $0 + filters.count($1) }, identifier: "bible-filters-open") {
+                    showingFilters = true
+                }
+                SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
+                                 active: sort != .updated, identifier: "bible-sort", label: sort.rawValue)
+                Spacer(minLength: 0)
                 if filters.isActive { SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = RecipeFilters() }.accessibilityIdentifier("bible-clear-filters") }
-            }
-
-        }.padding(.horizontal, SGTheme.Space.margin).padding(.top, SGTheme.Space.compact).background(SGTheme.ColorToken.background)
+            }.accessibilityElement(children: .contain).accessibilityIdentifier("bible-filters")
+        }.padding(.horizontal, SGTheme.Space.margin).padding(.top, SGTheme.Space.compact).padding(.bottom, SGTheme.Space.xSmall)
+            .background(SGTheme.ColorToken.background)
     }
     private func load() async {
         guard let request else { failed = true; loading = false; return }
