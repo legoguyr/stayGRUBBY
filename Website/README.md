@@ -31,7 +31,7 @@ Without the app, the website explains beta access and privacy, and keeps Support
 
 ## Beta acquisition and referral metadata
 
-The deployed Worker serves `/beta` and embeds the same acquisition action on generic profile, post and Recipe fallbacks. `distribution.json` controls the Apple destination for all of them. When the verified App Store listing is available, switch that one value and deploy the full Worker plus assets. AASA and canonical paths stay unchanged. No public content is fetched.
+The homepage's Join the Beta button opens `/beta`. The Worker serves the branded beta page and uses the same acquisition action on generic profile, post and Recipe fallbacks. `distribution.json` controls the Apple destination. At App Store release, update the homepage beta wording and switch the destination to the verified listing. AASA and canonical paths stay unchanged. No public content is fetched.
 
 The optional `?ref=<opaque token>` is 16–64 ASCII letters, digits, underscores or hyphens. A single valid value travels in the explicit Open StayGrubby URL; invalid or duplicate values are ignored. TestFlight receives the verified invitation URL alone. After installation, reopen the original shared link to recover the intended destination and any referral metadata. Attribution at signup requires future work.
 
@@ -47,11 +47,11 @@ Run the production entry point from the repository root with an authenticated Wr
 sh Website/deploy-production.sh
 ```
 
-The script builds the public asset allowlist, runs the local tests and Wrangler dry run, deploys the Worker and assets using `Website/wrangler.jsonc`, then runs `python3 Website/verify_live_links.py`. A production publish is incomplete until the live gate passes. An assets-only deploy (including `wrangler deploy --assets` or an assets-only dashboard upload) is invalid even if Home, Privacy and the static AASA file respond. The Worker owns `/beta`, profile, post and Recipe browser fallbacks.
+The script builds the public asset allowlist, runs the local tests and Wrangler dry run, deploys the Worker and assets using `Website/wrangler.jsonc`, then runs `python3 Website/verify_live_links.py`. A production publish is incomplete until the live gate passes. The Cloudflare Git build trigger for `main` must call this same script. An assets-only deploy (including `wrangler deploy --assets` or an assets-only dashboard upload) is invalid even if Home, Privacy and the static AASA file respond. The Worker owns `/beta`, profile, post and Recipe browser fallbacks.
 
 Use existing authentication. If Wrangler is unavailable during an incident, the authenticated Cloudflare connector can restore a previously verified full version after confirming the active deployment and the target's `fetch` handler and `ASSETS` binding. Run the same live gate immediately and verify the active version afterward. Keep the existing domain, disabled workers.dev/previews and public asset allowlist.
 
-Verify direct responses for all pointer forms, both AASA paths, `/`, `/privacy`, `/support`, unknown/malformed paths and official assets. Check identity/security headers, destination retention, no redirect loops and no private-content fetch. `verify_live_links.py` performs these checks with read-only GET/HEAD requests (30 checks as of November 7). Passing it is not physical iOS acceptance.
+The live gate requires direct, browser-renderable HTML for the beta and shared-link fallbacks, with one `text/html; charset=utf-8` type, `no-store, no-transform`, and no `Content-Disposition` header. It verifies the beta heading, the actual TestFlight anchor and the homepage CTA to `/beta`, along with Privacy, Support, branded 404s and both AASA endpoints. Its 30 GET/HEAD checks validate a deployed version at a point in time. Physical iPhone Safari remains a separate check.
 
 ## Deployment incident history
 
@@ -76,3 +76,9 @@ The whole-app audit found active assets-only version `a53e89dd-e0fc-4f7c-a8eb-39
 The active Wrangler deployment `b490cd5c-3d16-4ab8-9843-0d58e542ee53` contained neither a fetch handler nor an asset binding. Home, Privacy and static AASA still responded, while beta and valid shared pointers returned empty 404s. The canonical Wrangler dry run packaged the handler and binding, but the local CLI had no authenticated session. The authenticated Cloudflare connector redeployed the previously verified full version `f5164ec8-90ca-44b9-b567-697963dc1f09` to 100% in deployment `01aaf7a1-7034-4ee0-a64e-4399543644c8`. The Worker's `workers.dev` and preview access were returned to their canonical disabled settings.
 
 All 27 local website tests and 30 hosted GET/HEAD checks passed. Verified direct browser fallbacks and the configured Apple beta invitation, malformed and unknown 404s, headers, both origin AASA endpoints and Apple's association CDN. Home, Privacy, Support, CSS and wordmark matched the canonical build before and after recovery. The production script now requires the live check and rejects deployment overrides.
+
+### November 7 Safari beta follow-up
+
+The Git build trigger subsequently published assets alone using `wrangler deploy --assets`. The active version had no fetch handler or ASSETS binding. Safari-style requests to `/beta` and representative shared links received an empty 404 without a media type or redirect. The earlier checks had passed against the full version before it was replaced. The original iPhone popup itself was not reproduced. The Git trigger now invokes the canonical script and its live gate, and Worker pages omit the optional disposition header.
+
+Wrangler's local session could package the canonical build but could not publish. The authenticated Cloudflare connection deployed that full Worker and its assets as version `92c0dc95-b5dc-4347-a976-350cd920abbe`. The live gate caught a Cloudflare-injected analytics script on the first browser response. `no-transform` prevented injection on the Worker fallbacks without changing zone-wide analytics settings. All 28 local tests and 30 hosted checks passed, including the homepage CTA and the existing Apple invitation. Apple’s association CDN also matched the source.

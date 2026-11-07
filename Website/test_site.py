@@ -95,11 +95,18 @@ class SiteTests(unittest.TestCase):
                             self.assertIn(value, ["https://ai.google.dev/gemini-api/terms", "https://policies.google.com/privacy"])
                         else:
                             self.assertEqual(url.netloc, "staygrubby.com")
+                    elif value == "/beta":
+                        self.assertEqual(name, "index.html")
                     else:
                         path = "index.html" if value == "/" else value.lstrip("/")
                         if "." not in Path(path).name:
                             path += ".html"
                         self.assertTrue((self.output / path).is_file(), value)
+
+    def test_homepage_has_a_visible_beta_cta(self):
+        html = (self.output / "index.html").read_text()
+        self.assertIn("currently in beta for iPhone", html)
+        self.assertIn('<a class="button" href="/beta">Join the Beta</a>', html)
 
     def test_profile_landing_and_association_are_static_and_private(self):
         import json

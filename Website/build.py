@@ -92,8 +92,8 @@ def build(output, distribution=None):
       <p class="eyebrow">Your cooking. Your taste.</p>
       <h1>Remember what<br>you loved cooking.</h1>
       <p class="intro">Keep a private cooking journal, compare your dishes, and build a ranking that reflects your taste.</p>
-      <p class="release">An iPhone app being prepared for release.</p>
-      <a class="button" href="/privacy">Read our Privacy Policy <span aria-hidden="true">↗</span></a>
+      <p class="release">StayGrubby is currently in beta for iPhone.</p>
+      <a class="button" href="/beta">Join the Beta</a>
     </section>
     <section class="features" aria-label="About StayGrubby">
       <article><span class="number" aria-hidden="true">01</span><h2>Keep your cooks</h2><p>Record dishes, photos, notes, and the versions you want to remember.</p></article>

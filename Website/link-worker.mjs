@@ -15,6 +15,7 @@ const headers={
  'Permissions-Policy':'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
  'Strict-Transport-Security':'max-age=31536000'
 };
+const fallbackHeaders={...headers,'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store, no-transform','X-Robots-Tag':'noindex, nofollow'};
 export function destination(url){
  if(url.hash || [...url.searchParams.keys()].some(key=>key!=='ref'))return null;
  const token=referral(url);
@@ -41,8 +42,8 @@ export default {
    return new Response(request.method==='HEAD'?null:JSON.stringify(association),{headers:{...headers,'Content-Type':'application/json','Cache-Control':'public, max-age=3600'}});
   }
   const target=destination(url);
-  if(target||url.pathname==='/kitchen'||url.pathname==='/beta')return new Response(request.method==='HEAD'?null:fallback(target,false,url.pathname==='/beta'),{headers:{...headers,'Content-Type':'text/html; charset=utf-8','Content-Disposition':'inline','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
-  if(/^\/(?:@|%40|p\/|r\/)/i.test(url.pathname))return new Response(request.method==='HEAD'?null:fallback(null,true),{status:404,headers:{...headers,'Content-Type':'text/html; charset=utf-8','Content-Disposition':'inline','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
+  if(target||url.pathname==='/kitchen'||url.pathname==='/beta')return new Response(request.method==='HEAD'?null:fallback(target,false,url.pathname==='/beta'),{headers:fallbackHeaders});
+  if(/^\/(?:@|%40|p\/|r\/)/i.test(url.pathname))return new Response(request.method==='HEAD'?null:fallback(null,true),{status:404,headers:fallbackHeaders});
   // Canonical HTML pages are requested by their real file, with html_handling=none.
   // This avoids the old rewrite-to-.html / redirect-to-extensionless loop.
   if(['/','/privacy','/support'].includes(url.pathname)){

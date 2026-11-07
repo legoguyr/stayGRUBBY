@@ -6,15 +6,16 @@ for(const path of ['/@friendly_cook','/%40friendly_cook','/p/'+id,'/p/'+id+'/rec
  let reads=0;const response=await worker.fetch(new Request('https://staygrubby.com'+path),{ASSETS:{fetch:()=>{reads++;throw Error('Private fallback must not fetch any data')}}});
  assert.equal(response.status,200);assert.equal(response.headers.get('location'),null);assert.equal(reads,0);
  assert.equal(response.headers.get('content-type'),'text/html; charset=utf-8');
- assert.equal(response.headers.get('content-disposition'),'inline');
+ assert.equal(response.headers.get('content-disposition'),null);
  const html=await response.text();assert(html.includes('href="staygrubby://open'+decodeURIComponent(path)+'"'));assert(!html.includes('<script'));assert(!html.includes('supabase'));assert(response.headers.get('content-security-policy').includes("default-src 'none'"));
 });
 test('HEAD and invalid app paths are explicit HTML, never untyped download responses',async()=>{
- for(const [path,status] of [['/r/'+id,200],['/p/bad',404]]){
+ for(const [path,status] of [['/beta',200],['/r/'+id,200],['/p/bad',404]]){
   for(const method of ['GET','HEAD']){
    const r=await worker.fetch(new Request('https://staygrubby.com'+path,{method}),{});
    assert.equal(r.status,status);assert.equal(r.headers.get('content-type'),'text/html; charset=utf-8');
-   assert.equal(r.headers.get('content-disposition'),'inline');assert.equal(r.headers.get('location'),null);
+   assert.equal(r.headers.get('content-disposition'),null);assert.equal(r.headers.get('location'),null);
+   assert.equal(r.headers.get('cache-control'),'no-store, no-transform');
    const text=await r.text();if(method==='HEAD')assert.equal(text,'');else assert(text.startsWith('<!doctype html>'));
   }
  }
@@ -35,8 +36,9 @@ test('beta and private pointers offer the verified Apple invitation without a re
   assert.equal(response.status,200);
   assert.equal(response.headers.get('location'),null);
   const html=await response.text();
+  if (path === '/beta') assert.match(html,/<h1>We’re in beta\.<\/h1>/);
   assert.match(html,/Join StayGrubby Beta/);
-  assert.match(html,/https:\/\/testflight\.apple\.com\/join\/JWckxC4r/);
+  assert.match(html,/<a class="button" href="https:\/\/testflight\.apple\.com\/join\/JWckxC4r">Join StayGrubby Beta<\/a>/);
   assert.doesNotMatch(html,/<script|supabase|private-notes/i);
  }
 });
