@@ -1,5 +1,9 @@
 # StayGrubby V1 — TestFlight readiness review
 
+## Build 4 release state — November 7, 2026
+
+StayGrubby **1.0 (4)** uploaded successfully to App Store Connect from a signed Release archive with iOS 17.0 minimum. Apple reported processing at upload. TestFlight notes, group assignments, external distribution and tester notifications are owner-managed. This checkpoint records the uploaded build number and the separate [production link recovery](Website/README.md). The archived app remains unchanged.
+
 ## Owner closeout — October 20, 2026
 
 The owner confirms staygrubby.com is publicly deployed with operational HTTPS and appropriate HTTP/HTTPS and www/non-www routing. The canonical policy is https://staygrubby.com/privacy; privacy contact is privacy@staygrubby.com and support contact is support@staygrubby.com. The owner completed the App Store Connect App Privacy questionnaire. The ninth account-deletion migration and delete-account Edge Function v2 are deployed. **Implemented and automated/security verified; real Apple credential revocation remains physically unverified.** The owner intentionally deferred that destructive physical test; it does not block continued core development. Earlier publication/disclosure/test-pending statements below describe the prior review state, superseded by this owner closeout. No new deployment, App Store Connect action or real deletion test was performed for Cuisine.

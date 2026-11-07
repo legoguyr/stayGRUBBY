@@ -207,6 +207,8 @@ Recipe activity opens the authorized reader through its own action. Share and Se
 
 Canonical HTTPS profile, post, current Recipe and pinned Recipe links continue opening exact native destinations. The same pointers serve generic acquisition HTML in a browser, with the stable [beta page](https://staygrubby.com/beta) and one configured Apple destination. At App Store V1 switch that destination to the verified store listing. Optional opaque `ref` metadata travels through the original URL or explicit app-open link, never through access decisions or the TestFlight CTA. No referral counts or rewards are active.
 
+The production Cloudflare Worker serves these browser fallbacks and delegates static pages and artwork to its asset binding. An assets-only publish can leave Home, Privacy and the static AASA file available while breaking every shared-link fallback. Production publishes require the [full Worker and assets deployment and live-link gate](Website/README.md#source-verification-and-deployment).
+
 ## Design, sharing, privacy and distribution
 
 Reuse `StayGrubby/DesignSystem` (`SGTheme`, existing controls/header/editorial components) and canonical asset-catalog artwork. Supplied logo red is **#F10607**, cream **#FAF3EC**, charcoal **#1F1F1F**; adaptive app controls use existing contrast-adjusted tokens. Food imagery/type/whitespace lead; decoration and motion remain restrained. [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) provides detailed contracts; [design review](STAYGRUBBY_DESIGN_SYSTEM_REVIEW.md) retains evidence.

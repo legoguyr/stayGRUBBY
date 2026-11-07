@@ -23,21 +23,21 @@ The old `/@* → /kitchen.html` rewrite interacted with default HTML canonicaliz
 
 The handler now returns direct 200 fallbacks retaining the validated destination, and direct JSON AASA at both `/.well-known/apple-app-site-association` and `/apple-app-site-association`. `html_handling=none`, empty `_redirects` and explicit Worker-first paths prevent the loop. The fallback offers a user-initiated `staygrubby://open/...` button, registered by the native Info.plist. There is no automatic app-open loop.
 
-Without the app, the website explains beta access and privacy, and keeps Support/Privacy available. `distribution.json` intentionally has no beta/App Store URL; never invent one. iOS Universal Links depend on installation/provisioning, Apple association caching and the recipient's browser preference. Same-domain Safari navigation may stay in Safari; use the explicit Open button or long-press from Messages/Mail. Automatic installed-app behavior still requires two-iPhone physical acceptance.
+Without the app, the website explains beta access and privacy, and keeps Support/Privacy available. `distribution.json` holds the verified Apple acquisition URL. iOS Universal Links depend on installation/provisioning, Apple association caching and the recipient's browser preference. Same-domain Safari navigation may stay in Safari; use the explicit Open button or long-press from Messages/Mail.
 
 ## Source, verification and deployment
 
-The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, updated effective November 5, 2026 for Product Closeout. It is bundled offline and rendered completely by `build.py`. This updated default-sharing/activity disclosure is prepared locally; hosted policy publication is required before distributing the updated build, through the router-preserving release-gate workflow. Official artwork comes from the app asset catalog.
+The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 5, 2026 for Product Closeout. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
+
+Run the production entry point from the repository root with an authenticated Wrangler:
 
 ```sh
-python3 Website/build.py
-python3 -m unittest discover -s Website -p 'test_*.py'
-node --test Website/test_links.mjs
-wrangler deploy --config Website/wrangler.jsonc --dry-run
-wrangler deploy --config Website/wrangler.jsonc
+sh Website/deploy-production.sh
 ```
 
-Use only existing normal authentication; never paste tokens into Codex. Publish the tested Worker and exact `public` asset allowlist. Build output/cache/CLI state stay ignored. Config keeps the existing identity/domain, compatibility date, disabled workers.dev/previews, no backend bindings and no paid setup.
+The script builds the public asset allowlist, runs the local tests and Wrangler dry run, deploys the Worker and assets using `Website/wrangler.jsonc`, then runs `python3 Website/verify_live_links.py`. A production publish is incomplete until the live gate passes. An assets-only deploy (including `wrangler deploy --assets` or an assets-only dashboard upload) is invalid even if Home, Privacy and the static AASA file respond. The Worker owns `/beta`, profile, post and Recipe browser fallbacks.
+
+Use existing authentication. If Wrangler is unavailable during an incident, the authenticated Cloudflare connector can restore a previously verified full version after confirming the active deployment and the target's `fetch` handler and `ASSETS` binding. Run the same live gate immediately and verify the active version afterward. Keep the existing domain, disabled workers.dev/previews and public asset allowlist.
 
 The authenticated connector deployed tested bundle version **e392a755-ffe1-4261-b0f3-f4f39d2bbba4** during this cycle. A first `keep_assets` deployment retained old routing configuration; verification caught it. The routing correction reattached the byte-identical existing asset manifest using a short-lived completion capability internally, and applied the tested routing settings. No capability was printed, persisted or added to the repository; no static asset bytes changed. Source AASA is served by the handler ahead of the retained older asset copy. A normal future Wrangler deployment rebuilds/replaces that asset too. Final configuration verification also caught default workers.dev/preview exposure from the API upload and restored both to false, confirmed by read-back.
 
@@ -59,4 +59,10 @@ The deployed Worker serves `/beta` and embeds the same acquisition action on gen
 
 The optional `?ref=<opaque token>` is 16–64 ASCII letters, digits, underscores or hyphens. A single valid value travels in the explicit Open StayGrubby URL; invalid or duplicate values are ignored. TestFlight receives the verified invitation URL alone. After installation, reopen the original shared link to recover the intended destination and any referral metadata. Attribution at signup requires future work.
 
-Active Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` restored the ASSETS binding and preserved the already-hosted static bytes, including the current Privacy page. The live guard covers direct beta, existing destinations, valid and malformed referral metadata, Privacy/Support, and both association paths.
+Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` shipped beta acquisition with the ASSETS binding and the existing static bytes, including the current Privacy page.
+
+## November 7 Build 4 production recovery
+
+The active Wrangler deployment `b490cd5c-3d16-4ab8-9843-0d58e542ee53` contained neither a fetch handler nor an asset binding. Home, Privacy and static AASA still responded, while beta and valid shared pointers returned empty 404s. The canonical Wrangler dry run packaged the handler and binding, but the local CLI had no authenticated session. The authenticated Cloudflare connector redeployed the previously verified full version `f5164ec8-90ca-44b9-b567-697963dc1f09` to 100% in deployment `01aaf7a1-7034-4ee0-a64e-4399543644c8`. The Worker's `workers.dev` and preview access were returned to their canonical disabled settings.
+
+All 27 local website tests and 30 hosted GET/HEAD checks passed. Verified direct browser fallbacks and the configured Apple beta invitation, malformed and unknown 404s, headers, both origin AASA endpoints and Apple's association CDN. Home, Privacy, Support, CSS and wordmark matched the canonical build before and after recovery. The production script now requires the live check and rejects deployment overrides.
