@@ -11,6 +11,8 @@ struct AddCookingView: View {
     @Query private var attempts: [CookingAttempt]
     let list: RankingList
     let dish: Dish?
+    /// A Recipe's Dish identity to use when this cook creates its Dish (Rank My Version).
+    var newDishID: UUID? = nil
     let origin: SocialCookingClaim?
     let onResultClose: () -> Void
     @State private var draft: CookingDraft
@@ -26,8 +28,8 @@ struct AddCookingView: View {
     @State private var completionSnapshot: RankingCompletionSnapshot?
     @State private var cookedWith = Set<UUID>()
 
-    init(list: RankingList, dish: Dish? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
-        self.list = list; self.dish = dish; self.origin = origin; self.onResultClose = onResultClose
+    init(list: RankingList, dish: Dish? = nil, newDishID: UUID? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
+        self.list = list; self.dish = dish; self.newDishID = newDishID; self.origin = origin; self.onResultClose = onResultClose
         var initial = origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft()
         // A Recipe claim can prefill this cook, but it does not replace the linked Dish's own text.
         if let dish {
@@ -39,7 +41,7 @@ struct AddCookingView: View {
     /// A lone unnamed first cook shows no "Version 1" (`CookName.label`); Cook Again on an
     /// existing Dish shows its fallback name. Presentation only.
     private var newVersionLabel: String? {
-        draft.cleanTitle ?? (dish == nil ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
+        draft.cleanTitle ?? (dish?.attempts.isEmpty ?? true ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
     }
     private var displayName: String {
         [draft.cleanDishName, newVersionLabel].compactMap { $0 }.joined(separator: " — ")
@@ -82,7 +84,7 @@ struct AddCookingView: View {
                     }
                 } else {
                     CookingFormScroll(draft: $draft, existingDish: dish != nil, sharingSelection: socialRequest == nil ? nil : $sharing, cookedWith: socialRequest != nil && sharing.configured == true ? $cookedWith : nil,
-                                      fallbackCookName: dish == nil ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
+                                      fallbackCookName: dish?.attempts.isEmpty ?? true ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
                 }
             }
             .navigationTitle(savedAttempt != nil ? "Ranking Result" : session == nil ? (origin?.kind == "recipe" || origin?.recipeSnapshot != nil ? "Rank My Version" : dish == nil ? "New Dish" : "Cook Again") : "Rank this cook")
@@ -134,7 +136,7 @@ struct AddCookingView: View {
             } else {
                 try publication?.cancelUnsavedCreation(session.itemID)
             }
-            savedAttempt = try CookingStore.create(draft: draft, existingDish: dish, session: session, context: context, mediaDirectory: mediaRoot)
+            savedAttempt = try CookingStore.create(draft: draft, existingDish: dish, newDishID: newDishID, session: session, context: context, mediaDirectory: mediaRoot)
             completionSnapshot = before
             if let savedAttempt { publication?.privateSaveFinished(savedAttempt) }
             publication?.retry()

@@ -1,8 +1,8 @@
 # StayGrubby food architecture — one Dish, separate records
 
-**Canonical domain document — final reconciliation November 8, 2026.** This document combines the Unified Food Architecture checkpoint (`6214900`), the accepted Codex data-foundation work (`a6de6b8`) and the owner decisions recorded the same day. It owns:
+**Canonical domain document — November 8, 2026, revised for the one-Dish identity decision.** It combines the Unified Food Architecture checkpoint (`6214900`), the accepted Codex data-foundation work (`a6de6b8`), the D1/D2 stages and the later owner decision that **Dish and Recipe are two views of one Dish identity** (§1 decision 11), which replaces the earlier multi-Recipe/Main Recipe relationship model. It owns:
 
-- how Dishes, Recipes and Cooking Attempts relate, including Main Recipe and association rules
+- how Dishes, Recipes and Cooking Attempts relate (one Dish identity, exact cook provenance)
 - the final user-facing wording for Cooking Attempts (renameable cooks) and Recipe History
 - which data describes the Recipe *as written* and which describes the cook *as made*
 - what Grub Rank and Food Bible each show and filter
@@ -11,35 +11,37 @@
 
 Current implementation lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md), the implementation order in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md#next--unified-dish-foundation-then-ui-overhaul), design-system rules in [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), and long-term signals in [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md). Supporting evidence: [V1_DATA_FOUNDATION_AUDIT.md](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
-Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1**. **D1 status (November 8):** §4 cook naming and the copy rebrand are **Implemented**; §3 Dish Recipes / Main Recipe and the §5 Recipe Diet content key are **Implemented and deployed** (`20261108171120_dish_recipe_links`); the app UI that calls them arrives in D2/F. Protected ranking math and Recipe Creator are unchanged.
+Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1** · **Transitional** (kept for data safety and older builds; not part of the V1 model). Current state: §3 one-Dish identity is **Implemented, pending deployment** (`20261108230000_dish_recipe_identity`); §4 cook naming, the §5 Recipe Diet content key and the D1/D2 server structures are deployed. Protected ranking math and Recipe Creator are unchanged.
 
 ## 1. Owner decisions (November 8, 2026)
 
 | # | Decision | Where specified |
 | --- | --- | --- |
 | 1 | **Dish** is the user-facing name for the combined food identity | §2 |
-| 2 | A Dish may have several Recipes and a **user-selectable Main Recipe**, with a deterministic default when none is chosen | §3.2 |
-| 3 | **Food Bible stays the Recipe lens**; a cooked Dish without a Recipe does not appear there | §6 |
+| 2 | ~~A Dish may have several Recipes and a user-selectable Main Recipe~~ — **superseded by decision 11.** Existing multi-Recipe data is preserved (§3.3), but V1 has one Recipe per Dish and no Main Recipe workflow | §3 |
+| 3 | **Food Bible stays the Recipe lens**: it lists Dishes that have Recipe content; a cooked Dish without a Recipe does not appear there | §6 |
 | 4 | Recipe revisions are **Recipe History**, never "versions" | §4 |
-| 5 | Each Cooking Attempt can be **renamed** by the user ("Original", "Spicy Version", "Thanksgiving 2026"). Without a custom name it falls back to "Version N". No identity or ranking evidence depends on the name | §4 |
+| 5 | Each Cooking Attempt has a user **Cook Name** ("Original", "Spicy Version", "Thanksgiving 2026"), edited in Edit Cook. Without one it falls back to "Version N". No identity or ranking evidence depends on the name | §4 |
 | 6 | **All Cooks** replaces the All Versions control (validated in §4.3) | §4.3 |
 | 7 | **Cook Again** is the action for making the Dish again | §7.2 |
-| 8 | Explicit Recipe provenance **associates automatically**; ambiguous or loose matches are **suggested for the user to confirm**, never merged silently | §3.3 |
+| 8 | ~~Explicit provenance associates automatically; loose matches are suggested~~ — **superseded by decision 11:** a Recipe belongs to its Dish by identity, so there is no relationship for the user to manage | §3 |
 | 9 | Recipe data is **as written**, Cooking Attempt data is **as made**. This now applies to Dietary as well as Contains | §5 |
 | 10 | Codex's exact Recipe-revision provenance, link-integrity and dated-reaction work is preserved. Protected ranking math is unchanged | §2.1, §9 |
+| 11 | **Dish and Recipe are two views of the same Dish identity** (like one post surfacing in different feeds). The user never manages a Dish↔Recipe relationship. Creating a Recipe in Food Bible creates its Dish; adding a Recipe from a Dish writes that Dish's Recipe side; Grub Rank and Food Bible show the same Dish. Dish Detail shows "View Recipe", not a second copy of the Dish. No standalone Rename; no Main Recipe workflow in V1. Grub List shows Dish/cook activity only | §2, §3, §6, §8 |
 
 ## 2. One Dish, separate records
 
-Users see **one Dish**. A Dish can have cooks, Recipes, or both. A Dish with only a Recipe reads as *not cooked yet*. Underneath, the records stay separate and keep their own IDs, owners, sync paths and deletion rules:
+Users see **one Dish**. A Dish can have cooks, a Recipe, or both. A Dish with only a Recipe reads as *not cooked yet*. The schema stays normalized (no merged table), but one canonical **Dish identity** — the Dish UUID — connects Recipe content and revisions, cooks, ranking evidence, photos and future sharing/intelligence:
 
 | Layer | Record | Lives in | Owns |
 | --- | --- | --- | --- |
-| Dish (composed, internal name `Food`) | No stored table. A read model built per view | App | Nothing. It only assembles the records below |
+| Dish identity | The Dish UUID: `dishes.id` (client-synced) and `recipes.dish_id` | SwiftData + private sync; Supabase | One identity for both views (§3) |
 | Cooked side | `Dish` → `CookingAttempt` → `RankedItem` + `Comparison` | SwiftData + private sync | Food identity fields; each cook *as made*; frozen ranking evidence |
-| Recipe side | `Recipe` → `recipe_revisions` | Supabase (online only) | Instructions *as written*, audience, revisions, attribution |
-| Relationships | Dish-level association (Decided, §3.1), `recipe_cook_links`, `recipe_cooks`, `dish_recipes` (legacy), `recipe_forks`, `post_recipes` | Supabase | Each records a different claim (§3.1). They are never merged into one another |
+| Recipe side | `Recipe` (`dish_id`) → `recipe_revisions` | Supabase (online only) | Instructions *as written*, audience, revisions, attribution |
+| Provenance | `recipe_cooks` (exact revision a cook used), `recipe_forks`, `post_recipes` | Supabase | Historical claims; never rewritten |
+| Transitional | `dish_recipes`, `dish_recipe_links`, `recipe_cook_links` | Supabase | Pre-identity associations kept for data safety and older builds (§3.3) |
 
-In code and docs, `Food` means the composed read model and `Dish` means the SwiftData/`dishes` entity. In user-facing copy, everything is "Dish". **No `foods` table now.** Store a Food identity only when a shipped feature has to reference a Recipe-only Dish and a cooked Dish uniformly. Want to Cook and Collections are the expected triggers (§10).
+In user-facing copy, everything is "Dish". **No `foods` table:** the Dish UUID already identifies a Recipe-only Dish and a cooked Dish uniformly, so Want to Cook, Collections and sharing can target a Dish ID directly (§10).
 
 ### 2.1 Accepted provenance and integrity (Codex `a6de6b8`)
 
@@ -49,64 +51,35 @@ These are **implemented and deployed** (`20261108171024_recipe_cook_lifecycle`, 
 - **Current link.** A new Recipe-origin cook fills a vacant exact link automatically. Deleting a cook retires its exact link but leaves its snapshot intact. Completion retries never recreate a removed association.
 - **Dated reactions.** Each completed rank or re-rank appends `{id, time, reaction, kind}` to private ranked-item diagnostics in the same transaction. These entries are never model inputs and never shared.
 
-This document builds on those rules. It never redefines exact use from links, titles or Main Recipe.
+This document builds on those rules. It never redefines exact use from links, titles or Dish identity.
 
-## 3. Dish ↔ Recipe relationships
+## 3. One Dish identity (owner decision 11)
 
-### 3.1 Four kinds of relationship
+### 3.1 Model
 
-| Relationship | Meaning | Storage | Cardinality |
-| --- | --- | --- | --- |
-| **Recipe used** | This cook was made from this exact revision | `recipe_cooks` snapshot (immutable) | ≤1 per cook |
-| **Current cook link** | This cook is currently associated with this Recipe | `recipe_cook_links` | ≤1 Recipe per cook; ≤1 cook per Recipe |
-| **Dish Recipe** (Implemented, deployed) | This Recipe is one of the ways I make this Dish | New owner-private relation `dish_recipe_links(account_id, dish_id, recipe_id, is_main, created_at)` | Many Recipes per Dish; one Recipe may belong to several Dishes; at most one `is_main` per Dish (partial unique index) |
-| **Legacy family link** | Pre-V2 association of a Recipe with a whole Dish | `dish_recipes`, PK `(account_id, dish_id)` | ≤1 per Dish |
+- **`recipes.dish_id`** is the owner's Dish identity for that Recipe. Unique per owner: a Dish has at most one owned Recipe. It is an owner-scoped UUID rather than a foreign key, because the `dishes` row is client-synced and may arrive after the Recipe (or not exist yet for a never-cooked Recipe created on another device). A removed (tombstoned) Dish is never shown as a Recipe's Dish.
+- **Exact provenance is unchanged:** `recipe_cooks` freezes the revision each cook was made from (Codex lifecycle). A Dish's Recipe is "how I make this Dish"; "Recipe used" is "what this cook was made from". They can differ (an older revision, or a Sous Chef's Recipe) and both stay visible.
+- **Foreign Recipes** (a Sous Chef's, or post-V1 Saved) never get the viewer's Dish identity; cooking one records provenance only. "Save a Private Copy" makes an owned Recipe that gets a Dish when first created or cooked.
 
-**Why a new relation:** a Dish can't hold several Recipes in today's structures. `dish_recipes` allows only one Recipe per Dish, and exact links are per cook. Repurposing `dish_recipes` as "main" was rejected: changing the main Recipe would delete the old association and change the meaning of historical rows. The implementation stage will:
+### 3.2 Behavior
 
-- add the table additively, with RLS, owner-derived RPCs and a compare-and-swap guard
-- read legacy `dish_recipes` rows as Dish Recipes (copied once, with fingerprints, if that keeps one source of truth; the legacy table is kept read-only)
-- **not** copy exact cook links or used snapshots into it, because those are already related through the cook
-
-Deleting the Dish or the Recipe cascades. Supabase authorization is required in that cycle.
-
-A Dish's **related Recipes** are the union, deduplicated by Recipe UUID and restricted to Recipes the viewer may read, of:
-
-- its Dish Recipes and legacy family link
-- Recipes exact-linked to any of its active cooks
-- Recipes recorded as used by any of its cooks (a revoked foreign Recipe shows only its frozen snapshot)
-
-### 3.2 Main Recipe
-
-- **Chosen:** the user can mark any related Recipe as Main from Dish Detail. This sets `is_main` on its Dish Recipe row, first creating the row if the Recipe was related only through a cook.
-- **Default when nothing is chosen** (deterministic and independent of ranking, so it never flips when scores move):
-  1. the legacy family-linked Recipe, if any
-  2. otherwise, the oldest related Recipe by Recipe creation time, with Recipe UUID as the tie-break
-- **Auto-main:** the first Recipe associated with a Dish that has no Recipe becomes Main.
-- If the chosen Main is deleted, revoked or unlinked, the default rule applies again. The app never silently picks a different explicit Main.
-- Main Recipe drives the Dish Detail Recipe section and the Cook Again suggestion (§7.2). It **never** establishes that any cook used it.
-
-### 3.3 Automatic vs suggested association
-
-| Situation | Behavior |
+| Action | Result |
 | --- | --- |
-| Rank My Version / Cook Again *from a Recipe* | **Automatic:** reserves the exact revision, creates the Recipe-used snapshot, fills a vacant exact link (Codex trigger), and adds a Dish Recipe row (Main if the Dish had none) |
-| Add Recipe (Import / Create Manually) from a Dish or cook | **Automatic:** creates a Dish Recipe; also creates the exact link when started from a cook. Creation and association are one atomic call |
-| Link Existing from a Dish, or Link a Dish from a Recipe | **Automatic:** this is an explicit user act. It creates a Dish Recipe (plus an exact link if the user picked a cook). It never creates a Recipe-used snapshot |
-| Cook Again on a Dish that has a Main Recipe | **Suggest:** "Cook from [Main Recipe]" or "Without a Recipe". Nothing is preselected and nothing is recorded as used unless the user chooses the Recipe |
-| Rank My Version on a Recipe related to one Dish only through a legacy or Dish-level link | **Suggest:** add the cook to that Dish (default highlighted) or start a new Dish |
-| Recipe related to several Dishes | **Ask** which Dish |
-| New Dish whose name matches a Recipe-only Dish or an unlinked owned Recipe | **Suggest:** "Link [Recipe]?" Dismissing the suggestion leaves both separate |
-| Two Dishes with similar names | Never merged. A Dish merge is not part of V1 |
+| Create or import a Recipe in Food Bible | The app picks a new Dish UUID, saves the Recipe with it (`recipeDishID`), and once the server confirms creates the local Dish (no cooks) and syncs it. The Dish appears in Food Bible as *not cooked yet*, never in Grub Rank |
+| Add Recipe on a Dish (Dish Detail) | The Recipe is created with that Dish's identity: it becomes the Dish's Recipe side |
+| Rank My Version on an owned Recipe | The cook goes into the Recipe's own Dish; a Dish row is created with the Recipe's Dish UUID if it does not exist yet |
+| Completing a cook of an owned Recipe without a live Dish | The cook's Dish becomes the Recipe's Dish (server trigger) |
+| 86 the last cook of a Dish with a Recipe | The Dish identity stays (Recipe-only Dish, *not cooked yet*) |
+| 86 a Recipe | An uncooked Dish that only existed for it is removed; a cooked Dish stays in Grub Rank |
+| Edit a Recipe | Never moves it to another Dish |
 
-Rules: never infer use from title, photo or fuzzy match. Never move a cook between Dishes implicitly. Foreign Recipes (a Sous Chef's, or post-V1 Saved) can be used and suggested, but are never made owned or delegated.
+Server actions: `save` accepts `recipeDishID` (new Recipe, or filling a missing/removed Dish); `set_dish` claims explicitly; `dish` returns the Dish's own Recipe first; `library_index` reports each owned Recipe's live Dish and `cooked`; Recipe cards carry `dishID` for the owner only. Assigning a Dish is not a Recipe revision (the Recipe History archive fires only on revision/content changes).
 
-### 3.4 D1 implementation (deployed November 8)
+### 3.3 Transitional structures (kept, not the V1 model)
 
-- **Store:** `staygrubby.dish_recipe_links`, owner-private, RLS with no client grants, cascades from the Dish and the Recipe. Legacy `dish_recipes` rows were copied once (not marked Main) and stay unchanged. A trigger mirrors legacy attach/detach from existing app builds.
-- **Automatic association:** `associate_dish_recipe` (advisory-locked per Dish) runs when an exact cook link is inserted and when a Recipe-origin reservation completes (Codex lifecycle). The first Recipe of a Dish with no other related Recipe becomes the chosen Main.
-- **Actions** on `api.recipes`: `dish_recipes` (read), `link_dish_recipe`, `unlink_dish_recipe` (also removes the legacy row, never cook links or used snapshots), `set_main_recipe` (compare-and-swap on `expectedMainID`, null clears the choice). Each returns the Dish's related Recipes with `mainRecipeID`, `chosenMainRecipeID`, and per Recipe `dishLinked`, `legacy`, `linkedAttemptIDs`, `usedByAttemptIDs`. A revoked Recipe drops out of the list; its frozen snapshot remains in provenance.
-- **App:** `DishRecipeSet` decodes the response; `RecipeAssociation` encodes §3.3 (explicit → automatic, one related Dish → suggest, several → ask, none → new Dish; Cook Again offers Main first and preselects nothing). D2 and F call them once the migration is deployed.
+- `dish_recipes` (legacy family link), `dish_recipe_links` (D1 multi-Recipe + Main) and `recipe_cook_links` (current cook link) stay with their triggers and RLS so no data is lost and older builds keep working. The app no longer offers Link a Dish, Unlink, Set as Main or multiple Recipes per Dish.
+- The identity backfill used the D2 resolution (Main-Recipe Dish, exact-linked cook's Dish, related Dish, legacy link). If two Recipes resolved to one Dish, the Dish's Main kept it and the others stayed unassigned until cooked (production had none: 5 Recipes, 5 distinct Dishes).
+- Retire these structures only in a later, explicitly authorized cleanup once no supported build reads them.
 
 ## 4. Cooking Attempts: final terminology and naming
 
@@ -121,7 +94,7 @@ Rules: never infer use from title, photo or fuzzy match. Never move a cook betwe
 | Cooking from a Recipe | Recipe-origin cook | **Rank My Version** (approved vocabulary; your cook is your version *of the Recipe*) | — |
 | Grub Rank projection | `RankingsDisplayMode.topVersion` / `.allVersions` | Off: one row per Dish (its top cook). On: **All Cooks** | "All Versions", "Top Version" |
 | Recipe revisions | `recipe_revisions` | **Recipe History** (overflow item and screen title); a single entry is a "revision" | "Version History" |
-| Changing a cook's name | — | **Rename** (Dish Detail cook row overflow, plus the Cook Name field in Edit Cook) | — |
+| Changing a cook's name | — | The **Cook Name** field in Edit Cook (no separate Rename action) | "Rename" |
 
 "Version" remains only inside the fallback name "Version N" and the Rank My Version action.
 
@@ -133,10 +106,10 @@ Rules: never infer use from title, photo or fuzzy match. Never move a cook betwe
 - **Ranking independence:**
   - Comparisons, assessments, reactions, unlock eligibility, Recipe-used snapshots and links all key on `CookingAttempt.id` / `RankedItem.id`, never on the name.
   - `RankedItem.name` is a display cache of `displayName`. `CookingStore.rename` refreshes it for that cook; creating or deleting a cook refreshes siblings whose fallback visibility changes (a lone first cook caches "Dish", then "Dish — Version 1" once a second cook exists). Strengths, uncertainty and evidence are never touched (`CookNameTests`).
-  - Rename is an ordinary metadata edit staged as `editCook` through the outbox. It never starts a re-rank and never posts.
+  - Editing the Cook Name is an ordinary Edit Cook change staged as `editCook` through the outbox. It never starts a re-rank and never posts.
 - **Snapshots stay snapshots:** published posts and rank-at-sharing records keep the name they were shared with. Recipe-used content is untouched. Search matches the current display name (custom or fallback).
-- **Where names appear:** Grub Rank rows, Dish Detail cook list, the comparison screen (Dish + name), the result screen, the Cook Again chooser, the Link a Dish picker, share cards and the composer (per their existing snapshot rules), and accessibility labels ("Spicy Version, cook of Chili").
-- **Suggested names:** none. The field is labelled "Cook Name (optional)"; when the cook would show a fallback, a hint below reads "Leave blank to show Version 3." Rename (cook overflow and a Cooks row context action) uses the fallback as its placeholder. No date- or Recipe-derived automatic names, because they would read as the user's choice.
+- **Where names appear:** Grub Rank rows, Dish Detail cook list, the comparison screen (Dish + name), the result screen, the Cook Again chooser, the Dish picker, share cards and the composer (per their existing snapshot rules), and accessibility labels ("Spicy Version, cook of Chili").
+- **Suggested names:** none. The field is labelled "Cook Name (optional)"; when the cook would show a fallback, a hint below reads "Leave blank to show Version 3."  No date- or Recipe-derived automatic names, because they would read as the user's choice.
 
 ### 4.3 All Cooks — validation and placement
 
@@ -177,13 +150,13 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 | | Grub Rank | Food Bible |
 | --- | --- | --- |
 | Question | What have I cooked, and how did it rank? | How do I make things? |
-| Rows | Ranked **cooks**: by default one per Dish (top cook), or every cook with All Cooks | **Recipes**: one card per Recipe UUID, showing its Dish when related |
-| Includes | Dishes with ≥1 ranked cook | Owned Recipes (Recipe-only Dishes and Recipes of cooked Dishes); post-V1 Saved Recipes and Want to Cook |
+| Rows | Ranked **cooks**: by default one per Dish (top cook), or every cook with All Cooks | **Dishes with Recipe content**: one card per Dish (its name, the Recipe title when different) |
+| Includes | Dishes with ≥1 ranked cook | Owned Dishes with a Recipe (cooked or not cooked yet) and authorized Sous Chef Recipes; post-V1 Saved Recipes and Want to Cook |
 | Excludes | Recipe-only Dishes | Cooked Dishes without a Recipe (owner decision 3) |
 | Order | Global Bradley–Terry order (frozen) plus read-only Sort | Recently Updated / Newest / Oldest / A–Z / Z–A |
 | Opens | Dish Detail, with the tapped cook selected (its cook face) | The same Dish's Recipe face: the Recipe reader for that Recipe, carrying the Dish's Cooks section; a Recipe-only Dish shows "Not cooked yet" (§8.1) |
 
-A Recipe related to several Dishes appears once in Food Bible. Its card names the Main-Recipe Dish first, otherwise the Dish of its exact-linked cook, otherwise the first by name.
+Both lenses show the same Dish identity: a Dish with cooks and a Recipe appears in both, and 86ing in one view never orphans the other (§3.2).
 
 ### 6.1 Filters per lens
 
@@ -205,28 +178,21 @@ Grub Rank keeps its four direct chips. Food Bible has six groups and keeps the s
 
 ## 7. Contextual flows
 
-### 7.1 One Add Recipe flow — `AddRecipeFlow(context:)`
+### 7.1 Add Recipe
 
-| Choice | Meaning | Shown |
-| --- | --- | --- |
-| **Import Recipe** | Outside text → Gemini (contract 4) → editable `RecipeDraft` → review → explicit Save. Paste is the V1 source; Scan and Share Sheet are post-V1 sources of the same pipeline | Always |
-| **Create Manually** | Empty draft → the same editor | Always |
-| **Link Existing** | Choose an owned Recipe in the photographic picker | Dish or cook context only |
+Two choices everywhere: **Paste Recipe** (outside text → Gemini contract 4 → editable `RecipeDraft` → review → explicit Save; Scan and Share Sheet are post-V1 sources of the same pipeline) and **Add Manually** (empty draft → the same editor). There is no Link Existing / Link a Dish in V1: a Recipe belongs to its Dish by identity (§3).
 
-| Context | Started from | Result (associations per §3.3) |
-| --- | --- | --- |
-| `.library` | Food Bible + | Recipe-only Dish |
-| `.dish(dishID)` | Dish Detail "Add Recipe" | Dish Recipe (Main if first) |
-| `.cook(attemptID)` | Cook row / Edit Cook | Dish Recipe plus an exact link to that cook |
+| Started from | Result |
+| --- | --- |
+| Food Bible + | A new Dish with this Recipe (not cooked yet) |
+| Dish Detail "Add Recipe" | This Dish's Recipe side |
 
-This replaces today's three divergent entry points: Food Bible Paste/Add Manually, the Dish Recipe section Add/Link, and the Recipe overflow Link a Dish. **Link a Dish** stays as the reverse entry from a Recipe and uses the same picker. External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Recipe Creator behavior are unchanged; only the "Paste Recipe" label and grouping change.
+External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Recipe Creator behavior are unchanged. F may merge the two entry points into one `AddRecipeFlow(context:)` view; the data rule above is final.
 
 ### 7.2 Cook Again and Rank My Version
 
-Both start the same new-cook flow and differ only in their starting point:
-
-- **Cook Again** (from Dish Detail or a Grub Rank row) starts a new cook of *this* Dish. If the Dish has related Recipes, the first step offers "Cook from [Main Recipe]", "Choose another Recipe" or "Without a Recipe" (§3.3). Choosing a Recipe makes it a Recipe-origin cook with exact revision reservation.
-- **Rank My Version** (from a Recipe) starts a Recipe-origin cook of *this* Recipe. The destination Dish follows §3.3: automatic when explicit, suggested when loose, asked when several Dishes are related, and a new Dish (prefilled from the Recipe, editable) for a Recipe-only Dish.
+- **Cook Again** (Dish Detail or Grub Rank) starts a new cook of *this* Dish. Offering "Cook from this Dish's Recipe" as a first step (exact revision reservation) is an F option; nothing is preselected or recorded as used unless chosen.
+- **Rank My Version** (from a Recipe) starts a Recipe-origin cook that goes into the Recipe's own Dish (§3.2). A Sous Chef's Recipe starts a new Dish of the viewer's.
 - Both end in the unchanged protected flow: Initial Reaction → comparisons → result.
 
 ### 7.3 Editors
@@ -242,31 +208,27 @@ Each part owns one record and is built by generalizing existing components (AGEN
 
 | Part | Built from | Used by |
 | --- | --- | --- |
-| `DishIdentityHeader` — hero, name, food metadata, top score | `SGHeroMedia`, `SGScore`, `TagChip`, `SourceSummary` | Dish Detail |
-| `DishCooksSection` — cooks with name, rank, gated score, date; Rename; Cook Again | `RankedDishRow`, `CookVersionIdentity`, `sgPhotoFrame(.compactThumbnail)` | Dish Detail |
-| `DishRecipesSection` — Main Recipe preview, other related Recipes, Set as Main, Add Recipe; "Recipe used" vs "Linked Recipe" per cook | `DishRecipeSection` (generalized), `RecipePhoto`, `RecipeReadingBody` | Dish Detail, cook detail |
-| `CookName` — display-name resolver plus the Rename field | `CookingAttempt.meaningfulVersionLabel` (generalized) | Every place in §4.2 |
-| `DishRow` / `RecipeCard` | `RankedDishRow`, Food Bible card (`.cookbook`) | Grub Rank, Food Bible, pickers, post-V1 Saved/Collections |
-| `DishPicker` (Dish / cook / Recipe modes) | `DishSelectionView`, `CookVersionSelectionView`, `SGSearchField` | Link Existing, Link a Dish, Cook Again Recipe choice, post-V1 Collections |
-| `AddRecipeFlow(context:)` | `RecipeCreationChoice`, `RecipeImportView`, `RecipeEditor` | §7.1 |
-| `CookEditor` | `CookingMetadataForm`, `CookingDetailsSheet`, `SGOptionSheet`, `SGFormSection` | §7.3 |
-| `DishActions` — Share / Post to Grub List / Cook Again / Rank My Version / overflow (Rename, Recipe History, 86) | `SocialLinkShareAction`, overflow menus | Dish Detail, Recipe reader; the Stage C sharing model plugs in here |
+| `DishIdentityHeader` — name, cook name, score, rank | `SGEyebrow`, `ScoreBadge` | Dish Detail |
+| `DishCooksSection` — cooks with name, rank, gated score, date; Cook Again | `CookVersionIdentity`, `sgPhotoFrame(.compactThumbnail)` | Dish Detail, the Recipe face |
+| `DishRecipeRow` — "View Recipe" (or Add Recipe: Paste / Add Manually) plus the cook's "Recipe used" revision when it differs | `RecipeInlineAction`, `RecipeSnapshotView` | Dish Detail |
+| `CookName` — display-name resolver; the name is edited in Edit Cook | `CookingAttempt.meaningfulVersionLabel` | Every place in §4.2 |
+| `DishActions` — overflow: Edit Cook, Re-rank, Share with Sous Chefs, Dish text, 86 | overflow menus | Dish Detail; the Stage C sharing model plugs in here |
+| Food Bible card — the Dish name, the Recipe title when it differs | `CookbookCard` | Food Bible |
+| `AddRecipeFlow(context:)` (F) | `RecipeCreationChoice`, `RecipeImportView`, `RecipeEditor` | §7.1 |
+| `CookEditor` (F) | `CookingMetadataForm`, `CookingDetailsSheet`, `SGOptionSheet`, `SGFormSection` | §7.3 |
 
-### 8.1 D2 implementation (November 8)
+### 8.1 Dish Detail and the Recipe face (current)
 
-One Dish Detail with two faces built from the same parts, so neither lens loses its job:
-
-- **Cook face** (Grub Rank → `AttemptDetailView`): hero, `DishIdentityHeader`, cook metadata, Dish text, `DishRecipesSection`, cook provenance (tagged Sous Chefs named: "Cooked with Alex and Sam"), Source, Personal Notes, `DishCooksSection` (Cooks, Cook Again, Rename). Overflow: `DishActions`.
-- **Recipe face** (Food Bible or a Recipes row → `RecipeDetailView`): the Recipe reader, plus the Dish's `DishCooksSection` ("Your cooks of [Dish]") when the Dish is cooked, or a "Not cooked yet" eyebrow for a Recipe-only Dish. The Dish shown is the one the screen was opened from, else the exact-linked cook's Dish, else the legacy family Dish.
-- **`DishRecipesSection`:** Main Recipe card ("Main Recipe" once there are several), other Recipes, per-row Set as Main / Remove from Dish (context menu and accessibility actions), "Used for this cook" / "Linked to this cook" labels, the selected cook's "Recipe used" snapshot, and Add Recipe / Link Existing (Dish-level `link_dish_recipe`). Contextual `AddRecipeFlow` and the cook-level link chooser remain F.
-- **Food Bible Dish resolution:** `20261108210256_food_bible_dish_resolution` (read path only) makes `library_index` name the Main-Recipe Dish first, then the exact-linked cook's Dish, then the first related Dish by name, and adds `cooked`. **Deployed November 8** (no rows changed; all 5 hosted Recipes resolved to the same Dish as before). The app keeps a local `cooked` fallback for older servers.
-- Rejected for D2: a segmented Cooks/Recipe container (it would hide either the method or the cooks behind a control) and moving Recipe reading into Dish Detail.
+- **Dish Detail** (Grub Rank → `AttemptDetailView`): hero, `DishIdentityHeader`, cook metadata, Dish text, `DishRecipeRow`, cook provenance (tagged Sous Chefs named: "Cooked with Alex and Sam"), Source, Personal Notes, `DishCooksSection`. The Recipe is one row — the Dish photo and text are not repeated.
+- **Recipe face** (Food Bible card or View Recipe → `RecipeDetailView`): the Recipe reader for the Dish, with the Dish's cooks ("Your cooks of [Dish]") or a "Not cooked yet" eyebrow. The Dish shown is the Recipe's own Dish identity. No Link a Dish / Unlink actions.
+- **Grub List** shows Dish/cook activity only. Recipe-only activity (`recipe_created`) is not shown; a cook post can still offer its Recipe.
+- History: D2 (`9b28a33`) shipped a multi-Recipe Recipes section with Main Recipe; it was replaced the same day by this model. `20261108210256_food_bible_dish_resolution` (deployed) remains the fallback resolution for Recipes without a Dish identity.
 
 ## 9. Evidence preserved for Personal Cooking Intelligence
 
 - **Cooked, known and intended stay separate:** cooks, Recipes, and post-V1 Saved / Want to Cook. A Recipe-only Dish is never counted as cooked.
 - **As written vs as made** (Diet and Contains on both sides) is stored separately. The difference itself shows substitutions.
-- **Used vs linked vs Main:** only `recipe_cooks` means "cooked from this revision". Main Recipe is a preference, and a Dish Recipe is an association.
+- **Used vs the Dish's Recipe:** only `recipe_cooks` means "cooked from this revision". A Dish's Recipe (`recipes.dish_id`) is how the user makes the Dish now; the difference over time is cooking history (remake counts, substitutions). Transitional associations are not evidence.
 - **Dated reactions** (Codex) record *when* evaluations happened. Cook names are user labels, not evidence, and are never interpreted.
 - **Food-level fields are current state.** Renaming a Dish or changing its Cuisine applies to every cook (known limit). Capture an "as cooked" value going forward only if a real feature needs it.
 - **Context** (Collection, shared cook, Recipe origin) stays an explicit relationship.
@@ -276,24 +238,26 @@ One Dish Detail with two faces built from the same parts, so neither lens loses 
 | Feature | Fit |
 | --- | --- |
 | **Saved Recipes** | An owner-private, revocable bookmark to a Sous Chef's Recipe, shown in a Food Bible "Saved" segment. Rank My Version on it creates an owned cook with creator credit, never a copy or an owned link. Save a Private Copy stays a separate explicit action |
-| **Want to Cook** | An intention targeting a Dish (cooked or Recipe-only) or a Recipe, resolved by a later cook. This is the first trigger to decide between a stored Food identity and a tagged `(dish_id \| recipe_id)` target. The dormant `recipe_tickets` covers Recipes only |
-| **Collections** | Collection ↔ Dish many-to-many, where members may be Recipe-only. Same target decision |
+| **Want to Cook** | An intention targeting a Dish ID (cooked or Recipe-only), resolved by a later cook. No separate Food identity is needed: the Dish UUID covers both. The dormant `recipe_tickets` covers Recipes only |
+| **Collections** | Collection ↔ Dish ID many-to-many; members may be Recipe-only Dishes |
 | **Contextual rank boards** | A filtered projection of the **one** global ranking (Collection, Cuisine, shared cooking). Never a separate fit, evidence set or manual order. Whether a board shows board-relative positions is an owner decision for that feature |
 | **Scan Recipe / Share Sheet** | Extra Import Recipe sources (on-device text recognition; an authenticated app-group handoff). Same Gemini → review → Save path; disclosure covers photo-derived text |
-| **Discover / statistics** | Counts only explicit cooks and used snapshots per the audit's definitions |
+| **Discover / statistics / remake counts** | Count explicit cooks per Dish ID and used snapshots per the audit's definitions |
+| **Dish sharing** | Shares one Dish ID: its cooks (per existing post rules) and, when shared, its Recipe |
 
-## 11. Per-cycle architecture check
+## 11. Per-cycle architecture check (one-Dish identity)
 
-- **A. Requirements:** final Dish/Recipe/cook terminology, data behavior and implementation order.
-- **B. Existing data reuse:** cook naming reuses `versionTitle`; the Food read model reuses existing records; Codex lifecycle triggers handle exact association.
-- **C. Intelligence value:** as-written/as-made Diet and Contains plus Main-vs-used distinctions improve future signals; names stay labels, not evidence.
-- **D. New data justified now:** two additions, both required by owner decisions — `dish_recipe_links` (several Recipes per Dish plus Main) and an optional Recipe Diet content key. No Food table.
-- **E. Privacy:** Dish Recipe links are owner-private like current links. Recipe Diet follows Recipe audience and revision pinning. Certification never leaves the cook. Snapshots are unchanged.
-- **F. Scalability:** Dish composition is bounded by `library_index` pages and the local store; relationship reads are per Dish.
-- **G. Documentation and tests:** canonical docs updated here. Implementation needs migration/RLS tests, `CookingStore` rename-invariance tests (evidence, strengths and IDs unchanged) and UI tests for the copy changes.
+- **A. Requirements:** one user-facing Dish across Grub Rank and Food Bible; no relationship management; exact cook provenance kept.
+- **B. Reuse:** existing `dishes` rows and sync, `recipes`, `recipe_cooks`; one added column. No merged table.
+- **C. Intelligence value:** a stable Dish ID ties Recipe revisions, cooks, remake counts and photos together.
+- **D. New data justified:** `recipes.dish_id` (+ unique per owner). Nothing speculative.
+- **E. Privacy:** Dish IDs are owner-private (cards expose `dishID` only to the owner); Grub List no longer shows Recipe-only activity.
+- **F. Scalability:** one indexed column; per-entry lookups bounded by `library_index` pages.
+- **G. Docs/tests:** this document, the architecture overview, roadmap, UI architecture, release gate; backend `dish-recipe-identity` test; app unit/UI tests.
 
 ## 12. Still open (decide in the named stage, not blocking)
 
 - Board-relative positions on future contextual rank boards (post-V1 feature).
-- ~~Whether to also show the Main Recipe on Grub Rank rows~~ — **decided in D2: no.** Grub Rank rows stay cook-focused; the Main Recipe lives on Dish Detail.
+- ~~Whether to also show the Recipe on Grub Rank rows~~ — **decided: no.** Grub Rank rows stay cook-focused; View Recipe lives on Dish Detail.
+- When to retire the transitional association tables (§3.3) — a later authorized cleanup.
 - Recipe reservation expiry and snapshot retention after explicit cook deletion (privacy decision, carried from the audit; V1 release gate).

@@ -49,9 +49,8 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.staticTexts["recipe-save-error"].waitForExistence(timeout:8));XCTAssertTrue(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'recipe-ingredient-row-' AND label CONTAINS 'stock'")).firstMatch.exists)
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1);entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.staticTexts["stock"].exists)
-        app.openRecipeAction("recipe-link");XCTAssertTrue(app.navigationBars["Link a Dish"].waitForExistence(timeout:8))
-        let cook=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-cook-'")).firstMatch;XCTAssertTrue(cook.waitForExistence(timeout:8));cook.tap();XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout:8))
-        app.openRecipeAction("recipe-detach");app.buttons["Unlink"].tap();XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForNonExistence(timeout:8))
+        // A Recipe made in Food Bible is its own Dish immediately: not cooked yet, nothing to link.
+        XCTAssertTrue(app.descendants(matching:.any)["recipe-not-cooked"].waitForExistence(timeout:8))
         app.navigationBars.buttons["Food Bible"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1)
         app.tabBars.buttons["Grub Rank"].tap();XCTAssertTrue(app.staticTexts["Matzo Ball Soup"].waitForExistence(timeout:8))
     }

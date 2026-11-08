@@ -29,8 +29,8 @@ struct DishIdentityHeader: View {
     }
 }
 
-/// Every cook of one Dish with name, global rank, gated score and date. Rename and Cook Again
-/// are offered by the host. `current` marks the cook Dish Detail is showing.
+/// Every cook of one Dish with name, global rank, gated score and date. Cook Again is offered
+/// by the host; a cook's name is edited in Edit Cook. `current` marks the cook Dish Detail is showing.
 struct DishCooksSection: View {
     let dish: Dish
     var current: CookingAttempt? = nil
@@ -38,7 +38,6 @@ struct DishCooksSection: View {
     var linksByDestination = false
     var title = "Cooks"
     var cookAgain: (() -> Void)? = nil
-    var rename: ((CookingAttempt) -> Void)? = nil
     @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
@@ -98,191 +97,95 @@ struct DishCooksSection: View {
         .accessibilityLabel([cook.meaningfulVersionLabel.map { "\($0), cook of \(dish.name)" } ?? dish.name, "rank \(rank)"].joined(separator: ", "))
         .accessibilityIdentifier("version-row-\(cook.id)")
         .accessibilityHint(current ? "Current cook" : "Opens this cook")
-        .contextMenu { if let rename { Button("Rename", systemImage: "character.cursor.ibeam") { rename(cook) } } }
-        .accessibilityActions { if let rename { Button("Rename") { rename(cook) } } }
     }
 }
 
-/// A Dish's related Recipes: the Main Recipe first, then the others, with Set as Main and
-/// Remove from Dish. For the selected cook it states "Recipe used" (an exact snapshot)
-/// separately from "Linked Recipe" (a current association). Main never implies use.
-struct DishRecipesSection: View {
+/// The Dish's Recipe side on Dish Detail: one "View Recipe" row, or Add Recipe when the Dish
+/// has none. Dish and Recipe are one Dish, so the Recipe is not repeated here (photo, body).
+/// The selected cook's exact "Recipe used" revision stays separate provenance.
+struct DishRecipeRow: View {
     let dish: Dish
     var attempt: CookingAttempt? = nil
+    /// Tells the host whether this Dish has a Recipe (keeps the Dish when its last cook is 86'd).
+    var recipeKnown: ((Bool) -> Void)? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
-    @Query private var syncBindings: [SyncStoreBinding]
-    @State private var set: DishRecipeSet?
+    @State private var recipe: Recipe?
     @State private var usedRecipe: RecipeCookSnapshot?
+    @State private var loaded = false
     @State private var failure: String?
-    @State private var busy = false
-    @State private var creating = false
-    @State private var linking = false
-    @State private var removing: Recipe?
+    @State private var adding: RecipeCreationMode?
     @State private var generation = UUID()
-
-    private var synced: Bool {
-        guard let cook = attempt ?? dish.attempts.first else { return false }
-        return CookPublicationReadiness.revision(for: cook, binding: syncBindings.first, requireCurrent: false) != nil
-    }
 
     var body: some View {
         if request != nil {
             VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                if let usedRecipe { usedBlock(usedRecipe) }
-                SGSectionHeader(title: (set?.recipes.count ?? 0) > 1 ? "Recipes" : "Recipe") {
-                    if set != nil && !(set?.recipes.isEmpty ?? true) { addMenu }
+                if let recipe {
+                    NavigationLink { RecipeDetailView(id: recipe.id, dishID: dish.id) } label: {
+                        HStack(spacing: SGTheme.Space.small) {
+                            Label("View Recipe", systemImage: "book").font(SGTheme.TypeRole.headline)
+                                .foregroundStyle(SGTheme.ColorToken.primaryText)
+                            Spacer(minLength: 0)
+                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                        }.frame(minHeight: 44).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(recipe.content.title == dish.name ? "View Recipe" : "View Recipe, \(recipe.content.title)")
+                    .accessibilityIdentifier("dish-view-recipe")
+                } else if loaded {
+                    Menu {
+                        Button("Paste Recipe", systemImage: "doc.text") { adding = .imported }.accessibilityIdentifier("dish-recipe-import")
+                        Button("Add Manually", systemImage: "square.and.pencil") { adding = .manual }.accessibilityIdentifier("dish-recipe-manual")
+                    } label: {
+                        Label("Add Recipe", systemImage: "plus").frame(minHeight: 44)
+                    }.buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-add-recipe")
                 }
-                if let set {
-                    if let main = set.main { mainCard(main) }
-                    ForEach(set.others, id: \.recipe.id) { otherRow($0) }
-                    if set.recipes.isEmpty { emptyActions }
-                } else if !synced {
-                    Text("Recipes are available once this Dish syncs.").font(.footnote).foregroundStyle(.secondary)
-                } else if failure == nil { ProgressView().frame(maxWidth: .infinity, alignment: .leading) }
+                if let usedRecipe, usedRecipe.recipeID != recipe?.id || usedRecipe.revision != recipe?.revision {
+                    NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: {
+                        Label("Recipe used for this cook · revision \(usedRecipe.revision)", systemImage: "clock")
+                    }.frame(minHeight: 44).accessibilityIdentifier("cook-recipe-snapshot")
+                }
                 if let failure {
                     Text(failure).font(.footnote).accessibilityIdentifier("cook-recipe-error")
-                    Button("Retry Recipes") { Task { await load() } }
+                    Button("Retry Recipe") { Task { await load() } }
                 }
             }
-            .task(id: "\(dish.id):\(attempt?.id.uuidString ?? ""):\(synced)") { await load() }
+            .task(id: "\(dish.id):\(attempt?.id.uuidString ?? "")") { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
-            .sheet(isPresented: $creating) {
-                RecipeEditor(title: dish.name, course: attempt?.categoryCode ?? dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { recipe in
-                    Task { await mutate("link_dish_recipe", recipe: recipe.id) }
+            .sheet(item: $adding, onDismiss: { Task { await load() } }) { mode in
+                NavigationStack {
+                    if mode == .imported { RecipeImportView(dish: dish) { adding = nil } }
+                    else {
+                        RecipeEditor(dishID: dish.id, title: dish.name, course: attempt?.categoryCode ?? dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { _ in adding = nil }
+                    }
                 }
             }
-            .sheet(isPresented: $linking, onDismiss: { Task { await load() } }) {
-                NavigationStack { RecipeLibraryView(dishID: dish.id, linksDishRecipe: true) }
-            }
-            .confirmationDialog("Remove this Recipe from \(dish.name)?", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
-                Button("Remove from Dish", role: .destructive) { if let removing { Task { await mutate("unlink_dish_recipe", recipe: removing.id) } } }
-            } message: { Text("The Recipe, its history, your cooks and any Recipe-used records stay intact.") }
         }
-    }
-
-    private var addMenu: some View {
-        Menu {
-            Button("Add Recipe", systemImage: "plus") { creating = true }.accessibilityIdentifier("dish-add-recipe")
-            Button("Link Existing Recipe", systemImage: "link") { linking = true }.accessibilityIdentifier("dish-link-recipe")
-        } label: { SGToolbarIcon(symbol: "plus") }
-            .disabled(busy).accessibilityLabel("Add a Recipe to this Dish").accessibilityIdentifier("dish-recipes-add")
-    }
-    @ViewBuilder private var emptyActions: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: SGTheme.Space.medium) { addButtons }
-            VStack(alignment: .leading, spacing: SGTheme.Space.small) { addButtons }
-        }
-    }
-    @ViewBuilder private var addButtons: some View {
-        Button("Add Recipe", systemImage: "plus") { creating = true }
-            .buttonStyle(RecipeInlineAction()).disabled(busy).accessibilityIdentifier("dish-add-recipe")
-        Button("Link Existing Recipe", systemImage: "link") { linking = true }
-            .buttonStyle(RecipeInlineAction()).disabled(busy).accessibilityIdentifier("dish-link-recipe")
-    }
-
-    private func usedBlock(_ used: RecipeCookSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            SGSectionHeader(title: "Recipe used")
-            if let creator = used.creatorName { Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("cook-recipe-creator") }
-            NavigationLink { RecipeSnapshotView(cook: used) } label: { Label(used.snapshot.title, systemImage: "clock") }
-                .accessibilityIdentifier("cook-recipe-snapshot")
-            Text("Recipe revision \(used.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
-        }.padding(.bottom, SGTheme.Space.small)
-    }
-
-    private func relation(_ entry: DishRecipeSet.Entry) -> String? {
-        guard let attempt else { return nil }
-        if entry.usedByAttemptIDs.contains(attempt.id) { return "Used for this cook" }
-        if entry.linkedAttemptIDs.contains(attempt.id) { return "Linked to this cook" }
-        return nil
-    }
-
-    private func mainCard(_ entry: DishRecipeSet.Entry) -> some View {
-        NavigationLink { RecipeDetailView(id: entry.recipe.id, dishID: dish.id) } label: {
-            HStack(spacing: SGTheme.Space.small) {
-                RecipePhoto(id: entry.recipe.content.photoID, dish: dish, name: entry.recipe.content.title).sgPhotoFrame(.compactThumbnail)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                    if (set?.recipes.count ?? 0) > 1 { SGEyebrow(text: "Main Recipe") }
-                    Text(entry.recipe.content.title).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
-                        .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)
-                    if let relation = relation(entry) { Text(relation).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").foregroundStyle(.secondary)
-            }.contentShape(Rectangle())
-        }
-        .buttonStyle(.plain).frame(minHeight: 44)
-        .contextMenu { removeButton(entry.recipe) }
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens the Recipe")
-        .accessibilityIdentifier("dish-view-recipe")
-    }
-
-    private func otherRow(_ entry: DishRecipeSet.Entry) -> some View {
-        NavigationLink { RecipeDetailView(id: entry.recipe.id, dishID: dish.id) } label: {
-            HStack(spacing: SGTheme.Space.small) {
-                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                    Label(entry.recipe.content.title, systemImage: "book").foregroundStyle(SGTheme.ColorToken.primaryText)
-                    if let relation = relation(entry) { Text(relation).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").foregroundStyle(.secondary)
-            }.contentShape(Rectangle())
-        }
-        .buttonStyle(.plain).frame(minHeight: 44)
-        .contextMenu {
-            Button("Set as Main Recipe", systemImage: "star") { Task { await setMain(entry.recipe.id) } }
-            removeButton(entry.recipe)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityActions {
-            Button("Set as Main Recipe") { Task { await setMain(entry.recipe.id) } }
-            Button("Remove from Dish") { removing = entry.recipe }
-        }
-        .accessibilityIdentifier("dish-recipe-\(entry.recipe.id)")
-    }
-    private func removeButton(_ recipe: Recipe) -> some View {
-        Button("Remove from Dish", systemImage: "link.badge.plus", role: .destructive) { removing = recipe }
     }
 
     private func load() async {
-        guard synced, let request else { return }
+        guard let request else { return }
         let token = UUID(); generation = token
         do {
-            let value = try await DishRecipeService.load(dish.id, request: request)
+            struct DishResponse: Decodable { var recipe: Recipe? }
+            var payload = SocialPayload(); payload.dishID = dish.id
+            let next = try JSONDecoder().decode(DishResponse.self, from: await request("recipes", "dish", payload)).recipe
             var used: RecipeCookSnapshot?
-            if let attempt { used = try await DishRecipeService.usedRecipe(for: attempt.id, dishID: dish.id, request: request) }
+            if let attempt { used = try? await DishRecipeService.usedRecipe(for: attempt.id, dishID: dish.id, request: request) }
             guard !Task.isCancelled, generation == token else { return }
-            set = value; usedRecipe = used; failure = nil
+            recipe = next; usedRecipe = used; loaded = true; failure = nil; recipeKnown?(next != nil)
         } catch is CancellationError {} catch {
             guard generation == token else { return }
             failure = DishRecipeService.message(for: error)
         }
-    }
-    private func mutate(_ action: String, recipe: UUID) async {
-        guard let request else { return }; busy = true; defer { busy = false }
-        do {
-            set = try await DishRecipeService.mutate(action, dishID: dish.id, recipeID: recipe, request: request)
-            NotificationCenter.default.post(name: .socialContentChanged, object: nil); failure = nil
-        } catch { failure = DishRecipeService.message(for: error) }
-    }
-    private func setMain(_ recipe: UUID) async {
-        guard let request else { return }; busy = true; defer { busy = false }
-        do {
-            set = try await DishRecipeService.setMain(recipe, dishID: dish.id, expected: set?.chosenMainRecipeID, request: request)
-            NotificationCenter.default.post(name: .socialContentChanged, object: nil); failure = nil
-        } catch { failure = DishRecipeService.message(for: error); await load() }
     }
 }
 
 /// The Dish Detail overflow actions, in one place for every Dish surface.
 struct DishActions: View {
     var editCook: () -> Void
-    var rename: () -> Void
     var rerank: () -> Void
     var shareWithSousChefs: (() -> Void)?
     var editDishText: () -> Void
@@ -290,7 +193,6 @@ struct DishActions: View {
     var body: some View {
         Menu {
             Button("Edit Cook", systemImage: "pencil", action: editCook).accessibilityIdentifier("detail-edit-cook")
-            Button("Rename", systemImage: "character.cursor.ibeam", action: rename).accessibilityIdentifier("detail-rename-cook")
             Button("Re-rank", systemImage: "arrow.triangle.2.circlepath", action: rerank).accessibilityIdentifier("detail-rerank")
             if let shareWithSousChefs { Button("Share with Sous Chefs", systemImage: "person.2", action: shareWithSousChefs).accessibilityIdentifier("share-with-friends") }
             Button("Edit Dish Description & Notes", systemImage: "text.alignleft", action: editDishText).accessibilityIdentifier("dish-text-edit")

@@ -36,6 +36,8 @@ nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var saved: Bool
     var linkedDishID: UUID? = nil
     var linkedAttemptID: UUID? = nil
+    /// The viewer's own Dish identity for this Recipe (Dish and Recipe are one Dish).
+    var dishID: UUID? = nil
 }
 nonisolated struct RecipesPage: Codable { var recipes: [Recipe] }
 nonisolated struct RecipeTicket: Codable, Identifiable { var id: UUID; var createdAt: Double; var recipe: Recipe? }

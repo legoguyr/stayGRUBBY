@@ -102,13 +102,17 @@ struct CookbookPhoto: View {
 struct CookbookCard: View {
     let entry: CookbookEntry
     var dish: Dish?
+    private var title: String { dish?.name ?? entry.recipeTitle }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
             RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).sgPhotoFrame(.cookbook).accessibilityHidden(true)
-            Text(entry.recipeTitle).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
+            // Food Bible lists Dishes with Recipe content: the Dish name leads, the Recipe title
+            // follows only when it differs.
+            Text(title).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
+            if title != entry.recipeTitle { Text(entry.recipeTitle).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
             let metadata = [entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
             if !metadata.isEmpty { Text(metadata).font(.caption).foregroundStyle(.secondary) }
-        }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
+        }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([title, title == entry.recipeTitle ? nil : entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
     }
 }
 // Presentation-only selection, reusing existing media without copying files or relationships.

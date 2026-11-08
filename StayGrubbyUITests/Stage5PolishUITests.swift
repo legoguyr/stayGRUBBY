@@ -66,19 +66,24 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         XCTAssertTrue(recipient.waitForExistence(timeout:8));reach(recipient,app);recipient.tap();app.buttons["social-send-confirm"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["social-send-success"].waitForExistence(timeout:8))
     }
-    @MainActor func testDishRecipeRelationshipActionsShareOneCompactRow() {
+    @MainActor func testDishRecipeSideIsOneViewRecipeOrAddRecipeRow() {
         let app = launch(["--test-light"]); app.tabBars.buttons["Grub Rank"].tap()
         let cook = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'" )).firstMatch
         XCTAssertTrue(cook.waitForExistence(timeout: 8)); cook.tap()
-        let add = app.buttons["dish-add-recipe"], link = app.buttons["dish-link-recipe"]
-        reach(add, app); reach(link, app)
-        XCTAssertTrue(add.isHittable && link.isHittable)
-        XCTAssertEqual(add.frame.midY, link.frame.midY, accuracy: 2)
-        XCTAssertGreaterThanOrEqual(add.frame.height, 44); XCTAssertGreaterThanOrEqual(link.frame.height, 44)
-        shot("Compact Dish Recipe relationship row", app)
-        add.tap(); XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout: 8))
-        app.buttons["recipe-editor-cancel"].tap()
-        XCTAssertTrue(link.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 8))
+        let view = app.buttons["dish-view-recipe"], add = app.buttons["dish-add-recipe"]
+        for _ in 0..<8 where !(view.exists || add.exists) { app.swipeUp() }
+        XCTAssertTrue(view.exists || add.exists, app.debugDescription)
+        XCTAssertFalse(app.buttons["dish-link-recipe"].exists); XCTAssertFalse(app.buttons["dish-recipes-add"].exists)
+        if add.exists {
+            reach(add, app); XCTAssertGreaterThanOrEqual(add.frame.height, 44); add.tap()
+            XCTAssertTrue(app.buttons["dish-recipe-manual"].waitForExistence(timeout: 5)); XCTAssertTrue(app.buttons["dish-recipe-import"].exists)
+            app.buttons["dish-recipe-manual"].tap(); XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout: 8))
+            shot("Add Recipe to this Dish", app); app.buttons["recipe-editor-cancel"].tap()
+            XCTAssertTrue(add.waitForExistence(timeout: 8))
+        } else {
+            reach(view, app); XCTAssertGreaterThanOrEqual(view.frame.height, 44); shot("View Recipe row", app)
+        }
     }
     @MainActor func testRecipeSheetOfflineRetryAndDismissKeepsKitchen() {
         let app=launch(["--test-light","--stage5-recipes-offline"]);openRecipes(app)
@@ -89,19 +94,16 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         let app=launch(["--bible-v2-empty"]);openRecipes(app)
         XCTAssertTrue(app.staticTexts["kitchen-recipes-empty"].waitForExistence(timeout:8));XCTAssertFalse(app.buttons["kitchen-recipes-all"].exists)
     }
-    @MainActor func testNewRecipeDefaultAndDistinctGrubListRecipeDestination() {
+    @MainActor func testNewRecipeDefaultAndGrubListShowsNoRecipeOnlyActivity() {
         let app=launch(["--test-light"]);app.tabBars.buttons["Food Bible"].tap();app.buttons["bible-add"].tap();XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:8));app.buttons["bible-manual"].tap()
         let toggle=app.switches["recipe-sharing"];reach(toggle,app);XCTAssertEqual(toggle.value as? String,"1");app.buttons["recipe-editor-cancel"].tap()
         XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:5));app.navigationBars.buttons["Done"].tap()
+        // Grub List is Dish/cook activity only: a Sous Chef's new Recipe is not an activity item.
         app.tabBars.buttons["Grub List"].tap()
-        let recipe=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'feed-recipe-open-'")).firstMatch;reach(recipe,app)
-        XCTAssertEqual(recipe.value as? String, "Recipe")
-        shot("Closeout distinct new Recipe Grub List activity",app);recipe.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertEqual(app.staticTexts["recipe-title"].label,"Sous Chef Lemon Cake")
-        let activity = app.cells.matching(identifier: "actionGroupCell").matching(NSPredicate(format: "label == %@", "Copy"))
-        XCTAssertFalse(activity.firstMatch.exists, "Recipe navigation must not present the share sheet")
-        app.buttons["recipe-share-link"].tap()
-        XCTAssertTrue(activity.firstMatch.waitForExistence(timeout: 8), "Explicit Share presents the native sheet")
-        XCTAssertEqual(activity.count, 1)
+        XCTAssertTrue(app.descendants(matching:.any)["grub-list"].waitForExistence(timeout:8))
+        XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"identifier BEGINSWITH 'post-open-'")).firstMatch.waitForExistence(timeout:8), "Cook posts still appear")
+        XCTAssertFalse(app.descendants(matching:.any).matching(NSPredicate(format:"identifier BEGINSWITH 'feed-recipe-'")).firstMatch.exists)
+        shot("Grub List without Recipe-only activity",app)
     }
     @MainActor func testEditCookTagsLoadSaveAndCancel() {
         let app = launch(["--test-light"])

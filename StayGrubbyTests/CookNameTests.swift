@@ -5,6 +5,11 @@ import Testing
 
 /// D1: renameable cooks (FOOD_ARCHITECTURE §4.2). Names are labels only.
 @MainActor struct CookNameTests {
+    /// Cook Name is edited through Edit Cook (`CookingStore.edit`); there is no separate Rename.
+    private func rename(_ cook: CookingAttempt, _ name: String, _ context: ModelContext) throws {
+        var draft = CookingDraft(attempt: cook); draft.versionTitle = name
+        try CookingStore.edit(cook, draft: draft, context: context)
+    }
     @Test func normalizationTrimsCollapsesBoundsAndClears() {
         #expect(CookName.normalized("  Spicy \n  Version ") == "Spicy Version")
         #expect(CookName.normalized("   ") == nil)
@@ -21,7 +26,7 @@ import Testing
         #expect(CookName.name(custom: nil, sequence: 2) == "Version 2")
     }
 
-    @Test func renameChangesOnlyNameAndDisplayCacheNeverEvidence() throws {
+    @Test func editingCookNameChangesOnlyNameAndDisplayCacheNeverEvidence() throws {
         let f = try CookingReRankingWorkflowTests().fixture(3)
         defer { withExtendedLifetime(f) {} }
         let dish = try #require(f.cooks[0].dish)
@@ -36,7 +41,7 @@ import Testing
         let before = try CookingGraphExport.snapshot(context: f.context)
         let order = f.list.orderedItems.map(\.id)
         let operations = try f.context.fetchCount(FetchDescriptor<SyncOperation>())
-        try CookingStore.rename(second, to: "  Spicy   Version ", context: f.context)
+        try rename(second, "  Spicy   Version ", f.context)
         let after = try CookingGraphExport.snapshot(context: f.context)
 
         #expect(second.versionTitle == "Spicy Version")
@@ -53,21 +58,19 @@ import Testing
         #expect(f.list.orderedItems.map(\.id) == order)
         #expect(try f.context.fetchCount(FetchDescriptor<SyncOperation>()) >= operations)
 
-        // Clearing returns to the fallback; an unchanged name is a no-op.
-        try CookingStore.rename(second, to: "   ", context: f.context)
+        // Clearing returns to the fallback; evidence stays untouched throughout.
+        try rename(second, "   ", f.context)
         #expect(second.versionTitle == nil && second.meaningfulVersionLabel == "Version 2")
         #expect(second.rankedItem?.name == "Dish 0 — Version 2")
-        let unchanged = try CookingGraphExport.snapshot(context: f.context)
-        try CookingStore.rename(second, to: nil, context: f.context)
-        #expect(try CookingGraphExport.snapshot(context: f.context) == unchanged)
-        #expect(evidence(unchanged.items) == evidence(before.items) && unchanged.comparisons == before.comparisons)
+        let cleared = try CookingGraphExport.snapshot(context: f.context)
+        #expect(evidence(cleared.items) == evidence(before.items) && cleared.comparisons == before.comparisons)
     }
 
     @Test func namesAreNotUniqueBecauseIdentityIsTheID() throws {
         let f = try CookingReRankingWorkflowTests().fixture(2)
         defer { withExtendedLifetime(f) {} }
-        try CookingStore.rename(f.cooks[0], to: "Spicy", context: f.context)
-        try CookingStore.rename(f.cooks[1], to: "Spicy", context: f.context)
+        try rename(f.cooks[0], "Spicy", f.context)
+        try rename(f.cooks[1], "Spicy", f.context)
         #expect(f.cooks[0].versionTitle == f.cooks[1].versionTitle && f.cooks[0].id != f.cooks[1].id)
     }
 }

@@ -41,7 +41,7 @@ Use established vocabulary where appropriate:
 | Delete (restrained) | 86 (Delete), 86 Dish/Recipe/Cook/Comment/Post; Delete Account stays conventional |
 | Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
 
-Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, Cook Again, Rename, Re-rank. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
+Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, Cook Again, View Recipe, Re-rank. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
 
 ## Protected ranking and reuse
 

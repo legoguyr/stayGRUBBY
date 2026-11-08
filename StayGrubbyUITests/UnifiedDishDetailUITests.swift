@@ -25,42 +25,25 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         let a = XCTAttachment(screenshot: app.screenshot()); a.name = name; a.lifetime = .keepAlways; add(a)
     }
 
-    @MainActor func testRecipesSectionMainRecipeCooksAndReaderDishBlock() throws {
+    @MainActor func testDishAndRecipeAreOneDish() throws {
         let app = launch(["--test-light"])
         let cook = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch
         XCTAssertTrue(cook.waitForExistence(timeout: 10)); let rowLabel = cook.label; cook.tap()
         XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 10))
-
-        // Cooks section and Recipes section are both on Dish Detail.
         reach(app.buttons["detail-new-version"], app)
         XCTAssertEqual(app.buttons["detail-new-version"].label, "Cook Again")
-        let main = app.buttons["dish-view-recipe"]
-        if !main.exists {
-            reach(app.buttons["dish-link-recipe"], app); app.buttons["dish-link-recipe"].tap()
-            chooseRecipe(app, index: 0)
+        // One Recipe side per Dish: View Recipe, or Add Recipe that writes this Dish's Recipe.
+        let view = app.buttons["dish-view-recipe"], add = app.buttons["dish-add-recipe"]
+        for _ in 0..<8 where !(view.exists || add.exists) { app.swipeUp() }
+        if !view.exists {
+            reach(add, app); add.tap()
+            XCTAssertTrue(app.buttons["dish-recipe-manual"].waitForExistence(timeout: 5)); app.buttons["dish-recipe-manual"].tap()
+            let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout: 8))
+            app.buttons["recipe-save"].tap()
         }
-        reach(main, app)
-        let firstTitle = main.label
-
-        // A second Recipe joins the Dish; Set as Main swaps the Main card.
-        reach(app.buttons["dish-recipes-add"], app); app.buttons["dish-recipes-add"].tap()
-        XCTAssertTrue(app.buttons["dish-link-recipe"].waitForExistence(timeout: 5)); app.buttons["dish-link-recipe"].tap()
-        let choices = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'choose-recipe-' AND NOT (label CONTAINS %@)", String(firstTitle.prefix(12))))
-        XCTAssertTrue(choices.firstMatch.waitForExistence(timeout: 10)); choices.firstMatch.tap()
-        let other = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'dish-recipe-'")).firstMatch
-        reach(other, app)
-        XCTAssertTrue(app.staticTexts["Main Recipe"].exists || app.staticTexts["MAIN RECIPE"].exists)
-        shot("D2 Dish Recipes light", app)
-        let otherTitle = other.label
-        other.press(forDuration: 1.0)
-        let setMain = app.buttons["Set as Main Recipe"]
-        XCTAssertTrue(setMain.waitForExistence(timeout: 5)); setMain.tap()
-        XCTAssertTrue(app.buttons["dish-view-recipe"].waitForExistence(timeout: 10))
-        let swapped = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label CONTAINS %@", String(otherTitle.prefix(12))), object: app.buttons["dish-view-recipe"])
-        XCTAssertEqual(XCTWaiter.wait(for: [swapped], timeout: 10), .completed)
-
-        // The Recipe reader shows the same Dish's cooks (the Dish it was opened from).
-        reach(app.buttons["dish-view-recipe"], app); app.buttons["dish-view-recipe"].tap()
+        reach(view, app); shot("D3 Dish View Recipe light", app)
+        XCTAssertFalse(app.descendants(matching: .any)["MAIN RECIPE"].exists)
+        view.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["recipe-not-cooked"].exists)
         let cooks = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'version-row-'")).firstMatch
@@ -68,7 +51,8 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         let heading = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Your cooks of'")).firstMatch
         XCTAssertTrue(heading.exists)
         XCTAssertTrue(rowLabel.contains(heading.label.replacingOccurrences(of: "Your cooks of ", with: "")), "\(heading.label) vs \(rowLabel)")
-        shot("D2 Recipe reader Dish cooks light", app)
+        app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
+        shot("D3 Recipe face of the same Dish light", app)
     }
 
     @MainActor func testFoodBibleCookedFilterAndNotCookedYetState() throws {
@@ -98,5 +82,10 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         app.buttons["bible-filter-option-notCooked"].tap(); app.buttons["bible-filter-option-cooked"].tap(); app.buttons["filters-done"].tap()
         XCTAssertEqual(rows.count + notCooked, total)
         app.buttons["bible-clear-filters"].tap(); XCTAssertEqual(rows.count, total)
+        // The new Recipe is its own Dish in Food Bible, but an uncooked Dish is not in Grub Rank.
+        XCTAssertTrue(rows.matching(NSPredicate(format: "label CONTAINS 'Uncooked Granita'")).firstMatch.exists)
+        app.tabBars.buttons["Grub Rank"].tap()
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Uncooked Granita'")).firstMatch.exists)
     }
 }

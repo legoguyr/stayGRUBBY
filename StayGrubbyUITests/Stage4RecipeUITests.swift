@@ -55,22 +55,15 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         let yield = app.textFields["recipe-yield"]
         XCTAssertTrue(yield.waitForExistence(timeout: 5)); XCTAssertEqual(yield.value as? String, "4 servings")
     }
-    @MainActor func testSpecificVersionLinkChangeUnlinkAndPhotoOwnership() throws {
+    @MainActor func testRecipeIsOneDishWithoutLinkActionsAndKeepsOwnedPhoto() throws {
         let app = launch(["--test-light"]); recipe("Braised Short Ribs", app)
         let hero = app.descendants(matching: .any).matching(identifier: "recipe-hero").firstMatch
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Recipe photo'"), object: hero)], timeout: 8), .completed)
-        action("recipe-link", app)
-        let versions = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'choose-cook-'"))
-        XCTAssertTrue(versions.firstMatch.waitForExistence(timeout: 5)); XCTAssertGreaterThanOrEqual(versions.count, 2); versions.firstMatch.tap()
-        XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8))
-        XCTAssertEqual(hero.value as? String, "Recipe photo")
-        action("recipe-link", app)
-        XCTAssertGreaterThanOrEqual(versions.count, 2); versions.element(boundBy: 1).tap()
-        XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8))
-        action("recipe-detach", app); app.buttons["Unlink"].tap()
-        XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForNonExistence(timeout: 8))
-        XCTAssertEqual(hero.value as? String, "Recipe photo")
-        shot("Stage 4 owned photo survives unlink", app)
+        // Dish and Recipe are one Dish: there is no separate Link/Unlink relationship to manage.
+        app.revealRecipeActions()
+        XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["recipe-link"].exists); XCTAssertFalse(app.buttons["recipe-detach"].exists)
+        shot("Recipe actions without Dish linking", app)
     }
     @MainActor func testAccessibleRecipeMenuAndFilters() throws {
         let app = launch(["--test-light", "--test-large-type"])
@@ -89,14 +82,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         func photo(_ value: String) {
             XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: hero)], timeout: 8), .completed)
         }
-        photo("Dish family photo")
-        for (version, expected) in [("Smoky Sunday", "Linked cook photo"), ("Golden sear", "StayGrubby placeholder")] {
-            action("recipe-link", app)
-            XCTAssertTrue(app.navigationBars["Link a Dish"].waitForExistence(timeout: 5))
-            let choice = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'choose-cook-' AND label CONTAINS %@", version)).firstMatch
-            XCTAssertTrue(choice.waitForExistence(timeout: 5)); choice.tap()
-            XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout: 8)); photo(expected)
-        }
+        photo("Dish family photo") // Without its own photo, the Recipe shows its Dish's photo.
         action("recipe-edit", app)
         XCTAssertTrue(app.buttons["recipe-photo-fixture"].waitForExistence(timeout: 5)); app.buttons["recipe-photo-fixture"].tap()
         let details = app.buttons["Details & source"]
@@ -126,16 +112,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         make.tap(); XCTAssertTrue(app.navigationBars["Rank My Version"].waitForExistence(timeout:8))
         XCTAssertTrue(app.staticTexts["inherited-dish-name"].waitForExistence(timeout:5)); XCTAssertEqual(app.staticTexts["inherited-dish-name"].label,"Braised Short Ribs with Polenta")
         app.buttons["Cancel"].tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
-        app.revealRecipeActions(); XCTAssertEqual(app.buttons["recipe-link"].label,"Link a Dish"); app.buttons["recipe-link"].tap()
-        XCTAssertTrue(app.navigationBars["Link a Dish"].waitForExistence(timeout:5))
-        let choices = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'choose-cook-'"))
-        XCTAssertGreaterThanOrEqual(choices.count,2); XCTAssertFalse(app.buttons["choose-dish-Braised Short Ribs with Polenta"].exists)
-        let search = app.textFields["parent-dish-search"]; search.tap(); search.typeText("Sea Bass\n")
-        XCTAssertEqual(choices.count,1); XCTAssertTrue(choices.firstMatch.label.contains("Sea Bass"))
-        app.buttons["parent-dish-search-clear"].tap(); search.tap(); search.typeText("Golden sear\n")
-        XCTAssertEqual(choices.count,1); XCTAssertTrue(choices.firstMatch.label.contains("Braised Short Ribs")); XCTAssertTrue(choices.firstMatch.label.contains("Golden sear"))
-        shot("Stage 4 owner correction flat version selector",app)
-        choices.firstMatch.tap(); XCTAssertTrue(app.buttons["recipe-linked-cook"].waitForExistence(timeout:8))
+        app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
     }
 
 }

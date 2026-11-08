@@ -8,7 +8,12 @@ struct RecipeEditor: View {
     @Environment(\.socialMedia) private var media
     @Environment(\.dynamicTypeSize) private var textSize
     @Query private var dishes: [Dish]
+    @Environment(\.modelContext) private var modelContext
     let recipe: Recipe?
+    /// A new Recipe's Dish identity: the Dish it was added from, or a new Dish (Food Bible).
+    private let newDishIdentity: UUID?
+    /// True when this new Recipe starts a new Dish, created locally once the server accepts it.
+    private let createsDish: Bool
     var dishID: UUID?
     var attemptID: UUID?
     let importReview: RecipeImportReview?
@@ -36,6 +41,8 @@ struct RecipeEditor: View {
     @FocusState private var focus: RecipeField?
     init(recipe: Recipe? = nil, dishID: UUID? = nil, attemptID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, initiallyShared: Bool? = nil, onSave: @escaping (Recipe) -> Void) {
         self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.attemptID = attemptID; self.onSave = onSave
+        newDishIdentity = recipe == nil && attemptID == nil ? (dishID ?? UUID()) : nil
+        createsDish = recipe == nil && attemptID == nil && dishID == nil
         var value = draft ?? recipe?.content ?? RecipeContent(title: title, course: course, cuisine: cuisine)
         value.components = value.orderedComponents
         original = value; originallyShared = initiallyShared ?? RecipeSharingPolicy.initiallyShared(recipe)
@@ -318,7 +325,7 @@ struct RecipeEditor: View {
     private func save() async {
         guard let request else { failed = true; return }; saving = true; failed = false; defer { saving = false }
         do {
-            var payload = SocialPayload(); payload.recipeID = recipeID; payload.dishID = recipe == nil && attemptID == nil ? dishID : nil; payload.attemptID = recipe == nil ? attemptID : nil; payload.expectedRevision = recipe?.revision
+            var payload = SocialPayload(); payload.recipeID = recipeID; payload.recipeDishID = newDishIdentity; payload.attemptID = recipe == nil ? attemptID : nil; payload.expectedRevision = recipe?.revision
             var saved = ingredientEntry.prepared(content)
             if let photoBytes {
                 guard let media else { throw AccountFoundationError.accountNotResolved }
@@ -326,6 +333,9 @@ struct RecipeEditor: View {
             } else if photoRemoved { saved.photoID = nil; payload.removeRecipePhoto = true }
             payload.recipe = saved; payload.visibility = shared ? "friends" : "private"
             let next = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "save", payload))
+            // Dish and Recipe are one Dish: a new Food Bible Recipe gets its local Dish immediately,
+            // only once the server confirms the identity (an older server leaves it Recipe-only).
+            if createsDish, let id = newDishIdentity, next.dishID == id { try? DishIdentityStore.ensureDish(id: id, for: next.content, context: modelContext) }
             try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); onSave(next); dismiss()
         } catch is CancellationError {} catch { failed = true }
     }

@@ -73,4 +73,6 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var includeRecipe: Bool?
     /// D1 Set as Main compare-and-swap value; nil means no explicit Main was chosen.
     var expectedMainID: UUID?
+    /// The Dish identity a Recipe belongs to (`recipes.dish_id`).
+    var recipeDishID: UUID?
 }

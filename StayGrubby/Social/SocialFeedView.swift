@@ -34,13 +34,13 @@ struct SocialFeedView: View {
                     Button("Retry") { revision += 1 }.accessibilityIdentifier("feed-retry")
                 } else if !loading && posts.isEmpty {
                     ContentUnavailableView("Nothing shared yet", systemImage: "fork.knife",
-                        description: Text(friendCount == 0 ? "Find a Sous Chef to see their cooks and Recipes." : "Cooks and Recipes from your Sous Chefs will appear here."))
+                        description: Text(friendCount == 0 ? "Find a Sous Chef to see what they cook." : "Cooks from your Sous Chefs will appear here."))
                     NavigationLink("Find Sous Chefs") { FriendsView() }.accessibilityIdentifier("feed-find-friends")
                 }
                 ForEach(posts) { activity in
                     switch activity {
                     case .cook(let post): SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
-                    case .recipe(let recipe): RecipeActivityCard(activity: recipe, profile: { person = recipe.author }, open: { route = .currentRecipe(recipe.entry.recipeID) })
+                    case .recipe: EmptyView() // Grub List is Dish/cook activity only.
                     }
                 }.listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 if hasMore { Button("Load more posts") { Task { await load(more: true) } }.disabled(loading).accessibilityIdentifier("feed-more") }
@@ -96,7 +96,9 @@ struct SocialFeedView: View {
             let next = try JSONDecoder().decode(GrubListPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, generation == token else { return }
             friendCount = people.people.count
-            if more { let ids = Set(posts.map(\.id)); posts += next.activities.filter { !ids.contains($0.id) } } else { posts = next.activities }; hasMore = next.activities.count == 25
+            // Grub List is Dish/cook activity only; Recipe-only activity is not shown. A cook post can still offer its Recipe.
+            let cooks = next.activities.filter { if case .cook = $0 { true } else { false } }
+            if more { let ids = Set(posts.map(\.id)); posts += cooks.filter { !ids.contains($0.id) } } else { posts = cooks }; hasMore = next.activities.count == 25
             await SocialPhotoCleanup.run(request: request, media: media)
         } catch is CancellationError { } catch {
             guard generation == token else { return }; posts = []; hasMore = false; failed = true

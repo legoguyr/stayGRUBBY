@@ -16,8 +16,8 @@ struct AttemptDetailView: View {
     @State private var versionFinalized = false
     @Environment(\.returnToRankings) private var returnToRankings
     @State private var deleting = false
-    @State private var renaming: CookingAttempt?
-    @State private var cookName = ""
+    /// Whether this Dish has a Recipe; the Dish then outlives its last cook (Recipe-only Dish).
+    @State private var dishHasRecipe = false
     @State private var error: String?
     @Environment(\.dynamicTypeSize) private var textSize
     @ScaledMetric(relativeTo: .caption) private var tagColumnWidth = SGTheme.Size.tagColumnWidth
@@ -40,7 +40,7 @@ struct AttemptDetailView: View {
                 // Provenance is usually empty but still a stack child; grouping it keeps an
                 // empty block from doubling the section gap.
                 VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
-                    if let dish = attempt.dish { DishRecipesSection(dish: dish, attempt: attempt) }
+                    if let dish = attempt.dish { DishRecipeRow(dish: dish, attempt: attempt) { dishHasRecipe = $0 } }
                     CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
                 }
                 if let source = attempt.dish?.source {
@@ -57,8 +57,7 @@ struct AttemptDetailView: View {
                 }
                 if let dish = attempt.dish {
                     DishCooksSection(dish: dish, current: attempt,
-                                     cookAgain: attempt.rankedItem?.list == nil ? nil : { addingVersion = true },
-                                     rename: { beginRename($0) })
+                                     cookAgain: attempt.rankedItem?.list == nil ? nil : { addingVersion = true })
                 }
             }
             .frame(maxWidth: SGTheme.Size.contentMaximum)
@@ -71,7 +70,7 @@ struct AttemptDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 DishShareAction(model: .make(for: attempt), toolbar: true, currentModel: { .make(for: attempt) })
-                DishActions(editCook: { editing = true }, rename: { beginRename(attempt) }, rerank: { reranking = true },
+                DishActions(editCook: { editing = true }, rerank: { reranking = true },
                             shareWithSousChefs: request == nil ? nil : { sharingSocial = true },
                             editDishText: { editingDishText = true }, delete: { deleting = true })
             }.sgIndependentToolbarBackground()
@@ -89,30 +88,17 @@ struct AttemptDetailView: View {
         }
         .alert("86 this Cook?", isPresented: $deleting) {
             Button("86 Cook", role: .destructive) {
-                do { try CookingStore.delete(attempt, context: context, mediaDirectory: mediaRoot); dismiss() }
+                do { try CookingStore.delete(attempt, keepsEmptyDish: dishHasRecipe, context: context, mediaDirectory: mediaRoot); dismiss() }
                 catch { self.error = error.localizedDescription }
             }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("This removes this cook and can’t be undone. Other cooks stay saved. If this is the Dish’s last cook, the Dish is also removed.") }
-        .alert("Rename Cook", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
-            TextField(renaming.map { CookName.fallback(sequence: $0.sequenceNumber) } ?? "Cook Name", text: $cookName)
-                .accessibilityIdentifier("rename-cook-field")
-            Button("Save") { if let renaming { rename(renaming) } }.accessibilityIdentifier("rename-cook-save")
-            Button("Cancel", role: .cancel) { }
-        } message: { Text("Only the name changes. Its rank, score and history stay the same. Leave blank to use the automatic name.") }
+        } message: { Text("This removes this cook and can’t be undone. Other cooks stay saved. \(dishHasRecipe ? "Its Recipe stays in your Food Bible." : "If this is the Dish’s last cook, the Dish is also removed.")") }
         .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
         .deferRemoteCookingUpdates()
     }
 
-    private func beginRename(_ cook: CookingAttempt) {
-        cookName = cook.versionTitle ?? ""; renaming = cook
-    }
-    private func rename(_ cook: CookingAttempt) {
-        do { try CookingStore.rename(cook, to: cookName, context: context) }
-        catch { self.error = error.localizedDescription }
-    }
 
     private var metadata: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {

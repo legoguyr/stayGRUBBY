@@ -5,8 +5,6 @@ import SwiftData
 struct RecipeLibraryView: View {
     var dishID: UUID? = nil
     var attemptID: UUID? = nil
-    /// D2: add the chosen Recipe as one of this Dish's Recipes (`link_dish_recipe`).
-    var linksDishRecipe = false
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
     @State private var entries: [CookbookEntry] = []
@@ -37,10 +35,6 @@ struct RecipeLibraryView: View {
     private func attach(_ id: UUID) async {
         guard let request else { return }; busy = true; defer { busy = false }
         do {
-            if linksDishRecipe, let dishID {
-                _ = try await DishRecipeService.mutate("link_dish_recipe", dishID: dishID, recipeID: id, request: request)
-                try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss(); return
-            }
             let recipe = try await RecipeService.recipe("get", id: id, request: request)
             var payload = SocialPayload(); payload.dishID = dishID; payload.recipeID = id; payload.attemptID = attemptID; payload.previousAttemptID = recipe.linkedAttemptID
             _ = try await request("recipes", attemptID == nil ? "attach" : "link_cook", payload)
@@ -101,19 +95,17 @@ struct RecipeDetailView: View {
     @State private var claim: SocialCookingClaim?
     @State private var list: RankingList?
     @State private var deleting = false
-    @State private var detaching = false
     @State private var failed = false
     @State private var busy = false
     @State private var copiedRecipeID: UUID?
     @State private var copyReservation = UUID()
     @State private var reservation = UUID()
     @State private var generation = UUID()
-    private var linkedDish: Dish? { dishes.first { $0.id == recipe?.linkedDishID } }
     private var linkedCook: CookingAttempt? { guard let id = recipe?.linkedAttemptID else { return nil }; return dishes.lazy.flatMap(\.attempts).first { $0.id == id } }
     /// D2: the Dish this Recipe is shown for: the Dish it was opened from (Dish Detail, or the Dish
     /// Food Bible named), else its exact-linked cook's Dish, else the legacy family Dish.
     private var relatedDish: Dish? {
-        if let dishID, let dish = dishes.first(where: { $0.id == dishID }) { return dish }
+        if let id = recipe?.dishID ?? dishID, let dish = dishes.first(where: { $0.id == id }) { return dish }
         if let dish = linkedCook?.dish { return dish }
         return recipe?.linkedDishID.flatMap { id in dishes.first { $0.id == id } }
     }
@@ -137,10 +129,6 @@ struct RecipeDetailView: View {
                                 Button("Recipe History", systemImage: "clock") { management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                                 Button("Save as New Recipe", systemImage: "document.on.document") { management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                             }
-                            Button(recipe.linkedAttemptID == nil ? "Link a Dish" : "Change Linked Dish", systemImage: "link") { management = .link(recipe) }.accessibilityIdentifier("recipe-link")
-                            if recipe.linkedAttemptID != nil || linkedDish != nil {
-                                Button(recipe.linkedAttemptID == nil ? "Unlink Dish Family" : "Unlink Dish", systemImage: "link.badge.plus", role: .destructive) { detaching = true }.accessibilityIdentifier("recipe-detach")
-                            }
                             if recipe.isOwner { Button("86 Recipe (Delete)", systemImage: "trash", role: .destructive) { deleting = true }.accessibilityIdentifier("recipe-delete") }
                         }
 
@@ -159,17 +147,17 @@ struct RecipeDetailView: View {
                 case .duplicate(let r): RecipeEditor(draft: r.content, initiallyShared: false) { _ in }
                 }
             }
-            .sheet(item: $claim, onDismiss: { reservation = UUID() }) { claim in if let list { AddCookingView(list: list, dish: linkedDish, origin: claim) } }
-            .confirmationDialog("Unlink this Recipe?", isPresented: $detaching, titleVisibility: .visible) {
-                Button("Unlink", role: .destructive) { Task { await detach() } }
-            } message: { Text("Only the current link is removed. The Recipe, cooks, photos and saved Recipe-used snapshots stay intact.") }
+            .sheet(item: $claim, onDismiss: { reservation = UUID() }) { claim in
+                // Rank My Version cooks into this Recipe's own Dish (its identity even before a Dish row exists).
+                if let list { AddCookingView(list: list, dish: relatedDish, newDishID: relatedDish == nil && recipe?.isOwner == true ? recipe?.dishID : nil, origin: claim) }
+            }
             .confirmationDialog("86 this Recipe?", isPresented: $deleting, titleVisibility: .visible) {
                 Button("86 Recipe", role: .destructive) { Task { await delete() } }
-            } message: { Text("This removes the Recipe and its current links and can’t be undone. Dishes, cooks, rankings and saved cook snapshots stay intact.") }
+            } message: { Text("This removes the Recipe and can’t be undone. Your cooks, rankings and saved cook snapshots stay intact.") }
     }
     private func reader(_ recipe: Recipe) -> some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.section) {
-            RecipePhoto(id: recipe.content.photoID, dish: linkedDish, name: recipe.content.title, cook: linkedCook, exactCookLink: recipe.linkedAttemptID != nil)
+            RecipePhoto(id: recipe.content.photoID, dish: relatedDish, name: recipe.content.title, cook: linkedCook, exactCookLink: recipe.linkedAttemptID != nil)
                 .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
             VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
                 if !cooked && recipe.isOwner { SGEyebrow(text: "Not cooked yet").accessibilityIdentifier("recipe-not-cooked") }
@@ -185,14 +173,6 @@ struct RecipeDetailView: View {
             Button { Task { await begin() } } label: { Label("Rank My Version", systemImage: "fork.knife").frame(maxWidth: .infinity) }
                 .buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-make")
             if !recipe.isOwner { Button("Save a Private Copy") { Task { await copyRecipe() } }.frame(minHeight: 44).disabled(busy).accessibilityIdentifier("recipe-fork") }
-            if let cook = linkedCook {
-                NavigationLink { AttemptDetailView(attempt: cook) } label: {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) { Text(cook.dish?.name ?? cook.displayName); CookVersionIdentity(cook: cook) }
-                        Image(systemName: "chevron.right")
-                    }
-                }.accessibilityIdentifier("recipe-linked-cook")
-            } else if recipe.linkedAttemptID != nil { Text("Linked Dish unavailable").foregroundStyle(.secondary) }
             RecipeReadingBody(content: recipe.content, allowScaling: true)
             if let dish = relatedDish, cooked {
                 Divider()
@@ -222,15 +202,6 @@ struct RecipeDetailView: View {
         do { let next = try await RecipeService.begin(id: id, reservation: reservation, request: request); try Task.checkCancellation(); list = try CookingStore.globalRanking(context: context); claim = next }
         catch is CancellationError {} catch { failed = true }
     }
-    private func detach() async {
-        guard let request, let recipe else { return }; busy = true; defer { busy = false }
-        do {
-            var payload = SocialPayload(); payload.recipeID = id
-            if let cookID = recipe.linkedAttemptID { payload.previousAttemptID = cookID; _ = try await request("recipes", "unlink_cook", payload) }
-            else if let linkedID = linkedDish?.id { payload.dishID = linkedID; _ = try await request("recipes", "detach", payload) }
-            try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); await load()
-        } catch is CancellationError {} catch { failed = true }
-    }
     private func copyRecipe() async {
         guard let request else { return }; busy = true; defer { busy = false }
         do {
@@ -240,7 +211,13 @@ struct RecipeDetailView: View {
     }
     private func delete() async {
         guard let request else { return }
-        do { _ = try await request("recipes", "delete", .init(recipeID: id)); try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss() } catch { failed = true }
+        let uncookedDish = recipe?.isOwner == true ? (recipe?.dishID ?? relatedDish?.id) : nil
+        do {
+            _ = try await request("recipes", "delete", .init(recipeID: id)); try Task.checkCancellation()
+            // A Dish that only existed for this Recipe goes with it; cooked Dishes stay in Grub Rank.
+            try? DishIdentityStore.removeIfUncooked(id: uncookedDish, context: context)
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss()
+        } catch { failed = true }
     }
 }
 

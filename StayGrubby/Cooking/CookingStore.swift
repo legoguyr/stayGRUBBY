@@ -64,7 +64,8 @@ enum CookingStore {
     }
 
     @discardableResult
-    static func create(draft: CookingDraft, existingDish: Dish? = nil, session: RankingEngine,
+    /// `newDishID` keeps an existing Dish identity (a Recipe's Dish that has no row yet).
+    static func create(draft: CookingDraft, existingDish: Dish? = nil, newDishID: UUID? = nil, session: RankingEngine,
                        context: ModelContext, mediaDirectory: URL? = nil) throws -> CookingAttempt {
         guard !draft.cleanDishName.isEmpty, draft.cookedAt != nil, draft.validDishText else { throw StoreError.invalidDraft }
         guard session.isComplete else { throw StoreError.incompleteSession }
@@ -74,7 +75,7 @@ enum CookingStore {
         else { throw StoreError.duplicateItem }
         guard session.orderedIDs.count == global.items.count,
               Set(session.orderedIDs) == Set(global.items.map(\.id)),
-              existingDish == nil || existingDish!.attempts.contains(where: { $0.rankedItem?.list?.id == global.id })
+              existingDish == nil || existingDish!.attempts.isEmpty || existingDish!.attempts.contains(where: { $0.rankedItem?.list?.id == global.id })
         else { throw RankingStore.EvidenceError.invalidComparison }
         if let photo = draft.pendingPhoto { try requireNewPhoto(photo.id, context: context) }
         let baseline = try SyncJournal.begin(context)
@@ -83,7 +84,7 @@ enum CookingStore {
             let dish: Dish
             if let existingDish { dish = existingDish }
             else {
-                dish = Dish(name: draft.cleanDishName, category: draft.category)
+                dish = Dish(name: draft.cleanDishName, category: draft.category, id: newDishID ?? UUID())
                 dish.cuisine = draft.cuisine
                 context.insert(dish)
                 DishSourceStore.apply(draft.source, to: dish, context: context)
@@ -166,25 +167,8 @@ enum CookingStore {
         }
     }
 
-    /// Renames one cook. Only the stored name and display caches change; IDs, strengths,
-    /// uncertainty, comparisons, assessments and Recipe provenance are untouched, and no
-    /// re-rank or post starts. Nil or blank returns the cook to its "Version N" fallback.
-    static func rename(_ attempt: CookingAttempt, to name: String?, context: ModelContext) throws {
-        guard attempt.dish != nil, attempt.rankedItem != nil else { throw StoreError.missingItem }
-        let name = CookName.normalized(name)
-        guard name != attempt.versionTitle else { return }
-        let baseline = try SyncJournal.begin(context)
-        do {
-            attempt.versionTitle = name
-            attempt.rankedItem?.name = attempt.displayName
-            attempt.updatedAt = .now
-            try SyncJournal.stage(baseline, kind: "editCook", context: context)
-            try context.save()
-            SyncJournal.didCommit(context)
-        } catch { context.rollback(); throw error }
-    }
-
-    static func delete(_ attempt: CookingAttempt, context: ModelContext, mediaDirectory: URL? = nil) throws {
+    /// `keepsEmptyDish` keeps the Dish identity when its Recipe outlives its last cook.
+    static func delete(_ attempt: CookingAttempt, keepsEmptyDish: Bool = false, context: ModelContext, mediaDirectory: URL? = nil) throws {
         guard let item = attempt.rankedItem else { throw StoreError.missingItem }
         let list = item.list
         let retiredFiles = attempt.media.map { ($0.displayFilename, $0.thumbnailFilename) }
@@ -203,7 +187,7 @@ enum CookingStore {
             attempt.tags = []
             context.delete(attempt)
             context.delete(item)
-            if let dish, dish.attempts.isEmpty { context.delete(dish) } else if let dish { refreshNameCaches(of: dish) }
+            if let dish, dish.attempts.isEmpty, !keepsEmptyDish { context.delete(dish) } else if let dish { refreshNameCaches(of: dish) }
             try list?.recompute()
             try SyncJournal.stage(baseline, kind: "deleteCook", context: context)
             try context.save()
