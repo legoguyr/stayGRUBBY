@@ -11,7 +11,7 @@
 
 Current implementation lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md), the implementation order in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md#next--unified-dish-foundation-then-ui-overhaul), design-system rules in [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), and long-term signals in [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md). Supporting evidence: [V1_DATA_FOUNDATION_AUDIT.md](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
-Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1** · **Transitional** (kept for data safety and older builds; not part of the V1 model). Current state: §3 one-Dish identity is **Implemented, pending deployment** (`20261108230000_dish_recipe_identity`); §4 cook naming, the §5 Recipe Diet content key and the D1/D2 server structures are deployed. Protected ranking math and Recipe Creator are unchanged.
+Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1** · **Transitional** (kept for data safety and older builds; not part of the V1 model). Current state: §3 one-Dish identity is **Implemented and deployed** (`20261108221250_dish_recipe_identity`, November 8); §4 cook naming, the §5 Recipe Diet content key and the D1/D2 server structures are deployed. Protected ranking math and Recipe Creator are unchanged.
 
 ## 1. Owner decisions (November 8, 2026)
 
