@@ -11,7 +11,7 @@
 
 Current implementation lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md), the implementation order in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md#next--unified-dish-foundation-then-ui-overhaul), design-system rules in [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), and long-term signals in [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md). Supporting evidence: [V1_DATA_FOUNDATION_AUDIT.md](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
-Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1**. **D1 status (November 8):** §4 cook naming and the copy rebrand are **Implemented**; §3 Dish Recipes / Main Recipe and the §5 Recipe Diet content key are **Implemented, pending deployment** (`20261108193000_dish_recipe_links`). Protected ranking math and Recipe Creator are unchanged.
+Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1**. **D1 status (November 8):** §4 cook naming and the copy rebrand are **Implemented**; §3 Dish Recipes / Main Recipe and the §5 Recipe Diet content key are **Implemented and deployed** (`20261108171120_dish_recipe_links`); the app UI that calls them arrives in D2/F. Protected ranking math and Recipe Creator are unchanged.
 
 ## 1. Owner decisions (November 8, 2026)
 
@@ -43,7 +43,7 @@ In code and docs, `Food` means the composed read model and `Dish` means the Swif
 
 ### 2.1 Accepted provenance and integrity (Codex `a6de6b8`)
 
-These are **implemented locally, pending authorized deployment** of `20261108091616_recipe_cook_lifecycle`. The architecture depends on them:
+These are **implemented and deployed** (`20261108171024_recipe_cook_lifecycle`, November 8). The architecture depends on them:
 
 - **Exact use.** A cook's sync completes its matching owner/ranked-item Recipe reservation in the same transaction, freezing the revision, content and creator credit in `recipe_cooks`. Existing provable matches are repaired, with the repair time marked as reconciliation time. Cooks without a matching reservation keep unknown Recipe use.
 - **Current link.** A new Recipe-origin cook fills a vacant exact link automatically. Deleting a cook retires its exact link but leaves its snapshot intact. Completion retries never recreate a removed association.
@@ -59,7 +59,7 @@ This document builds on those rules. It never redefines exact use from links, ti
 | --- | --- | --- | --- |
 | **Recipe used** | This cook was made from this exact revision | `recipe_cooks` snapshot (immutable) | ≤1 per cook |
 | **Current cook link** | This cook is currently associated with this Recipe | `recipe_cook_links` | ≤1 Recipe per cook; ≤1 cook per Recipe |
-| **Dish Recipe** (Implemented, pending deployment) | This Recipe is one of the ways I make this Dish | New owner-private relation `dish_recipe_links(account_id, dish_id, recipe_id, is_main, created_at)` | Many Recipes per Dish; one Recipe may belong to several Dishes; at most one `is_main` per Dish (partial unique index) |
+| **Dish Recipe** (Implemented, deployed) | This Recipe is one of the ways I make this Dish | New owner-private relation `dish_recipe_links(account_id, dish_id, recipe_id, is_main, created_at)` | Many Recipes per Dish; one Recipe may belong to several Dishes; at most one `is_main` per Dish (partial unique index) |
 | **Legacy family link** | Pre-V2 association of a Recipe with a whole Dish | `dish_recipes`, PK `(account_id, dish_id)` | ≤1 per Dish |
 
 **Why a new relation:** a Dish can't hold several Recipes in today's structures. `dish_recipes` allows only one Recipe per Dish, and exact links are per cook. Repurposing `dish_recipes` as "main" was rejected: changing the main Recipe would delete the old association and change the meaning of historical rows. The implementation stage will:
@@ -101,7 +101,7 @@ A Dish's **related Recipes** are the union, deduplicated by Recipe UUID and rest
 
 Rules: never infer use from title, photo or fuzzy match. Never move a cook between Dishes implicitly. Foreign Recipes (a Sous Chef's, or post-V1 Saved) can be used and suggested, but are never made owned or delegated.
 
-### 3.4 D1 implementation (pending deployment)
+### 3.4 D1 implementation (deployed November 8)
 
 - **Store:** `staygrubby.dish_recipe_links`, owner-private, RLS with no client grants, cascades from the Dish and the Recipe. Legacy `dish_recipes` rows were copied once (not marked Main) and stay unchanged. A trigger mirrors legacy attach/detach from existing app builds.
 - **Automatic association:** `associate_dish_recipe` (advisory-locked per Dish) runs when an exact cook link is inserted and when a Recipe-origin reservation completes (Codex lifecycle). The first Recipe of a Dish with no other related Recipe becomes the chosen Main.
@@ -165,7 +165,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 
 - It is an additive optional key in the Recipe content JSON. It is part of revisions and post pinning like every other content field.
 - The author sets it in the Recipe editor. **Gemini does not propose it.** Recipe Creator contract 4 is frozen, and Diet suitability depends on product choices (stock, cheese rennet, Worcestershire). Unknown stays unknown.
-- D1 confirmed the server previously **dropped unknown content keys silently**; `20261108193000_dish_recipe_links` adds `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). `RecipeContent.dietary` round-trips it so edits never drop it. The editor control ships in F (3b).
+- D1 confirmed the server previously **dropped unknown content keys silently**; `20261108171120_dish_recipe_links` adds `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). `RecipeContent.dietary` round-trips it so edits never drop it. The editor control ships in F (3b).
 
 **Cooking from a Recipe (prefill, user-confirmed):**
 
