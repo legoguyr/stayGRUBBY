@@ -38,7 +38,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         search.tap();search.typeText("Braised");XCTAssertEqual(entries(app).count,1);entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertFalse(app.buttons["recipe-ticket"].exists);shot(app,"Recipe reader hero dark")
         reach(app.staticTexts["Polenta"].firstMatch,app:app);shot(app,"Reader ingredients and method dark")
-        reach(app.buttons["recipe-make"],app:app);app.buttons["recipe-make"].tap();XCTAssertTrue(app.navigationBars["New Version"].waitForExistence(timeout:8));app.buttons["Cancel"].tap()
+        reach(app.buttons["recipe-make"],app:app);app.buttons["recipe-make"].tap();XCTAssertTrue(app.navigationBars["Rank My Version"].waitForExistence(timeout:8));app.buttons["Cancel"].tap()
     }
     @MainActor func testCreateInlineRecipeSaveFailureRetryAndDetachPreservesCook() {
         let app=launch(["--test-light","--score-unlock-fixture","1","--recipe-save-failure"])

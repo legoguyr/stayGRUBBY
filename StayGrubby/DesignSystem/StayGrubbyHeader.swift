@@ -14,7 +14,7 @@ struct StayGrubbyHeader: View {
         Group {
             if searching {
                 HStack(spacing: SGTheme.Space.xSmall) {
-                    SGSearchField(placeholder: "Search dishes and versions", text: $searchText,
+                    SGSearchField(placeholder: "Search dishes and cooks", text: $searchText,
                                   identifier: "ranking-search-field", clearIdentifier: "header-clear-search", autoFocus: true)
                     Button("Done") { animate { searching = false } }
                         .font(SGTheme.TypeRole.body.weight(.semibold))
@@ -80,7 +80,7 @@ struct SGCreationChoices: View {
         VStack(spacing: SGTheme.Space.xSmall) {
             choice("New Dish", subtitle: "Something new for your ranking", symbol: "fork.knife", action: newDish)
                 .accessibilityIdentifier("new-dish")
-            choice("New Version", subtitle: "Another cook of a saved dish", symbol: "arrow.triangle.branch", action: newVersion)
+            choice("Cook Again", subtitle: "Make a saved Dish again", symbol: "arrow.triangle.branch", action: newVersion)
                 .disabled(!canCreateVersion).accessibilityIdentifier("new-version")
         }.sgCard().padding(.horizontal, SGTheme.Space.medium)
     }

@@ -24,11 +24,12 @@ final class CookingAttempt {
         get { DishCategory(rawValue: categoryCode) ?? .other }
         set { categoryCode = newValue.rawValue }
     }
-    var versionLabel: String { versionTitle ?? "Version \(sequenceNumber)" }
+    /// The cook's name with its "Version N" fallback always shown (`CookName`).
+    var versionLabel: String { CookName.name(custom: versionTitle, sequence: sequenceNumber) }
     /// Presentation only; stored sequence/title and historical snapshots stay unchanged.
+    /// A lone unnamed cook has no label (`CookName.label`).
     var meaningfulVersionLabel: String? {
-        if let title = versionTitle?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty { return title }
-        return (dish?.attempts.count ?? 1) > 1 || sequenceNumber > 1 ? "Version \(sequenceNumber)" : nil
+        CookName.label(custom: versionTitle, sequence: sequenceNumber, siblingCount: dish?.attempts.count ?? 1)
     }
     var displayName: String { [dish?.name ?? rankedItem?.name ?? "Dish", meaningfulVersionLabel].compactMap { $0 }.joined(separator: " — ") }
     var dietaryTags: Set<DietaryTag> { Set(tags.filter { $0.kindCode == CookingTagKind.dietary.rawValue }.compactMap { DietaryTag(rawValue: $0.value) }) }

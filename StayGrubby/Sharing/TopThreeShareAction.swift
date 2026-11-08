@@ -17,7 +17,7 @@ struct TopThreeShareAction: View {
         }
         .disabled(model == nil).accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
-        .accessibilityHint(model == nil ? "Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing" : "Shares your current top three dishes and versions as an image. Choose Save Image to save it to Photos.")
+        .accessibilityHint(model == nil ? "Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to unlock sharing" : "Shares your current top three cooks as an image. Choose Save Image to save it to Photos.")
         .shareCardSheet(card: $sharing, notice: $notice)
         .onChange(of: model) { _, next in if next == nil { sharing = nil } }
     }

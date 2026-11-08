@@ -9,6 +9,8 @@ struct CookingMetadataForm: View {
     var cookedWith: Binding<Set<UUID>>? = nil
     var editingParticipants = false
     var selectedPeople: [SocialPerson] = []
+    /// The cook's "Version N" fallback, or nil when an unnamed cook shows no name.
+    var fallbackCookName: String? = nil
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var details = false
     @FocusState private var focusedField: EntryField?
@@ -27,8 +29,12 @@ struct CookingMetadataForm: View {
                         .focused($focusedField, equals: .name).submitLabel(.done).onSubmit { focusedField = nil }
                         .accessibilityIdentifier("dish-name").sgField()
                 }
-                TextField("Version title (optional)", text: $draft.versionTitle).accessibilityIdentifier("version-title")
+                TextField("Cook Name (optional)", text: $draft.versionTitle).accessibilityIdentifier("version-title")
                     .focused($focusedField, equals: .version).submitLabel(.done).onSubmit { focusedField = nil }.sgField()
+                if let fallbackCookName, draft.cleanTitle == nil {
+                    Text("Leave blank to show \(fallbackCookName).").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("cook-name-fallback")
+                }
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     Text("Public Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
                     TextField("A few words for your Sous Chefs", text: $draft.publicDescription, axis: .vertical)
@@ -47,7 +53,7 @@ struct CookingMetadataForm: View {
                         .focused($focusedField, equals: .dishNotes).lineLimit(1...4).accessibilityIdentifier("cook-dish-private-notes").sgField()
                 }
                 if existingDish || editing {
-                    Text(editing ? "Name, description, Dish notes, Cuisine and Source apply to all versions." : "Description and Dish notes apply to all versions.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    Text(editing ? "Name, description, Dish notes, Cuisine and Source apply to every cook of this Dish." : "Description and Dish notes apply to every cook of this Dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 }
                 if !draft.validDishText {
                     Text("Keep the description within 2,000 characters and private notes within 8,000.")
@@ -104,9 +110,10 @@ struct CookingFormScroll: View {
     var cookedWith: Binding<Set<UUID>>? = nil
     var editingParticipants = false
     var selectedPeople: [SocialPerson] = []
+    var fallbackCookName: String? = nil
     var body: some View {
         ScrollView {
-            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople)
+            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople, fallbackCookName: fallbackCookName)
                 .frame(maxWidth: SGTheme.Size.contentMaximum)
                 .padding(SGTheme.Space.medium).frame(maxWidth: .infinity)
         }.accessibilityIdentifier("cooking-form").scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)

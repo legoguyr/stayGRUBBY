@@ -54,7 +54,7 @@ final class ScoreUnlockUITests: StayGrubbyUITestCase {
             let banner = app.descendants(matching: .any)["score-unlock-banner"]
             if count < 10 {
                 XCTAssertTrue(banner.waitForExistence(timeout: 10))
-                XCTAssertTrue(banner.label.contains("\(count) / 10 dishes & versions ranked"))
+                XCTAssertTrue(banner.label.contains("\(count) / 10 cooks ranked"))
                 XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Score '")).firstMatch.exists)
             } else { XCTAssertFalse(banner.exists) }
             if count > 0 {

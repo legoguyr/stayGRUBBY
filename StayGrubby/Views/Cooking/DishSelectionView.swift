@@ -34,7 +34,7 @@ struct DishSelectionView: View {
                                             .sgPhotoFrame(.compactThumbnail)
                                         VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                                             Text(dish.name).font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
-                                            Text(dish.attempts.count == 1 ? "1 version" : "\(dish.attempts.count) versions").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                                            Text(dish.attempts.count == 1 ? "1 cook" : "\(dish.attempts.count) cooks").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                                         }.frame(maxWidth: .infinity, alignment: .leading)
                                         Image(systemName: "chevron.right").foregroundStyle(.secondary)
                                     }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())

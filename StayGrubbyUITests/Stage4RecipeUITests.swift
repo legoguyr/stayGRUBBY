@@ -49,7 +49,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         XCTAssertEqual(servings.value as? String, "5")
         shot("V1 written quantities and serving scaling dark", app)
         action("recipe-history", app)
-        XCTAssertTrue(app.navigationBars["Version History"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Recipe History"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["recipe-version-1"].exists)
         app.buttons["Done"].tap(); action("recipe-edit", app)
         let yield = app.textFields["recipe-yield"]
@@ -123,7 +123,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         XCTAssertGreaterThan(allergens.frame.minY, app.staticTexts["recipe-method-heading"].frame.minY)
         XCTAssertFalse(app.staticTexts["Servings and times may include estimates. Adjust for your kitchen."].exists)
         for _ in 0..<6 { if make.isHittable && make.frame.maxY < app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
-        make.tap(); XCTAssertTrue(app.navigationBars["New Version"].waitForExistence(timeout:8))
+        make.tap(); XCTAssertTrue(app.navigationBars["Rank My Version"].waitForExistence(timeout:8))
         XCTAssertTrue(app.staticTexts["inherited-dish-name"].waitForExistence(timeout:5)); XCTAssertEqual(app.staticTexts["inherited-dish-name"].label,"Braised Short Ribs with Polenta")
         app.buttons["Cancel"].tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
         app.revealRecipeActions(); XCTAssertEqual(app.buttons["recipe-link"].label,"Link a Dish"); app.buttons["recipe-link"].tap()

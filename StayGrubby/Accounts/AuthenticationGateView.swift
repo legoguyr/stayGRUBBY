@@ -98,7 +98,7 @@ struct AuthenticationGateView: View {
             comparisonExample
 
             VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                story("Your Grub Rank", detail: "Save dishes, photos, and every new version.", symbol: "book.closed")
+                story("Your Grub Rank", detail: "Save dishes, photos, and every cook.", symbol: "book.closed")
                 story("Share your favorites", detail: "Send a dish, your Signature Dishes or your Kitchen when you want.", symbol: "square.and.arrow.up")
             }
         }

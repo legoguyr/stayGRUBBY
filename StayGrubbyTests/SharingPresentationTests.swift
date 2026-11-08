@@ -108,7 +108,7 @@ import Vision
 
     @Test func preparationFailureExplainsActualRendererProblem() {
         let locked = ShareCardNotice.preparationFailed(ShareCardRenderer.RenderError.scoresLocked.localizedDescription)
-        #expect(locked.message.contains("10 dishes or versions"))
+        #expect(locked.message.contains("10 cooks"))
         let failed = ShareCardNotice.preparationFailed(ShareCardRenderer.RenderError.renderingFailed.localizedDescription)
         #expect(failed.message.contains("try again"))
     }

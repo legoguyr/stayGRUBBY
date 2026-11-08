@@ -38,7 +38,7 @@ struct CookingDetailsSheet: View {
                     Section("Existing notes for this cook") {
                         TextField("Cook-specific notes", text: $draft.notes, axis: .vertical)
                             .lineLimit(1...6).focused($notesFocused).accessibilityIdentifier("cook-notes")
-                        Text("Only this version. Separate from Dish Private Notes.").font(.footnote).foregroundStyle(.secondary)
+                        Text("Only this cook. Separate from Dish Private Notes.").font(.footnote).foregroundStyle(.secondary)
                     }
                 }
                 if !draft.allergy.isEmpty {

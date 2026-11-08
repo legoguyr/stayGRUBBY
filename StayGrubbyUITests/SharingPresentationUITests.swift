@@ -26,7 +26,7 @@ final class SharingPresentationUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.staticTexts["result-rank-privacy"].label.contains("stay in the app"))
             let preview = app.images["ranking-share-preview"]
             XCTAssertTrue(preview.waitForExistence(timeout: 15))
-            XCTAssertTrue(preview.label.contains("BEST VERSION YET"))
+            XCTAssertTrue(preview.label.contains("BEST COOK YET"))
             XCTAssertFalse(preview.label.contains("overall") || preview.label.contains("spots"))
             XCTAssertTrue(app.buttons["result-share-dish"].isHittable)
             XCTAssertTrue(app.buttons["ranking-result-close"].isHittable)

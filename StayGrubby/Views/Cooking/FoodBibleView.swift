@@ -173,7 +173,7 @@ struct DishRecipeSection: View {
             SGSectionHeader(title: "Recipe")
             if let recipe {
                 NavigationLink { RecipeDetailView(id: recipe.id) } label: { Label(recipe.content.title, systemImage: "book") }.accessibilityIdentifier("dish-view-recipe")
-                if legacy { Text("Legacy link: no specific version recorded.").font(.footnote).foregroundStyle(.secondary) }
+                if legacy { Text("Legacy link: no specific cook recorded.").font(.footnote).foregroundStyle(.secondary) }
             } else if loaded {
                 if linkedID != nil && (exactLink || legacy) {
                     Text("Linked Recipe unavailable").foregroundStyle(.secondary)
@@ -184,7 +184,7 @@ struct DishRecipeSection: View {
                         VStack(alignment: .leading, spacing: SGTheme.Space.small) { relationshipActions }
                     }
 
-                } else { Text("Choose a version to link a Recipe.").foregroundStyle(.secondary) }
+                } else { Text("Choose a cook to link a Recipe.").foregroundStyle(.secondary) }
             }
             if !cookAvailable { Text("Recipe links are available once this cook syncs.").font(.footnote) }
             else if let relationshipError {

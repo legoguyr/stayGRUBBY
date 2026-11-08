@@ -105,9 +105,9 @@ import UIKit
     }
 
     @Test func remainingCopyUsesSingularAndThresholdConfiguration() {
-        #expect(ScoreUnlockState(rankedEntryCount: 9).remainingText == "Rank 1 more dish or version to reveal your numerical scores.")
-        #expect(ScoreUnlockState(rankedEntryCount: 0).remainingText.contains("10 more dishes or versions"))
-        #expect(ScoreUnlockState(rankedEntryCount: 6).progressText == "6 / 10 dishes & versions ranked")
+        #expect(ScoreUnlockState(rankedEntryCount: 9).remainingText == "Rank 1 more cook to reveal your numerical scores.")
+        #expect(ScoreUnlockState(rankedEntryCount: 0).remainingText.contains("10 more cooks"))
+        #expect(ScoreUnlockState(rankedEntryCount: 6).progressText == "6 / 10 cooks ranked")
         #expect(ScoreUnlockState(rankedEntryCount: 9).scoreText(5.5) == nil)
         #expect(ScoreUnlockState(rankedEntryCount: 10).scoreText(5.5) == "5.5")
     }

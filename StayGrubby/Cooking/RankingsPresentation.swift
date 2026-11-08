@@ -1,6 +1,7 @@
 import Foundation
 
 nonisolated enum RankingsDisplayMode: String, CaseIterable, Identifiable {
+    // Persisted raw values; never shown. User-facing labels are "All Cooks" (FOOD_ARCHITECTURE §4.3).
     case topVersion = "Top Version", allVersions = "All Versions"
     var id: String { rawValue }
     static let preferenceKey = "StayGrubby.rankingsDisplayMode.v1"

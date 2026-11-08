@@ -43,7 +43,7 @@ extension XCUIApplication {
         XCTFail("Creation choices did not appear")
     }
     /// Older version-specific regressions exercise the complete ranking view.
-    /// Owner-revised Stage B: Top Version / All Versions is the Show All Versions switch.
+    /// D1: the All Cooks switch (stored raw values still "Top Version" / "All Versions").
     @MainActor func showAllVersions() { setRankingDisplay(allVersions: true) }
     @MainActor var allVersionsSwitch: XCUIElement { switches["rankings-show-all-versions"] }
     @MainActor func setRankingDisplay(allVersions: Bool) {

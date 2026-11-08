@@ -8,9 +8,9 @@ enum CookingStore {
         var errorDescription: String? {
             switch self {
             case .missingRanking: "The saved cooking ranking could not be found. Your data has not been reset."
-            case .invalidDraft: "Enter a dish name and a cooked date for a new version."
-            case .missingItem: "This version is no longer available."
-            case .duplicateItem: "This ranked item already has a cooking version."
+            case .invalidDraft: "Enter a Dish name and a cooked date for this cook."
+            case .missingItem: "This cook is no longer available."
+            case .duplicateItem: "This ranked item already has a cook."
             case .incompleteSession: "Finish the ranking questions before saving."
             }
         }
@@ -91,13 +91,15 @@ enum CookingStore {
             dish.publicDescription = CookingDraft.optional(draft.publicDescription)
             dish.privateNotes = CookingDraft.optional(draft.privateNotes)
             let number = (dish.attempts.map(\.sequenceNumber).max() ?? 0) + 1
-            let label = "\(dish.name) — \(draft.cleanTitle ?? "Version \(number)")"
+            let label = [dish.name, CookName.label(custom: draft.cleanTitle, sequence: number, siblingCount: dish.attempts.count + 1)]
+                .compactMap { $0 }.joined(separator: " — ")
             let item = try RankingStore.stage(name: label, session: session, to: global, context: context)
             let attempt = CookingAttempt(item: item, sequence: number, category: draft.category, cookedAt: draft.cookedAt)
             context.insert(attempt)
             dish.attempts.append(attempt)
             apply(draft, to: attempt)
             attempt.tags = try tags(for: draft, context: context)
+            refreshNameCaches(of: dish)
             if let photo = draft.pendingPhoto {
                 let media = try LocalPhotoStore.write(photo, rootURL: mediaDirectory)
                 writtenMedia = media
@@ -164,6 +166,24 @@ enum CookingStore {
         }
     }
 
+    /// Renames one cook. Only the stored name and display caches change; IDs, strengths,
+    /// uncertainty, comparisons, assessments and Recipe provenance are untouched, and no
+    /// re-rank or post starts. Nil or blank returns the cook to its "Version N" fallback.
+    static func rename(_ attempt: CookingAttempt, to name: String?, context: ModelContext) throws {
+        guard attempt.dish != nil, attempt.rankedItem != nil else { throw StoreError.missingItem }
+        let name = CookName.normalized(name)
+        guard name != attempt.versionTitle else { return }
+        let baseline = try SyncJournal.begin(context)
+        do {
+            attempt.versionTitle = name
+            attempt.rankedItem?.name = attempt.displayName
+            attempt.updatedAt = .now
+            try SyncJournal.stage(baseline, kind: "editCook", context: context)
+            try context.save()
+            SyncJournal.didCommit(context)
+        } catch { context.rollback(); throw error }
+    }
+
     static func delete(_ attempt: CookingAttempt, context: ModelContext, mediaDirectory: URL? = nil) throws {
         guard let item = attempt.rankedItem else { throw StoreError.missingItem }
         let list = item.list
@@ -183,7 +203,7 @@ enum CookingStore {
             attempt.tags = []
             context.delete(attempt)
             context.delete(item)
-            if let dish, dish.attempts.isEmpty { context.delete(dish) }
+            if let dish, dish.attempts.isEmpty { context.delete(dish) } else if let dish { refreshNameCaches(of: dish) }
             try list?.recompute()
             try SyncJournal.stage(baseline, kind: "deleteCook", context: context)
             try context.save()
@@ -208,6 +228,14 @@ enum CookingStore {
         guard try context.fetchCount(FetchDescriptor<CookingMedia>(predicate: #Predicate { $0.id == id })) == 0,
               try context.fetchCount(FetchDescriptor<SyncTombstone>(predicate: #Predicate { $0.key == identity })) == 0
         else { throw LocalPhotoStore.PhotoError.identityAlreadyUsed }
+    }
+
+    /// `RankedItem.name` is a display cache of `displayName`. Refreshing it when a sibling's
+    /// "Version N" visibility changes touches no ID, strength, uncertainty or evidence.
+    private static func refreshNameCaches(of dish: Dish) {
+        for sibling in dish.attempts where sibling.rankedItem?.name != sibling.displayName {
+            sibling.rankedItem?.name = sibling.displayName
+        }
     }
 
     private static func apply(_ draft: CookingDraft, to attempt: CookingAttempt) {

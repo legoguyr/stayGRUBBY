@@ -20,7 +20,7 @@ struct CookingPhotoEditor: View {
                         .stroke(SGTheme.ColorToken.border)
                 }
             if draft.existingPhotoCount > 1 {
-                Label("Cover photo · \(draft.existingPhotoCount) photos in this version", systemImage: "square.stack")
+                Label("Cover photo · \(draft.existingPhotoCount) photos in this cook", systemImage: "square.stack")
                     .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     .accessibilityIdentifier("cook-photo-collection")
             }

@@ -26,15 +26,15 @@ struct RecipeHistoryView: View {
                 ForEach(versions) { version in
                     Button { selection = version } label: {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text("Version \(version.revision)\(version.revision == recipe.revision ? " · Current" : "")").font(.headline)
+                            Text("Revision \(version.revision)\(version.revision == recipe.revision ? " · Current" : "")").font(.headline)
                             Text(version.title).font(.subheadline)
                             Text(Date(timeIntervalSince1970: version.createdAt), format: .dateTime.month().day().year()).font(.caption).foregroundStyle(.secondary)
                         }.frame(minHeight: 44)
                     }.accessibilityIdentifier("recipe-version-\(version.revision)")
                 }
-                if more { Button(loading ? "Loading…" : "Load Versions") { Task { await load() } }.disabled(loading) }
-                if failed { Text("Couldn’t load versions. Your Recipe history is unchanged."); Button("Retry") { Task { await load() } } }
-            }.navigationTitle("Version History")
+                if more { Button(loading ? "Loading…" : "Load More") { Task { await load() } }.disabled(loading) }
+                if failed { Text("Couldn’t load Recipe History. Your Recipe is unchanged."); Button("Retry") { Task { await load() } } }
+            }.navigationTitle("Recipe History")
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
                 .task { await load() }
                 .navigationDestination(item: $selection) { version in
@@ -69,18 +69,18 @@ private struct RecipeVersionReader: View {
                     Text(content.title).font(SGTheme.TypeRole.hero)
                     if let text = content.description { Text(text) }
                     RecipeReadingBody(content: content)
-                    if version != recipe.revision { Button("Restore as New Current Version") { confirming = true }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-restore") }
-                    Text("Restoring creates a new current version. Existing versions and cooked snapshots stay unchanged.").font(.footnote).foregroundStyle(.secondary)
+                    if version != recipe.revision { Button("Restore as Current Revision") { confirming = true }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-restore") }
+                    Text("Restoring creates a new current revision. Earlier revisions and cooked snapshots stay unchanged.").font(.footnote).foregroundStyle(.secondary)
                 } else if !failed { ProgressView() }
-                if failed { Text("This version is unavailable or the Recipe changed. Close history and refresh before retrying.") }
+                if failed { Text("This revision is unavailable or the Recipe changed. Close Recipe History and refresh before retrying.") }
             }.padding(SGTheme.Space.readingMargin)
-        }.background(SGTheme.ColorToken.background).navigationTitle("Version \(version)")
+        }.background(SGTheme.ColorToken.background).navigationTitle("Revision \(version)")
             .task {
                 guard let request else { failed = true; return }
                 do { content = try JSONDecoder().decode(RecipeRevisionContent.self, from: await request("recipes", "revision", .init(expectedRevision: version, recipeID: recipe.id))).content } catch { failed = true }
             }
-            .confirmationDialog("Restore Version \(version)?", isPresented: $confirming, titleVisibility: .visible) {
-                Button("Create New Current Version") { Task { await restore() } }
+            .confirmationDialog("Restore Revision \(version)?", isPresented: $confirming, titleVisibility: .visible) {
+                Button("Create New Current Revision") { Task { await restore() } }
             }
     }
     private func restore() async {

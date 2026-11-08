@@ -36,10 +36,10 @@ struct AddCookingView: View {
         }
         _draft = State(initialValue: initial)
     }
-    /// A lone untitled first cook shows no "Version 1" (same rule as `meaningfulVersionLabel`);
-    /// a New Version of an existing Dish keeps its sequence label. Presentation only.
+    /// A lone unnamed first cook shows no "Version 1" (`CookName.label`); Cook Again on an
+    /// existing Dish shows its fallback name. Presentation only.
     private var newVersionLabel: String? {
-        draft.cleanTitle ?? (dish == nil ? nil : "Version \((dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1)")
+        draft.cleanTitle ?? (dish == nil ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
     }
     private var displayName: String {
         [draft.cleanDishName, newVersionLabel].compactMap { $0 }.joined(separator: " — ")
@@ -81,10 +81,11 @@ struct AddCookingView: View {
                         } catch { self.error = error.localizedDescription }
                     }
                 } else {
-                    CookingFormScroll(draft: $draft, existingDish: dish != nil, sharingSelection: socialRequest == nil ? nil : $sharing, cookedWith: socialRequest != nil && sharing.configured == true ? $cookedWith : nil)
+                    CookingFormScroll(draft: $draft, existingDish: dish != nil, sharingSelection: socialRequest == nil ? nil : $sharing, cookedWith: socialRequest != nil && sharing.configured == true ? $cookedWith : nil,
+                                      fallbackCookName: dish == nil ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
                 }
             }
-            .navigationTitle(savedAttempt != nil ? "Ranking Result" : session == nil ? (dish == nil ? "New Dish" : "New Version") : "Rank this cook")
+            .navigationTitle(savedAttempt != nil ? "Ranking Result" : session == nil ? (origin?.kind == "recipe" || origin?.recipeSnapshot != nil ? "Rank My Version" : dish == nil ? "New Dish" : "Cook Again") : "Rank this cook")
             .navigationBarTitleDisplayMode(.inline)
             .background(SGTheme.ColorToken.background)
             .toolbar {

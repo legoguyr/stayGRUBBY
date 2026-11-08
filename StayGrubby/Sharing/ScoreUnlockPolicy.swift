@@ -52,12 +52,12 @@ nonisolated struct ScoreUnlockState: Equatable, Sendable {
     var isUnlocked: Bool { rankedEntryCount >= ScoreUnlockPolicy.requiredRankedEntryCount }
     var remainingEntryCount: Int { max(0, ScoreUnlockPolicy.requiredRankedEntryCount - rankedEntryCount) }
     var progress: Double { min(1, Double(max(0, rankedEntryCount)) / Double(ScoreUnlockPolicy.requiredRankedEntryCount)) }
-    var progressText: String { "\(rankedEntryCount) / \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes & versions ranked" }
+    var progressText: String { "\(rankedEntryCount) / \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks ranked" }
     var remainingText: String {
-        "Rank \(remainingEntryCount) more \(remainingEntryCount == 1 ? "dish or version" : "dishes or versions") to reveal your numerical scores."
+        "Rank \(remainingEntryCount) more \(remainingEntryCount == 1 ? "cook" : "cooks") to reveal your numerical scores."
     }
     var completionText: String {
-        "You're building your rankings. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock your numerical scores."
+        "You're building your rankings. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to unlock your numerical scores."
     }
     func scoreText(_ score: Double) -> String? {
         guard isUnlocked, score.isFinite else { return nil }
@@ -119,7 +119,7 @@ struct LockedScoreIndicator: View {
             .foregroundStyle(.secondary)
             .padding(SGTheme.Space.xSmall)
             .accessibilityLabel("Score locked")
-            .accessibilityHint("Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to reveal scores")
+            .accessibilityHint("Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to reveal scores")
             .accessibilityIdentifier("score-locked")
     }
 }

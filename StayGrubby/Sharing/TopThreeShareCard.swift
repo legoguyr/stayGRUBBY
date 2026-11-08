@@ -99,7 +99,7 @@ struct ScoreUnlockMilestoneView: View {
             VStack(spacing: SGTheme.Space.large) {
                 Image(systemName: "lock.open.fill").font(.title2).foregroundStyle(SGTheme.Brand.red).accessibilityHidden(true)
                 Text("Your scores are unlocked!").font(SGTheme.TypeRole.title)
-                Text("You've ranked \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes and versions. Your numerical scores are now available!")
+                Text("You've ranked \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks. Your numerical scores are now available!")
                     .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                 if let model {
                     if let card, card.topThreeModel == model {

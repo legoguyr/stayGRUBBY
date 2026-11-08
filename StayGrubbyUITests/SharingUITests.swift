@@ -9,7 +9,7 @@ final class SharingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.images["ranking-share-preview"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.images["ranking-share-preview"].label.contains("Smoky Sunday"))
-        XCTAssertTrue(app.images["ranking-share-preview"].label.contains("BEST VERSION YET"))
+        XCTAssertTrue(app.images["ranking-share-preview"].label.contains("BEST COOK YET"))
         XCTAssertTrue(app.staticTexts["result-rank"].exists)
         XCTAssertTrue(app.staticTexts["result-rank"].isHittable)
         XCTAssertTrue(app.buttons["ranking-result-close"].isHittable)

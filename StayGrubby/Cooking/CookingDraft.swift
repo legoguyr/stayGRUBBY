@@ -40,7 +40,7 @@ import Foundation
     var hasPhoto: Bool { pendingPhoto != nil || (existingPhoto != nil && !removeExistingPhoto) }
     var validDishText: Bool { DishTextPolicy.valid(description: publicDescription, notes: privateNotes) }
     var cleanDishName: String { dishName.trimmingCharacters(in: .whitespacesAndNewlines) }
-    var cleanTitle: String? { Self.optional(versionTitle) }
+    var cleanTitle: String? { CookName.normalized(versionTitle) }
     static func optional(_ value: String) -> String? {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed

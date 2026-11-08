@@ -120,7 +120,7 @@ struct RecipeDetailView: View {
                     RecipeToolbarActions(url: recipe.visibility == "friends" ? AppRoute.recipeURL(recipe.id) : nil, sendContent: recipe.visibility == "friends" ? .recipe(recipe.id) : nil, disabled: busy) {
                             if recipe.isOwner {
                                 Button("Edit Recipe", systemImage: "pencil") { management = .edit(recipe) }.accessibilityIdentifier("recipe-edit")
-                                Button("Version History", systemImage: "clock") { management = .history(recipe) }.accessibilityIdentifier("recipe-history")
+                                Button("Recipe History", systemImage: "clock") { management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                                 Button("Save as New Recipe", systemImage: "document.on.document") { management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                             }
                             Button(recipe.linkedAttemptID == nil ? "Link a Dish" : "Change Linked Dish", systemImage: "link") { management = .link(recipe) }.accessibilityIdentifier("recipe-link")

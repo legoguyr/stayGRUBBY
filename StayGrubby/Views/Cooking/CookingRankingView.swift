@@ -140,12 +140,13 @@ struct CookingRankingView: View {
                          disabled: { $0.needsScores && !scores.isUnlocked },
                          active: sort != .grubRank, identifier: "ranking-sort", label: sort.rawValue)
     }
-    /// Presentation only: Off = Top Version, On = All Versions (same stored preference).
+    /// Presentation only: Off = one row per Dish (its top cook), On = All Cooks. The stored raw
+    /// values ("Top Version" / "All Versions") are unchanged so existing preferences survive.
     private var versionsToggle: some View {
-        SGBrowseToggle(title: "All Versions", isOn: Binding(
+        SGBrowseToggle(title: "All Cooks", isOn: Binding(
             get: { displayMode == .allVersions },
             set: { displayPreference = ($0 ? RankingsDisplayMode.allVersions : .topVersion).rawValue }),
-                       identifier: "rankings-show-all-versions", spokenTitle: "Show All Versions")
+                       identifier: "rankings-show-all-versions", spokenTitle: "Show All Cooks of Each Dish")
     }
     /// Clear All keeps its slot while hidden so activating a filter never moves Sort,
     /// the All Versions switch or the wrapping choice.

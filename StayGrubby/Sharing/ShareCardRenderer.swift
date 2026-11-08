@@ -18,7 +18,7 @@ struct RenderedDishShareCard: Identifiable {
             switch self {
             case .missingBrandAsset: "The StayGrubby logo could not be loaded."
             case .renderingFailed: "The share card could not be prepared. Please try again."
-            case .scoresLocked: "Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing with scores."
+            case .scoresLocked: "Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to unlock sharing with scores."
             }
         }
     }

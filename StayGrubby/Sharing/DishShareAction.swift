@@ -18,12 +18,12 @@ struct DishShareAction: View {
                 Button { prepare() } label: { SGToolbarIcon(symbol: "square.and.arrow.up") }
                     .buttonStyle(.plain).sgUtilityTint().disabled(model.scoreText == nil)
                     .accessibilityIdentifier(model.scoreText == nil ? "dish-sharing-locked" : identifier)
-                    .accessibilityLabel(model.scoreText == nil ? "Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing." : "Share Dish")
+                    .accessibilityLabel(model.scoreText == nil ? "Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to unlock sharing." : "Share Dish")
             } else if model.scoreText == nil {
                 Label(compact ? "Share" : "Share Dish unlocks with your scores", systemImage: "lock.fill")
                     .font(compact ? SGTheme.TypeRole.headline : SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     .accessibilityIdentifier("dish-sharing-locked")
-                    .accessibilityLabel("Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) dishes or versions to unlock sharing.")
+                    .accessibilityLabel("Share locked. Rank \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks to unlock sharing.")
                     .frame(maxWidth: compact ? .infinity : nil, minHeight: compact ? SGTheme.Size.minimumTap : nil)
                     .background(compact ? SGTheme.ColorToken.elevatedSurface : .clear, in: RoundedRectangle(cornerRadius: SGTheme.Radius.field))
             } else {

@@ -11,7 +11,7 @@
 
 Current implementation lives in [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md), the implementation order in the [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md#next--unified-dish-foundation-then-ui-overhaul), design-system rules in [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), and long-term signals in [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md). Supporting evidence: [V1_DATA_FOUNDATION_AUDIT.md](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
-Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1**. This checkpoint changes no schema, ranking, Recipe Creator or UI code.
+Status words: **Implemented** · **Implemented, pending deployment** · **Decided** (approved, not built) · **Post-V1**. **D1 status (November 8):** §4 cook naming and the copy rebrand are **Implemented**; §3 Dish Recipes / Main Recipe and the §5 Recipe Diet content key are **Implemented, pending deployment** (`20261108193000_dish_recipe_links`). Protected ranking math and Recipe Creator are unchanged.
 
 ## 1. Owner decisions (November 8, 2026)
 
@@ -59,7 +59,7 @@ This document builds on those rules. It never redefines exact use from links, ti
 | --- | --- | --- | --- |
 | **Recipe used** | This cook was made from this exact revision | `recipe_cooks` snapshot (immutable) | ≤1 per cook |
 | **Current cook link** | This cook is currently associated with this Recipe | `recipe_cook_links` | ≤1 Recipe per cook; ≤1 cook per Recipe |
-| **Dish Recipe** (Decided) | This Recipe is one of the ways I make this Dish | New owner-private relation `dish_recipe_links(account_id, dish_id, recipe_id, is_main, created_at)` | Many Recipes per Dish; one Recipe may belong to several Dishes; at most one `is_main` per Dish (partial unique index) |
+| **Dish Recipe** (Implemented, pending deployment) | This Recipe is one of the ways I make this Dish | New owner-private relation `dish_recipe_links(account_id, dish_id, recipe_id, is_main, created_at)` | Many Recipes per Dish; one Recipe may belong to several Dishes; at most one `is_main` per Dish (partial unique index) |
 | **Legacy family link** | Pre-V2 association of a Recipe with a whole Dish | `dish_recipes`, PK `(account_id, dish_id)` | ≤1 per Dish |
 
 **Why a new relation:** a Dish can't hold several Recipes in today's structures. `dish_recipes` allows only one Recipe per Dish, and exact links are per cook. Repurposing `dish_recipes` as "main" was rejected: changing the main Recipe would delete the old association and change the meaning of historical rows. The implementation stage will:
@@ -101,6 +101,13 @@ A Dish's **related Recipes** are the union, deduplicated by Recipe UUID and rest
 
 Rules: never infer use from title, photo or fuzzy match. Never move a cook between Dishes implicitly. Foreign Recipes (a Sous Chef's, or post-V1 Saved) can be used and suggested, but are never made owned or delegated.
 
+### 3.4 D1 implementation (pending deployment)
+
+- **Store:** `staygrubby.dish_recipe_links`, owner-private, RLS with no client grants, cascades from the Dish and the Recipe. Legacy `dish_recipes` rows were copied once (not marked Main) and stay unchanged. A trigger mirrors legacy attach/detach from existing app builds.
+- **Automatic association:** `associate_dish_recipe` (advisory-locked per Dish) runs when an exact cook link is inserted and when a Recipe-origin reservation completes (Codex lifecycle). The first Recipe of a Dish with no other related Recipe becomes the chosen Main.
+- **Actions** on `api.recipes`: `dish_recipes` (read), `link_dish_recipe`, `unlink_dish_recipe` (also removes the legacy row, never cook links or used snapshots), `set_main_recipe` (compare-and-swap on `expectedMainID`, null clears the choice). Each returns the Dish's related Recipes with `mainRecipeID`, `chosenMainRecipeID`, and per Recipe `dishLinked`, `legacy`, `linkedAttemptIDs`, `usedByAttemptIDs`. A revoked Recipe drops out of the list; its frozen snapshot remains in provenance.
+- **App:** `DishRecipeSet` decodes the response; `RecipeAssociation` encodes §3.3 (explicit → automatic, one related Dish → suggest, several → ask, none → new Dish; Cook Again offers Main first and preselects nothing). D2 and F call them once the migration is deployed.
+
 ## 4. Cooking Attempts: final terminology and naming
 
 ### 4.1 Words
@@ -121,20 +128,21 @@ Rules: never infer use from title, photo or fuzzy match. Never move a cook betwe
 ### 4.2 Naming behavior (Decided; for the rebranding stage)
 
 - **Storage is unchanged.** The name *is* the existing `versionTitle` (SwiftData) / `version_title` (Supabase, ≤200 characters, synced). Don't rename the stored property: renaming a SwiftData attribute is a migration with no benefit. Add a `cookName` accessor if it helps readability.
-- **Normalization:** trim surrounding whitespace and collapse internal runs (existing `cleanTitle`). An empty name becomes nil and returns to the fallback. Names are not unique: two "Spicy" cooks are allowed, because identity is the UUID.
+- **Normalization:** `CookName.normalized` trims, collapses internal whitespace runs and bounds the name at 200 characters (`CookingDraft.cleanTitle` uses it). An empty name becomes nil and returns to the fallback. Names are not unique: two "Spicy" cooks are allowed, because identity is the UUID.
 - **Display name** = custom name, else "Version N", where N = the stored `sequenceNumber`. That number is stable, so it is never renumbered after deletion, and a gap such as "Version 1, Version 3" is acceptable and honest. A lone unnamed cook shows **no** label (existing meaningful-label rule). Once a second cook exists, an unnamed first cook shows "Version 1". Legacy imports follow the same rule.
 - **Ranking independence:**
   - Comparisons, assessments, reactions, unlock eligibility, Recipe-used snapshots and links all key on `CookingAttempt.id` / `RankedItem.id`, never on the name.
-  - `RankedItem.name` is a display cache. A rename refreshes it for that cook, and it refreshes siblings whose fallback visibility changes, in the same transaction, through the existing `CookingStore` edit path. Strengths, uncertainty and evidence are never touched.
-  - Rename is an ordinary metadata edit through the cooking service and outbox. It never starts a re-rank and never posts.
+  - `RankedItem.name` is a display cache of `displayName`. `CookingStore.rename` refreshes it for that cook; creating or deleting a cook refreshes siblings whose fallback visibility changes (a lone first cook caches "Dish", then "Dish — Version 1" once a second cook exists). Strengths, uncertainty and evidence are never touched (`CookNameTests`).
+  - Rename is an ordinary metadata edit staged as `editCook` through the outbox. It never starts a re-rank and never posts.
 - **Snapshots stay snapshots:** published posts and rank-at-sharing records keep the name they were shared with. Recipe-used content is untouched. Search matches the current display name (custom or fallback).
 - **Where names appear:** Grub Rank rows, Dish Detail cook list, the comparison screen (Dish + name), the result screen, the Cook Again chooser, the Link a Dish picker, share cards and the composer (per their existing snapshot rules), and accessibility labels ("Spicy Version, cook of Chili").
-- **Suggested names:** none. The field shows the fallback as its placeholder ("Version 3"). No date- or Recipe-derived automatic names, because they would read as the user's choice.
+- **Suggested names:** none. The field is labelled "Cook Name (optional)"; when the cook would show a fallback, a hint below reads "Leave blank to show Version 3." Rename (cook overflow and a Cooks row context action) uses the fallback as its placeholder. No date- or Recipe-derived automatic names, because they would read as the user's choice.
 
 ### 4.3 All Cooks — validation and placement
 
 - **Placement:** keep the Stage B slot (Grub Rank row 3, `SGBrowseToggle`, after Sort). Off = one row per Dish showing its top cook. On = every cook at its true global rank. Dish Detail shows a **Cooks** section listing all of the Dish's cooks with rank, gated score, date and name, so the toggle mainly serves cross-Dish browsing.
 - **Validation:** "All Cooks" matches "Cooks" on Dish Detail, the "3 cooks" counts and "Cook Again", which together make a single vocabulary. **Risk:** "cooks" can be read as people. In context (a Dish ranking whose people are "Sous Chefs") it reads as attempts, but the spoken label must remove the ambiguity: **"Show All Cooks of Each Dish"**. If owner acceptance still finds it ambiguous, the fallback is "Every Cook". No other alternative is kept open.
+- **Other copy changed in D1:** Dish Detail section "Cooks" with a Cook Again button; the creation menu's Cook Again ("Make a saved Dish again"); navigation titles Cook Again / Rank My Version; Recipe History with "Revision N" entries; score-unlock copy counts cooks ("6 / 10 cooks ranked"); the share achievement reads "BEST COOK YET".
 - **Storage:** `RankingsDisplayMode` raw values ("Top Version" / "All Versions") are persisted in UserDefaults under `StayGrubby.rankingsDisplayMode.v1`. Change only the display labels, never the raw values, so existing preferences survive.
 
 ## 5. As written vs as made
@@ -157,7 +165,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 
 - It is an additive optional key in the Recipe content JSON. It is part of revisions and post pinning like every other content field.
 - The author sets it in the Recipe editor. **Gemini does not propose it.** Recipe Creator contract 4 is frozen, and Diet suitability depends on product choices (stock, cheese rennet, Worcestershire). Unknown stays unknown.
-- The implementation stage must confirm whether the server's content validation accepts the key, and add it additively if not.
+- D1 confirmed the server previously **dropped unknown content keys silently**; `20261108193000_dish_recipe_links` adds `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). `RecipeContent.dietary` round-trips it so edits never drop it. The editor control ships in F (3b).
 
 **Cooking from a Recipe (prefill, user-confirmed):**
 

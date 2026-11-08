@@ -45,7 +45,7 @@ final class FoodBibleV2UITests: StayGrubbyUITestCase {
         XCTAssertTrue(card.waitForExistence(timeout:8)); let identity = card.identifier; card.tap(); app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8))
         app.openRecipeAction("recipe-edit"); XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText(" updated"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
         app.openRecipeAction("recipe-history"); XCTAssertTrue(app.buttons["recipe-version-1"].waitForExistence(timeout:8)); app.buttons["recipe-version-1"].tap()
-        reach(app.buttons["recipe-restore"],app:app); screenshot(app,"Recipe history and restore dark"); app.buttons["recipe-restore"].tap(); app.buttons["Create New Current Version"].tap()
+        reach(app.buttons["recipe-restore"],app:app); screenshot(app,"Recipe history and restore dark"); app.buttons["recipe-restore"].tap(); app.buttons["Create New Current Revision"].tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8)); XCTAssertEqual(app.staticTexts["recipe-title"].label,"Independent Soup")
         app.openRecipeAction("recipe-save-new"); XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText(" copy"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
         app.terminate(); app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20)); openBible(app)

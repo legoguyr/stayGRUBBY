@@ -13,15 +13,7 @@ nonisolated struct ShareCardModel: Equatable, Sendable {
 
     @MainActor
     static func make(for attempt: CookingAttempt, event: RankingCompletionSnapshot? = nil) -> Self {
-        let customTitle = attempt.versionTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
-        let subtitle: String?
-        if let customTitle, !customTitle.isEmpty {
-            subtitle = customTitle
-        } else if attempt.sequenceNumber > 1 || (attempt.dish?.attempts.count ?? 0) > 1 {
-            subtitle = "Version \(attempt.sequenceNumber)"
-        } else {
-            subtitle = nil
-        }
+        let subtitle = attempt.meaningfulVersionLabel
         let visibility = ScoreUnlockPolicy.state(for: attempt)
         let score = attempt.rankedItem?.score
         return Self(title: attempt.dish?.name ?? attempt.rankedItem?.name ?? "Dish",
@@ -39,7 +31,7 @@ nonisolated enum ShareAchievement: String, Equatable, Sendable {
         switch self {
         case .newNumberOne: "NEW #1 DISH"
         case .topFive: "TOP 5"
-        case .bestVersion: "BEST VERSION YET"
+        case .bestVersion: "BEST COOK YET"
         }
     }
     var symbol: String {

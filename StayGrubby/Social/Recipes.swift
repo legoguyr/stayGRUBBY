@@ -20,6 +20,9 @@ nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     var photoID: UUID? = nil
     var tips: String? = nil
     var originalCreator: String? = nil
+    /// Diet as written (`DietaryTag` raw values: dairyFree, glutenFree, vegan, vegetarian).
+    /// Author-selected only; never Certification. Kept so editing never drops it.
+    var dietary: [String]? = nil
 }
 nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var id: UUID

@@ -16,6 +16,8 @@ struct AttemptDetailView: View {
     @State private var versionFinalized = false
     @Environment(\.returnToRankings) private var returnToRankings
     @State private var deleting = false
+    @State private var renaming: CookingAttempt?
+    @State private var cookName = ""
     @State private var error: String?
     @Environment(\.dynamicTypeSize) private var textSize
     @ScaledMetric(relativeTo: .caption) private var tagColumnWidth = SGTheme.Size.tagColumnWidth
@@ -67,6 +69,7 @@ struct AttemptDetailView: View {
                 DishShareAction(model: .make(for: attempt), toolbar: true, currentModel: { .make(for: attempt) })
                 Menu {
                     Button("Edit Cook", systemImage: "pencil") { editing = true }.accessibilityIdentifier("detail-edit-cook")
+                    Button("Rename", systemImage: "character.cursor.ibeam") { beginRename(attempt) }.accessibilityIdentifier("detail-rename-cook")
                     Button("Re-rank", systemImage: "arrow.triangle.2.circlepath") { reranking = true }.accessibilityIdentifier("detail-rerank")
                     if request != nil { Button("Share with Sous Chefs", systemImage: "person.2") { sharingSocial = true }.accessibilityIdentifier("share-with-friends") }
                     Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
@@ -93,11 +96,25 @@ struct AttemptDetailView: View {
                 catch { self.error = error.localizedDescription }
             }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("This removes this cook and can’t be undone. Other cooks stay saved. If this is the dish's last version, the dish is also removed.") }
-        .alert("Couldn't delete", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
+        } message: { Text("This removes this cook and can’t be undone. Other cooks stay saved. If this is the Dish’s last cook, the Dish is also removed.") }
+        .alert("Rename Cook", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+            TextField(renaming.map { CookName.fallback(sequence: $0.sequenceNumber) } ?? "Cook Name", text: $cookName)
+                .accessibilityIdentifier("rename-cook-field")
+            Button("Save") { if let renaming { rename(renaming) } }.accessibilityIdentifier("rename-cook-save")
+            Button("Cancel", role: .cancel) { }
+        } message: { Text("Only the name changes. Its rank, score and history stay the same. Leave blank to use the automatic name.") }
+        .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
             Button("OK") { error = nil }
         } message: { Text(error ?? "") }
         .deferRemoteCookingUpdates()
+    }
+
+    private func beginRename(_ cook: CookingAttempt) {
+        cookName = cook.versionTitle ?? ""; renaming = cook
+    }
+    private func rename(_ cook: CookingAttempt) {
+        do { try CookingStore.rename(cook, to: cookName, context: context) }
+        catch { self.error = error.localizedDescription }
     }
 
     private var globalRank: Int? {
@@ -161,11 +178,11 @@ struct AttemptDetailView: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             if textSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                    SGSectionHeader(title: "Versions")
+                    SGSectionHeader(title: "Cooks")
                     newVersionButton
                 }
             } else {
-                SGSectionHeader(title: "Versions") { newVersionButton }
+                SGSectionHeader(title: "Cooks") { newVersionButton }
             }
             ForEach(versionEntries, id: \.attempt.id) { entry in
                 if entry.attempt.id == attempt.id {
@@ -180,7 +197,7 @@ struct AttemptDetailView: View {
     }
 
     private var newVersionButton: some View {
-        Button("New Version", systemImage: "plus") { addingVersion = true }
+        Button("Cook Again", systemImage: "plus") { addingVersion = true }
             .labelStyle(SGCenteredActionLabelStyle())
             .buttonStyle(SGButtonStyle()).accessibilityIdentifier("detail-new-version")
             .disabled(attempt.dish == nil || attempt.rankedItem?.list == nil)
@@ -212,7 +229,9 @@ struct AttemptDetailView: View {
         .padding(.vertical, SGTheme.Space.small).contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("version-row-\(cook.id)")
-        .accessibilityHint(current ? "Current version" : "Opens this version")
+        .accessibilityHint(current ? "Current cook" : "Opens this cook")
+        .contextMenu { Button("Rename", systemImage: "character.cursor.ibeam") { beginRename(cook) } }
+        .accessibilityAction(named: "Rename") { beginRename(cook) }
     }
     private func versionIdentity(_ cook: CookingAttempt) -> some View { CookVersionIdentity(cook: cook) }
 
@@ -246,7 +265,8 @@ struct EditCookingView: View {
         NavigationStack {
             CookingFormScroll(draft: $draft, editing: true,
                               cookedWith: selection == nil ? nil : $participants, editingParticipants: true,
-                              selectedPeople: selection?.event?.participants.map(\.person) ?? [])
+                              selectedPeople: selection?.event?.participants.map(\.person) ?? [],
+                              fallbackCookName: CookName.label(custom: nil, sequence: attempt.sequenceNumber, siblingCount: attempt.dish?.attempts.count ?? 1))
                 .disabled(saving || savedDraft)
                 .navigationTitle("Edit Cook").navigationBarTitleDisplayMode(.inline)
                 .toolbar {

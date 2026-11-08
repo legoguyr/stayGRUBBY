@@ -128,6 +128,21 @@ final class CookingUITests: StayGrubbyUITestCase {
         tap(app.buttons["save-cook-metadata"])
         XCTAssertTrue(app.staticTexts["Grilled"].waitForExistence(timeout: 15))
 
+        // D1 Rename: only the name changes; the Dish keeps its overall rank.
+        let overall = app.staticTexts["#1 overall"]
+        XCTAssertTrue(overall.waitForExistence(timeout: 10))
+        func rename(from old: String, to new: String) {
+            tap(app.cookAction("detail-rename-cook"))
+            let field = app.alerts["Rename Cook"].textFields.firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 10)); field.tap()
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count) + new)
+            app.alerts["Rename Cook"].buttons["Save"].firstMatch.tap()
+            XCTAssertTrue(app.staticTexts[new].waitForExistence(timeout: 15))
+        }
+        rename(from: "Grilled", to: "Charred")
+        XCTAssertTrue(app.staticTexts["#1 overall"].exists)
+        rename(from: "Charred", to: "Grilled")
+
         transition(app.cookAction("detail-rerank"), to: app.buttons["Liked it"])
         XCTAssertTrue(app.buttons["It was fine"].exists && app.buttons["Didn't like it"].exists)
         transition(app.buttons["Liked it"], to: app.buttons["Too Tough"])
