@@ -8,7 +8,7 @@ StayGrubby is a private cooking journal and personal ranking app with optional f
 
 When you create an account, StayGrubby uses Sign in with Apple and Supabase Authentication. Apple and Supabase may process an Apple account identifier, a Supabase user and session identifier, and an email address or Apple private-relay address supplied through Sign in with Apple. StayGrubby assigns a separate internal account identifier.
 
-The app stores the cooking information you choose to enter, including dish and version names, cooking dates, notes, course and tag selections, source details, ranking comparisons, ranking results, and associated diagnostics needed to maintain your personal ranking. If you select photos, the app creates optimized JPEG display and thumbnail copies for the app and private backup.
+The app stores the cooking information you choose to enter, including dish and version names, cooking dates, notes, course and tag selections, source details, ranking comparisons, ranking results, and associated diagnostics for your personal ranking. These include the reaction you choose and the time you finish a new rank or re-rank. This reaction history is private and follows the cooking library’s sync and deletion rules. If you select photos, the app creates optimized JPEG display and thumbnail copies for the app and private backup.
 
 ## How information is used and stored
 

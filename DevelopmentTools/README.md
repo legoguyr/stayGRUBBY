@@ -1,5 +1,25 @@
 # Development tools
 
+## Preloaded development persona
+
+Run the `StayGrubby` scheme in **Debug** on the existing Simulator lane. In Xcode's Run arguments, pass these three arguments separately:
+
+```text
+--ui-test-store
+<UUID from uuidgen>
+--development-persona
+```
+
+For an already installed Debug app:
+
+```sh
+xcrun simctl launch --terminate-running-process booted com.guyrettig.StayGrubby --ui-test-store "$(uuidgen)" --development-persona
+```
+
+Use the same UUID to reopen the edited cooking library. Use a fresh UUID for a new copy of the baseline. Use the persona flag by itself with the UUID gate, without other review fixture flags. Cooking and any photos you add use an isolated persona store and media root. The mocked Recipes and social data reload from the seed on each launch. The launch flag and mock are compiled out of Release.
+
+Maya Ortiz starts in Grub Rank with 14 cooks across 11 Dishes. Compare **Harissa Chicken · Smoky Sunday**, which used Avery's revision 1, with **Oven-roasted batch**, an ordinary sibling version. Food Bible has Avery's current revision 2, two linked owned Recipes and standalone Rosemary White Beans. My Kitchen and Grub List have Signature Dishes, two Sous Chefs, a pending request, and seeded posts, Hands, comments and Tickets. The persona ships with photo placeholders. Use a dedicated photo fixture or add photos in the isolated library when testing media.
+
 ## Unattended authenticated Recipe Creator validation
 
 `recipe_live_test.mjs` is explicit development tooling, **outside every Xcode target**. It never runs at app launch or in Release/TestFlight/App Store; the app does not reference its endpoint. Production stays Apple-only, with email and anonymous sign-in disabled. Never use Guy's account/phone/SDK Keychain or extract the Gemini key.

@@ -10,6 +10,7 @@ import Observation
     private(set) var completed = false
     private(set) var completionSnapshot: RankingCompletionSnapshot?
 
+    private let completionID = UUID()
     private var baseline: RankingContext?
     private var reassessment: RankingAssessment?
 
@@ -35,7 +36,8 @@ import Observation
         else { throw CookingStore.StoreError.missingItem }
         guard try list.rankingContext() == baseline else { throw RankingStore.EvidenceError.sessionHasNewEvidence }
         let before = RankingCompletionSnapshot.capture(from: list)
-        try CookingStore.rerank(attempt, evidence: session.evidence, context: context, reaction: session.reaction, reassessment: session.evidence.isEmpty ? nil : reassessment)
+        try CookingStore.rerank(attempt, evidence: session.evidence, context: context, reaction: session.reaction,
+                                reassessment: session.evidence.isEmpty ? nil : reassessment, completionID: completionID)
         completionSnapshot = before
         completed = true
     }

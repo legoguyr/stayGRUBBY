@@ -34,6 +34,8 @@ Each stage: implement → focused verification → owner acceptance where needed
 
 Moderation (UGC filtering, report → review → resolution, block enforcement), privacy/security review, account deletion and UGC cleanup review, Terms, Community Guidelines, Privacy Policy, Recipe/allergen/serving disclaimers, support/contact, Apple App Privacy, age rating, App Review access/sign-in, production configuration, advisories (leaked-password warning, production `development-test-session` function), incompatible-build retirement. Checklist: [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md). Privacy/moderation dependencies may move earlier.
 
+Data integrity before V1 includes authorizing and deploying the locally verified Recipe cook lifecycle migration, confirming hosted restore and current-link retirement, and carrying forward the dated private reaction record. Personal Cooking Intelligence remains post-V1. [Data foundation follow-up](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
+
 ## THEN — Release Candidate
 
 Final TestFlight release candidate, one proportionate broader regression and Release verification, physical acceptance (including two-device Universal Links and real-device photos/auth/sync/sharing). Archive, build-number change, upload and distribution each need explicit owner approval.

@@ -32,10 +32,10 @@ struct AccountApplicationRoot: View {
             #endif
         }
         .task {
-            session.finishPendingLocalDeletion()
             #if DEBUG
             if DevelopmentLibraryAccess.requestedOnLaunch { openDevelopment(); return }
             #endif
+            session.finishPendingLocalDeletion()
             await session.restoreSessionOnLaunch()
         }
         .task(id:session.state) {
@@ -80,6 +80,9 @@ struct AccountApplicationRoot: View {
         }
     }
     private func prepareAccess() async {
+        #if DEBUG
+        if DebugReviewConfiguration.current.storeID != nil { return }
+        #endif
         access.reset()
         guard case .resolved(let account) = session.state else {
             await Task.yield()

@@ -230,7 +230,7 @@ struct SocialPublicationHost: ViewModifier {
                 guard let root, let request else { return }
                 var owner = try? SyncJournal.binding(context)?.accountID
                 #if DEBUG
-                if owner == nil, DebugReviewConfiguration.current.storeID != nil, ProcessInfo.processInfo.arguments.contains("--social-review") {
+                if owner == nil, DebugReviewConfiguration.current.socialReview {
                     owner = UUID(uuidString: "10000000-0000-0000-0000-000000000099")
                 }
                 #endif

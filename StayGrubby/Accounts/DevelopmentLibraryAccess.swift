@@ -15,8 +15,12 @@ import SwiftData
         let url = review.storeURL(in: FileManager.default.temporaryDirectory)
         let root = review.mediaRoot(in: FileManager.default.temporaryDirectory)
         let container = try LocalStoreStartup.openGuest(overrideURL:url)
-        if review.discoveryFixture, let root { try DiscoveryReviewFixture.seed(container:container,mediaDirectory:root) }
-        if let count = review.scoreUnlockCount, let root { try ScoreUnlockReviewFixture.seed(container:container,mediaRoot:root,count:count) }
+        if review.developmentPersona, let url {
+            try DevelopmentPersona.seed(context: container.mainContext, marker: url.appendingPathExtension("seeded"))
+        } else {
+            if review.discoveryFixture, let root { try DiscoveryReviewFixture.seed(container:container,mediaDirectory:root) }
+            if let count = review.scoreUnlockCount, let root { try ScoreUnlockReviewFixture.seed(container:container,mediaRoot:root,count:count) }
+        }
         return Self(container:container,mediaRoot:root,isolated:review.storeID != nil)
     }
 }

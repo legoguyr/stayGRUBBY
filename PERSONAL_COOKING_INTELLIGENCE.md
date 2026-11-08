@@ -40,7 +40,7 @@ Principles: working functionality before speculative infrastructure; capture str
 
 ## 4. Verified existing-data inventory (Build 4)
 
-Grounded in SwiftData models, `RecipeContent`, and the 41 `staygrubby` tables (local migrations match hosted). A UI concept alone does not count.
+Grounded in SwiftData models, `RecipeContent`, and the 41 `staygrubby` tables verified at Build 4, with the November 8 data-foundation follow-up annotated below. A UI concept alone does not count.
 
 **Classifications:** ✅ Implemented and verified · 🟡 Partially implemented · 📝 Available but unstructured · 🗺️ Approved/planned · ⛔ Not currently captured.
 
@@ -52,7 +52,7 @@ Grounded in SwiftData models, `RecipeContent`, and the 41 `staygrubby` tables (l
 | Displayed score | ✅ | Derived at read time by `ScoreCalibration` (strength + reaction); not stored as truth. Score/order semantics under pre-V1 investigation |
 | Pairwise evidence | ✅ | `Comparison` / `comparisons`: immutable UUID observations, winner or tie, timestamp; repeats retained |
 | Ranking uncertainty | ✅ | `RankedItem.uncertainty`; session diagnostics include position mean/SD and max slot probability |
-| Explicit reaction | 🟡 | Three-level initial and latest reaction (Liked / Fine / Didn't like) in session diagnostics, per cook. No ingredient/flavor-level explicit preferences |
+| Explicit reaction | 🟡 | Three-level whole-cook reaction (Liked / Fine / Didn't like). The follow-up records a private date, ID and kind for each new completed rank or re-rank in the existing diagnostics. Earlier initial/latest values are undated. Ingredient/flavor-level preferences remain unknown |
 | Timestamps | ✅ | Cook date, created/updated on cooks, comparisons, Recipes, revisions, posts, comments |
 | Cooking frequency / repetition | 📝 | Derivable from cook dates and versions per Dish; no stored aggregate (none needed yet) |
 | Recipe ingredients | 🟡 | Components with ingredient lines and parsed fields; no canonical ingredient identity across Recipes |
@@ -61,7 +61,7 @@ Grounded in SwiftData models, `RecipeContent`, and the 41 `staygrubby` tables (l
 | Techniques | 📝 | Only inside step text; no technique taxonomy |
 | Recipe metadata | ✅ | Yield, prep/cook/elapsed minutes with origins, Course, Cuisine, Contains/Possible allergens, tips |
 | Recipe revision history | ✅ | `recipe_revisions` immutable; restore-as-new; owner-only history |
-| Dish ↔ Recipe relationships | ✅ | `recipe_cook_links` (exact current), `dish_recipes` (legacy family), `recipe_cooks` (immutable used-snapshot) |
+| Dish ↔ Recipe relationships | ✅ | `recipe_cook_links` (exact current), `dish_recipes` (legacy family), `recipe_cooks` (immutable used-snapshot). The pre-V1 lifecycle migration finalizes exact reservations with cook sync and retires deleted-cook links after deployment. |
 | Recipe ownership | ✅ | `recipes.owner`, visibility `private` / Sous Chefs |
 | Creator attribution | ✅ | `originalCreator`/source fields; pinned foreign creator credit on Recipe-origin cooks; `recipe_forks` provenance |
 | Recipe recreations | 🟡 | Run It Back / Shared Cooking provenance in `cooking_origins`, `recreated` Ticket kind, `recipe_cooks`; Run It Back entry points hidden; no recreation statistics |
