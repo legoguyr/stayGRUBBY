@@ -53,6 +53,8 @@ Four authenticated tabs: **Grub List / Grub Rank (initial) / Food Bible / My Kit
 | Social | Optional profile, mutual Sous Chefs, explicit posts with safe snapshots, Hands/comments, Shared Cooking, Tickets, reports/blocks |
 | Account/media | Apple/Supabase identity → permanent account; account-isolated store, outbox and private photo backup |
 
+**Unified food identity (decided November 8, 2026; not yet implemented).** Dish and Recipe become one user-facing food identity through a composed `Food` read model — no new table; Dish, CookingAttempt, RankedItem, Recipe and every bridge keep their IDs, owners, sync paths and deletion rules. Grub Rank (ranked cooks) and Food Bible (foods with a Recipe) become lenses that open the same Food Detail. Metadata storage placement is unchanged; editors will separate "About this Dish" from "This cook". Contract, lens filters, versions vocabulary, the contextual Add Recipe flow and future compatibility: [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md).
+
 ## Cooking library
 
 New Dish and New Version each create an independent attempt and ranked item in the one global ranking. Edit and re-rank preserve identities. Top Version / All Versions are projections that keep true global ranks; filters never create another ranking. Required inputs for a new cook: trimmed Dish name, known cooked date (defaults to today), valid Course (Main default) and a completed ranking session; everything else is optional. Legacy unknown-date records remain editable.
@@ -75,7 +77,7 @@ Scores unlock at **ten** eligible saved ranked attempts; re-rank never increment
 
 ## Food Bible and Recipes — Architecture V2
 
-Recipe means **how I make something**; Dish means **what I cooked and ranked**. Either exists alone. Food Bible indexes Recipe UUIDs once each (standalone owned Recipes plus eligible Recipes linked to the caller's Dishes) through bounded `library_index` pagination. Add Recipe offers **Paste Recipe / Add Manually**, neither requiring a Dish. Recipe Detail keeps **Rank My Version** primary, with compact Share/Send and overflow (Edit, Version History, Save as New, Link a Dish, 86 Recipe). Linking uses the photographic Dish/version selector. New Recipe creation plus exact linking is atomic.
+Recipe means **how I make something**; Dish means **what I cooked and ranked**. Either exists alone. (This section describes the current Build 4 implementation; the decided unified presentation is in [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md).) Food Bible indexes Recipe UUIDs once each (standalone owned Recipes plus eligible Recipes linked to the caller's Dishes) through bounded `library_index` pagination. Add Recipe offers **Paste Recipe / Add Manually**, neither requiring a Dish. Recipe Detail keeps **Rank My Version** primary, with compact Share/Send and overflow (Edit, Version History, Save as New, Link a Dish, 86 Recipe). Linking uses the photographic Dish/version selector. New Recipe creation plus exact linking is atomic.
 
 Owner-private `recipe_cook_links`: at most one current cook per Recipe and one current Recipe per cook, compare-and-swap guarded. A current link is a deliberate association, not proof a Recipe was used. Cook Detail distinguishes **Recipe used** (immutable snapshot) from **Linked Recipe** or legacy family link. Never infer which Recipe an old cook used from today's link.
 
@@ -180,6 +182,7 @@ Follow AGENTS.md's minimum-confidence table.
 | Auth/account/sync | [ACCOUNT_ARCHITECTURE.md](ACCOUNT_ARCHITECTURE.md), [SYNC_ARCHITECTURE.md](SYNC_ARCHITECTURE.md) |
 | Photos | [MEDIA_SYNC_ARCHITECTURE.md](MEDIA_SYNC_ARCHITECTURE.md) |
 | Social | [SOCIAL_ARCHITECTURE.md](SOCIAL_ARCHITECTURE.md) |
+| Dish + Recipe relationship, lenses, Add Recipe | [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md), [V1 data audit](V1_DATA_FOUNDATION_AUDIT.md) |
 | Food Bible/Recipe | sections above, [Architecture V2 review](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md), [Recipe Style Guide](RECIPE_STYLE_GUIDE.md), [Creator ownership audit](RECIPE_CREATOR_REVIEW.md) |
 | UI/share images | [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md), [V1_SHARING_ARCHITECTURE.md](V1_SHARING_ARCHITECTURE.md) |
 | Future intelligence / data planning | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) |

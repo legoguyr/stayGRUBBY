@@ -2,7 +2,7 @@
 
 Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bible) and intentionally shared social activity. Official identity: **#stayGRUBBY**.
 
-**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). Next: the system-wide UI overhaul (Stages A–G) → V1 Release Gate → Release Candidate → App Store V1.
+**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). Next: the system-wide UI overhaul (Stages A–G; the November 8 Unified Food Architecture checkpoint split D into D1/D2) → V1 Release Gate → Release Candidate → App Store V1.
 
 ## Read first
 
@@ -17,7 +17,8 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 
 | Document | Purpose |
 | --- | --- |
-| [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul Stages A–G |
+| [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md) | One food identity over Dish + Recipe: ownership, Grub Rank / Food Bible lenses and filters, versions, contextual Add Recipe, reusable food UI parts, future compatibility |
+| [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul Stages A–G (D split into D1 Food Foundation / D2 Food Detail) |
 | [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md) | V1 release requirements and state |
 | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
 | [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |

@@ -119,7 +119,7 @@ An empty library shows no browse controls (and Grub Rank no search button). The 
 
 **New Dish / New Version / Edit Cook.** Order: photos → Dish Name → Version Title → Public Description → Date Cooked (defaults to today) → Private Notes → Details sheet (Course, Cuisine, Source, Dietary, Contains) → Tag a Sous Chef 🧑‍🍳 (horizontal avatar row + searchable sheet, eight-person limit) → Share with Sous Chefs toggle. Required: Dish name, date, valid Course. Custom Tags are hidden from entry; Dietary offers Diet and Certification (incl. Halal) groups. Edit Cook reuses tagging.
 
-**Dish Detail.** Native back + compact Share + overflow (Edit Cook, Re-rank, post sharing, 86). Hero photo, identity, score/rank, metadata, Recipe relationship row, Versions. Lone untitled cook shows no "Version 1".
+**Dish Detail.** Native back + compact Share + overflow (Edit Cook, Re-rank, post sharing, 86). Hero photo, identity, score/rank, metadata, Recipe relationship row, Versions. Lone untitled cook shows no "Version 1". *Decided (D2):* Dish Detail and Recipe Detail become one Food Detail reached from either lens ([FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#3-two-lenses-one-library)).
 
 **Food Bible.** Recipe cards keyed by Recipe UUID; search field, then Filters · Sort (5.4); Filters sheet groups Course, Cuisine, Contains, Avoid, Source (no Photo filter); directional sort. Add Recipe → Paste Recipe / Add Manually. Recipe Detail: creator near title, Rank My Version primary, servings scaling, Ingredients/Method typography, Contains/Possible after method, compact safety disclosure, provenance last; Share/Send/overflow toolbar. Unit-conversion controls hidden.
 
@@ -141,17 +141,20 @@ Scores unlock at ten eligible saved ranked entries; locked states never render a
 
 A true consolidation across screens, not per-screen polish. Candidate shared systems: `SGPhotoFrame(role:)`, `ScoreBadge(size:)`, one Share menu/action model, `SGOptionSheet`, generalized `SGSelectionRow`, `SGFilterBar`, `SGEditorScaffold`, `SGContentState`, `SGSectionHeader` rule, shared toolbar/tint rules, and Recipe/Food Bible values routed through `SGTheme`.
 
+**Unified food parts (Decided November 8, 2026 — [FOOD_ARCHITECTURE.md §6](FOOD_ARCHITECTURE.md#6-reusable-lego-ui-architecture)).** Dish and Recipe become one user-facing food identity; screens are assembled from parts that each own one record: `FoodIdentityHeader`, `FoodCooksSection`, `FoodRecipeSection`, `FoodRow`/`FoodCard`, `FoodPicker`, `AddRecipeFlow(context:)`, `CookEditor` ("About this Dish" / "This cook") and `FoodActions`. Each is built by generalizing the existing components named there; an empty side renders as one quiet action, never an empty section.
+
 | Stage | Scope |
 | --- | --- |
 | A — Foundations | **Implemented November 7, 2026 — owner accepted.** Tokens/accent rule, photo roles + placeholder, score roles, section/content states, toolbar/row action styles, foundational defects |
 | B — Pickers / Search / Filtering | **Implemented November 7, 2026 — automated + Simulator checks passed, owner physical acceptance pending.** Owner review revision (same day): direct Grub Rank filter chips, separate Sort, All Versions toggle, Photo filter removed, Dietary note removed with Halal restored and alphabetized groups. Final owner correction (November 8): multi-select Course/Cuisine, sheets stay open until Done, active chips use color only (no count) with no layout movement; shared search field, option sheets, Dietary editor |
-| C — Sharing | Separate Post to Grub List from external Share; one Share action (image + short `#stayGRUBBY` message + exact link); composer simplification |
-| D — Detail screens | Dish Detail / Recipe Detail consolidation |
+| C — Sharing | Separate Post to Grub List from external Share; one Share action (image + short `#stayGRUBBY` message + exact link); composer simplification. Shape the action model so it becomes `FoodActions` in D2 |
+| D1 — Food Foundation | Non-visual: `Food` read model, resolution rules, link-integrity fixes (see roadmap) |
+| D2 — Food Detail | One Food Detail from both lenses (replaces separate Dish Detail / Recipe Detail consolidation); Cook detail; Food Bible "Cooked / Not cooked yet" toggle |
 | E — Social / Kitchens | Grub List, Tickets relocation, My Kitchen stats, Sous Chef Kitchen, Sous Chefs, Requests |
-| F — Forms / Editors | New Dish, New Version, Edit Cook, Recipe editor, related forms |
+| F — Forms / Editors | `AddRecipeFlow(context:)` (Import Recipe / Create Manually / Link Existing), `CookEditor` scope groups, Rank My Version destinations, New Dish, New Version, Edit Cook, Recipe editor, related forms |
 | G — Copy / Celebrations / Final consolidation | Copy purge, ranking result/celebration states (after the score/order investigation), accessibility/consistency pass |
 
-Each stage updates this file as decisions become durable (AGENTS.md living documentation).
+Each stage updates this file as decisions become durable (AGENTS.md living documentation). The Food Bible filter set and Grub Rank chips are confirmed per lens in [FOOD_ARCHITECTURE §3.1](FOOD_ARCHITECTURE.md#31-filters-per-lens); no filter moves between lenses.
 
 ## 10. Known defects queued for the overhaul
 
@@ -164,7 +167,7 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 | ~~Unlock milestone says "from Profile"~~ | Fixed in A |
 | ~~Tickets row tint bleeds red into handle/message/time~~ (fixed in A via `SGRowButtonStyle`); rows still run four lines | E |
 | ~~Sous Chef Kitchen Recipes row shows two chevrons~~ | Fixed in A |
-| Add Recipe → Add Manually shows both Back and Cancel (nested navigation) | F |
+| Add Recipe → Add Manually shows both Back and Cancel (nested navigation); three divergent Add/Link Recipe entry points (→ one `AddRecipeFlow`) | F |
 | Keyboard Done pill overlaps the Comment Send button and New Dish Continue bar (iOS 26) | A / F |
 | ~~Grub Rank Avoid chip clipped~~ (even equal-width chips that wrap at large text) | Fixed in B |
 | ~~Empty Grub Rank still shows segmented control and filters~~ | Fixed in B |
@@ -180,8 +183,8 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 | "Your dish is ranked!" used for low-score and re-rank results | G |
 | Unlock milestone replaces the new Dish's own result, so its rank/score is never shown | G |
 | Too Tough on a repeated pair gives no feedback (behavior protected; presentation only) | G |
-| Tagged Sous Chef leaves no visible trace on Dish Detail / Grub List card (decided: show collaborators on the card, wording not final, e.g. "Guy + Alex cooked this") | D / E |
-| Rank My Version does not explain Recipe provenance or that it creates a new Dish rather than a version of an existing one | F |
+| Tagged Sous Chef leaves no visible trace on Dish Detail / Grub List card (decided: show collaborators on the card, wording not final, e.g. "Guy + Alex cooked this") | D2 / E |
+| Rank My Version does not explain Recipe provenance or that it creates a new Dish rather than a version of an existing one (destinations decided in [FOOD_ARCHITECTURE §4.1](FOOD_ARCHITECTURE.md#41-rank-my-version-in-the-unified-model)) | F |
 | Recipe editor uses red for nearly everything | F |
 | ~~No-photo cards form a wall of giant wordmarks; SF-symbol placeholders elsewhere~~ (`SGPhotoPlaceholder`) | Fixed in A |
 | Edit Cook Save is compact while Continue is full-width | F |
