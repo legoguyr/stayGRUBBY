@@ -2,7 +2,7 @@
 
 Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bible) and intentionally shared social activity. Official identity: **#stayGRUBBY**.
 
-**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). November 8: `agent/claude` integrated into local `main`; D1 Unified Dish Foundation implemented; the lifecycle and Dish Recipe links migrations are deployed. D2 Unified Dish Detail implemented (its Food Bible index migration awaits authorized deployment). Next: F → C → E → G → V1 Release Gate → Release Candidate → App Store V1.
+**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). November 8: `agent/claude` integrated into local `main`; D1 Unified Dish Foundation implemented; the lifecycle and Dish Recipe links migrations are deployed. D2 Unified Dish Detail implemented and its Food Bible index migration deployed. Next: F → C → E → G → V1 Release Gate → Release Candidate → App Store V1.
 
 ## Read first
 
