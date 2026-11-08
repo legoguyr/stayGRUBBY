@@ -107,7 +107,7 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 ## Feature flags
 
-`staygrubby.feature_flags(key, enabled, audience, description, updated_at)` is owner-managed (SQL/dashboard), RLS-closed and never client-writable; `api.feature_flags('get')` returns the keys enabled for the signed-in account. Today only `audience = 'everyone'` can be on; `internal` and `beta` are reserved and resolve to off until a reviewed membership model exists (a cohort table read by `staygrubby.feature_flag_api` only). The app loads flags at sign-in (`FeatureFlagService`, `\.featureFlags`); offline, older servers and errors mean every flag is off. A flag never makes an unfinished feature shippable. Known keys: `dish_aggregate_scores` (future, off). Migration `20261108233000_feature_flags` is **local, pending authorized deployment**.
+`staygrubby.feature_flags(key, enabled, audience, description, updated_at)` is owner-managed (SQL/dashboard), RLS-closed and never client-writable; `api.feature_flags('get')` returns the keys enabled for the signed-in account. Today only `audience = 'everyone'` can be on; `internal` and `beta` are reserved and resolve to off until a reviewed membership model exists (a cohort table read by `staygrubby.feature_flag_api` only). The app loads flags at sign-in (`FeatureFlagService`, `\.featureFlags`); offline, older servers and errors mean every flag is off. A flag never makes an unfinished feature shippable. Known keys: `dish_aggregate_scores` (future, off). Migration `20261108234407_feature_flags` is **deployed** (November 8; empty table, no flag enabled).
 
 ## Supabase system map
 
