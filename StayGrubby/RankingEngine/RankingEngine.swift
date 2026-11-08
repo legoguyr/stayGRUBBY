@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated enum InitialReaction: String, CaseIterable, Identifiable {
+nonisolated enum InitialReaction: String, Codable, CaseIterable, Identifiable {
     case liked = "Liked it", fine = "It was fine", disliked = "Didn't like it"
     var id: String { rawValue }
     var percentile: Double {

@@ -154,6 +154,29 @@ import Testing
         #expect(ScoreCalibration.reaction(in: restoredCook.rankedItem?.sessionDiagnosticsData) == .disliked)
         #expect(restoredCook.rankedItem!.score < 5.8)
     }
+    @Test func reactionOnlyCompletionsAppendDatedPrivateEvidenceOnce() throws {
+        let start = Date()
+        let f = try fixture(1)
+        let cook = try #require(f.cooks.first), item = try #require(cook.rankedItem)
+        let before = item.strength
+        let reactions: [InitialReaction] = [.liked, .liked, .disliked]
+        for reaction in reactions {
+            let workflow = CookingReRankingWorkflow(attempt: cook)
+            try workflow.choose(reaction, context: f.context)
+            try workflow.finish(context: f.context)
+            try workflow.finish(context: f.context)
+        }
+        struct Diagnostics: Decodable { let completedReactions: [CompletedRankingReaction] }
+        let data = try #require(item.sessionDiagnosticsData)
+        let history = try JSONDecoder().decode(Diagnostics.self, from: data).completedReactions
+        #expect(history.map(\.reaction) == [.fine, .liked, .liked, .disliked])
+        #expect(history.map(\.kind) == [.initial, .rerank, .rerank, .rerank])
+        #expect(Set(history.map(\.id)).count == 4)
+        #expect(history.allSatisfy { $0.completedAt >= start && $0.completedAt <= Date() })
+        #expect(try history.last?.appending(to: data) == data)
+        #expect(f.list.comparisons.isEmpty && item.strength == before)
+    }
+
     @Test func legacyCookWithoutDiagnosticsGetsCurrentAssessmentOnlyOnCompletion() throws {
         let f = try fixture(1)
         let cook = try #require(f.cooks.first), item = try #require(cook.rankedItem)

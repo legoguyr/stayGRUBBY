@@ -11,6 +11,8 @@ nonisolated struct DebugReviewConfiguration {
     let dark: Bool
     let reduceMotion: Bool
     let largeType: Bool
+    let developmentPersona: Bool
+    let socialReview: Bool
     let discoveryFixture: Bool
     let comparisonMode: String?
     let sharingMode: String?
@@ -27,6 +29,8 @@ nonisolated struct DebugReviewConfiguration {
         dark = isolated && arguments.contains("--test-dark")
         reduceMotion = isolated && arguments.contains("--test-reduce-motion")
         largeType = isolated && arguments.contains("--test-large-type")
+        developmentPersona = isolated && arguments.contains("--development-persona")
+        socialReview = isolated && (developmentPersona || arguments.contains("--social-review"))
         discoveryFixture = isolated && arguments.contains("--discovery-fixture")
         if isolated, let index = arguments.firstIndex(of: "--comparison-fixture"),
            arguments.indices.contains(index + 1), ["11", "10", "01", "00"].contains(arguments[index + 1]) {
@@ -46,11 +50,11 @@ nonisolated struct DebugReviewConfiguration {
     }
 
     func storeURL(in temporaryDirectory: URL) -> URL? {
-        storeID.map { temporaryDirectory.appendingPathComponent("ui-test-\($0.uuidString).store") }
+        storeID.map { temporaryDirectory.appendingPathComponent("ui-test-\($0.uuidString)\(developmentPersona ? "-persona" : "").store") }
     }
 
     func mediaRoot(in temporaryDirectory: URL) -> URL? {
-        storeID.map { temporaryDirectory.appendingPathComponent("ui-test-\($0.uuidString)-media", isDirectory: true) }
+        storeID.map { temporaryDirectory.appendingPathComponent("ui-test-\($0.uuidString)\(developmentPersona ? "-persona" : "")-media", isDirectory: true) }
     }
 }
 #endif

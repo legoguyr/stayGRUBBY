@@ -5,8 +5,7 @@ import SwiftData
 @MainActor enum CookPublicationReadiness {
     static func revision(for attempt: CookingAttempt, binding: SyncStoreBinding?, requireCurrent: Bool = true) -> Int? {
         #if DEBUG
-        if binding == nil, DebugReviewConfiguration.current.storeID != nil,
-           ProcessInfo.processInfo.arguments.contains("--social-review") { return 0 }
+        if binding == nil, DebugReviewConfiguration.current.socialReview { return 0 }
         #endif
         guard let binding, binding.enabled, !binding.restorationRequired, binding.acceptedRevision >= 0,
               let data = binding.acceptedSnapshotData, let graph = try? CookingGraph.decode(data),

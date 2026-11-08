@@ -46,7 +46,7 @@ Four authenticated tabs: **Grub List / Grub Rank (initial) / Food Bible / My Kit
 | --- | --- |
 | Dish | Stable cooking identity/name, default Course/Cuisine/Source, optional Public Description (2,000 scalars) and owner-only Private Notes (8,000); no independent score |
 | CookingAttempt | An actual cook/version: date, optional version title, private per-cook notes, Course snapshot, tags, up to six ordered cook-owned photos, sequence number |
-| RankedItem | One ranking identity per attempt: BT strength, uncertainty, session diagnostics (initial/latest reaction, comparison/skip/undo counts, stop reason) |
+| RankedItem | One ranking identity per attempt: BT strength, uncertainty, session diagnostics (initial/latest reaction, private dated completed reactions, comparison/skip/undo counts, stop reason) |
 | Ranking evidence | One global RankingList; individual immutable-ID Comparison observations (winner or tie, timestamp); evidence is authoritative |
 | Recipe | Server-owned UUID, owner, visibility (`private` / Sous Chefs), structured content, current revision, immutable revision history |
 | Recipe provenance | Exact snapshots for explicitly associated cooks (`recipe_cooks`), private current cook links, legacy Dish-family links, forks, pinned creator attribution |
@@ -75,6 +75,8 @@ Version labels show only when meaningful (intentional title or multiple versions
 
 Scores unlock at **ten** eligible saved ranked attempts; re-rank never increments eligibility; deleting below ten relocks presentation without destroying evidence. Native colors: coral 1.0–4.9, orange 5.0–7.5, gold 7.6–10.0; exports always brand red. The hosted `ranking_assessment_client_guard` rejects writes from clients that do not declare `rankingAssessmentVersion: 1` when assessment diagnostics exist; old queued payloads are never relabeled; a rejection keeps local work and stops automatic retries. Retire incompatible old TestFlight builds during authorized distribution work.
 
+Completed initial ranks and re-ranks record a private dated reaction in the existing ranked-item diagnostics, including reaction-only sessions. A completed entry has a stable ID, time, reaction and kind. It commits with the cook or re-rank transaction and syncs through the same owner-scoped payload. Existing undated reactions are retained without inferring missing events. The history is separate from the inputs for fitting, score calibration and eligibility. Cook deletion removes it from active history and account deletion removes account-owned storage.
+
 ## Food Bible and Recipes — Architecture V2
 
 Recipe means **how I make something**; Dish means **what I cooked and ranked**. Either exists alone. (This section describes the current Build 4 implementation; the decided unified presentation is in [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md).) Food Bible indexes Recipe UUIDs once each (standalone owned Recipes plus eligible Recipes linked to the caller's Dishes) through bounded `library_index` pagination. Add Recipe offers **Paste Recipe / Add Manually**, neither requiring a Dish. Recipe Detail keeps **Rank My Version** primary, with compact Share/Send and overflow (Edit, Version History, Save as New, Link a Dish, 86 Recipe). Linking uses the photographic Dish/version selector. New Recipe creation plus exact linking is atomic.
@@ -86,6 +88,8 @@ Recipes use authenticated online APIs with ownership/visibility and expected-rev
 Save keeps the Recipe ID, checks the revision and archives an immutable revision. History is owner-only. Restore creates a **new** revision. Save as New creates an independent private identity. Recipe-origin cook snapshots stay immutable through later edits. Serving adjustment is a deterministic display-only projection (1–100 servings; ranges/vague yields disabled; no unit conversion). As Written / US / Metric conversion exists but is hidden for V1. Recipe photo precedence: Recipe-owned → explicitly linked cook → branded fallback. New owner-authored Recipes default to **Share with Sous Chefs** (never Public); copies and Save as New stay private.
 
 Rank My Version reserves the Recipe identity and exact revision, then runs the normal cook/rank flow. Recipe-origin cooks pin optional foreign creator attribution; self-origin cooks get no self-credit. Owner-accepted November 2; frozen except evidenced defects. Detail: [FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md](FOOD_BIBLE_ARCHITECTURE_V2_REVIEW.md), [NEXT_RELEASE_STAGE_4_REVIEW.md](NEXT_RELEASE_STAGE_4_REVIEW.md), [V1_PRODUCT_CLOSEOUT_REVIEW.md](V1_PRODUCT_CLOSEOUT_REVIEW.md).
+
+The locally verified `20261108091616_recipe_cook_lifecycle` migration is pending authorized deployment. It completes a reserved Recipe revision when the matching owner/item cook sync commits and repairs earlier provable matches without choosing a current association. A new visible Recipe-origin cook can fill a vacant exact link. Sync deletion retires the current exact link. Completion RPC retries acknowledge the saved cook without recreating an unlinked association. Existing authorized legacy Dish-family links and historical Recipe-used snapshots retain their separate semantics. See the [data foundation follow-up](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
 Recipe/allergen/serving estimate limitations require Terms/disclaimer/safety coverage before V1 (not solely the Privacy Policy, not repeated in readers).
 
@@ -103,7 +107,7 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 ## Supabase system map
 
-Project **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17). Hosted and local migrations match (41 at Build 4; Build 4 added `20261107074843_cook_publication_snapshot` and `20261107074901_edit_cook_participants`). Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).
+Project **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17). Build 4 verified 41 hosted migrations. The branch adds the pending local Recipe cook lifecycle migration. Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).
 
 | Layer | Contents and boundary |
 | --- | --- |
@@ -165,6 +169,7 @@ Reuse `StayGrubby/DesignSystem` and asset-catalog artwork. Logo red **#F10607** 
 
 - Every Debug review fixture requires `--ui-test-store <UUID>`, which creates an isolated temporary SwiftData store and media root. Fixtures never touch normal account, guest or demo roots. All fixture/review code is compile-time excluded from Release.
 - `--social-review*`, `--shared-review`, `--stage*-review`, `--recipes-review*`, `--sharing-fixture <case>`, `--score-unlock-fixture N` (N ∈ 0, 1, 9, 10, 12), `--discovery-fixture` and similar use in-memory mocks with no Auth or Supabase traffic. Appearance/type: `--test-light`, `--test-dark`, `--test-large-type`, `--test-reduce-motion`.
+- `--development-persona` uses the same UUID gate and a separate persona store/media namespace. The fictional cooking library persists locally. Recipe and social fixtures use the existing in-memory transport and reload on launch. See [launch instructions](DevelopmentTools/README.md#preloaded-development-persona).
 - `--recipe-live-regression` calls the live Gemini path and runs only with a matching approval ID from an owner-authorized budget. Never run it without a current-cycle grant.
 - Never use real accounts or real data as disposable fixtures; never create test data in the owner's account; never run destructive account tests against the owner.
 

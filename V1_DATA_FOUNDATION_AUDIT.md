@@ -4,6 +4,20 @@ November 7, 2026 · Investigation at `3103fbd` · Decision input for the next ar
 
 Ship V1 without a new intelligence schema or event stream. Preserve the facts users already create. Before release, verify and close the narrow lifecycle gaps around exact Recipe-used provenance and links to deleted cooks. The only time-sensitive candidate for new history is the explicit reaction chosen at each completed re-rank. Add it before V1 only if the owner commits to dated private taste history and accepts the retention contract.
 
+## November 8 follow-up
+
+The inventory and initial recommendations below describe the November 7 checkpoint. The follow-up adopts private dated reactions for future completed sessions and closes two confirmed Recipe lifecycle gaps in the branch.
+
+- **Exact use.** Cook sync completes the existing reservation on an exact owner and ranked-item match. The archived content, revision and creator credit come from that reservation. The additive migration repairs existing provable matches. Its repair timestamp marks reconciliation because the original completion time is unknown. Cooks without a matching reservation retain unknown Recipe use.
+- **Current association.** The migration retires exact links pointing at tombstoned cooks. A new authorized Recipe-origin cook may fill a vacant exact link. Recovery of older reservations leaves association choice to the owner. The previous completion RPC acknowledges an already recorded cook so a journal replay cannot recreate an unlinked association. Legacy links to active Dish families still serve as associations, and ordinary New Version has no implicit Recipe origin.
+- **Dated reaction.** The existing ranked-item diagnostics retain one event ID, completion time, reaction and initial/re-rank kind per completed session. Reaction-only finishes count. Cancellation and undone answers create no history. Earlier initial/latest values are preserved as undated evidence. The events travel with private cook sync and are absent from shared projections and active history after cook deletion. Account erasure follows the existing account boundary.
+- **First-party evidence.** Derive future private summaries from retained cook dates, versions, explicit reactions, comparisons and verified Recipe-use snapshots. Recipe methods, authored times and ingredients describe instructions. Actual execution, proficiency and ingredient-specific preference require their own evidence.
+- **Development persona.** Maya Ortiz uses the existing Debug-only library and social review harness. It includes linked and standalone Recipes, an exact revision-1 cook with current revision 2, a sibling ordinary version, multiple courses and reactions, unlocked ranking, posts, comments, Hands, Tickets and Sous Chef relationships. See the [launch instructions](DevelopmentTools/README.md#preloaded-development-persona).
+
+**Architecture check.** A/B. Reuse cooking identities, existing reservations, owner sync and isolated fixtures. C/D. Capture a compact reaction per deliberate completion and reuse the existing diagnostics blob. E. Keep private evidence behind the account boundary, with the existing deletion and receipt rules. F. Live reconciliation uses the existing unique owner/item key and bounded lookups. The one-time repair joins only matching active cooks; check affected counts and preserved content/revisions before authorized deployment. Reaction storage grows with completed sessions. G. Verify restore, retry, deletion and owner isolation in the disposable backend harness and exercise the launch path in Debug and Release.
+
+**Still open.** Recipe reservation expiry and snapshot retention after explicit cook deletion need a separate privacy decision. The migration leaves deleted snapshots outside active readers and preserves existing retention. Unified Dish/Recipe product design, default Recipe selection and any future intelligence experience remain separate work.
+
 ## Current inventory and historical limits
 
 | Area | Durable facts and history | Current, derived or missing |

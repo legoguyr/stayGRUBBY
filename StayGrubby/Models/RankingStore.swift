@@ -1,6 +1,35 @@
 import Foundation
 import SwiftData
 
+/// Private evidence carried by the existing ranked-item sync payload.
+nonisolated struct CompletedRankingReaction: Codable, Equatable {
+    enum Kind: String, Codable { case initial, rerank }
+    let id: UUID
+    let completedAt: Date
+    let reaction: InitialReaction
+    let kind: Kind
+
+    func appending(to data: Data) throws -> Data {
+        guard var diagnostics = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw ScoreCalibration.MetadataError.invalidDiagnostics
+        }
+        let key = "completedReactions"
+        let history = diagnostics[key] ?? []
+        guard var entries = history as? [[String: Any]] else {
+            throw ScoreCalibration.MetadataError.invalidDiagnostics
+        }
+        if entries.contains(where: { ($0["id"] as? String).flatMap(UUID.init(uuidString:)) == id }) {
+            return data
+        }
+        guard let entry = try JSONSerialization.jsonObject(with: JSONEncoder().encode(self)) as? [String: Any] else {
+            throw ScoreCalibration.MetadataError.invalidDiagnostics
+        }
+        entries.append(entry)
+        diagnostics[key] = entries
+        return try JSONSerialization.data(withJSONObject: diagnostics, options: [.sortedKeys])
+    }
+}
+
 /// Commits a completed session atomically. Drafts and skipped questions never enter the store.
 @MainActor
 enum RankingStore {
@@ -28,7 +57,9 @@ enum RankingStore {
             list.comparisons.append(comparison)
         }
         let analysis = try list.recompute()
-        item.sessionDiagnosticsData = try JSONEncoder().encode(session.diagnostics(analysis: analysis, rank: analysis.rankEstimates()[item.id]))
+        let diagnostics = try JSONEncoder().encode(session.diagnostics(analysis: analysis, rank: analysis.rankEstimates()[item.id]))
+        item.sessionDiagnosticsData = try CompletedRankingReaction(id: item.id, completedAt: .now,
+            reaction: session.reaction, kind: .initial).appending(to: diagnostics)
         return item
     }
 
@@ -41,7 +72,7 @@ enum RankingStore {
     }
 
     static func record(_ evidence: [PreferenceEvidence], in list: RankingList, context: ModelContext,
-                       completedReaction: (item: RankedItem, reaction: InitialReaction)? = nil,
+                       completedReaction: (item: RankedItem, entry: CompletedRankingReaction)? = nil,
                        reassessment: RankingAssessment? = nil) throws {
         let ids = Set(list.items.map(\.id))
         guard evidence.allSatisfy({ ids.contains($0.first) && ids.contains($0.second) && $0.first != $0.second && [0.0, 0.5, 1.0].contains($0.outcome) }) else { throw EvidenceError.invalidComparison }
@@ -56,7 +87,8 @@ enum RankingStore {
                 completedReaction.item.sessionDiagnosticsData = try RankingAssessment.appending(reassessment, to: completedReaction.item.sessionDiagnosticsData)
             }
             if let assessment = completedReaction {
-                assessment.item.sessionDiagnosticsData = try ScoreCalibration.recording(assessment.reaction, in: assessment.item.sessionDiagnosticsData)
+                let diagnostics = try ScoreCalibration.recording(assessment.entry.reaction, in: assessment.item.sessionDiagnosticsData)
+                assessment.item.sessionDiagnosticsData = try assessment.entry.appending(to: diagnostics)
             }
             for observation in evidence {
                 let comparison = Comparison(evidence: observation)

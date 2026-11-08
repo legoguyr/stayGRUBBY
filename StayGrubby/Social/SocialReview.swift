@@ -23,6 +23,15 @@ import SwiftData
     var cookRecipeLinks: [UUID: UUID] = [:]
     var ticketDates: [UUID: Double] = [:]
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
+    var recipeClaimSnapshots: [UUID: RecipeCookSnapshot] = [:]
+    private var personaLoaded = false
+
+    func loadPersona(context: ModelContext) throws {
+        reviewContext = context
+        guard !personaLoaded else { return }
+        try DevelopmentPersona.populate(self, context: context)
+        personaLoaded = true
+    }
     var sharedRecipeSnapshots: [UUID: SharedRecipe] = [:]
     private var recipeFeedSeeded = false
     var sharedEvents: [UUID: SharedCookingEvent] = [:]
@@ -153,11 +162,15 @@ import SwiftData
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
         if endpoint == "recipes" {
+            if DebugReviewConfiguration.current.developmentPersona, let reviewContext {
+                let active = Set(try reviewContext.fetch(FetchDescriptor<CookingAttempt>()).map(\.id))
+                cookRecipeLinks = cookRecipeLinks.filter { active.contains($0.value) }
+            }
             if action == "cook", let chosen = payload.attemptID,
                let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.id == chosen }) {
                 let exact = cookRecipeLinks.first { $0.value == chosen }?.key
                 let claim = recipeClaims.values.first { $0.itemID == cook.rankedItemID && $0.completed }
-                let used = claim.flatMap { c in c.recipeSnapshot.map { RecipeCookSnapshot(id: c.id, recipeID: recipes.values.first { $0.content == c.recipeSnapshot }?.id, snapshot: $0, revision: 1) } }
+                let used = claim.flatMap { recipeClaimSnapshots[$0.id] }
                 let rid = exact ?? used?.recipeID ?? cook.dish.flatMap { dishRecipes[$0.id] }
                 struct Response: Encodable { var recipe: Recipe?; var legacyFamilyLink: Bool; var linkedRecipeID: UUID?; var exactCookLink: Bool; var usedRecipe: RecipeCookSnapshot? }
                 return try JSONEncoder().encode(Response(recipe: rid.flatMap(linkedRecipe), legacyFamilyLink: exact == nil && used == nil && rid != nil, linkedRecipeID: rid, exactCookLink: exact != nil, usedRecipe: used))
@@ -209,7 +222,7 @@ import SwiftData
                 let peer = payload.peerID
                 let allowed = peer == nil || people.contains { $0.id == peer && $0.relationship == .friends }
                 let values = recipes.values.filter { r in allowed && (peer == nil ? r.isOwner : (!r.isOwner && r.creator?.id == peer && r.visibility == "friends")) }
-                let entries = values.map { r in CookbookEntry(dishID: peer == nil ? linkedRecipe(r.id)?.linkedDishID : nil, recipeID:r.id,dishTitle:r.content.title,recipeTitle:r.content.title,course:r.content.course,cuisine:r.content.cuisine,revision:r.revision,updatedAt:r.updatedAt,yield:r.content.yield,prepMinutes:r.content.prepMinutes,cookMinutes:r.content.cookMinutes,source:r.content.source,elapsedMinutes:r.content.elapsedMinutes,creatorMetadata:r.content.metadataOrigins != nil,photoID:r.content.photoID,linkedAttemptID:peer == nil ? r.linkedAttemptID : nil,createdAt:r.createdAt) }.sorted { $0.id.uuidString < $1.id.uuidString }.filter { payload.beforeID == nil || $0.id.uuidString > payload.beforeID!.uuidString }
+                let entries = values.map { r in CookbookEntry(dishID: peer == nil ? linkedRecipe(r.id)?.linkedDishID : nil, recipeID:r.id,dishTitle:r.content.title,recipeTitle:r.content.title,course:r.content.course,cuisine:r.content.cuisine,revision:r.revision,updatedAt:r.updatedAt,yield:r.content.yield,prepMinutes:r.content.prepMinutes,cookMinutes:r.content.cookMinutes,source:r.content.source,elapsedMinutes:r.content.elapsedMinutes,creatorMetadata:r.content.metadataOrigins != nil,photoID:r.content.photoID,linkedAttemptID:peer == nil ? linkedRecipe(r.id)?.linkedAttemptID : nil,createdAt:r.createdAt) }.sorted { $0.id.uuidString < $1.id.uuidString }.filter { payload.beforeID == nil || $0.id.uuidString > payload.beforeID!.uuidString }
                 return try JSONEncoder().encode(CookbookPage(entries:Array(entries.prefix(25))))
             }
             if action == "library_index" {
@@ -241,18 +254,20 @@ import SwiftData
             if action == "list" { return try JSONEncoder().encode(RecipesPage(recipes: Array(recipes.values))) }
             if action == "tickets" { return try JSONEncoder().encode(TicketsPage(tickets: ticketDates.map { RecipeTicket(id: $0.key, createdAt: $0.value, recipe: recipes[$0.key]) })) }
             if action == "provenance" {
-                let values = recipeClaims.values.filter { $0.itemID == payload.targetID && $0.completed }.compactMap { c -> RecipeCookSnapshot? in
-                    guard let snapshot = c.recipeSnapshot else { return nil }
-                    return RecipeCookSnapshot(id: c.id, recipeID: recipes.values.first { $0.content == snapshot }?.id, snapshot: snapshot, revision: 1)
-                }
+                let values = recipeClaims.values.filter { $0.itemID == payload.targetID && $0.completed }
+                    .compactMap { recipeClaimSnapshots[$0.id] }
                 return try JSONEncoder().encode(RecipeCooksPage(cooks: values))
             }
             if action == "complete", let id = payload.originID, let previous = recipeClaims[id] {
+                guard !previous.completed else { return Data("{}".utf8) }
                 recipeClaims[id] = .init(id: id, itemID: previous.itemID, kind: previous.kind, completed: true, metadata: previous.metadata, recipeOriginID: id, recipeSnapshot: previous.recipeSnapshot)
                 if let attempts = try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()),
                    let cook = attempts.first(where: { $0.rankedItemID == previous.itemID }), let dish = cook.dish,
-                   let recipeID = recipes.values.first(where: { $0.content == previous.recipeSnapshot })?.id {
-                    dishRecipes[dish.id] = dishRecipes[dish.id] ?? recipeID; recipes[recipeID]?.linkedDishID = dish.id
+                   let recipeID = recipeClaimSnapshots[id]?.recipeID, recipes[recipeID] != nil {
+                    if !DebugReviewConfiguration.current.developmentPersona {
+                        dishRecipes[dish.id] = dishRecipes[dish.id] ?? recipeID
+                        recipes[recipeID]?.linkedDishID = dish.id
+                    }
                     if cookRecipeLinks[recipeID] == nil && !cookRecipeLinks.values.contains(cook.id) { cookRecipeLinks[recipeID] = cook.id }
                 }
                 return Data("{}".utf8)
@@ -270,12 +285,21 @@ import SwiftData
                 try persistRecipes()
                 return try JSONEncoder().encode(linkedRecipe(id))
             }
-            if action == "delete" { cookRecipeLinks[id] = nil; recipes[id] = nil; ticketDates[id] = nil; dishRecipes = dishRecipes.filter { $0.value != id }; return Data("{}".utf8) }
+            if action == "delete" {
+                cookRecipeLinks[id] = nil; recipes[id] = nil; ticketDates[id] = nil
+                dishRecipes = dishRecipes.filter { $0.value != id }
+                for origin in recipeClaimSnapshots.keys where recipeClaimSnapshots[origin]?.recipeID == id {
+                    recipeClaimSnapshots[origin]?.recipeID = nil
+                }
+                return Data("{}".utf8)
+            }
             if action == "unticket" { ticketDates[id] = nil; recipes[id]?.saved = false; return Data("{}".utf8) }
             guard var recipe = linkedRecipe(id) else { throw URLError(.resourceUnavailable) }
             if action == "ticket" { ticketDates[id] = ticketDates[id] ?? 100; recipe.saved = true; recipes[id] = recipe }
             if action == "begin", let reservation = payload.originID {
                 if recipeClaims[reservation] == nil {
+                    recipeClaimSnapshots[reservation] = .init(id: reservation, recipeID: recipe.id,
+                        creatorName: recipe.creator?.displayName, snapshot: recipe.content, revision: recipe.revision)
                     recipeClaims[reservation] = .init(id: reservation, itemID: UUID(), kind: "recipe", completed: false, metadata: .init(title: recipe.content.title, course: recipe.content.course), recipeOriginID: reservation, recipeSnapshot: recipe.content)
                 }
                 return try JSONEncoder().encode(recipeClaims[reservation])
@@ -353,7 +377,13 @@ import SwiftData
                 let key = post.id.uuidString
                 if cookingClaims[key] == nil {
                     var claim = SocialCookingClaim(id: UUID(), itemID: UUID(), kind: "recreated", completed: false, metadata: .init(title: post.title, course: "main"))
-                    if let snapshot = sharedRecipeSnapshots[post.id] { claim.recipeOriginID = claim.id; claim.recipeSnapshot = snapshot.content; recipeClaims[claim.id] = claim }
+                    if let snapshot = sharedRecipeSnapshots[post.id] {
+                        claim.recipeOriginID = claim.id
+                        claim.recipeSnapshot = snapshot.content
+                        recipeClaims[claim.id] = claim
+                        recipeClaimSnapshots[claim.id] = .init(id: claim.id, recipeID: snapshot.recipeID,
+                            creatorName: snapshot.creator?.displayName, snapshot: snapshot.content, revision: snapshot.revision)
+                    }
                     cookingClaims[key] = claim
                 }
                 return try JSONEncoder().encode(cookingClaims[key])
@@ -483,7 +513,8 @@ struct SocialReviewModifier: ViewModifier {
     @Environment(AppLinkRouter.self) private var links
     @Environment(\.modelContext) private var context
     func body(content: Content) -> some View {
-        if DebugReviewConfiguration.current.storeID != nil && ProcessInfo.processInfo.arguments.contains("--social-review") {
+        let configuration = DebugReviewConfiguration.current
+        if configuration.socialReview {
             content.environment(\.socialMedia, { action in
                 if action.isDownload { if let data = review.avatars[action.paths[0]] { return data }; throw URLError(.fileDoesNotExist) }
                 if case .avatarUpload(let path, let bytes) = action { review.avatars[path] = bytes }
@@ -501,7 +532,10 @@ struct SocialReviewModifier: ViewModifier {
                     return data
                 }
                 return try JSONEncoder().encode(RecipeExtraction(title: "Soup", components: [.init(title: nil, ingredients: ["2 carrots", "stock"], steps: ["cook chicken until done"])]))
-            }).environment(\.socialRequest, { endpoint, action, payload in try await review.request(endpoint, action, payload) })
+            }).environment(\.socialRequest, { endpoint, action, payload in
+                if configuration.developmentPersona { try review.loadPersona(context: context) }
+                return try await review.request(endpoint, action, payload)
+            })
                 .task {
                     review.reviewContext = context
                     try? review.seedCookbook(context: context)
