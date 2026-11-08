@@ -8,7 +8,11 @@ Within repository guidance, precedence is: **explicit current task → AGENTS.md
 
 Work autonomously within the requested cycle; resolve routine engineering choices from repository evidence. Refactors, tests, safe migrations, scoped bug fixes, documentation, coherent commits and normal pushes are permitted within scope. Supabase migration/function deployment requires authorization in the current cycle. Escalate consequential ambiguity, destructive operations, security/credential issues, billing, production-user risk or material scope expansion; do not seek routine approvals.
 
-Default to **one primary agent, existing checkout, main, one Simulator/UI-test lane**. Do not introduce workers/worktrees unless explicitly requested. Inspect Git status/HEAD before work; preserve unexpected or unrelated changes. Never reset/clean/discard approved work. [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) retains the old parallel experiment, not a second instruction system.
+Keep **one primary agent per task and one Simulator/UI-test lane**. Claude and Codex develop only in their permanent `agent/claude` and `agent/codex` worktrees. `main` is the integration and release source of truth. The owner or an agent with explicit integration authorization uses the `main` checkout for that work. See [opening, synchronization and integration steps](PARALLEL_DEVELOPMENT.md).
+
+Before editing, verify the checkout path, branch, HEAD and status. Fetch and fast-forward the assigned branch from the latest accepted `main` using the documented procedure. Preserve existing work if the checkout is dirty or the branch has diverged. After integration, refresh each agent branch from the accepted `main` in its own worktree.
+
+Assign non-overlapping implementation areas. Commit only work owned by the current task. Never edit, stash, reset, clean or revert another agent's worktree. Resolve canonical-document conflicts during authorized integration so both accepted changes survive. Keep Simulator, device and deployment activity coordinated because these resources are shared. Creating additional worktrees or delegating to subagents still requires explicit direction.
 
 Preserve accepted/frozen systems unless the prompt reopens them or an evidenced regression/dependency requires the smallest safe fix. Explain that exception. Do not retune accepted ranking/calibration, unlocking, photo sync or Recipe Creator behavior for hypothetical improvement.
 
@@ -46,6 +50,8 @@ Ranking is frozen unless explicitly reopened: Liked/Fine/Didn't Like initial rea
 Before creating a selector, picker, sheet, popover, menu, confirmation, search/filter/sort control, metadata editor, identity/Dish/Recipe row, action family, card, toolbar or empty/loading/error state, inspect accepted StayGrubby equivalents first. Prefer **direct reuse → generalize an existing component → shared reusable component → unique implementation only for genuinely different behavior**. Apply the same language, spacing, navigation and interaction conventions across screens; location alone does not justify a different control. Avoid abstraction for its own sake. Accepted equivalents include allergen checklists, photo infrastructure, RecipeDraft/exact quantity math, design tokens, account/session boundaries, RLS and share/post renderers; justify parallel implementations.
 
 ### Living Documentation
+
+**Repository = long-term memory. Prompt = current task.** Claude loads this same file through [CLAUDE.md](CLAUDE.md). Record durable decisions in the owning canonical document and keep task prompts focused on scope, constraints and acceptance.
 
 Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release. Recipe estimate/quantity and ingredient-derived allergen limitations belong in appropriate Terms/disclaimer/safety coverage, not solely the Privacy Policy. Avoid repeated reader warnings; retain actionable safety, privacy and provenance information.
 
@@ -101,4 +107,12 @@ Supabase authorization does not authorize **TestFlight uploads, App Store submis
 
 Update canonical architecture/roadmap/domain documents when permanent behavior changes. Keep historical evidence with clear dates/supersession labels; do not manufacture past acceptance. Small changes normally update an existing document rather than generating a giant review. Planned features belong in the roadmap, not current implementation claims.
 
-At substantive closeout, report concisely: changes, important decisions, migrations/deployments, verification, data/security, commits/final HEAD/push, limitations and one owner acceptance procedure if needed. Guy is learning parts of Xcode/Git: manual actions should be direct and sequential, with implementation detail only where useful.
+Begin every agent task's final report with these fields, in order:
+
+**Agent:** Claude or Codex\
+**Task:** task name\
+**Branch:** actual branch\
+**Worktree:** absolute path\
+**Commit:** checkpoint SHA or none
+
+Then report the changes, tests, push status, owner verification, unresolved issues and integration requirements. Include relevant migrations, deployments and data/security results. Keep manual actions direct and sequential.
