@@ -94,6 +94,8 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var linkedAttemptID: UUID? = nil
     var createdAt: Double? = nil
     var allergens: RecipeAllergenAssessment? = nil
+    /// D2: the named Dish has an active cook (server `library_index`); nil from older servers.
+    var cooked: Bool? = nil
     var id: UUID { recipeID }
     var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
     var duration: Int? { if let elapsedMinutes { return elapsedMinutes }; if creatorMetadata == true { return nil }; return prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }
@@ -130,6 +132,15 @@ nonisolated enum CookbookSearch {
     }
 }
 @MainActor enum CookbookIndex {
+    /// Older servers omit `cooked`; derive it from the exact cook link or the named local Dish.
+    static func resolvingCooked(_ entries: [CookbookEntry], dishes: [UUID: Dish]) -> [CookbookEntry] {
+        entries.map { entry in
+            guard entry.cooked == nil else { return entry }
+            var value = entry
+            value.cooked = entry.linkedAttemptID != nil || entry.dishID.flatMap { dishes[$0] }?.attempts.isEmpty == false
+            return value
+        }
+    }
     static func load(request: SocialRequest) async throws -> [CookbookEntry] {
         try await load(request: request, action: "library_index", personID: nil, pageSize: 50)
     }

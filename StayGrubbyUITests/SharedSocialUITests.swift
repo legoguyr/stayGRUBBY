@@ -85,9 +85,10 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         finish(app, title: "Dinner Together"); app.buttons["ranking-result-close"].tap()
         let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", Dinner Together — Version 1, score ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8), app.debugDescription); row.tap()
-        let participants = app.buttons["Cooked Together · participants"]
+        let participants = app.buttons["cook-collaborators"]
         for _ in 0..<6 { if participants.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(participants.waitForExistence(timeout: 8)); participants.tap()
+        XCTAssertTrue(participants.waitForExistence(timeout: 8))
+        XCTAssertTrue(participants.label.contains("Cooked with Friendly Cook"), participants.label); participants.tap()
         XCTAssertTrue(app.staticTexts["Invited"].waitForExistence(timeout: 8))
         app.buttons["Remove invitation for Friendly Cook"].tap()
         XCTAssertTrue(app.staticTexts["Removed"].waitForExistence(timeout: 8))

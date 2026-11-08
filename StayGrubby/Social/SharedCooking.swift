@@ -60,6 +60,15 @@ nonisolated struct SharedCookingEvent: Codable, Identifiable, Sendable {
         var id: UUID { person.id }
     }
 }
+extension SharedCookingEvent {
+    /// D2: tagged Sous Chefs stay visible on Dish Detail ("Cooked with Alex and Sam").
+    /// Declined and removed people are not shown; pending invitations are, to the tagger.
+    static func collaboratorLine(_ event: SharedCookingEvent) -> String {
+        let names = event.participants.filter { !["declined", "removed"].contains($0.state) }.map(\.person.displayName)
+        guard !names.isEmpty else { return "Cooked Together · participants" }
+        return "Cooked with " + ListFormatter.localizedString(byJoining: names)
+    }
+}
 nonisolated struct CookParticipantSelection: Codable, Sendable {
     let selectionToken: String
     let selectedIDs: Set<UUID>

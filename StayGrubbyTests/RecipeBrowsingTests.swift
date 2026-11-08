@@ -28,4 +28,19 @@ struct RecipeBrowsingTests {
         #expect(filters.entries([missing,a,z],query:"",sort:.newest).map(\.id) == [a.id,z.id,missing.id])
         #expect(filters.entries([missing,a,z],query:"",sort:.oldest).map(\.id) == [z.id,a.id,missing.id])
     }
+    @MainActor @Test func cookedFilterUsesServerValueThenLocalFallback() {
+        var cooked = entry("Chili"); cooked.cooked = true
+        var notYet = entry("Granita"); notYet.cooked = false
+        var linked = entry("Linked"); linked.linkedAttemptID = UUID()
+        let unknown = entry("Unknown")
+        let resolved = CookbookIndex.resolvingCooked([cooked, notYet, linked, unknown], dishes: [:])
+        #expect(resolved.map(\.cooked) == [true, false, true, false])
+        var filters = RecipeFilters(); filters.cooked = [RecipeFilters.cookedValue]
+        #expect(filters.count(.cooked) == 1 && filters.isActive)
+        #expect(filters.entries(resolved, query: "", sort: .alphabetical).map(\.id) == [cooked.id, linked.id])
+        filters.cooked = [RecipeFilters.notCookedValue]
+        #expect(Set(filters.entries(resolved, query: "", sort: .alphabetical).map(\.id)) == [notYet.id, unknown.id])
+        filters.cooked = [RecipeFilters.cookedValue, RecipeFilters.notCookedValue]
+        #expect(filters.entries(resolved, query: "", sort: .alphabetical).count == 4)
+    }
 }

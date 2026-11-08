@@ -181,7 +181,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 | Includes | Dishes with ≥1 ranked cook | Owned Recipes (Recipe-only Dishes and Recipes of cooked Dishes); post-V1 Saved Recipes and Want to Cook |
 | Excludes | Recipe-only Dishes | Cooked Dishes without a Recipe (owner decision 3) |
 | Order | Global Bradley–Terry order (frozen) plus read-only Sort | Recently Updated / Newest / Oldest / A–Z / Z–A |
-| Opens | Dish Detail, with the tapped cook selected | Dish Detail with that Recipe selected; a Recipe-only Dish opens the Dish Detail "not cooked yet" state |
+| Opens | Dish Detail, with the tapped cook selected (its cook face) | The same Dish's Recipe face: the Recipe reader for that Recipe, carrying the Dish's Cooks section; a Recipe-only Dish shows "Not cooked yet" (§8.1) |
 
 A Recipe related to several Dishes appears once in Food Bible. Its card names the Main-Recipe Dish first, otherwise the Dish of its exact-linked cook, otherwise the first by name.
 
@@ -198,7 +198,7 @@ Filters read the record the lens lists, use the Stage B chip/sheet grammar, and 
 | Avoid | ✅ cook Contains | ✅ Contains + Possible |
 | Contains | — (Avoid covers it) | ✅ |
 | Source | — | ✅ |
-| Cooked / Not cooked yet | — | **Decided:** toggle in Food Bible, derived from relationships with no new data |
+| Cooked / Not cooked yet | — | **Implemented (D2):** a "Cooked" group in the Filters sheet (Cooked, Not cooked yet), derived from relationships with no new data |
 | Photo | ✗ removed | ✗ removed |
 
 Grub Rank keeps its four direct chips. Food Bible has six groups and keeps the single Filters sheet (UI_ARCHITECTURE 5.4 rule).
@@ -252,6 +252,16 @@ Each part owns one record and is built by generalizing existing components (AGEN
 | `CookEditor` | `CookingMetadataForm`, `CookingDetailsSheet`, `SGOptionSheet`, `SGFormSection` | §7.3 |
 | `DishActions` — Share / Post to Grub List / Cook Again / Rank My Version / overflow (Rename, Recipe History, 86) | `SocialLinkShareAction`, overflow menus | Dish Detail, Recipe reader; the Stage C sharing model plugs in here |
 
+### 8.1 D2 implementation (November 8)
+
+One Dish Detail with two faces built from the same parts, so neither lens loses its job:
+
+- **Cook face** (Grub Rank → `AttemptDetailView`): hero, `DishIdentityHeader`, cook metadata, Dish text, `DishRecipesSection`, cook provenance (tagged Sous Chefs named: "Cooked with Alex and Sam"), Source, Personal Notes, `DishCooksSection` (Cooks, Cook Again, Rename). Overflow: `DishActions`.
+- **Recipe face** (Food Bible or a Recipes row → `RecipeDetailView`): the Recipe reader, plus the Dish's `DishCooksSection` ("Your cooks of [Dish]") when the Dish is cooked, or a "Not cooked yet" eyebrow for a Recipe-only Dish. The Dish shown is the one the screen was opened from, else the exact-linked cook's Dish, else the legacy family Dish.
+- **`DishRecipesSection`:** Main Recipe card ("Main Recipe" once there are several), other Recipes, per-row Set as Main / Remove from Dish (context menu and accessibility actions), "Used for this cook" / "Linked to this cook" labels, the selected cook's "Recipe used" snapshot, and Add Recipe / Link Existing (Dish-level `link_dish_recipe`). Contextual `AddRecipeFlow` and the cook-level link chooser remain F.
+- **Food Bible Dish resolution:** `20261108200000_food_bible_dish_resolution` (read path only) makes `library_index` name the Main-Recipe Dish first, then the exact-linked cook's Dish, then the first related Dish by name, and adds `cooked`. **Pending authorized deployment;** until then the app derives `cooked` from the exact link or the named local Dish, and Recipes linked only through Dish Recipes show no Dish in Food Bible.
+- Rejected for D2: a segmented Cooks/Recipe container (it would hide either the method or the cooks behind a control) and moving Recipe reading into Dish Detail.
+
 ## 9. Evidence preserved for Personal Cooking Intelligence
 
 - **Cooked, known and intended stay separate:** cooks, Recipes, and post-V1 Saved / Want to Cook. A Recipe-only Dish is never counted as cooked.
@@ -285,5 +295,5 @@ Each part owns one record and is built by generalizing existing components (AGEN
 ## 12. Still open (decide in the named stage, not blocking)
 
 - Board-relative positions on future contextual rank boards (post-V1 feature).
-- Whether to also show the Main Recipe on Grub Rank rows (D2, presentation only).
+- ~~Whether to also show the Main Recipe on Grub Rank rows~~ — **decided in D2: no.** Grub Rank rows stay cook-focused; the Main Recipe lives on Dish Detail.
 - Recipe reservation expiry and snapshot retention after explicit cook deletion (privacy decision, carried from the audit; V1 release gate).

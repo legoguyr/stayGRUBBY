@@ -71,4 +71,6 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var omitScore: Bool?
     var includeRankSnapshot: Bool?
     var includeRecipe: Bool?
+    /// D1 Set as Main compare-and-swap value; nil means no explicit Main was chosen.
+    var expectedMainID: UUID?
 }

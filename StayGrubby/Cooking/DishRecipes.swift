@@ -1,11 +1,14 @@
 import Foundation
+import Supabase
 
 /// D1 Unified Dish read model for one Dish's Recipe side (FOOD_ARCHITECTURE §3).
 /// Decoded from `recipes` actions `dish_recipes`, `link_dish_recipe`,
 /// `unlink_dish_recipe` and `set_main_recipe`. The server computes the related-Recipe
 /// union and the deterministic Main, so every client shows the same Main.
-nonisolated struct DishRecipeSet: Codable, Equatable, Sendable {
-    struct Entry: Codable, Equatable, Sendable {
+nonisolated struct DishRecipeSet: Codable, Sendable {
+    // Not Equatable: `Recipe` has no value equality, and a partial one would hide link changes
+    // from SwiftUI state updates.
+    struct Entry: Codable, Sendable {
         var recipe: Recipe
         /// A Dish-level association (Dish Recipe), including mirrored legacy links.
         var dishLinked: Bool
@@ -25,13 +28,6 @@ nonisolated struct DishRecipeSet: Codable, Equatable, Sendable {
 
     var main: Entry? { recipes.first { $0.recipe.id == mainRecipeID } }
     var others: [Entry] { recipes.filter { $0.recipe.id != mainRecipeID } }
-}
-
-extension Recipe: Equatable {
-    static func == (lhs: Recipe, rhs: Recipe) -> Bool {
-        lhs.id == rhs.id && lhs.revision == rhs.revision && lhs.updatedAt == rhs.updatedAt
-            && lhs.isOwner == rhs.isOwner && lhs.visibility == rhs.visibility && lhs.content == rhs.content
-    }
 }
 
 /// How a Recipe becomes related to a Dish (FOOD_ARCHITECTURE §3.3). Explicit provenance
@@ -74,5 +70,37 @@ nonisolated enum RecipeAssociation: Equatable, Sendable {
     static func cookAgainChoices(_ set: DishRecipeSet?) -> [UUID] {
         guard let set else { return [] }
         return (set.main.map { [$0] } ?? []).map(\.recipe.id) + set.others.map(\.recipe.id)
+    }
+}
+
+/// Calls for the D1 `recipes` Dish Recipe actions. Every result is the Dish's full set.
+@MainActor enum DishRecipeService {
+    static func load(_ dishID: UUID, request: SocialRequest) async throws -> DishRecipeSet {
+        var payload = SocialPayload(); payload.dishID = dishID
+        return try JSONDecoder().decode(DishRecipeSet.self, from: await request("recipes", "dish_recipes", payload))
+    }
+    static func mutate(_ action: String, dishID: UUID, recipeID: UUID, request: SocialRequest) async throws -> DishRecipeSet {
+        precondition(["link_dish_recipe", "unlink_dish_recipe"].contains(action))
+        var payload = SocialPayload(); payload.dishID = dishID; payload.recipeID = recipeID
+        return try JSONDecoder().decode(DishRecipeSet.self, from: await request("recipes", action, payload))
+    }
+    /// Compare-and-swap on the user's previous explicit choice (nil when none was chosen).
+    static func setMain(_ recipeID: UUID?, dishID: UUID, expected: UUID?, request: SocialRequest) async throws -> DishRecipeSet {
+        var payload = SocialPayload(); payload.dishID = dishID; payload.recipeID = recipeID; payload.expectedMainID = expected
+        return try JSONDecoder().decode(DishRecipeSet.self, from: await request("recipes", "set_main_recipe", payload))
+    }
+    /// The exact Recipe revision this cook was made from, if any (`recipe_cooks`).
+    static func usedRecipe(for attemptID: UUID, dishID: UUID, request: SocialRequest) async throws -> RecipeCookSnapshot? {
+        struct Response: Decodable { var usedRecipe: RecipeCookSnapshot? }
+        var payload = SocialPayload(); payload.dishID = dishID; payload.attemptID = attemptID
+        return try JSONDecoder().decode(Response.self, from: await request("recipes", "cook", payload)).usedRecipe
+    }
+    static func message(for error: Error) -> String {
+        if error is URLError { return "Recipes need a connection. Try again when you’re online." }
+        switch (error as? PostgrestError)?.code {
+        case "40001": return "This Dish changed or is still syncing. Try again."
+        case "42501": return "This Recipe is unavailable."
+        default: return "Couldn’t load Recipes. Try again."
+        }
     }
 }

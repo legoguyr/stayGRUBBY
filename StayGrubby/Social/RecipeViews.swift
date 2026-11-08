@@ -5,6 +5,8 @@ import SwiftData
 struct RecipeLibraryView: View {
     var dishID: UUID? = nil
     var attemptID: UUID? = nil
+    /// D2: add the chosen Recipe as one of this Dish's Recipes (`link_dish_recipe`).
+    var linksDishRecipe = false
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
     @State private var entries: [CookbookEntry] = []
@@ -35,6 +37,10 @@ struct RecipeLibraryView: View {
     private func attach(_ id: UUID) async {
         guard let request else { return }; busy = true; defer { busy = false }
         do {
+            if linksDishRecipe, let dishID {
+                _ = try await DishRecipeService.mutate("link_dish_recipe", dishID: dishID, recipeID: id, request: request)
+                try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss(); return
+            }
             let recipe = try await RecipeService.recipe("get", id: id, request: request)
             var payload = SocialPayload(); payload.dishID = dishID; payload.recipeID = id; payload.attemptID = attemptID; payload.previousAttemptID = recipe.linkedAttemptID
             _ = try await request("recipes", attemptID == nil ? "attach" : "link_cook", payload)
@@ -104,6 +110,14 @@ struct RecipeDetailView: View {
     @State private var generation = UUID()
     private var linkedDish: Dish? { dishes.first { $0.id == recipe?.linkedDishID } }
     private var linkedCook: CookingAttempt? { guard let id = recipe?.linkedAttemptID else { return nil }; return dishes.lazy.flatMap(\.attempts).first { $0.id == id } }
+    /// D2: the Dish this Recipe is shown for: the Dish it was opened from (Dish Detail, or the Dish
+    /// Food Bible named), else its exact-linked cook's Dish, else the legacy family Dish.
+    private var relatedDish: Dish? {
+        if let dishID, let dish = dishes.first(where: { $0.id == dishID }) { return dish }
+        if let dish = linkedCook?.dish { return dish }
+        return recipe?.linkedDishID.flatMap { id in dishes.first { $0.id == id } }
+    }
+    private var cooked: Bool { relatedDish?.attempts.isEmpty == false }
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.section) {
@@ -158,6 +172,7 @@ struct RecipeDetailView: View {
             RecipePhoto(id: recipe.content.photoID, dish: linkedDish, name: recipe.content.title, cook: linkedCook, exactCookLink: recipe.linkedAttemptID != nil)
                 .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
             VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
+                if !cooked && recipe.isOwner { SGEyebrow(text: "Not cooked yet").accessibilityIdentifier("recipe-not-cooked") }
                 Text(recipe.content.title).font(SGTheme.TypeRole.hero).accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 let metadata = [recipe.content.cuisine,recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
                 if !metadata.isEmpty { Text(metadata).font(.subheadline).foregroundStyle(.secondary) }
@@ -178,10 +193,11 @@ struct RecipeDetailView: View {
                     }
                 }.accessibilityIdentifier("recipe-linked-cook")
             } else if recipe.linkedAttemptID != nil { Text("Linked Dish unavailable").foregroundStyle(.secondary) }
-            else if let dish = linkedDish {
-                Text("Dish family · \(dish.name)").font(.subheadline)
-            }
             RecipeReadingBody(content: recipe.content, allowScaling: true)
+            if let dish = relatedDish, cooked {
+                Divider()
+                DishCooksSection(dish: dish, linksByDestination: true, title: "Your cooks of \(dish.name)")
+            }
             Divider()
             VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                 if let source = recipe.content.source, !source.isEmpty { Text("Source · \(source)") }

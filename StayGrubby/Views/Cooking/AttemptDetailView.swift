@@ -26,7 +26,7 @@ struct AttemptDetailView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 SGHeroMedia(media: attempt.primaryImage, name: attempt.dish?.name ?? attempt.displayName)
-                header
+                DishIdentityHeader(attempt: attempt)
                 metadata
                 if let dish = attempt.dish {
                     if let description = dish.publicDescription { Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description") }
@@ -40,7 +40,7 @@ struct AttemptDetailView: View {
                 // Provenance is usually empty but still a stack child; grouping it keeps an
                 // empty block from doubling the section gap.
                 VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
-                    if let dish = attempt.dish { DishRecipeSection(dish: dish, attempt: attempt) }
+                    if let dish = attempt.dish { DishRecipesSection(dish: dish, attempt: attempt) }
                     CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
                 }
                 if let source = attempt.dish?.source {
@@ -55,7 +55,11 @@ struct AttemptDetailView: View {
                         Text(notes)
                     }
                 }
-                versions
+                if let dish = attempt.dish {
+                    DishCooksSection(dish: dish, current: attempt,
+                                     cookAgain: attempt.rankedItem?.list == nil ? nil : { addingVersion = true },
+                                     rename: { beginRename($0) })
+                }
             }
             .frame(maxWidth: SGTheme.Size.contentMaximum)
             .padding(.horizontal, SGTheme.Space.medium).padding(.bottom, SGTheme.Space.xLarge)
@@ -67,16 +71,9 @@ struct AttemptDetailView: View {
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 DishShareAction(model: .make(for: attempt), toolbar: true, currentModel: { .make(for: attempt) })
-                Menu {
-                    Button("Edit Cook", systemImage: "pencil") { editing = true }.accessibilityIdentifier("detail-edit-cook")
-                    Button("Rename", systemImage: "character.cursor.ibeam") { beginRename(attempt) }.accessibilityIdentifier("detail-rename-cook")
-                    Button("Re-rank", systemImage: "arrow.triangle.2.circlepath") { reranking = true }.accessibilityIdentifier("detail-rerank")
-                    if request != nil { Button("Share with Sous Chefs", systemImage: "person.2") { sharingSocial = true }.accessibilityIdentifier("share-with-friends") }
-                    Button("Edit Dish Description & Notes", systemImage: "text.alignleft") { editingDishText = true }.accessibilityIdentifier("dish-text-edit")
-                    Button("86 Cook (Delete)", systemImage: "trash", role: .destructive) { deleting = true }
-                } label: { SGToolbarIcon(symbol: "ellipsis") }
-                .sgUtilityTint()
-                .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")
+                DishActions(editCook: { editing = true }, rename: { beginRename(attempt) }, rerank: { reranking = true },
+                            shareWithSousChefs: request == nil ? nil : { sharingSocial = true },
+                            editDishText: { editingDishText = true }, delete: { deleting = true })
             }.sgIndependentToolbarBackground()
         }
         .sheet(isPresented: $sharingSocial) { SocialPostComposer(attempt: attempt, close: { sharingSocial = false }) }
@@ -117,27 +114,6 @@ struct AttemptDetailView: View {
         catch { self.error = error.localizedDescription }
     }
 
-    private var globalRank: Int? {
-        guard let item = attempt.rankedItem, let ordered = item.list?.orderedItems,
-              let index = ordered.firstIndex(where: { $0.id == item.id }) else { return nil }
-        return index + 1
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            SGEyebrow(text: globalRank == 1 ? "Signature Dish" : "From your Grub Rank")
-            Text(attempt.dish?.name ?? "Dish").font(SGTheme.TypeRole.hero)
-                .fixedSize(horizontal: false, vertical: true)
-            if let version = attempt.meaningfulVersionLabel { Text(version).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
-            HStack(spacing: SGTheme.Space.small) {
-                if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
-                if let globalRank {
-                    Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                }
-            }
-        }
-    }
-
     private var metadata: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             HStack {
@@ -174,66 +150,6 @@ struct AttemptDetailView: View {
         attempt.dietaryTags.map(\.label).sorted()
     }
 
-    private var versions: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            if textSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                    SGSectionHeader(title: "Cooks")
-                    newVersionButton
-                }
-            } else {
-                SGSectionHeader(title: "Cooks") { newVersionButton }
-            }
-            ForEach(versionEntries, id: \.attempt.id) { entry in
-                if entry.attempt.id == attempt.id {
-                    versionRow(entry.attempt, rank: entry.rank, current: true)
-                } else {
-                    NavigationLink(value: entry.attempt.id) {
-                        versionRow(entry.attempt, rank: entry.rank, current: false)
-                    }.buttonStyle(.plain)
-                }
-            }
-        }.padding(.vertical, SGTheme.Space.medium)
-    }
-
-    private var newVersionButton: some View {
-        Button("Cook Again", systemImage: "plus") { addingVersion = true }
-            .labelStyle(SGCenteredActionLabelStyle())
-            .buttonStyle(SGButtonStyle()).accessibilityIdentifier("detail-new-version")
-            .disabled(attempt.dish == nil || attempt.rankedItem?.list == nil)
-    }
-
-    private var versionEntries: [(rank: Int, attempt: CookingAttempt)] {
-        guard let dish = attempt.dish, let ordered = attempt.rankedItem?.list?.orderedItems else { return [] }
-        let ranks = Dictionary(uniqueKeysWithValues: ordered.enumerated().map { ($0.element.id, $0.offset + 1) })
-        return dish.attempts.compactMap { cook in ranks[cook.rankedItemID].map { ($0, cook) } }
-            .sorted { $0.rank < $1.rank }
-    }
-
-    private func versionRow(_ cook: CookingAttempt, rank: Int, current: Bool) -> some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            HStack(spacing: SGTheme.Space.small) {
-                if cook.primaryImage != nil {
-                    DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.meaningfulVersionLabel ?? cook.dish?.name ?? "Dish")
-                        .sgPhotoFrame(.compactThumbnail)
-                }
-                if !textSize.isAccessibilitySize { versionIdentity(cook) }
-                Spacer(minLength: 0)
-                Text("#\(rank)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                if let item = cook.rankedItem { ScoreBadge(score: item.score) }
-                Image(systemName: current ? "checkmark.circle.fill" : "chevron.right")
-                    .foregroundStyle(current ? SGTheme.ColorToken.accent : .secondary)
-            }
-            if textSize.isAccessibilitySize { versionIdentity(cook) }
-        }
-        .padding(.vertical, SGTheme.Space.small).contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("version-row-\(cook.id)")
-        .accessibilityHint(current ? "Current cook" : "Opens this cook")
-        .contextMenu { Button("Rename", systemImage: "character.cursor.ibeam") { beginRename(cook) } }
-        .accessibilityAction(named: "Rename") { beginRename(cook) }
-    }
-    private func versionIdentity(_ cook: CookingAttempt) -> some View { CookVersionIdentity(cook: cook) }
 
 }
 

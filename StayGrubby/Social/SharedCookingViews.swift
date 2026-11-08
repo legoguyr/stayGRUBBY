@@ -230,7 +230,10 @@ struct CookingProvenanceView: View {
                         Text(origin.kind == "recreated" ? origin.creator.map { "Inspired by \($0.displayName)" } ?? "Original cooking activity unavailable" : origin.creator.map { "Cooked with \($0.displayName)" } ?? "Cooked Together · original activity unavailable")
                             .font(.subheadline)
                     }
-                    ForEach(page.events) { event in NavigationLink("Cooked Together · participants") { SharedCookingEntryView(eventID: event.id) } }
+                    ForEach(page.events) { event in
+                        NavigationLink(SharedCookingEvent.collaboratorLine(event)) { SharedCookingEntryView(eventID: event.id) }
+                            .accessibilityIdentifier("cook-collaborators")
+                    }
                 }
                 if failed { Button("Retry cooking provenance") { Task { await load() } }.font(.footnote) }
                 if includesRecipe { RecipeCookingProvenance(itemID: itemID) }

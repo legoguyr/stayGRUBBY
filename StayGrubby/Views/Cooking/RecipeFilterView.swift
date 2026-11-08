@@ -32,6 +32,10 @@ struct RecipeFilterView: View {
                 SGSearchField(placeholder: "Search \(group.rawValue.lowercased())", text: $search, identifier: "bible-filter-search")
                 option("Not specified", RecipeFilters.unspecified, selection)
                 ForEach(values.filter { CookbookSearch.matches($0, query: search) }, id: \.self) { option($0, $0, selection) }
+            case .cooked:
+                option("Cooked", RecipeFilters.cookedValue, $filters.cooked)
+                option("Not cooked yet", RecipeFilters.notCookedValue, $filters.cooked)
+                SGOptionNote("Cooked means the Recipe’s Dish has at least one cook in your Grub Rank.")
             case .contains, .avoid:
                 SGAllergenChoices(selection: allergenSelection, identifierPrefix: group == .contains ? "bible-contains" : "bible-avoid")
                 SGOptionNote(group == .avoid ? "Excludes listed Contains or Possible matches. Missing information is not an allergen-free guarantee." : RecipeAllergenAssessment.safetyText)
@@ -51,6 +55,6 @@ struct RecipeFilterView: View {
         }.accessibilityIdentifier("bible-filter-option-\(id)")
     }
     private func clear() {
-        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = [] }
+        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = []; case .cooked: filters.cooked = [] }
     }
 }
