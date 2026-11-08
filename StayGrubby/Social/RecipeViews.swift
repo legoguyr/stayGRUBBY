@@ -22,7 +22,11 @@ struct RecipeLibraryView: View {
             if failed { Text("Recipes unavailable. Check your connection or existing link."); Button("Retry") { Task { await load() } } }
             if !loading && entries.isEmpty { Text("No Recipes yet") }
         }.navigationTitle("Choose Recipe").navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: "Search Recipes").task { await load() }
+            .safeAreaInset(edge: .top) {
+                SGSearchField(placeholder: "Search Recipes", text: $query, identifier: "recipe-library-search")
+                    .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
+            }
+            .task { await load() }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(busy) } }
             .interactiveDismissDisabled(busy)
     }

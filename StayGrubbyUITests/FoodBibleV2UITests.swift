@@ -40,7 +40,7 @@ final class FoodBibleV2UITests: StayGrubbyUITestCase {
     @MainActor func testStandaloneSaveEditHistoryRestoreForkAndRelaunch() {
         let app = launch("--test-dark")
         app.buttons["bible-add"].tap(); XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:8)); app.buttons["bible-manual"].tap()
-        let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText("Independent Soup"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
+        let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText("Independent Soup"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap(); app.skipRankPrompt()
         let card = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout:8)); let identity = card.identifier; card.tap(); app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8))
         app.openRecipeAction("recipe-edit"); XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText(" updated"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
@@ -58,7 +58,7 @@ final class FoodBibleV2UITests: StayGrubbyUITestCase {
         let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText("Photo Soup"); app.buttons["recipe-keyboard-done"].tap()
         app.buttons["recipe-photo-fixture"].tap()
         let yield = app.textFields["recipe-yield"]; reach(yield,app:app); yield.tap(); yield.typeText("Serves 4"); app.buttons["recipe-keyboard-done"].tap()
-        app.buttons["recipe-save"].tap()
+        app.buttons["recipe-save"].tap(); app.skipRankPrompt()
         let card = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout:8)); card.tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
         let hero = app.otherElements["recipe-hero"]

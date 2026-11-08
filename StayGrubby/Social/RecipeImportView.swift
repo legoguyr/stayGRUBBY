@@ -6,6 +6,8 @@ struct RecipeImportView: View {
     @Environment(\.scoreMilestoneScope) private var scope
     let dish: Dish?
     var done: () -> Void
+    /// Receives the saved Recipe before `done` (Stage F Add Recipe flow).
+    var onSaved: ((Recipe) -> Void)? = nil
     @State private var raw = ""
     @State private var cloudConsent = false
     @State private var formatting = false
@@ -47,7 +49,7 @@ struct RecipeImportView: View {
                     Button("Discard", role: .destructive) { cancel(); dismiss() }; Button("Keep Editing", role: .cancel) {}
                 }
                 .sheet(item: $result) { item in
-                    RecipeEditor(dishID: dish?.id, draft: item.value.draft, importReview: .init(raw: raw, warnings: item.value.warnings)) { _ in done() }
+                    RecipeEditor(dishID: dish?.id, draft: item.value.draft, importReview: .init(raw: raw, warnings: item.value.warnings)) { recipe in onSaved?(recipe); done() }
                 }
                 .sheet(isPresented: $privacy) { PrivacyPolicyView() }
                 .onAppear {
@@ -98,33 +100,3 @@ private struct ImportReview: Identifiable { let id = UUID(); var value: RecipeIm
 nonisolated struct RecipeImportReview { var raw: String; var warnings: [String] }
 
 enum RecipeCreationMode: String, Identifiable { case manual, imported; var id: String { rawValue } }
-struct RecipeCreationChoice: View {
-    @Environment(\.dismiss) private var dismiss
-    var entries: [CookbookEntry]
-    @State private var mode: RecipeCreationMode?
-    var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-                Text("Keep a recipe, whether you’ve cooked it yet or not.").foregroundStyle(.secondary)
-                Button { mode = .imported } label: { VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { Label("Paste Recipe", systemImage: "doc.text").font(.headline); Text("Paste a full recipe and organize it for review.").font(.subheadline) }.frame(maxWidth: .infinity, alignment: .leading).padding(SGTheme.Space.medium) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-import")
-                Button { mode = .manual } label: { Label("Add Manually", systemImage: "square.and.pencil").frame(maxWidth: .infinity, alignment: .leading).padding(SGTheme.Space.medium) }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("bible-manual")
-                Spacer()
-            }.padding(SGTheme.Space.readingMargin).background(SGTheme.ColorToken.background).navigationTitle("Add Recipe")
-                .navigationDestination(item: $mode) { mode in RecipeStandaloneComposer(mode: mode) { dismiss() } }
-                .toolbar { ToolbarItem(placement: .cancellationAction) { RecipeCreationDone() } }
-        }
-    }
-}
-private struct RecipeCreationDone: View {
-    @Environment(\.dismiss) private var dismiss
-    var body: some View { Button("Done") { dismiss() } }
-}
-
-private struct RecipeStandaloneComposer: View {
-    let mode: RecipeCreationMode
-    let done: () -> Void
-    var body: some View {
-        if mode == .imported { RecipeImportView(dish: nil, done: done) }
-        else { RecipeEditor { _ in done() } }
-    }
-}

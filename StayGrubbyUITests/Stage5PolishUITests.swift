@@ -36,14 +36,15 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
     @MainActor func testKitchenRecipeSearchAndCompactReaderInBothAppearances() {
         for appearance in ["--test-light", "--test-dark"] {
             let app = launch([appearance]); openRecipes(app)
-            let search = app.searchFields.firstMatch
+            let search = app.textFields["kitchen-recipes-search"]
             XCTAssertTrue(search.waitForExistence(timeout: 8)); search.tap(); search.typeText("lemon")
+            XCTAssertTrue(app.buttons["kitchen-recipes-search-clear"].exists, "Search shows its X clear button")
             let cards = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'kitchen-recipe-'"))
             XCTAssertTrue(cards.firstMatch.waitForExistence(timeout: 5))
             XCTAssertEqual(cards.count, 1)
             search.typeText(" no-match")
             XCTAssertTrue(app.descendants(matching: .any)["kitchen-recipes-no-results"].waitForExistence(timeout: 5))
-            search.buttons["Clear text"].tap(); search.typeText("lemon")
+            app.buttons["kitchen-recipes-search-clear"].tap(); search.tap(); search.typeText("lemon")
             if app.keyboards.buttons["Search"].exists { app.keyboards.buttons["Search"].tap() }
             cards.firstMatch.tap()
             XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))

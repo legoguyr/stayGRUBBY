@@ -83,7 +83,7 @@ struct AttemptDetailView: View {
             if versionFinalized { versionFinalized = false; returnToRankings() }
         }) {
             if let list = attempt.rankedItem?.list, let dish = attempt.dish {
-                AddCookingView(list: list, dish: dish, onResultClose: { versionFinalized = true })
+                AddCookingView(list: list, dish: dish, offersRecipe: !dishHasRecipe, onResultClose: { versionFinalized = true })
             }
         }
         .alert("86 this Cook?", isPresented: $deleting) {

@@ -105,6 +105,10 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 **Photos.** `LocalPhotoStore` writes metadata-stripped display (≤1,200 px) and thumbnail (≤360 px) JPEGs under account-scoped roots; originals are never copied. Backup/restore uses immutable account/media/hash paths, server-owned manifests binding account/asset/path/hash/size, SHA-256 and JPEG bound checks. Cooking, Recipe, social and avatar photos are separate assets in separate private buckets; linking or sharing never transfers photo ownership. Social photos are separately consented copies. Detail: [MEDIA_SYNC_ARCHITECTURE.md](MEDIA_SYNC_ARCHITECTURE.md).
 
+## Feature flags
+
+`staygrubby.feature_flags(key, enabled, audience, description, updated_at)` is owner-managed (SQL/dashboard), RLS-closed and never client-writable; `api.feature_flags('get')` returns the keys enabled for the signed-in account. Today only `audience = 'everyone'` can be on; `internal` and `beta` are reserved and resolve to off until a reviewed membership model exists (a cohort table read by `staygrubby.feature_flag_api` only). The app loads flags at sign-in (`FeatureFlagService`, `\.featureFlags`); offline, older servers and errors mean every flag is off. A flag never makes an unfinished feature shippable. Known keys: `dish_aggregate_scores` (future, off). Migration `20261108233000_feature_flags` is **local, pending authorized deployment**.
+
 ## Supabase system map
 
 Project **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17). Build 4 verified 41 hosted migrations. The branch adds the pending local Recipe cook lifecycle migration. Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).

@@ -174,3 +174,12 @@ extension XCUIApplication {
         return action
     }
 }
+extension XCUIApplication {
+    /// Stage F: a new Dish + Recipe from Food Bible offers "Rank Now / Not Now"; tests that only
+    /// save Recipes choose Not Now. Returns whether the prompt appeared.
+    @MainActor @discardableResult func skipRankPrompt(timeout: TimeInterval = 8) -> Bool {
+        let notNow = buttons["rank-prompt-not-now"]
+        guard notNow.waitForExistence(timeout: timeout) else { return false }
+        notNow.tap(); return true
+    }
+}

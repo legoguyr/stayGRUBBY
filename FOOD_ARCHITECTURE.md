@@ -178,16 +178,20 @@ Grub Rank keeps its four direct chips. Food Bible has six groups and keeps the s
 
 ## 7. Contextual flows
 
-### 7.1 Add Recipe
+### 7.1 Add Recipe — `AddRecipeFlow` (Stage F, implemented)
 
-Two choices everywhere: **Paste Recipe** (outside text → Gemini contract 4 → editable `RecipeDraft` → review → explicit Save; Scan and Share Sheet are post-V1 sources of the same pipeline) and **Add Manually** (empty draft → the same editor). There is no Link Existing / Link a Dish in V1: a Recipe belongs to its Dish by identity (§3).
+One flow (`AddRecipeFlow(context:)`), two sources everywhere: **Paste Recipe** (outside text → Gemini contract 4 → editable `RecipeDraft` → review → explicit Save; Scan and Share Sheet are post-V1 sources of the same pipeline) and **Add Manually** (empty draft → the same editor). Every path ends with the Recipe on exactly one Dish (§3).
 
-| Started from | Result |
-| --- | --- |
-| Food Bible + | A new Dish with this Recipe (not cooked yet) |
-| Dish Detail "Add Recipe" | This Dish's Recipe side |
+| Started from | Choices | Result |
+| --- | --- | --- |
+| Food Bible + | **New Dish + Recipe** (Paste / Add Manually on the same compact screen) | A new Dish with this Recipe; then **Rank Now** (Rank My Version into that Dish) or **Not Now** (stays *not cooked yet*) |
+| Food Bible + | **Add to a Ranked Dish** → choose a ranked Dish without a Recipe → Paste / Add Manually | That Dish's Recipe side |
+| Dish Detail "Add Recipe" | Paste / Add Manually / **Use a Food Bible Recipe** | This Dish's Recipe side |
+| Ranking result of a Dish with no Recipe | **Add a Recipe?** → Add Recipe (this flow, Dish context) / Not Now | Offered for a brand-new Dish, and for Cook Again from Dish Detail when the Dish has no Recipe; never blocks Done |
 
-External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Recipe Creator behavior are unchanged. F may merge the two entry points into one `AddRecipeFlow(context:)` view; the data rule above is final.
+**Use a Food Bible Recipe** reconciles two identities safely: only an owned Recipe whose Dish has **no cooks** is offered. `set_dish` moves the Recipe's Dish identity to this Dish (content and Recipe History unchanged), then the now-empty uncooked Dish is removed through sync. A cooked Dish's Recipe is never moved (that would orphan its cooks), and a Dish that already has a Recipe offers View Recipe, not Add Recipe.
+
+External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Recipe Creator behavior are unchanged.
 
 ### 7.2 Cook Again and Rank My Version
 
@@ -244,6 +248,7 @@ Each part owns one record and is built by generalizing existing components (AGEN
 | **Scan Recipe / Share Sheet** | Extra Import Recipe sources (on-device text recognition; an authenticated app-group handoff). Same Gemini → review → Save path; disclosure covers photo-derived text |
 | **Discover / statistics / remake counts** | Count explicit cooks per Dish ID and used snapshots per the audit's definitions |
 | **Dish sharing** | Shares one Dish ID: its cooks (per existing post rules) and, when shared, its Recipe |
+| **Aggregate score and "made by N people"** (owner idea, not built) | A shared Recipe/Dish page may later show an aggregate score and how many people have made it. Dish IDs are private per account, so cross-person aggregation keys on the **shared Recipe UUID** and exact-use provenance (`recipe_cooks`), counting each person once, and only from cooks whose owners' sharing/consent allows it, with a minimum-count threshold. The score input is each person's displayed (gated) score for their best cook of that Recipe, never raw strengths or comparisons across people (rankings are personal and not comparable). Gated behind the `dish_aggregate_scores` feature flag (off); needs privacy/disclosure review before any UI |
 
 ## 11. Per-cycle architecture check (one-Dish identity)
 

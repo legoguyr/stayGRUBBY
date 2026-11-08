@@ -5,6 +5,7 @@ struct AccountApplicationRoot: View {
     @Environment(AccountSessionCoordinator.self) private var session
     @State private var access = AccountLibraryAccess()
     @State private var retryID = 0
+    @State private var featureFlags = FeatureFlags.off
     @State private var sync = CookingSyncCoordinator()
     @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
@@ -56,6 +57,12 @@ struct AccountApplicationRoot: View {
                     try await session.performSocialRequest(endpoint: endpoint, action: action, payload: payload)
                 })
                 .environment(\.cookingSyncCoordinator, sync)
+                .environment(\.featureFlags, featureFlags)
+                .task(id: account.accountID) {
+                    featureFlags = await FeatureFlagService.load {
+                        try await session.performSocialRequest(endpoint: "feature_flags", action: "get", payload: .init())
+                    }
+                }
                 .task(id: account.accountID) {
                     do {
                         let token = try sync.connect(store: store, account: account,

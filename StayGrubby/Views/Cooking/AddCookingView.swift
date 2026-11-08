@@ -13,6 +13,9 @@ struct AddCookingView: View {
     let dish: Dish?
     /// A Recipe's Dish identity to use when this cook creates its Dish (Rank My Version).
     var newDishID: UUID? = nil
+    /// Whether the result offers "Add a Recipe?" (the Dish has no Recipe). Nil: only a brand-new Dish
+    /// ranked without a Recipe is known to have none.
+    var offersRecipe: Bool? = nil
     let origin: SocialCookingClaim?
     let onResultClose: () -> Void
     @State private var draft: CookingDraft
@@ -27,9 +30,12 @@ struct AddCookingView: View {
     @State private var saveFailed = false
     @State private var completionSnapshot: RankingCompletionSnapshot?
     @State private var cookedWith = Set<UUID>()
+    @State private var recipePromptClosed = false
+    @State private var addingRecipe = false
+    private var promptsForRecipe: Bool { (offersRecipe ?? (origin == nil && dish == nil)) && socialRequest != nil && !recipePromptClosed }
 
-    init(list: RankingList, dish: Dish? = nil, newDishID: UUID? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
-        self.list = list; self.dish = dish; self.newDishID = newDishID; self.origin = origin; self.onResultClose = onResultClose
+    init(list: RankingList, dish: Dish? = nil, newDishID: UUID? = nil, offersRecipe: Bool? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
+        self.list = list; self.dish = dish; self.newDishID = newDishID; self.offersRecipe = offersRecipe; self.origin = origin; self.onResultClose = onResultClose
         var initial = origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft()
         // A Recipe claim can prefill this cook, but it does not replace the linked Dish's own text.
         if let dish {
@@ -55,6 +61,10 @@ struct AddCookingView: View {
                         .safeAreaInset(edge: .top) {
                             if sharingUnavailable { Text("Your cook is saved privately. Sharing couldn’t be queued; use Share with Sous Chefs below to retry.").font(.footnote).padding() }
                             SharedCookingPending(itemID: savedAttempt.rankedItemID)
+                            if promptsForRecipe, savedAttempt.dish != nil { recipePrompt }
+                        }
+                        .sheet(isPresented: $addingRecipe, onDismiss: { recipePromptClosed = true }) {
+                            if let dish = savedAttempt.dish { AddRecipeFlow(context: .dish(dish)) }
                         }
                 } else if let session {
                     if let opponent = list.items.first(where: { $0.id == session.nextOpponent }) {
@@ -121,6 +131,18 @@ struct AddCookingView: View {
             } catch is CancellationError { } catch { sharing.unavailable() }
         }
     }
+    /// Lightweight post-ranking prompt for a Dish without a Recipe (FOOD_ARCHITECTURE §7.1).
+    private var recipePrompt: some View {
+        HStack(spacing: SGTheme.Space.small) {
+            Label("Add a Recipe?", systemImage: "book").font(SGTheme.TypeRole.headline).frame(maxWidth: .infinity, alignment: .leading)
+            Button("Not Now") { recipePromptClosed = true }.frame(minHeight: SGTheme.Size.minimumTap).accessibilityIdentifier("recipe-prompt-not-now")
+            Button("Add Recipe") { addingRecipe = true }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("recipe-prompt-add")
+        }
+        .padding(SGTheme.Space.medium).sgCard().padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.xSmall)
+        .background(SGTheme.ColorToken.background)
+        .accessibilityElement(children: .contain).accessibilityIdentifier("recipe-prompt")
+    }
+
     private func save() {
         guard let session, session.isComplete, savedAttempt == nil, !saving else { return }
         saving = true; error = nil; saveFailed = false

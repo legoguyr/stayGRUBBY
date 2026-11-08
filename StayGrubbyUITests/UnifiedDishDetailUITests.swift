@@ -63,7 +63,7 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         // A standalone Recipe is a Recipe-only Dish: not cooked yet.
         app.buttons["bible-add"].tap(); XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout: 8)); app.buttons["bible-manual"].tap()
         let title = app.textFields["recipe-edit-title"]; XCTAssertTrue(title.waitForExistence(timeout: 8)); title.tap(); title.typeText("Uncooked Granita")
-        app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
+        app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap(); app.skipRankPrompt()
         let added = XCTNSPredicateExpectation(predicate: NSPredicate(format: "count == %d", before + 1), object: rows)
         XCTAssertEqual(XCTWaiter.wait(for: [added], timeout: 10), .completed); let total = rows.count
         app.openBibleFilterGroup("cooked")

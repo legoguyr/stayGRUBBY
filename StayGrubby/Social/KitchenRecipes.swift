@@ -77,7 +77,12 @@ private struct KitchenRecipeCollection: View {
                 // scene/account/access refreshes still clear or reauthorize foreign summaries.
                 .onDisappear { generation = UUID() }
                 .padding(SGTheme.Space.medium)
-        }.searchable(text: $query, prompt: "Search Recipes").scrollDismissesKeyboard(.interactively)
+        }
+        .safeAreaInset(edge: .top) {
+            SGSearchField(placeholder: "Search Recipes", text: $query, identifier: "kitchen-recipes-search")
+                .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.small).background(SGTheme.ColorToken.background)
+        }
+        .scrollDismissesKeyboard(.interactively)
         .background(SGTheme.ColorToken.background).navigationTitle("Recipes").navigationBarTitleDisplayMode(.inline)
     }
     private func load() async {

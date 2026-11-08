@@ -114,7 +114,7 @@ struct DishRecipeRow: View {
     @State private var usedRecipe: RecipeCookSnapshot?
     @State private var loaded = false
     @State private var failure: String?
-    @State private var adding: RecipeCreationMode?
+    @State private var adding = false
     @State private var generation = UUID()
 
     var body: some View {
@@ -133,12 +133,8 @@ struct DishRecipeRow: View {
                     .accessibilityLabel(recipe.content.title == dish.name ? "View Recipe" : "View Recipe, \(recipe.content.title)")
                     .accessibilityIdentifier("dish-view-recipe")
                 } else if loaded {
-                    Menu {
-                        Button("Paste Recipe", systemImage: "doc.text") { adding = .imported }.accessibilityIdentifier("dish-recipe-import")
-                        Button("Add Manually", systemImage: "square.and.pencil") { adding = .manual }.accessibilityIdentifier("dish-recipe-manual")
-                    } label: {
-                        Label("Add Recipe", systemImage: "plus").frame(minHeight: 44)
-                    }.buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-add-recipe")
+                    Button { adding = true } label: { Label("Add Recipe", systemImage: "plus").frame(minHeight: 44) }
+                        .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-add-recipe")
                 }
                 if let usedRecipe, usedRecipe.recipeID != recipe?.id || usedRecipe.revision != recipe?.revision {
                     NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: {
@@ -154,14 +150,7 @@ struct DishRecipeRow: View {
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load() } } }
             .onDisappear { generation = UUID() }
-            .sheet(item: $adding, onDismiss: { Task { await load() } }) { mode in
-                NavigationStack {
-                    if mode == .imported { RecipeImportView(dish: dish) { adding = nil } }
-                    else {
-                        RecipeEditor(dishID: dish.id, title: dish.name, course: attempt?.categoryCode ?? dish.defaultCategoryCode, cuisine: dish.cuisineLabel) { _ in adding = nil }
-                    }
-                }
-            }
+            .sheet(isPresented: $adding, onDismiss: { Task { await load() } }) { AddRecipeFlow(context: .dish(dish)) }
         }
     }
 

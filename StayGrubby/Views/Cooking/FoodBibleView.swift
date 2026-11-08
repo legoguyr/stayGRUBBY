@@ -56,7 +56,7 @@ struct FoodBibleView: View {
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
             .sheet(isPresented: $showingFilters) { RecipeFiltersSheet(filters: $filters, entries: entries) }
-            .sheet(isPresented: $choosing) { RecipeCreationChoice(entries: entries) }
+            .sheet(isPresented: $choosing) { AddRecipeFlow(context: .library, entries: entries) }
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
     /// Same two-row grammar as Grub Rank: search, then Filters + Sort (+ clear).
