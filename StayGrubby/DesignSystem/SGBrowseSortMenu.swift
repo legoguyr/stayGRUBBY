@@ -2,6 +2,7 @@ import SwiftUI
 
 // Stage B browsing grammar (owner-revised November 7, 2026):
 //   Grub Rank  header · [Course][Cuisine][Dietary][Avoid] · [Sort] … [All Versions ⏽] [clear]
+//              (chips: multi-select sheets that stay open until Done; active = red, no count)
 //   Food Bible search · [Filters n] [Sort] [clear]   (more groups than fit one even row)
 // Few common groups get direct, equal-width `SGFilterChip`s that each open one
 // `SGFilterGroupSheet`; larger sets use one `SGFilterSheet`. Sort is its own compact
@@ -34,8 +35,9 @@ struct SGBrowseSortMenu<Option: Hashable & Identifiable>: View {
     }
 }
 
-/// A direct filter-group control: equal width within its row, group title plus the
-/// active count (same "Filters 2" convention), opening that group's sheet.
+/// A direct filter-group control: equal width within its row, opening that group's
+/// sheet. Active is shown by color only (red title, selected fill) — no count — so the
+/// chip's geometry never changes when filters toggle.
 struct SGFilterChip: View {
     let title: String
     let count: Int
@@ -45,7 +47,7 @@ struct SGFilterChip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: SGTheme.Space.hairline) {
-                Text(count > 0 ? "\(title) \(count)" : title).lineLimit(1).fixedSize()
+                Text(title).lineLimit(1).fixedSize()
                 Image(systemName: "chevron.down").font(.caption2.weight(.semibold)).accessibilityHidden(true)
             }
             .font(SGTheme.TypeRole.secondary.weight(.medium))

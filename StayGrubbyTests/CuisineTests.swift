@@ -42,7 +42,7 @@ import Testing
         let after = try CookingGraphExport.snapshot(context: f.context)
         #expect(before.items == after.items && before.comparisons == after.comparisons)
         #expect(before.attempts.count == after.attempts.count && before.dishes.count == after.dishes.count)
-        let matches = CookingDiscovery.entries(in: f.list, attempts: f.cooks, filters: .init(cuisineID: "italian"))
+        let matches = CookingDiscovery.entries(in: f.list, attempts: f.cooks, filters: .init(cuisineIDs: ["italian"]))
         #expect(matches.map(\.id) == [cook.id])
         let originalRank = try #require(f.list.orderedItems.firstIndex { $0.id == cook.rankedItemID }) + 1
         #expect(matches.first?.globalRank == originalRank)
@@ -50,8 +50,8 @@ import Testing
         for mode in RankingsDisplayMode.allCases {
             #expect(RankingsPresentation.entries(CookingDiscovery.entries(in: f.list, attempts: f.cooks), matching: matches, mode: mode).map(\.globalRank) == [originalRank])
         }
-        #expect(CookingDiscovery.entries(in: f.list, attempts: f.cooks, query: "does not match", filters: .init(cuisineID: "italian")).isEmpty)
-        #expect(CookingDiscovery.entries(in: f.list, attempts: f.cooks, filters: .init(cuisineID: "italian", category: .dessert)).isEmpty)
+        #expect(CookingDiscovery.entries(in: f.list, attempts: f.cooks, query: "does not match", filters: .init(cuisineIDs: ["italian"])).isEmpty)
+        #expect(CookingDiscovery.entries(in: f.list, attempts: f.cooks, filters: .init(cuisineIDs: ["italian"], categories: [.dessert])).isEmpty)
         #expect(try CookingGraphExport.snapshot(context: f.context) == after)
         draft.cuisine = nil
         try CookingStore.edit(cook, draft: draft, context: f.context)

@@ -24,7 +24,7 @@ import UIKit
         let attempts = try f.context.fetch(FetchDescriptor<CookingAttempt>())
         let search = CookingDiscovery.entries(in: f.list, attempts: attempts, query: "Best grilled")
         #expect(RankingsPresentation.entries(eligible, matching: search, mode: .topVersion).map(\.id) == [version.id])
-        let filter = CookingDiscovery.entries(in: f.list, attempts: attempts, filters: .init(category: existing.category))
+        let filter = CookingDiscovery.entries(in: f.list, attempts: attempts, filters: .init(categories: [existing.category]))
         let filtered = RankingsPresentation.entries(eligible, matching: filter, mode: .topVersion)
         #expect(filtered.contains { $0.id == existing.id } && !filtered.contains { $0.id == version.id })
         #expect(ScoreUnlockPolicy.state(in: f.context).rankedEntryCount == 10)

@@ -59,7 +59,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
     @MainActor private func select(_ option: XCUIElement, in app: XCUIApplication) {
         reach(option, in: app)
         // A group sheet still settling its detent after a scroll can drop one tap;
-        // retry only while unselected (Course is single-select and a second tap clears it).
+        // retry only while unselected (a second tap would deselect it).
         for _ in 0..<3 {
             if option.value as? String == "Selected" { return }
             option.tap()
@@ -106,8 +106,25 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         XCTAssertFalse(row("Sea Bass", in: app).exists)
         capture("Search results Dark", app: app)
 
+        // Chip geometry and row positions must not move when a filter becomes active.
+        let chipFrames = ["course", "cuisine", "dietary", "avoid"].map { app.buttons["ranking-filter-\($0)"].frame }
+        let sortFrame = app.buttons["ranking-sort"].frame, toggleFrame = app.allVersionsSwitch.frame
+        XCTAssertFalse(app.buttons["clear-filters"].exists)
         filters("course", in: app)
-        select(app.buttons["filter-course-main"], in: app); doneFilters(in: app)
+        // Multi-select: choosing keeps the sheet open until Done.
+        select(app.buttons["filter-course-main"], in: app)
+        XCTAssertTrue(app.buttons["filters-done"].exists, "Selecting must not dismiss the filter sheet")
+        select(app.buttons["filter-course-dessert"], in: app)
+        XCTAssertEqual(app.buttons["filter-course-main"].value as? String, "Selected")
+        app.buttons["filter-course-dessert"].tap()
+        XCTAssertTrue(wait("value == 'Not selected'", on: app.buttons["filter-course-dessert"]))
+        XCTAssertTrue(app.buttons["filters-done"].exists)
+        doneFilters(in: app)
+        XCTAssertEqual(["course", "cuisine", "dietary", "avoid"].map { app.buttons["ranking-filter-\($0)"].frame }, chipFrames)
+        XCTAssertEqual(app.buttons["ranking-sort"].frame, sortFrame)
+        XCTAssertEqual(app.allVersionsSwitch.frame, toggleFrame)
+        XCTAssertTrue(app.buttons["clear-filters"].exists)
+        XCTAssertEqual(app.buttons["ranking-filter-course"].label, "Course, 1 active")
         filters("dietary", in: app)
         select(app.buttons["filter-dietary-kosher"], in: app); doneFilters(in: app)
         filters("avoid", in: app)

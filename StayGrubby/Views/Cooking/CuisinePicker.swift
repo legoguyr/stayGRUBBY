@@ -14,15 +14,27 @@ struct CuisinePicker: View {
     }
 }
 
-/// Searchable Cuisine list shared by editors and the Grub Rank Filters sheet. Choosing
-/// dismisses its container: closes a standalone sheet, or pops back to the filter list.
+/// Searchable Cuisine list shared by editors and the Grub Rank Cuisine filter.
+/// Editing: single choice that dismisses its sheet. Filtering (`filterSelection`):
+/// multi-select toggles that never dismiss; the user taps Done.
 struct CuisineOptions: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.sgCloseFilterSheet) private var closeFilters
     @Query private var dishes: [Dish]
     @Binding var selection: Cuisine?
     var allowsCreation = true
+    private var filterSelection: Binding<Set<String>>?
     @State private var search = ""
+
+    init(selection: Binding<Cuisine?>, allowsCreation: Bool = true) {
+        _selection = selection; self.allowsCreation = allowsCreation
+    }
+    init(filterSelection: Binding<Set<String>>) {
+        _selection = .constant(nil); allowsCreation = false; self.filterSelection = filterSelection
+    }
+    private func isSelected(_ cuisine: Cuisine) -> Bool {
+        filterSelection.map { $0.wrappedValue.contains(cuisine.id) } ?? (selection?.id == cuisine.id)
+    }
 
     private var saved: [Cuisine] { dishes.compactMap(\.cuisine) }
     private var options: [Cuisine] {
@@ -34,8 +46,10 @@ struct CuisineOptions: View {
     }
     var body: some View {
             List {
-                Button(allowsCreation ? "No cuisine" : "All cuisines") { choose(nil) }
-                    .accessibilityIdentifier("cuisine-clear")
+                if filterSelection == nil {
+                    Button(allowsCreation ? "No cuisine" : "All cuisines") { choose(nil) }
+                        .accessibilityIdentifier("cuisine-clear")
+                }
                 Section(search.isEmpty ? "Cuisines" : "Results") {
                     ForEach(options) { cuisine in
                         Button { choose(cuisine) } label: {
@@ -43,9 +57,11 @@ struct CuisineOptions: View {
                                 Text(cuisine.label).foregroundStyle(SGTheme.ColorToken.primaryText)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Spacer()
-                                if selection?.id == cuisine.id { Image(systemName: "checkmark").accessibilityLabel("Selected") }
+                                if isSelected(cuisine) { Image(systemName: "checkmark").accessibilityLabel("Selected") }
                             }.frame(minHeight: SGTheme.Size.minimumTap)
-                        }.accessibilityIdentifier("cuisine-option-\(cuisine.id)")
+                        }
+                        .accessibilityAddTraits(isSelected(cuisine) ? .isSelected : [])
+                        .accessibilityIdentifier("cuisine-option-\(cuisine.id)")
                     }
                 }
                 if allowsCreation, CuisineCatalog.existing(search, saved: saved) == nil,
@@ -61,10 +77,23 @@ struct CuisineOptions: View {
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Cuisine").navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                if let filterSelection {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Clear") { filterSelection.wrappedValue = [] }
+                            .disabled(filterSelection.wrappedValue.isEmpty).accessibilityIdentifier("filter-group-clear")
+                    }
+                }
                 if let closeFilters {
                     ToolbarItem(placement: .confirmationAction) { Button("Done", action: closeFilters).accessibilityIdentifier("filters-done") }
                 }
             }
     }
-    private func choose(_ cuisine: Cuisine?) { selection = cuisine; dismiss() }
+    private func choose(_ cuisine: Cuisine?) {
+        if let filterSelection, let cuisine {
+            if filterSelection.wrappedValue.contains(cuisine.id) { filterSelection.wrappedValue.remove(cuisine.id) }
+            else { filterSelection.wrappedValue.insert(cuisine.id) }
+            return
+        }
+        selection = cuisine; dismiss()
+    }
 }

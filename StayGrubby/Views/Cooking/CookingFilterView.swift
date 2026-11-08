@@ -14,8 +14,8 @@ nonisolated enum CookingFilterGroup: String, Identifiable, CaseIterable {
     }
     func count(in filters: CookingFilters) -> Int {
         switch self {
-        case .course: filters.category == nil ? 0 : 1
-        case .cuisine: filters.cuisineID == nil ? 0 : 1
+        case .course: filters.categories.count
+        case .cuisine: filters.cuisineIDs.count
         case .dietary: filters.dietary.count
         case .avoid: filters.avoidedAllergens.count
         }
@@ -26,8 +26,9 @@ extension CookingFilters {
     var activeCount: Int { CookingFilterGroup.allCases.reduce(0) { $0 + $1.count(in: self) } }
 }
 
-/// One Grub Rank filter group, opened directly from its chip. Each group keeps its
-/// existing semantics: Course and Cuisine single-select, Dietary matches any, Avoid excludes any.
+/// One Grub Rank filter group, opened directly from its chip. Every group is multi-select;
+/// choosing never closes the sheet — the user taps Done. Course, Cuisine and Dietary
+/// match any selected value; Avoid excludes any selected allergen.
 struct CookingFilterGroupSheet: View {
     @Binding var filters: CookingFilters
     let group: CookingFilterGroup
@@ -35,9 +36,7 @@ struct CookingFilterGroupSheet: View {
     var body: some View {
         SGFilterGroupSheet {
             if group == .cuisine {
-                CuisineOptions(selection: Binding(
-                    get: { CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == filters.cuisineID } },
-                    set: { filters.cuisineID = $0?.id }), allowsCreation: false)
+                CuisineOptions(filterSelection: $filters.cuisineIDs)
             } else {
                 SGFilterGroupPage(title: group.title, isActive: group.count(in: filters) > 0,
                                   clear: clear, clearIdentifier: group == .avoid ? "clear-avoid" : "filter-group-clear") {
@@ -48,8 +47,8 @@ struct CookingFilterGroupSheet: View {
     }
     private func clear() {
         switch group {
-        case .course: filters.category = nil
-        case .cuisine: filters.cuisineID = nil
+        case .course: filters.categories = []
+        case .cuisine: filters.cuisineIDs = []
         case .dietary: filters.dietary = []
         case .avoid: filters.avoidedAllergens = []
         }
@@ -57,11 +56,11 @@ struct CookingFilterGroupSheet: View {
 }
 
 extension CookingFilterGroup {
-    /// Spoken value for the group's chip; visible chips show title + count only.
+    /// Spoken value for the group's chip; visible chips show the title only (active = red).
     func summary(in filters: CookingFilters, dishes: [Dish]) -> String? {
         switch self {
-        case .course: filters.category?.label
-        case .cuisine: filters.cuisineID.flatMap { id in CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).first { $0.id == id }?.label }
+        case .course: filters.categories.isEmpty ? nil : CookingProductOptions.courses.filter(filters.categories.contains).map(\.label).joined(separator: ", ")
+        case .cuisine: filters.cuisineIDs.isEmpty ? nil : CuisineCatalog.options(saved: dishes.compactMap(\.cuisine)).filter { filters.cuisineIDs.contains($0.id) }.map(\.label).joined(separator: ", ")
         case .dietary: filters.dietary.isEmpty ? nil : CookingProductOptions.dietary.filter(filters.dietary.contains).map(\.label).joined(separator: ", ")
         case .avoid: filters.avoidedAllergens.isEmpty ? nil : CookingProductOptions.allergens.filter(filters.avoidedAllergens.contains).map(\.label).joined(separator: ", ")
         }
@@ -76,10 +75,9 @@ struct CookingFilterOptions: View {
         switch group {
         case .cuisine: EmptyView() // Uses the shared searchable Cuisine options.
         case .course:
-            SGSelectionRow(title: "All courses", selected: filters.category == nil) { filters.category = nil }
             ForEach(CookingProductOptions.courses) { course in
-                SGSelectionRow(title: course.label, selected: filters.category == course) {
-                    filters.category = filters.category == course ? nil : course
+                SGSelectionRow(title: course.label, selected: filters.categories.contains(course)) {
+                    if filters.categories.contains(course) { filters.categories.remove(course) } else { filters.categories.insert(course) }
                 }.accessibilityIdentifier("filter-course-\(course.rawValue)")
             }
         case .dietary:

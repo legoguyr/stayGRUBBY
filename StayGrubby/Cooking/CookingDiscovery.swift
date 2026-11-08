@@ -2,12 +2,14 @@ import Foundation
 
 /// Presentation state only. Discovery never writes models or invokes inference.
 nonisolated struct CookingFilters: Equatable {
-    var cuisineID: String?
-    var category: DishCategory?
+    /// Browse-only selections (never stored). Within a group, any selected value matches;
+    /// Avoid excludes any selected allergen. Groups combine with AND.
+    var cuisineIDs: Set<String> = []
+    var categories: Set<DishCategory> = []
     var dietary: Set<DietaryTag> = []
     var avoidedAllergens: Set<Allergen> = []
 
-    var count: Int { (category == nil ? 0 : 1) + (cuisineID == nil ? 0 : 1) + dietary.count + avoidedAllergens.count }
+    var count: Int { categories.count + cuisineIDs.count + dietary.count + avoidedAllergens.count }
     var isActive: Bool { count > 0 }
 }
 
@@ -32,8 +34,8 @@ enum CookingDiscovery {
     }
 
     private static func matches(_ attempt: CookingAttempt, search: String, filters: CookingFilters) -> Bool {
-        if let cuisineID = filters.cuisineID, attempt.dish?.cuisine?.id != cuisineID { return false }
-        if let category = filters.category, attempt.category != category { return false }
+        if !filters.cuisineIDs.isEmpty && !(attempt.dish?.cuisine.map { filters.cuisineIDs.contains($0.id) } ?? false) { return false }
+        if !filters.categories.isEmpty && !filters.categories.contains(attempt.category) { return false }
         let dietary = attempt.dietaryTags
         let allergies = attempt.allergyTags
         if !filters.dietary.isEmpty && dietary.isDisjoint(with: filters.dietary) { return false }

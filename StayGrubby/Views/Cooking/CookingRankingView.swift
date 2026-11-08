@@ -107,8 +107,8 @@ struct CookingRankingView: View {
     private var displayMode: RankingsDisplayMode { RankingsDisplayMode(rawValue: displayPreference) ?? .topVersion }
 
     /// Grub Rank browse controls: one even row of direct filter groups, then Sort, the
-    /// Show All Versions switch and a clear action only while filters are active.
-    /// At large text sizes each row wraps instead of clipping.
+    /// Show All Versions switch and a clear action shown only while filters are active.
+    /// Nothing moves when filters toggle. At large text sizes each row wraps instead of clipping.
     private var browseControls: some View {
         VStack(spacing: SGTheme.Space.xSmall) {
             ViewThatFits(in: .horizontal) {
@@ -147,11 +147,13 @@ struct CookingRankingView: View {
             set: { displayPreference = ($0 ? RankingsDisplayMode.allVersions : .topVersion).rawValue }),
                        identifier: "rankings-show-all-versions", spokenTitle: "Show All Versions")
     }
-    @ViewBuilder private var clearFilters: some View {
-        if filters.isActive {
-            SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
-                .accessibilityIdentifier("clear-filters")
-        }
+    /// Clear All keeps its slot while hidden so activating a filter never moves Sort,
+    /// the All Versions switch or the wrapping choice.
+    private var clearFilters: some View {
+        SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
+            .opacity(filters.isActive ? 1 : 0).disabled(!filters.isActive)
+            .accessibilityHidden(!filters.isActive)
+            .accessibilityIdentifier(filters.isActive ? "clear-filters" : "clear-filters-hidden")
     }
 
     private var noResults: some View {

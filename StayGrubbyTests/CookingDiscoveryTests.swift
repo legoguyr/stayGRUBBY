@@ -85,29 +85,33 @@ struct CookingDiscoveryTests {
 
     @Test func categoryDietaryAndAvoidUseCanonicalValues() throws {
         let f = try fixture()
-        #expect(f.results("", CookingFilters(category: .main)).map(\.id) == [f.sunday.id, f.chicken.id])
+        #expect(f.results("", CookingFilters(categories: [.main])).map(\.id) == [f.sunday.id, f.chicken.id])
         #expect(f.results("", CookingFilters(dietary: [.vegan])).map(\.id) == [f.pasta.id])
         #expect(f.results("", CookingFilters(avoidedAllergens: [.peanuts])).map(\.id) == [f.chicken.id, f.pasta.id, f.cake.id])
-        #expect(f.results("", CookingFilters(category: .soup)).isEmpty)
+        #expect(f.results("", CookingFilters(categories: [.soup])).isEmpty)
     }
 
     @Test func groupsAndSearchCombineWithANDAndValuesWithinGroupsUseOR() throws {
         let f = try fixture()
         #expect(f.results("", CookingFilters(dietary: [.vegan, .vegetarian])).map(\.id) == [f.pasta.id, f.cake.id])
         #expect(f.results("", CookingFilters(avoidedAllergens: [.peanuts, .wheat])).map(\.id) == [f.chicken.id])
-        let combined = CookingFilters(category: .main, dietary: [.kosher, .vegan], avoidedAllergens: [.sesame, .milk])
+        let mains = f.results("", CookingFilters(categories: [.main])), desserts = f.results("", CookingFilters(categories: [.dessert]))
+        let either = f.results("", CookingFilters(categories: [.main, .dessert]))
+        #expect(Set(either.map(\.id)) == Set((mains + desserts).map(\.id)) && either.count == mains.count + desserts.count)
+        #expect(either.map(\.globalRank) == either.map(\.globalRank).sorted())
+        let combined = CookingFilters(categories: [.main], dietary: [.kosher, .vegan], avoidedAllergens: [.sesame, .milk])
         #expect(f.results("chicken", combined).map(\.id) == [f.chicken.id])
         #expect(f.results("pasta", combined).isEmpty)
-        #expect(f.results("", CookingFilters(category: .dessert, dietary: [.vegan])).isEmpty)
+        #expect(f.results("", CookingFilters(categories: [.dessert], dietary: [.vegan])).isEmpty)
     }
 
     @Test func individualRemovalAndResetKeepTheOtherSelections() throws {
         let f = try fixture()
-        var filters = CookingFilters(category: .main, dietary: [.kosher], avoidedAllergens: [.peanuts])
+        var filters = CookingFilters(categories: [.main], dietary: [.kosher], avoidedAllergens: [.peanuts])
         #expect(filters.count == 3 && filters.isActive)
         #expect(f.results("", filters).map(\.id) == [f.chicken.id])
         filters.avoidedAllergens.remove(.peanuts)
-        #expect(filters.category == .main && filters.dietary == [.kosher])
+        #expect(filters.categories == [.main] && filters.dietary == [.kosher])
         #expect(f.results("", filters).map(\.id) == [f.chicken.id])
         filters = CookingFilters()
         #expect(!filters.isActive && filters.count == 0)
@@ -133,7 +137,7 @@ struct CookingDiscoveryTests {
         let evidence = f.list.comparisons.map(EvidenceSnapshot.init)
         let updated = f.attempts.map(\.updatedAt)
         for query in ["", "chicken", "date night", "kosher", "sesame-free", "nothing"] {
-            for filters in [CookingFilters(), CookingFilters(category: .main), CookingFilters(dietary: [.vegan, .kosher]), CookingFilters(avoidedAllergens: [.peanuts, .wheat])] {
+            for filters in [CookingFilters(), CookingFilters(categories: [.main]), CookingFilters(dietary: [.vegan, .kosher]), CookingFilters(avoidedAllergens: [.peanuts, .wheat])] {
                 let results = f.results(query, filters)
                 #expect(results.map(\.globalRank) == results.map(\.globalRank).sorted())
                 for entry in results {
@@ -175,7 +179,7 @@ struct CookingDiscoveryTests {
         for query in ["crispy", "vegetarian", "egg-free"] { #expect(f.results(query).contains { $0.id == f.chicken.id }) }
         #expect(f.results("picnic").isEmpty && f.chicken.customTags == ["Picnic"])
         #expect(f.results("date night").isEmpty && f.results("kosher").isEmpty)
-        #expect(f.results("", CookingFilters(category: .side, dietary: [.vegetarian], avoidedAllergens: [.milk])).map(\.id) == [f.chicken.id])
+        #expect(f.results("", CookingFilters(categories: [.side], dietary: [.vegetarian], avoidedAllergens: [.milk])).map(\.id) == [f.chicken.id])
         #expect(items == f.list.orderedItems.map(RankingSnapshot.init))
         #expect(evidence == f.list.comparisons.map(EvidenceSnapshot.init))
         #expect(f.chicken.dish?.source?.cookbookTitle == "Zahav")
@@ -183,7 +187,7 @@ struct CookingDiscoveryTests {
 
     @Test func rerankAndDeletePreserveDiscoverySemanticsAndOtherVersions() throws {
         let f = try fixture()
-        let filters = CookingFilters(category: .main)
+        let filters = CookingFilters(categories: [.main])
         let before = f.list.comparisons.map(EvidenceSnapshot.init)
         try CookingStore.rerank(f.chicken, evidence: [PreferenceEvidence(first: f.chicken.rankedItemID,
             second: f.sunday.rankedItemID, outcome: 1, timestamp: .now)], context: f.context)
@@ -235,7 +239,7 @@ struct CookingDiscoveryTests {
         let before = list.orderedItems.map(RankingSnapshot.init)
         let clock = ContinuousClock(); let start = clock.now
         for _ in 0..<20 {
-            let entries = CookingDiscovery.entries(in: list, attempts: attempts, query: "dish", filters: CookingFilters(category: .main))
+            let entries = CookingDiscovery.entries(in: list, attempts: attempts, query: "dish", filters: CookingFilters(categories: [.main]))
             #expect(entries.count == 250 && entries.first?.globalRank == 2 && entries.last?.globalRank == 500)
         }
         print("DISCOVERY|500 attempts|20 evaluations|\(start.duration(to: clock.now))")
