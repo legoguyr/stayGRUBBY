@@ -20,7 +20,7 @@ CookingMedia remains owned by one actual cook. Six images per version, persisted
 
 ## Current Recipe/cook metadata boundary — Architecture V2
 
-Unified presentation of Dish + Recipe as one food identity, and the per-field food/cook placement decision, are owned by [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md); the storage boundary below is unchanged.
+The unified Dish, Main Recipe, renameable cooks (the stored version title becomes the user's Cook Name, fallback "Version N"), and the as-written/as-made placement including Dietary are owned by [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md); the storage boundary below is unchanged until D1.
 
 Recipe is independent of Dish and owns its instructions, optional short description/photo, revisions, canonical yield/time and reviewed ingredient-derived Contains/Possible information. Dish keeps cooking identity/default Course/Cuisine/Source; actual cooks retain their own tags/substitutions and private notes. Existing Contains selections are preserved in cook-specific controls and existing Avoid/filter semantics. Food Bible prefers Recipe metadata with explicit linked-Dish fallback; Grub Rank still reads cooking metadata. No inference/backfill or religious/allergen safety certification is performed.
 

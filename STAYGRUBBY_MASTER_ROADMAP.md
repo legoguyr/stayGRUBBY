@@ -10,24 +10,52 @@ When proposing work classify it as **required before V1**, **desirable but defer
 
 **Complete.** StayGrubby 1.0 (4) is uploaded and processing; owner controls tester groups, notes and notifications. Owner physical acceptance passed for ranking, Already Shared, Recipe navigation/sharing, Edit Cook tagging and Universal Links. The November 7 production website regression (assets-only publish) is recovered and guarded by `Website/deploy-production.sh`. Tester feedback continues; Build 4 functionality reopens only for genuine regressions. [Architecture: Build 4](STAYGRUBBY_ARCHITECTURE.md#current-state--build-4).
 
-## NEXT — System-wide UI overhaul (Stages A–G)
+## NEXT — Unified Dish foundation, then UI overhaul
 
-A true consolidation of shared components and patterns, not per-screen polish, and no unrelated major functionality. Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan).
+**Final implementation sequence (Final Unified Food Architecture Reconciliation, November 8, 2026).** The old order put Stage C (Sharing) first. It is replaced, because building sharing, editors and social screens on the separate Dish Detail / Recipe Detail structure would mean building them twice. The unified Dish foundation now comes first. Specification: [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md). Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan). The letters are kept for continuity with completed work; **run them in the order of this table.**
 
-| Stage | Scope |
-| --- | --- |
-| A — Foundations | **Implemented Nov 7 — owner accepted.** Shared photo/score/state/section/toolbar foundations, spacing tokens, low-risk confirmed defects |
-| B — Pickers / Search / Filtering | **Implemented Nov 7, revised after owner review Nov 7–8 — owner physical acceptance pending.** Direct Grub Rank filter chips, separate Sort, All Versions toggle, Photo filter removed, Dietary groups with Halal restored, search |
-| C — Sharing | Post to Grub List vs external Share; one Share action with image + short `#stayGRUBBY` message + exact link. Build the action model so it plugs into the later `FoodActions` part |
-| D1 — Food Foundation | *New (Nov 8 checkpoint), no visual redesign.* `Food` read model composing Dish + related Recipes + Recipe-only foods (no table), resolution/primary-Recipe rules and unit tests; the audit's two pre-V1 integrity fixes (Recipe-used completion after sync + app loss; stale current links held by deleted cooks). Any migration/function change needs current-cycle Supabase authorization. Can run in parallel with C in a separate lane (non-overlapping files) |
-| D2 — Food Detail | One Food Detail opened from Grub Rank and Food Bible: `FoodIdentityHeader`, `FoodCooksSection`, `FoodRecipeSection` (Recipe used vs Linked Recipe), `FoodActions`; Cook detail; Recipe reader kept; Food Bible "Cooked / Not cooked yet" toggle; tagged collaborators on detail |
-| E — Social / Kitchens | Grub List, Tickets relocated to Grub List, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards |
-| F — Forms / Editors | `AddRecipeFlow(context:)` — Import Recipe / Create Manually / Link Existing everywhere; `CookEditor` with "About this Dish" / "This cook" groups; explicit Rank My Version destinations; New Dish, New Version, Edit Cook, Recipe editor |
-| G — Copy / Celebrations / Final consolidation | Copy purge (incl. the versions vocabulary decision), ranking results and celebrations, accessibility/consistency |
+| Order | Stage | Scope | V1 |
+| --- | --- | --- | --- |
+| done | A — Foundations | **Implemented Nov 7 — owner accepted.** Shared photo/score/state/section/toolbar foundations, spacing tokens | — |
+| done | B — Pickers / Search / Filtering | **Implemented Nov 7–8 — owner physical acceptance pending.** Direct Grub Rank chips, separate Sort, the projection toggle, Photo filter removed, Dietary groups | — |
+| 0 | Integration + data prerequisite | The owner integrates `agent/claude` (contains Codex `a6de6b8` plus this checkpoint) into `main`. Authorize and deploy `20261108091616_recipe_cook_lifecycle` with fingerprints (release-gate item). **In parallel (other agent lane):** the score/order investigation below | Required |
+| 1 | **D1 — Unified Dish Foundation** | Data, model and terminology; no Dish Detail redesign. (a) `dish_recipe_links` additive migration (several Recipes per Dish, one Main, legacy `dish_recipes` read or copied with fingerprints, RLS, owner RPCs, compare-and-swap); needs Supabase authorization. (b) `Food` read model: related-Recipe union, deterministic Main default, Recipe-only Dishes. (c) Association policy as testable logic: automatic for explicit provenance, suggestions for loose matches. (d) `CookName` resolver plus a Rename path that leaves IDs, strengths and evidence unchanged (tests). (e) **Terminology rebrand across existing screens:** Version Title → Cook Name, New Version → Cook Again, All Versions → All Cooks (labels only; raw preference values kept), Version History → Recipe History, "N versions" → "N cooks", accessibility. (f) Confirm the Recipe content contract accepts the `dietary` key | Required |
+| 2 | **D2 — Dish Detail** | One Dish Detail from Grub Rank and Food Bible: `DishIdentityHeader`, `DishCooksSection` (Rename, Cook Again), `DishRecipesSection` (Main Recipe, Set as Main, Recipe used vs Linked), `DishActions` shell; Recipe-only "not cooked yet" state; Food Bible Cooked / Not cooked yet toggle; tagged collaborators on detail; owner validation of All Cooks wording in context | Required |
+| 3 | **F — Flows and editors** | `AddRecipeFlow(context:)` (Import Recipe / Create Manually / Link Existing) replacing three entry points; Cook Again and Rank My Version start screens with the §3.3 suggestions; `CookEditor` "About this Dish" / "This cook"; Recipe editor (accent overuse, Back+Cancel defect); Diet/Contains prefill from a Recipe, user-confirmed | Required |
+| 3b | F — Recipe Diet (as written) | Author-selected Recipe Diet field and Food Bible Dietary (Diet) filter | Desirable, deferrable |
+| 4 | **C — Sharing** | Post to Grub List vs external Share; one Share action (image + short `#stayGRUBBY` message + exact link) built into `DishActions`; composer simplification | Required |
+| 5 | **E — Social / Kitchens** | Grub List, Tickets relocated to Grub List, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards; cook names on cards per snapshot rules | Required |
+| 6 | **G — Copy / Celebrations / Final consolidation** | Copy purge, ranking result and celebrations (after the investigation concludes), accessibility/consistency | Required |
 
-**Required pre-V1 investigation — Grub Rank score/order semantic consistency.** Displayed score is reaction-banded while order is Bradley–Terry strength, so a lower-ranked entry can show a higher score (observed #9 · 2.6 above #11 · 7.6). Investigate how to keep score and order understandable while preserving all evidence, history, re-rank behavior, calibration and uncertainty. Investigation first; any math/calibration change needs explicit owner reopening. It must conclude before Stage G finalizes result/celebration presentation. [Mechanism](STAYGRUBBY_ARCHITECTURE.md#ranking--protected).
+Why this order:
 
-**Unified Food Architecture checkpoint — completed November 8, 2026 (documentation only).** Dish + Recipe become one user-facing food identity via a composed read model; storage, ranking and Recipe Creator are unchanged. It resolved the Stage B metadata-ownership question (placement unchanged; editors show "About this Dish" vs "This cook"), split Stage D into D1/D2 and defined the Stage F Add Recipe flow. Six owner decisions are listed in [FOOD_ARCHITECTURE.md §10](FOOD_ARCHITECTURE.md#10-owner-decisions-requested); D2 copy waits for decision 1, the rest can wait for their stage. **Classification:** D1, D2 and the Stage F flow are **required before V1** (product coherence and link integrity); Saved Recipes, Want to Cook, Collections, contextual rank boards, Scan Recipe and Share Sheet import remain **post-V1** and are constrained, not authorized, by the checkpoint.
+- D1 contains the only schema change. It also contains the copy rebrand, so every later stage is built on final words and data.
+- D2 establishes the single screen that C, E and F attach to.
+- F comes before C because the new-cook flow and the result screen that sharing starts from are reshaped in F.
+- C and E are presentation work on top of that foundation.
+
+D1 (a) and (d)/(e) touch different files and can be split across the two agent lanes. Avoid running D2 and F in parallel, because both edit Dish Detail and the cooking forms.
+
+**Required pre-V1 investigation — Grub Rank score/order semantic consistency.** The displayed score is banded by reaction, while order follows Bradley–Terry strength, so a lower-ranked entry can show a higher score (observed: #9 · 2.6 above #11 · 7.6).
+
+- Investigate how to keep score and order understandable while preserving all evidence, history, re-rank behavior, calibration and uncertainty.
+- Investigation comes first; any math or calibration change needs the owner to explicitly reopen ranking.
+- It can start now in parallel. It must conclude before D2 settles how Dish Detail presents score and rank, and before G finalizes results.
+
+[Mechanism](STAYGRUBBY_ARCHITECTURE.md#ranking--protected).
+
+**Unified food architecture — final, November 8, 2026 (documentation only).** The owner decided:
+
+- Dish is the user-facing identity.
+- A Dish can have several Recipes, with a selectable Main Recipe.
+- Food Bible is the Recipe lens.
+- Recipe revisions are Recipe History.
+- Cooking Attempts can be renamed, with a "Version N" fallback.
+- All Cooks and Cook Again are the new labels.
+- Explicit provenance associates automatically; loose matches are suggested.
+- As written vs as made applies to Diet as well as Contains.
+
+The checkpoint `6214900` was reconciled with Codex `a6de6b8` (exact-revision provenance, link lifecycle, dated reactions — all preserved). Saved Recipes, Want to Cook, Collections, contextual rank boards, Scan Recipe and Share Sheet import remain **post-V1**: the architecture constrains them but does not authorize them.
 
 Each stage: implement → focused verification → owner acceptance where needed → update canonical docs as decisions become durable.
 
@@ -49,11 +77,11 @@ Metadata, screenshots, reviewer instructions, switch `Website/distribution.json`
 
 ## POST-V1 — near / medium term (approved or established; order not final)
 
-- **Want to Cook** — cooking intention distinct from cooking; bookmark + attributed cooking workflow. Targets a Food (Dish or Recipe) — the first candidate to justify a stored Food identity. [Concept](PERSONAL_COOKING_INTELLIGENCE.md#5-approved-future-concepts-not-implemented), [fit](FOOD_ARCHITECTURE.md#8-future-compatibility-all-post-v1-unless-the-roadmap-says-otherwise)
+- **Want to Cook** — cooking intention distinct from cooking; bookmark + attributed cooking workflow. Targets a Dish (cooked or Recipe-only) or a Recipe — the first candidate to justify a stored Food identity. [Concept](PERSONAL_COOKING_INTELLIGENCE.md#5-approved-future-concepts-not-implemented), [fit](FOOD_ARCHITECTURE.md#10-future-compatibility-post-v1-nothing-here-is-authorized)
 - **Saved Recipes** refinement — bookmarks to a Sous Chef's original, attribution preserved; depends on access-control maturity
 - **Recipe Social History / recreation statistics** — precise, privacy-safe "Made X times"
 - **Privacy/access-control evolution** — account maximum audience Public / Sous Chefs Only / Private with per-item visibility bounded by it; new items private by default
-- **Collections / Cooking Series** (name not final) — Collection ↔ Food many-to-many thematic context, distinct from Versions; contextual rank boards are projections of the one global ranking
+- **Collections / Cooking Series** (name not final) — Collection ↔ Dish many-to-many thematic context (members may be Recipe-only Dishes), distinct from a Dish's cooks; contextual rank boards are projections of the one global ranking
 - **Scan Recipe** and **Share Sheet import** — additional Import Recipe sources feeding the same Gemini → review → Save pipeline
 - **Cooking insights** and private **Stars ⭐** achievements/challenges
 - **Recipe unit conversion** when reliable (implementation retained, controls hidden)
@@ -99,4 +127,4 @@ Future planning lives **here** only. Historical stage plans and reviews ([NEXT_R
 
 ### Required first App Store release milestone
 
-**Build 4 → UI overhaul (A–C, D1–D2, E–G, with the score/order investigation) → V1 Release Gate → Release Candidate → App Store V1 → post-V1.** App Store V1 is a concrete milestone that optional ideas must not keep postponing. No submission or distribution is authorized by a development checkpoint.
+**Build 4 → integration + lifecycle deployment → D1 Unified Dish Foundation → D2 Dish Detail → F → C → E → G (with the score/order investigation in parallel) → V1 Release Gate → Release Candidate → App Store V1 → post-V1.** App Store V1 is a concrete milestone that optional ideas must not keep postponing. No submission or distribution is authorized by a development checkpoint.

@@ -36,10 +36,12 @@ Use established vocabulary where appropriate:
 | Notifications / new notification / Recreate | Tickets 🎟️ / New Ticket / Run It Back (entry points hidden) |
 | Internal publish / external share | Post to Grub List / Share |
 | Cook from a Recipe | Rank My Version |
+| Cooking Attempt / its name / unnamed fallback | cook ("3 cooks") / Cook Name / Version N |
+| Make the Dish again / show every cook / Recipe revisions | Cook Again / All Cooks / Recipe History |
 | Delete (restrained) | 86 (Delete), 86 Dish/Recipe/Cook/Comment/Post; Delete Account stays conventional |
 | Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
 
-Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, New Version, Re-rank. Vocabulary does not authorize future features.
+Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, Cook Again, Rename, Re-rank. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
 
 ## Protected ranking and reuse
 
@@ -55,7 +57,7 @@ Before creating a selector, picker, sheet, popover, menu, confirmation, search/f
 
 Update the owning canonical document automatically when a cycle establishes a durable product, architecture, design, testing or owner decision. Keep temporary implementation/test details in dated review evidence. Future roadmap work should be classified as required before App Store V1, desirable but deferrable, or post-V1 where useful; optional features must not indefinitely delay the required first public release. Recipe estimate/quantity and ingredient-derived allergen limitations belong in appropriate Terms/disclaimer/safety coverage, not solely the Privacy Policy. Avoid repeated reader warnings; retain actionable safety, privacy and provenance information.
 
-Canonical document roles: `AGENTS.md` rules · `STAYGRUBBY_ARCHITECTURE.md` current product/technical truth and system maps · `UI_ARCHITECTURE.md` current design-system spec, UI defect queue and overhaul stages · `STAYGRUBBY_MASTER_ROADMAP.md` sequencing, deferred and rejected work · `V1_RELEASE_GATE.md` release requirements/state · `PERSONAL_COOKING_INTELLIGENCE.md` long-term intelligence direction and data inventory · `FOOD_ARCHITECTURE.md` Dish/Recipe/cook relationships, library lenses and Add Recipe flow · `Website/README.md` website/Cloudflare deployment. Dated reviews are evidence, not current truth. Update canonical docs **during** meaningful stages as durable decisions/state change (architecture, schema, product decisions, shared UI patterns, privacy, deployment, testing, release state, roadmap movement), not only at the end; skip trivial implementation detail. Replace superseded current-state text rather than stacking new dated sections over it.
+Canonical document roles: `AGENTS.md` rules · `STAYGRUBBY_ARCHITECTURE.md` current product/technical truth and system maps · `UI_ARCHITECTURE.md` current design-system spec, UI defect queue and overhaul stages · `STAYGRUBBY_MASTER_ROADMAP.md` sequencing, deferred and rejected work · `V1_RELEASE_GATE.md` release requirements/state · `PERSONAL_COOKING_INTELLIGENCE.md` long-term intelligence direction and data inventory · `FOOD_ARCHITECTURE.md` Dish/Recipe/Cooking Attempt relationships, Main Recipe, cook naming/terminology, as written vs as made, library lenses and Add Recipe flow · `Website/README.md` website/Cloudflare deployment. Dated reviews are evidence, not current truth. Update canonical docs **during** meaningful stages as durable decisions/state change (architecture, schema, product decisions, shared UI patterns, privacy, deployment, testing, release state, roadmap movement), not only at the end; skip trivial implementation detail. Replace superseded current-state text rather than stacking new dated sections over it.
 
 ### Per-cycle architecture check
 

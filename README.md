@@ -2,7 +2,7 @@
 
 Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bible) and intentionally shared social activity. Official identity: **#stayGRUBBY**.
 
-**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). Next: the system-wide UI overhaul (Stages A–G; the November 8 Unified Food Architecture checkpoint split D into D1/D2) → V1 Release Gate → Release Candidate → App Store V1.
+**Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). Next (final order, November 8): integration + Recipe lifecycle deployment → D1 Unified Dish Foundation → D2 Dish Detail → F → C → E → G → V1 Release Gate → Release Candidate → App Store V1.
 
 ## Read first
 
@@ -17,8 +17,8 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 
 | Document | Purpose |
 | --- | --- |
-| [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md) | One food identity over Dish + Recipe: ownership, Grub Rank / Food Bible lenses and filters, versions, contextual Add Recipe, reusable food UI parts, future compatibility |
-| [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul Stages A–G (D split into D1 Food Foundation / D2 Food Detail) |
+| [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md) | One Dish over separate Dish/Recipe/cook records: relationships, Main Recipe, renameable cooks and final terminology, as written vs as made, lenses and filters, Add Recipe / Cook Again flows, reusable Dish UI parts |
+| [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul stages and their run order |
 | [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md) | V1 release requirements and state |
 | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
 | [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |
