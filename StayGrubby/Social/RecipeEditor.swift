@@ -38,6 +38,7 @@ struct RecipeEditor: View {
     @State private var ingredientFocusedSection: UUID?
     @State private var ordering: RecipeOrderingKind?
     @State private var allergenSelection: RecipeAllergenSelection?
+    @State private var choosingDiet = false
     @FocusState private var focus: RecipeField?
     init(recipe: Recipe? = nil, dishID: UUID? = nil, attemptID: UUID? = nil, title: String = "", course: String? = nil, cuisine: String? = nil, draft: RecipeDraft? = nil, importReview: RecipeImportReview? = nil, initiallyShared: Bool? = nil, onSave: @escaping (Recipe) -> Void) {
         self.importReview = importReview; self.recipe = recipe; self.dishID = dishID; self.attemptID = attemptID; self.onSave = onSave
@@ -128,7 +129,8 @@ struct RecipeEditor: View {
                 }
                 ingredientEntry.forget(corrected.id)
             }
-        }.sheet(isPresented: $choosingCuisine) {
+        }.sheet(isPresented: $choosingDiet) { DietarySelector(selection: $content.dietTags, dietOnly: true) }
+        .sheet(isPresented: $choosingCuisine) {
             CuisinePicker(selection: Binding(get: { content.cuisine.flatMap { CuisineCatalog.resolve($0) } }, set: { content.cuisine = $0?.label }))
         }.sheet(item: $bulkSection) { target in
             PasteIngredientsView(capacity: max(0, 100 - parts.reduce(0) { $0 + $1.ingredients.count })) { raw in ingredientEntry.appendBulk(raw, to: target.id, in: &content) }
@@ -275,6 +277,15 @@ struct RecipeEditor: View {
                     Button { choosingCuisine = true } label: {
                         HStack { Text("Cuisine"); Spacer(); Text(content.cuisine ?? "None").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
                     }.frame(minHeight: 44).accessibilityIdentifier("recipe-cuisine")
+                    Button { choosingDiet = true } label: {
+                        HStack {
+                            Text("Diet")
+                            Spacer()
+                            Text(content.dietTags.isEmpty ? "None" : CookingProductOptions.diets.filter(content.dietTags.contains).map(\.label).joined(separator: ", "))
+                                .foregroundStyle(.secondary).multilineTextAlignment(.trailing)
+                            Image(systemName: "chevron.right")
+                        }
+                    }.frame(minHeight: 44).accessibilityIdentifier("recipe-diet")
                     TextField("Original creator · optional", text: optional(\.originalCreator))
                     ManualSourceFields(name: optional(\.source), url: optional(\.externalURL), identifierPrefix: "recipe-source")
                 }.padding(.top, 12)

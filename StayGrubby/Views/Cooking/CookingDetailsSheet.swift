@@ -19,9 +19,6 @@ struct CookingDetailsSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Course", selection: $draft.category) {
-                        ForEach(CookingProductOptions.courses) { Text($0.label).tag($0) }
-                    }.pickerStyle(.navigationLink).accessibilityIdentifier("cook-course")
                     if inherited {
                         LabeledContent("Cuisine", value: draft.cuisine?.label ?? "None").accessibilityIdentifier("inherited-dish-cuisine")
                         LabeledContent("Source", value: draft.source?.summary ?? "None")
@@ -29,11 +26,14 @@ struct CookingDetailsSheet: View {
                         row("Cuisine", value: draft.cuisine?.label ?? "None") { cuisine = true }.accessibilityIdentifier("dish-cuisine")
                         row("Source", value: draft.source?.summary ?? "None") { source = true }.accessibilityIdentifier("dish-source-type")
                     }
-                }
+                } header: { Text("This Dish") } footer: { Text(inherited ? "Shared by every cook of this Dish. Edit them from Edit Cook." : "Shared by every cook of this Dish.") }
                 Section {
+                    Picker("Course", selection: $draft.category) {
+                        ForEach(CookingProductOptions.courses) { Text($0.label).tag($0) }
+                    }.pickerStyle(.navigationLink).accessibilityIdentifier("cook-course")
                     row("Dietary", value: draft.dietary.intersection(CookingProductOptions.dietary).map(\.label).sorted().joined(separator: ", ")) { dietary = true }.accessibilityIdentifier("cook-dietary")
                     row("Contains", value: draft.contains.map(\.label).sorted().joined(separator: ", ")) { contains = true }.accessibilityIdentifier("cook-contains")
-                }
+                } header: { Text("This cook") } footer: { Text("As made: what you actually cooked this time.") }
                 if hasExistingCookNotes {
                     Section("Existing notes for this cook") {
                         TextField("Cook-specific notes", text: $draft.notes, axis: .vertical)

@@ -24,6 +24,16 @@ nonisolated struct RecipeContent: Codable, Equatable, Sendable {
     /// Author-selected only; never Certification. Kept so editing never drops it.
     var dietary: [String]? = nil
 }
+extension RecipeContent {
+    /// Diet as written (never Certification); unknown codes are ignored.
+    var dietTags: Set<DietaryTag> {
+        get { Set((dietary ?? []).compactMap(DietaryTag.init(rawValue:))).intersection(CookingProductOptions.diets) }
+        set {
+            let codes = newValue.intersection(CookingProductOptions.diets).map(\.rawValue).sorted()
+            dietary = codes.isEmpty ? nil : codes
+        }
+    }
+}
 nonisolated struct Recipe: Codable, Identifiable, Sendable {
     var id: UUID
     var isOwner: Bool

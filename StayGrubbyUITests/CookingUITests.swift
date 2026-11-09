@@ -39,8 +39,9 @@ final class CookingUITests: StayGrubbyUITestCase {
                             predicate: NSPredicate(format: "hasKeyboardFocus == true"), object: field)
                         if XCTWaiter.wait(for: [focused], timeout: 3) == .completed {
                             field.typeText(text)
-                            let returnKey = app.keyboards.buttons["return"]
-                            if returnKey.exists { returnKey.tap() }
+                            // The cook form's keyboard toolbar Done (fields use the "done" key, not "return").
+                            let done = app.buttons["cook-keyboard-done"]
+                            if done.exists { done.tap() } else if app.keyboards.buttons["return"].exists { app.keyboards.buttons["return"].tap() }
                             return
                         }
                     }

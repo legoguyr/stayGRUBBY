@@ -107,4 +107,69 @@ final class StageFAddRecipeUITests: StayGrubbyUITestCase {
         XCTAssertTrue(prompt.waitForNonExistence(timeout: 8), "The prompt closes after Add Recipe or Not Now")
         app.buttons["ranking-result-close"].tap()
     }
+
+    @MainActor func testCookAgainStartOffersTheDishRecipeOrWithout() throws {
+        let app = launch(["--test-light"])
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'"))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        var withRecipe = false, withoutRecipe = false
+        for index in 0..<min(rows.count, 6) where !(withRecipe && withoutRecipe) {
+            rows.element(boundBy: index).tap(); XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 10))
+            let view = app.buttons["dish-view-recipe"], add = app.buttons["dish-add-recipe"]
+            for _ in 0..<8 where !(add.exists || view.exists) { app.swipeUp() }
+            let hasRecipe = view.exists
+            if (hasRecipe && !withRecipe) || (!hasRecipe && !withoutRecipe) {
+                reach(app.buttons["detail-new-version"], app); app.buttons["detail-new-version"].tap()
+                if hasRecipe {
+                    // Cook Again on a Dish with a Recipe: choose the Recipe (exact revision) or not.
+                    XCTAssertTrue(app.buttons["cook-again-recipe"].waitForExistence(timeout: 10)); XCTAssertTrue(app.buttons["cook-again-without"].exists)
+                    shot("F Cook Again start light", app)
+                    app.buttons["cook-again-recipe"].tap()
+                    XCTAssertTrue(app.navigationBars["Rank My Version"].waitForExistence(timeout: 10))
+                    XCTAssertTrue(app.staticTexts["inherited-dish-name"].exists, "The cook stays on this Dish")
+                    withRecipe = true
+                } else {
+                    XCTAssertTrue(app.navigationBars["Cook Again"].waitForExistence(timeout: 10))
+                    XCTAssertFalse(app.buttons["cook-again-recipe"].exists)
+                    withoutRecipe = true
+                }
+                // The cook editor is grouped by owner.
+                XCTAssertTrue(app.staticTexts["THIS DISH"].exists || app.staticTexts["This Dish"].exists)
+                XCTAssertTrue(app.staticTexts["THIS COOK"].exists || app.staticTexts["This cook"].exists)
+                app.buttons["Cancel"].tap()
+            }
+            app.navigationBars.buttons.firstMatch.tap()
+        }
+        XCTAssertTrue(withRecipe && withoutRecipe, "Fixture has Dishes with and without a Recipe")
+    }
+
+    @MainActor func testRecipeDietAsWrittenAndFoodBibleDietFilter() throws {
+        let app = launch(["--test-dark"])
+        app.tabBars.buttons["Food Bible"].tap(); app.buttons["bible-add"].tap()
+        XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout: 8)); app.buttons["bible-manual"].tap()
+        let field = app.textFields["recipe-edit-title"]; XCTAssertTrue(field.waitForExistence(timeout: 8)); field.tap(); field.typeText("Vegan Chili")
+        app.buttons["recipe-keyboard-done"].tap()
+        let details = app.buttons["Details & source"]
+        for _ in 0..<12 where !details.isHittable { app.swipeUp() }
+        details.tap()
+        let diet = app.buttons["recipe-diet"]; reach(diet, app); diet.tap()
+        XCTAssertTrue(app.buttons["filter-dietary-vegan"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["filter-dietary-halal"].exists, "Certification is never a Recipe property")
+        app.buttons["filter-dietary-vegan"].tap(); app.buttons["dietary-done"].tap()
+        XCTAssertTrue(diet.label.contains("Vegan"))
+        app.buttons["recipe-save"].tap(); app.skipRankPrompt()
+        let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-' AND label CONTAINS 'Vegan Chili'")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10)); card.tap()
+        let info = app.staticTexts["recipe-diet-information"]; reach(info, app)
+        XCTAssertTrue(info.label.contains("Vegan")); shot("F Recipe Diet as written dark", app)
+        app.navigationBars.buttons.firstMatch.tap()
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'"))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 8)); let total = rows.count
+        app.openBibleFilterGroup("diet"); XCTAssertTrue(app.buttons["bible-filter-option-vegan"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["bible-filter-option-kosher"].exists)
+        app.buttons["bible-filter-option-vegan"].tap(); app.buttons["filters-done"].tap()
+        XCTAssertTrue(rows.matching(NSPredicate(format: "label CONTAINS 'Vegan Chili'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertLessThan(rows.count, total)
+        app.buttons["bible-clear-filters"].tap(); XCTAssertEqual(rows.count, total)
+    }
 }

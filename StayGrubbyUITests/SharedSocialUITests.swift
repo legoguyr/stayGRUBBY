@@ -77,13 +77,19 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         let name = app.textFields["dish-name"]; XCTAssertTrue(name.waitForExistence(timeout: 8)); name.tap(); name.typeText("Dinner Together\n")
         let friend = app.buttons["cooked-with-10000000-0000-0000-0000-000000000001"]
         let form = app.scrollViews["cooking-form"]
-        for _ in 0..<6 { if friend.isHittable { break }; form.swipeUp() }
-        XCTAssertTrue(friend.waitForExistence(timeout: 5)); XCTAssertEqual(friend.value as? String, "Not selected"); friend.tap()
+        // Scroll until the avatar is fully above the pinned Continue bar (hittable alone is not enough).
+        let continueBar = app.buttons["Continue"]
+        for _ in 0..<8 {
+            if friend.exists && friend.isHittable && (!continueBar.exists || friend.frame.maxY < continueBar.frame.minY) { break }
+            form.swipeUp()
+        }
+        XCTAssertTrue(friend.waitForExistence(timeout: 5)); XCTAssertLessThan(friend.frame.maxY, continueBar.frame.minY, "The last form row can scroll clear of Continue")
+        XCTAssertEqual(friend.value as? String, "Not selected"); friend.tap()
         let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Selected'"), object: friend)
         XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 5), .completed, app.debugDescription)
         XCTAssertFalse(app.buttons["cooked-with-10000000-0000-0000-0000-000000000002"].exists)
         finish(app, title: "Dinner Together"); app.buttons["ranking-result-close"].tap()
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", Dinner Together — Version 1, score ")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", Dinner Together, score ")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8), app.debugDescription); row.tap()
         let participants = app.buttons["cook-collaborators"]
         for _ in 0..<6 { if participants.isHittable { break }; app.swipeUp() }

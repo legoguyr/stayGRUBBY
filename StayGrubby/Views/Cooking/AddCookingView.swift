@@ -39,6 +39,8 @@ struct AddCookingView: View {
         var initial = origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft()
         // A Recipe claim can prefill this cook, but it does not replace the linked Dish's own text.
         if let dish {
+            // One Dish identity: a Recipe-origin cook of an existing Dish keeps the Dish's name.
+            initial.dishName = dish.name
             initial.publicDescription = dish.publicDescription ?? ""
             initial.privateNotes = dish.privateNotes ?? ""
         }

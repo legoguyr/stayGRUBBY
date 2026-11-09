@@ -29,8 +29,10 @@ final class DishSourceUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         }
         func chooseSource(_ name: String) {
+            // Source lives in the Details sheet ("This Dish"); open it before resolving the row.
+            app.openCookingDetails()
             let source = app.buttons["dish-source-type"]
-            tapWhenVisible(source)
+            XCTAssertTrue(source.waitForExistence(timeout: 5), app.debugDescription); source.press(forDuration: 0.2)
             let destination = app.navigationBars["Source"]
             if !destination.waitForExistence(timeout: 3), app.cookingFieldIsVisible(source) {
                 source.press(forDuration: 0.2)
@@ -55,7 +57,7 @@ final class DishSourceUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["Save Cook"].exists)
         tapWhenVisible(app.buttons["ranking-result-close"])
-        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", Pasta — Version 1, score ")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", ", Pasta, score ")).firstMatch
         func openRow() {
             for _ in 0..<3 {
                 tapWhenVisible(row)
@@ -67,7 +69,7 @@ final class DishSourceUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Cookbook · Zahav"].waitForExistence(timeout: 15))
 
 
-        tapWhenVisible(app.buttons["Edit Cook"])
+        app.cookAction("detail-edit-cook").press(forDuration: 0.2)
         chooseSource("Restaurant")
         fill(app.textFields["source-restaurant-name"], "Carbone")
         XCTAssertFalse(app.textFields["Original dish name"].exists)
@@ -76,21 +78,21 @@ final class DishSourceUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Restaurant · Carbone"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Cookbook · Zahav"].exists)
 
-        tapWhenVisible(app.buttons["Edit Cook"])
+        app.cookAction("detail-edit-cook").press(forDuration: 0.2)
         chooseSource("No source")
         tapWhenVisible(app.buttons["save-cook-metadata"])
-        XCTAssertTrue(app.buttons["Edit Cook"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["Restaurant · Carbone"].exists)
         app.terminate(); app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         openRow()
         XCTAssertFalse(app.staticTexts["Restaurant · Carbone"].exists)
-        tapWhenVisible(app.buttons["Edit Cook"])
+        app.cookAction("detail-edit-cook").press(forDuration: 0.2)
         chooseSource("My Own")
         XCTAssertFalse(app.textFields["source-online-url"].exists)
         tapWhenVisible(app.buttons["save-cook-metadata"])
         XCTAssertTrue(app.staticTexts["My Own"].waitForExistence(timeout: 15))
-        tapWhenVisible(app.buttons["Edit Cook"])
+        app.cookAction("detail-edit-cook").press(forDuration: 0.2)
         chooseSource("Online")
         XCTAssertTrue(app.buttons["source-choice-myOwn"].exists)
         XCTAssertTrue(app.buttons["source-choice-cookbook"].exists)

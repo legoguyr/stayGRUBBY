@@ -96,6 +96,8 @@ nonisolated struct CookbookEntry: Codable, Identifiable, Sendable {
     var allergens: RecipeAllergenAssessment? = nil
     /// D2: the named Dish has an active cook (server `library_index`); nil from older servers.
     var cooked: Bool? = nil
+    /// Diet as written (`DietaryTag` raw values), from the Recipe content.
+    var dietary: [String]? = nil
     var id: UUID { recipeID }
     var searchableText: String { CookbookSearch.normalized([dishTitle, recipeTitle, cuisine, source, searchText].compactMap { $0 }.joined(separator: " ")) }
     var duration: Int? { if let elapsedMinutes { return elapsedMinutes }; if creatorMetadata == true { return nil }; return prepMinutes == nil && cookMinutes == nil ? nil : (prepMinutes ?? 0) + (cookMinutes ?? 0) }

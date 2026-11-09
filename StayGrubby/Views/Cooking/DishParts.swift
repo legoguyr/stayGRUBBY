@@ -106,8 +106,8 @@ struct DishCooksSection: View {
 struct DishRecipeRow: View {
     let dish: Dish
     var attempt: CookingAttempt? = nil
-    /// Tells the host whether this Dish has a Recipe (keeps the Dish when its last cook is 86'd).
-    var recipeKnown: ((Bool) -> Void)? = nil
+    /// Tells the host the Dish's Recipe, if any (Cook Again start; keeps the Dish when its last cook is 86'd).
+    var recipeKnown: ((Recipe?) -> Void)? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @State private var recipe: Recipe?
@@ -164,7 +164,7 @@ struct DishRecipeRow: View {
             var used: RecipeCookSnapshot?
             if let attempt { used = try? await DishRecipeService.usedRecipe(for: attempt.id, dishID: dish.id, request: request) }
             guard !Task.isCancelled, generation == token else { return }
-            recipe = next; usedRecipe = used; loaded = true; failure = nil; recipeKnown?(next != nil)
+            recipe = next; usedRecipe = used; loaded = true; failure = nil; recipeKnown?(next)
         } catch is CancellationError {} catch {
             guard generation == token else { return }
             failure = DishRecipeService.message(for: error)

@@ -130,7 +130,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 | Source / inspiration | manual Source | source / original creator | — | Different meanings, kept apart |
 | Description / notes | Public Description, Private Notes | description, tips | cook notes | Private notes never public |
 | **Contains** | — | Contains / Possible (reviewed assessment) | Contains | Shown per side with labels; never merged into one claim |
-| **Dietary — Diet** (Dairy-Free, Gluten-Free, Vegan, Vegetarian) | — | **Decided new field** `dietary` in `RecipeContent`: author-selected only | ✅ existing | The Recipe value says the Recipe *as written* fits that diet; the cook value says what was actually made |
+| **Dietary — Diet** (Dairy-Free, Gluten-Free, Vegan, Vegetarian) | — | **Implemented (Stage F)** `dietary` in `RecipeContent`: author-selected only | ✅ existing | The Recipe value says the Recipe *as written* fits that diet; the cook value says what was actually made |
 | **Dietary — Certification** (Halal, Kosher) | — | **Never** on a Recipe | ✅ existing | Certification depends on products, supervision and kitchen. It is a fact about the cook, so it is never inferred and never attached to written instructions |
 | Photos | — | Recipe photo | cook photos | Ownership unchanged |
 
@@ -138,7 +138,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 
 - It is an additive optional key in the Recipe content JSON. It is part of revisions and post pinning like every other content field.
 - The author sets it in the Recipe editor. **Gemini does not propose it.** Recipe Creator contract 4 is frozen, and Diet suitability depends on product choices (stock, cheese rennet, Worcestershire). Unknown stays unknown.
-- D1 confirmed the server previously **dropped unknown content keys silently**; `20261108171120_dish_recipe_links` adds `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). `RecipeContent.dietary` round-trips it so edits never drop it. The editor control ships in F (3b).
+- D1 found the server previously **dropped unknown content keys silently**; `20261108171120_dish_recipe_links` accepts `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). **Stage F:** the Recipe editor's *Details & source* has a **Diet** row (Diet-only `DietarySelector`, with a note that product labels matter and Certification belongs to the cook); the reader shows "Diet as written"; `20261109002508_food_bible_diet_index` adds `dietary` to Food Bible index entries for the Diet filter.
 
 **Cooking from a Recipe (prefill, user-confirmed):**
 
@@ -167,7 +167,7 @@ Filters read the record the lens lists, use the Stage B chip/sheet grammar, and 
 | Search | ✅ (Dish, cook display name, Course, Dietary, Contains) | ✅ Recipe text |
 | Course | ✅ cook snapshot | ✅ |
 | Cuisine | ✅ Dish | ✅ |
-| Dietary | ✅ Diet + Certification (cook) | **Decided:** Diet only, once the Recipe Diet field exists (§5). No Certification |
+| Dietary | ✅ Diet + Certification (cook) | **Implemented (Stage F):** a "Diet" group (any selected diet matches). No Certification |
 | Avoid | ✅ cook Contains | ✅ Contains + Possible |
 | Contains | — (Avoid covers it) | ✅ |
 | Source | — | ✅ |
@@ -195,16 +195,17 @@ External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Re
 
 ### 7.2 Cook Again and Rank My Version
 
-- **Cook Again** (Dish Detail or Grub Rank) starts a new cook of *this* Dish. Offering "Cook from this Dish's Recipe" as a first step (exact revision reservation) is an F option; nothing is preselected or recorded as used unless chosen.
+- **Cook Again** (Dish Detail or Grub Rank, `CookAgainFlow`) starts a new cook of *this* Dish. **Implemented (Stage F):** when the Dish has a Recipe, the first step offers **Cook from the Recipe** (a Recipe-origin cook with exact revision reservation; the cook stays on this Dish and keeps its name) or **Without the Recipe**. Nothing is preselected or recorded as used unless chosen. Offline or without a Recipe, it goes straight to the cook form, which then offers "Add a Recipe?".
 - **Rank My Version** (from a Recipe) starts a Recipe-origin cook that goes into the Recipe's own Dish (§3.2). A Sous Chef's Recipe starts a new Dish of the viewer's.
 - Both end in the unchanged protected flow: Initial Reaction → comparisons → result.
 
 ### 7.3 Editors
 
-`CookEditor` (New Dish, Cook Again, Rank My Version, Edit Cook) groups fields by owner so scope is visible without moving data:
+**Implemented (Stage F)** in the shared cook form (`CookingMetadataForm` + `CookingDetailsSheet`, used by New Dish, Cook Again, Rank My Version and Edit Cook), grouped by owner with `SGFormSection` so scope is visible without moving data:
 
-- **About this Dish:** name, Cuisine, Source, Public Description, Private Notes, default Course. The editor states that changes apply to every cook.
-- **This cook:** Cook Name, date, photos, cook notes, Course, Diet, Certification, Contains, Tag a Sous Chef.
+- **This Dish:** name, Public Description, Private Notes; in Details, Cuisine and Source. The form states these apply to every cook (inherited as read-only in Cook Again's Details).
+- **This cook:** Cook Name (fallback hint), date, Details (Course, Diet, Certification, Contains — "as made"), then Tag a Sous Chef and sharing. The hero photo stays first.
+- **Prefill from a Recipe:** a Recipe-origin cook preselects Diet (as written) and the Recipe's reviewed Contains, never Possible or Certification, and the form says so ("check them in Details for what you actually made").
 
 ## 8. Reusable Dish UI parts
 

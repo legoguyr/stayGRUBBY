@@ -132,7 +132,7 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
     @MainActor private func openSavedRecipe(_ app: XCUIApplication) {
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20));app.tabBars.buttons["Food Bible"].tap()
         let card=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout:8));card.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
+        XCTAssertTrue(card.waitForExistence(timeout:8));card.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));app.openRecipeAction("recipe-edit");XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
     }
     @MainActor func testCookbookAllMetadataAndSharedAllergenChecklistSurviveSaveAndRelaunch() throws {
         let bundle=Bundle(for:RecipeImportUITests.self)
@@ -189,7 +189,7 @@ final class RecipeImportUITests: StayGrubbyUITestCase {
         let stepOrder=table.cells.allElementsBoundByIndex.map(\.label);shot(app,"Native method drag within and between components")
         app.buttons["recipe-order-done"].tap();app.buttons["recipe-save"].tap();app.skipRankPrompt()
         XCTAssertTrue(app.textViews["recipe-import-text"].waitForNonExistence(timeout:8))
-        let entry=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch;XCTAssertTrue(entry.waitForExistence(timeout:8));entry.tap();XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout:8));app.buttons["recipe-edit"].tap();XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
+        let entry=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch;XCTAssertTrue(entry.waitForExistence(timeout:8));entry.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));app.openRecipeAction("recipe-edit");XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout:8))
         reach(app.buttons["recipe-reorder-steps"],app:app);app.buttons["recipe-reorder-steps"].tap();XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),stepOrder);app.buttons["recipe-order-done"].tap()
         app.terminate();app.launchWithReviewOptions();openSavedRecipe(app)
         reach(app.buttons["recipe-reorder-ingredients"],app:app);app.buttons["recipe-reorder-ingredients"].tap();XCTAssertEqual(table.cells.allElementsBoundByIndex.map(\.label),ingredientOrder);XCTAssertEqual(Set(table.cells.allElementsBoundByIndex.map(\.identifier)),originalIDs);app.buttons["recipe-order-done"].tap()

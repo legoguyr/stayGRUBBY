@@ -17,7 +17,9 @@ struct AttemptDetailView: View {
     @Environment(\.returnToRankings) private var returnToRankings
     @State private var deleting = false
     /// Whether this Dish has a Recipe; the Dish then outlives its last cook (Recipe-only Dish).
-    @State private var dishHasRecipe = false
+    @State private var dishRecipe: Recipe?
+    @State private var dishRecipeLoaded = false
+    private var dishHasRecipe: Bool { dishRecipe != nil }
     @State private var error: String?
     @Environment(\.dynamicTypeSize) private var textSize
     @ScaledMetric(relativeTo: .caption) private var tagColumnWidth = SGTheme.Size.tagColumnWidth
@@ -40,7 +42,7 @@ struct AttemptDetailView: View {
                 // Provenance is usually empty but still a stack child; grouping it keeps an
                 // empty block from doubling the section gap.
                 VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
-                    if let dish = attempt.dish { DishRecipeRow(dish: dish, attempt: attempt) { dishHasRecipe = $0 } }
+                    if let dish = attempt.dish { DishRecipeRow(dish: dish, attempt: attempt) { dishRecipe = $0; dishRecipeLoaded = true } }
                     CookingProvenanceView(itemID: attempt.rankedItemID, includesRecipe: false)
                 }
                 if let source = attempt.dish?.source {
@@ -83,7 +85,7 @@ struct AttemptDetailView: View {
             if versionFinalized { versionFinalized = false; returnToRankings() }
         }) {
             if let list = attempt.rankedItem?.list, let dish = attempt.dish {
-                AddCookingView(list: list, dish: dish, offersRecipe: !dishHasRecipe, onResultClose: { versionFinalized = true })
+                CookAgainFlow(list: list, dish: dish, knownRecipe: dishRecipe, recipeKnown: dishRecipeLoaded, onResultClose: { versionFinalized = true })
             }
         }
         .alert("86 this Cook?", isPresented: $deleting) {

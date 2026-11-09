@@ -49,6 +49,10 @@ struct RecipeReadingBody: View {
                     Text(tips).font(.body).lineSpacing(6).fixedSize(horizontal: false, vertical: true)
                 }
             }
+            if !content.dietTags.isEmpty {
+                Text("Diet as written: " + CookingProductOptions.diets.filter(content.dietTags.contains).map(\.label).joined(separator: ", "))
+                    .font(.subheadline).accessibilityIdentifier("recipe-diet-information")
+            }
             if let allergens = content.allergens, !allergens.contains.isEmpty || !allergens.possible.isEmpty {
                 VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
                     if !allergens.contains.isEmpty { Text("Contains: " + allergens.contains.compactMap { Allergen(rawValue: $0)?.label }.joined(separator: ", ")) }

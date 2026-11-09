@@ -94,11 +94,15 @@ struct CookingFilterOptions: View {
 /// cook editing; identifiers are stable for UI automation.
 struct DietaryChoices: View {
     @Binding var selection: Set<DietaryTag>
+    /// Recipes are "as written": Diet only, never Certification (FOOD_ARCHITECTURE §5).
+    var dietOnly = false
     var body: some View {
         SGOptionGroupLabel("Diet")
         ForEach(CookingProductOptions.diets) { row($0) }
-        SGOptionGroupLabel("Certification")
-        ForEach(CookingProductOptions.certifications) { row($0) }
+        if !dietOnly {
+            SGOptionGroupLabel("Certification")
+            ForEach(CookingProductOptions.certifications) { row($0) }
+        }
     }
     private func row(_ tag: DietaryTag) -> some View {
         SGSelectionRow(title: tag.label, selected: selection.contains(tag)) {
@@ -110,7 +114,13 @@ struct DietaryChoices: View {
 /// Editing a cook's Dietary labels. Same canonical options as the filter.
 struct DietarySelector: View {
     @Binding var selection: Set<DietaryTag>
+    var dietOnly = false
     var body: some View {
-        SGOptionSheet(title: "Dietary", doneIdentifier: "dietary-done") { DietaryChoices(selection: $selection) }
+        SGOptionSheet(title: dietOnly ? "Diet" : "Dietary", doneIdentifier: "dietary-done") {
+            DietaryChoices(selection: $selection, dietOnly: dietOnly)
+            if dietOnly {
+                SGOptionNote("Diet as written: whether the Recipe suits it with ordinary ingredients. Check labels (stock, cheese, sauces) when you cook. Halal and Kosher depend on your kitchen and products, so they belong to each cook, not the Recipe.")
+            }
+        }
     }
 }

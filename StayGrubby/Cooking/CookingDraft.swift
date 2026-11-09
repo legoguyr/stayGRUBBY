@@ -5,6 +5,8 @@ import Foundation
     var cuisine: Cuisine?
     var category: DishCategory = .main
     var cookedAt: Date? = .now
+    /// True when Diet/Contains were preselected from a Recipe as written; shown for confirmation.
+    var prefilledFromRecipe = false
     var versionTitle = ""
     var notes = ""
     var publicDescription = ""

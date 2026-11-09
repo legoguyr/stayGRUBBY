@@ -32,6 +32,9 @@ struct RecipeFilterView: View {
                 SGSearchField(placeholder: "Search \(group.rawValue.lowercased())", text: $search, identifier: "bible-filter-search")
                 option("Not specified", RecipeFilters.unspecified, selection)
                 ForEach(values.filter { CookbookSearch.matches($0, query: search) }, id: \.self) { option($0, $0, selection) }
+            case .diet:
+                ForEach(CookingProductOptions.diets) { option($0.label, $0.rawValue, $filters.diets) }
+                SGOptionNote("Diet as written by the Recipe. Check product labels when you cook.")
             case .cooked:
                 option("Cooked", RecipeFilters.cookedValue, $filters.cooked)
                 option("Not cooked yet", RecipeFilters.notCookedValue, $filters.cooked)
@@ -55,6 +58,6 @@ struct RecipeFilterView: View {
         }.accessibilityIdentifier("bible-filter-option-\(id)")
     }
     private func clear() {
-        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = []; case .cooked: filters.cooked = [] }
+        switch group { case .course: filters.courses = []; case .cuisine: filters.cuisines = []; case .source: filters.sources = []; case .contains: filters.contains = []; case .avoid: filters.avoid = []; case .cooked: filters.cooked = []; case .diet: filters.diets = [] }
     }
 }

@@ -89,7 +89,7 @@ struct CookingRankingView: View {
         .scrollDismissesKeyboard(.interactively)
         .sheet(item: $filterGroup) { CookingFilterGroupSheet(filters: $filters, group: $0) }
         .sheet(isPresented: $newDish) { AddCookingView(list: list) }
-        .sheet(item: $selectedDish) { AddCookingView(list: list, dish: $0) }
+        .sheet(item: $selectedDish) { CookAgainFlow(list: list, dish: $0) }
         .sheet(isPresented: $choosingDish, onDismiss: {
             selectedDish = pendingDish; pendingDish = nil
         }) {

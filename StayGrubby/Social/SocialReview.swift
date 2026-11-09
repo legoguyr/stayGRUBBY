@@ -238,7 +238,8 @@ import SwiftData
             }
             if action == "library_index" {
                 let entries = recipes.values.filter { r in r.isOwner || (r.visibility == "friends" && (dishRecipes.values.contains(r.id) || cookRecipeLinks[r.id] != nil) && people.contains { $0.id == r.creator?.id && $0.relationship == .friends }) }.compactMap { r in linkedRecipe(r.id) }.map { r in CookbookEntry(dishID: r.dishID ?? r.linkedDishID, recipeID: r.id, dishTitle: r.content.title, recipeTitle: r.content.title, course: r.content.course, cuisine: r.content.cuisine, revision: r.revision, searchText: ([r.content.title,r.content.description ?? "",r.content.source ?? ""] + r.content.ingredients).joined(separator: " "), updatedAt: r.updatedAt, yield: r.content.yield, prepMinutes: r.content.prepMinutes, cookMinutes: r.content.cookMinutes, source: r.content.source, elapsedMinutes: r.content.elapsedMinutes, creatorMetadata: r.content.metadataOrigins != nil, photoID: r.content.photoID, linkedAttemptID: r.linkedAttemptID, createdAt: r.createdAt, allergens: r.content.allergens) }.sorted { $0.id.uuidString < $1.id.uuidString }
-                return try JSONEncoder().encode(CookbookPage(entries: entries))
+                let withDiet = entries.map { entry -> CookbookEntry in var value = entry; value.dietary = recipes[entry.recipeID]?.content.dietary; return value }
+                return try JSONEncoder().encode(CookbookPage(entries: withDiet))
             }
             if action == "history", let id = payload.recipeID, let current = recipes[id] {
                 let values = recipeVersions[id] ?? [current]

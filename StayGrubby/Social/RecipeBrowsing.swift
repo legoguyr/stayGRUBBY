@@ -5,7 +5,7 @@ nonisolated enum RecipeBrowseSort: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 nonisolated enum RecipeFilterGroup: String, CaseIterable, Identifiable {
-    case course = "Course", cuisine = "Cuisine", contains = "Contains", avoid = "Avoid", source = "Source", cooked = "Cooked"
+    case course = "Course", cuisine = "Cuisine", diet = "Diet", contains = "Contains", avoid = "Avoid", source = "Source", cooked = "Cooked"
     var id: String { rawValue }
 }
 nonisolated struct RecipeFilters: Equatable {
@@ -14,14 +14,17 @@ nonisolated struct RecipeFilters: Equatable {
     var courses: Set<String> = [], cuisines: Set<String> = [], contains: Set<String> = [], avoid: Set<String> = [], sources: Set<String> = []
     /// D2: Cooked / Not cooked yet, derived from relationships (`CookbookEntry.cooked`).
     var cooked: Set<String> = []
-    var count: Int { courses.count + cuisines.count + contains.count + avoid.count + sources.count + cooked.count }
+    /// Diet as written (Diet only; Certification is never a Recipe property). Any selected diet matches.
+    var diets: Set<String> = []
+    var count: Int { courses.count + cuisines.count + diets.count + contains.count + avoid.count + sources.count + cooked.count }
     var isActive: Bool { count > 0 }
     func count(_ group: RecipeFilterGroup) -> Int {
-        switch group { case .course: courses.count; case .cuisine: cuisines.count; case .contains: contains.count; case .avoid: avoid.count; case .source: sources.count; case .cooked: cooked.count }
+        switch group { case .course: courses.count; case .cuisine: cuisines.count; case .contains: contains.count; case .avoid: avoid.count; case .source: sources.count; case .cooked: cooked.count; case .diet: diets.count }
     }
     func matches(_ entry: CookbookEntry) -> Bool {
         func match(_ values: Set<String>, _ field: String?) -> Bool { values.isEmpty || values.contains(field?.isEmpty == false ? field! : Self.unspecified) }
         guard match(courses,entry.course), match(cuisines,entry.cuisine), match(sources,entry.source) else { return false }
+        guard diets.isEmpty || !diets.isDisjoint(with: entry.dietary ?? []) else { return false }
         guard cooked.isEmpty || cooked.contains(entry.cooked == true ? Self.cookedValue : Self.notCookedValue) else { return false }
         let known = Set(entry.allergens?.contains ?? []), possible = Set(entry.allergens?.possible ?? [])
         return (contains.isEmpty || !known.isDisjoint(with: contains)) && known.union(possible).isDisjoint(with: avoid)

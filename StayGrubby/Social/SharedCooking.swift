@@ -42,6 +42,13 @@ nonisolated struct SocialCookingClaim: Codable, Identifiable, Sendable {
             } else if let source = recipeSnapshot.source {
                 sourceDraft.type = .other; sourceDraft.otherName = source; value.source = sourceDraft
             }
+            // As written → as made (FOOD_ARCHITECTURE §5): preselect Diet and reviewed Contains for the
+            // user to confirm. Possible and Certification are never prefilled.
+            let contains = Set((recipeSnapshot.allergens?.contains ?? []).compactMap(Allergen.init(rawValue:)))
+            if !recipeSnapshot.dietTags.isEmpty || !contains.isEmpty {
+                value.dietary.formUnion(recipeSnapshot.dietTags); value.contains.formUnion(contains)
+                value.prefilledFromRecipe = true
+            }
         }
         return value
     }

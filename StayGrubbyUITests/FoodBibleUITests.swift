@@ -47,7 +47,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         ingredient.typeText("1 cup stock\n2 cloves garlic");app.buttons["recipe-keyboard-done"].tap()
         let addStep=app.buttons["recipe-add-step"];reach(addStep,app:app);addStep.tap();let step=app.textFields["recipe-step-text"];reach(step,app:app);step.tap();step.typeText("Simmer gently.\nTaste before serving.");shot(app,"Inline ingredient and multiline method");app.buttons["recipe-keyboard-done"].tap()
         app.buttons["recipe-save"].tap();XCTAssertTrue(app.staticTexts["recipe-save-error"].waitForExistence(timeout:8));XCTAssertTrue(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'recipe-ingredient-row-' AND label CONTAINS 'stock'")).firstMatch.exists)
-        app.buttons["recipe-save"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1);entries(app).firstMatch.tap()
+        app.buttons["recipe-save"].tap();app.skipRankPrompt();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));XCTAssertEqual(entries(app).count,1);entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.staticTexts["stock"].exists)
         // A Recipe made in Food Bible is its own Dish immediately: not cooked yet, nothing to link.
         XCTAssertTrue(app.descendants(matching:.any)["recipe-not-cooked"].waitForExistence(timeout:8))
@@ -122,7 +122,7 @@ final class FoodBibleUITests: StayGrubbyUITestCase {
         let actions=app.buttons["Ingredient actions, garlic"];reach(actions,app:app);actions.tap();app.buttons["Edit Details"].tap()
         let qty=app.textFields["ingredient-detail-quantity"];XCTAssertTrue(qty.waitForExistence(timeout:5));XCTAssertEqual(qty.value as? String,"3")
         app.textFields["ingredient-detail-note"].tap();app.textFields["ingredient-detail-note"].typeText("plus more for garnish");shot(app,"Structured correction is secondary")
-        app.buttons["ingredient-details-done"].tap();app.buttons["recipe-save"].tap();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));entries(app).firstMatch.tap()
+        app.buttons["ingredient-details-done"].tap();app.buttons["recipe-save"].tap();app.skipRankPrompt();XCTAssertTrue(app.textFields["bible-search"].waitForExistence(timeout:8));entries(app).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.staticTexts["¼ cup"].exists);shot(app,"Reader natural quantity formatting")
         app.openRecipeAction("recipe-edit");XCTAssertEqual(ingredientRows(app).count,10)
         let restored=ingredientRows(app).matching(NSPredicate(format:"label CONTAINS 'garlic'")).firstMatch;reach(restored,app:app);XCTAssertTrue(restored.label.contains("3 clove"));XCTAssertTrue(restored.label.contains("plus more for garnish"))
