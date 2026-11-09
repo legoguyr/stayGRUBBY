@@ -74,13 +74,11 @@ extension XCUIApplication {
     }
     /// Food Bible uses the same Filters sheet pattern.
     @MainActor func openBibleFilterGroup(_ group: String) {
-        let link = buttons["bible-filter-\(group)"]
-        if !link.exists {
-            let open = buttons["bible-filters-open"]
-            XCTAssertTrue(open.waitForExistence(timeout: 10))
-            for _ in 0..<3 { open.tap(); if link.waitForExistence(timeout: 3) { break }; activate() }
-        }
-        XCTAssertTrue(link.waitForExistence(timeout: 10)); link.tap()
+        // Food Bible uses Grub Rank's direct filter chips: each chip opens its group sheet.
+        let chip = buttons["bible-filter-\(group)"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        for _ in 0..<3 { chip.tap(); if buttons["filters-done"].waitForExistence(timeout: 3) { return }; activate() }
+        XCTAssertTrue(buttons["filters-done"].waitForExistence(timeout: 5))
     }
     /// Reads a group's chip label ("Course, 1 active").
     @MainActor func rankingFilterLabel(_ group: String) -> String {

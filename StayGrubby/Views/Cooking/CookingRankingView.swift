@@ -111,13 +111,7 @@ struct CookingRankingView: View {
     /// Nothing moves when filters toggle. At large text sizes each row wraps instead of clipping.
     private var browseControls: some View {
         VStack(spacing: SGTheme.Space.xSmall) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: SGTheme.Space.xSmall) { filterChips(CookingFilterGroup.allCases) }
-                VStack(spacing: SGTheme.Space.xSmall) {
-                    HStack(spacing: SGTheme.Space.xSmall) { filterChips([.course, .cuisine]) }
-                    HStack(spacing: SGTheme.Space.xSmall) { filterChips([.dietary, .avoid]) }
-                }
-            }
+            HStack(spacing: SGTheme.Space.xSmall) { filterChips(CookingFilterGroup.grubRank) }
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); versionsToggle; clearFilters }
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
@@ -148,13 +142,16 @@ struct CookingRankingView: View {
             set: { displayPreference = ($0 ? RankingsDisplayMode.allVersions : .topVersion).rawValue }),
                        identifier: "rankings-show-all-versions", spokenTitle: "Show All Cooks of Each Dish")
     }
-    /// Clear All keeps its slot while hidden so activating a filter never moves Sort,
-    /// the All Versions switch or the wrapping choice.
+    /// One X clears search and filters: shown while either is active, hidden otherwise. It keeps its
+    /// slot while hidden so activating a filter or typing never moves Sort or All Cooks.
+    private var clearActive: Bool { filters.isActive || hasSearch }
     private var clearFilters: some View {
-        SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = CookingFilters() }
-            .opacity(filters.isActive ? 1 : 0).disabled(!filters.isActive)
-            .accessibilityHidden(!filters.isActive)
-            .accessibilityIdentifier(filters.isActive ? "clear-filters" : "clear-filters-hidden")
+        SGIconButton(title: hasSearch && !filters.isActive ? "Clear Search" : "Clear Search and Filters", symbol: "xmark") {
+            filters = CookingFilters(); searchText = ""
+        }
+            .opacity(clearActive ? 1 : 0).disabled(!clearActive)
+            .accessibilityHidden(!clearActive)
+            .accessibilityIdentifier(clearActive ? "clear-filters" : "clear-filters-hidden")
     }
 
     private var noResults: some View {

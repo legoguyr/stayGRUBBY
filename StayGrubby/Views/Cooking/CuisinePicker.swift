@@ -73,7 +73,12 @@ struct CuisineOptions: View {
                     Text("Use 80 characters or fewer.").foregroundStyle(.secondary)
                 }
             }
-            .searchable(text: $search, prompt: "Search cuisines")
+            // Shared search field (not system `.searchable`): its lingering search presentation in a
+            // sheet could swallow taps after dismissal. Same X behavior as every library search.
+            .safeAreaInset(edge: .top) {
+                SGSearchField(placeholder: "Search cuisines", text: $search, identifier: "cuisine-search")
+                    .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.small).background(SGTheme.ColorToken.background)
+            }
             .scrollDismissesKeyboard(.interactively)
             .navigationTitle("Cuisine").navigationBarTitleDisplayMode(.inline)
             .toolbar {

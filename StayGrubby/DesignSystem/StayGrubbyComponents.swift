@@ -197,11 +197,11 @@ struct SGSearchField: View {
                 .autocorrectionDisabled()
                 .accessibilityLabel(accessibilityLabel ?? placeholder)
                 .accessibilityIdentifier(identifier)
+            // The same X control as active filters (`SGIconButton`): appears while text exists,
+            // clears on tap, disappears when empty. Borderless so it never competes with the field.
             if !text.isEmpty {
-                Button { text = "" } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                        .frame(minWidth: SGTheme.Size.minimumTap, minHeight: SGTheme.Size.minimumTap)
-                }.buttonStyle(.plain).accessibilityLabel("Clear search")
+                SGIconButton(title: "Clear search", symbol: "xmark") { text = "" }
+                    .buttonStyle(.borderless).contentShape(Rectangle())
                     .accessibilityIdentifier(clearIdentifier ?? "\(identifier)-clear")
             }
         }

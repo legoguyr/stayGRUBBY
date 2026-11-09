@@ -12,7 +12,7 @@ struct FoodBibleView: View {
     @State private var query = ""
     @State private var filters = RecipeFilters()
     @State private var sort = RecipeBrowseSort.updated
-    @State private var showingFilters = false
+    @State private var filterGroup: RecipeFilterGroup?
     @State private var loading = true
     @State private var failed = false
     @State private var generation = UUID()
@@ -55,26 +55,37 @@ struct FoodBibleView: View {
             .task { await load() }.refreshable { await load() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
-            .sheet(isPresented: $showingFilters) { RecipeFiltersSheet(filters: $filters, entries: entries) }
+            .sheet(item: $filterGroup) { group in SGFilterGroupSheet { RecipeFilterView(filters: $filters, group: group, entries: entries) } }
             .sheet(isPresented: $choosing) { AddRecipeFlow(context: .library, entries: entries) }
             .navigationDestination(item: $selected) { route in RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
     }
-    /// Same two-row grammar as Grub Rank: search, then Filters + Sort (+ clear).
+    /// Same LEGO filter grammar as Grub Rank (`SGFilterChip` → `SGFilterGroupSheet`, Sort, one clear X);
+    /// Food Bible offers the deeper Recipe groups. Chips wrap into two even rows.
     private var searchHeader: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             SGSearchField(placeholder: "Dish, ingredient, cuisine…", text: $query, identifier: "bible-search",
                           clearIdentifier: "bible-search-clear", accessibilityLabel: "Search your cookbook")
+            VStack(spacing: SGTheme.Space.xSmall) {
+                HStack(spacing: SGTheme.Space.xSmall) { filterChips([.course, .cuisine, .diet, .cooked]) }
+                HStack(spacing: SGTheme.Space.xSmall) { filterChips([.contains, .avoid, .source]) }
+            }
             HStack(spacing: SGTheme.Space.xSmall) {
-                SGFilterButton(count: RecipeFilterGroup.allCases.reduce(0) { $0 + filters.count($1) }, identifier: "bible-filters-open") {
-                    showingFilters = true
-                }
                 SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
                                  active: sort != .updated, identifier: "bible-sort", label: sort.rawValue)
                 Spacer(minLength: 0)
-                if filters.isActive { SGIconButton(title: "Clear Filters", symbol: "xmark") { filters = RecipeFilters() }.accessibilityIdentifier("bible-clear-filters") }
+                // One X clears search and filters, shown while either is active (same control as Grub Rank).
+                SGIconButton(title: filters.isActive ? "Clear Search and Filters" : "Clear Search", symbol: "xmark") { filters = RecipeFilters(); query = "" }
+                    .opacity(clearActive ? 1 : 0).disabled(!clearActive).accessibilityHidden(!clearActive)
+                    .accessibilityIdentifier(clearActive ? "bible-clear-filters" : "bible-clear-filters-hidden")
             }.accessibilityElement(children: .contain).accessibilityIdentifier("bible-filters")
         }.padding(.horizontal, SGTheme.Space.margin).padding(.top, SGTheme.Space.compact).padding(.bottom, SGTheme.Space.xSmall)
             .background(SGTheme.ColorToken.background)
+    }
+    private var clearActive: Bool { filters.isActive || !query.isEmpty }
+    private func filterChips(_ groups: [RecipeFilterGroup]) -> some View {
+        ForEach(groups) { group in
+            SGFilterChip(title: group.rawValue, count: filters.count(group), identifier: "bible-filter-\(group.rawValue.lowercased())") { filterGroup = group }
+        }
     }
     private func load() async {
         guard let request else { failed = true; loading = false; return }

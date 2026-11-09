@@ -1,22 +1,7 @@
 import SwiftUI
 
 /// Food Bible's single Filters sheet.
-struct RecipeFiltersSheet: View {
-    @Binding var filters: RecipeFilters
-    let entries: [CookbookEntry]
-    var body: some View {
-        SGFilterSheet(isActive: filters.isActive, clear: { filters = RecipeFilters() }, clearIdentifier: "bible-filters-clear-all") {
-            ForEach(RecipeFilterGroup.allCases) { group in
-                SGFilterGroupLink(title: group.rawValue, count: filters.count(group),
-                                  identifier: "bible-filter-\(group.rawValue.lowercased())") {
-                    RecipeFilterView(filters: $filters, group: group, entries: entries)
-                }
-            }
-        }
-    }
-}
-
-/// One Recipe filter group, pushed from `RecipeFiltersSheet`.
+/// One Recipe filter group, opened directly from its chip in `SGFilterGroupSheet` (same as Grub Rank).
 struct RecipeFilterView: View {
     @Binding var filters: RecipeFilters
     let group: RecipeFilterGroup
@@ -33,7 +18,9 @@ struct RecipeFilterView: View {
                 option("Not specified", RecipeFilters.unspecified, selection)
                 ForEach(values.filter { CookbookSearch.matches($0, query: search) }, id: \.self) { option($0, $0, selection) }
             case .diet:
-                ForEach(CookingProductOptions.diets) { option($0.label, $0.rawValue, $filters.diets) }
+                // Same Diet rows as Grub Rank/cook editing (`DietaryChoices`), Diet only for Recipes.
+                DietaryChoices(selection: Binding(get: { Set(filters.diets.compactMap(DietaryTag.init(rawValue:))) },
+                                                  set: { filters.diets = Set($0.map(\.rawValue)) }), dietOnly: true)
                 SGOptionNote("Diet as written by the Recipe. Check product labels when you cook.")
             case .cooked:
                 option("Cooked", RecipeFilters.cookedValue, $filters.cooked)

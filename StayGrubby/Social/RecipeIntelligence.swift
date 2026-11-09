@@ -71,12 +71,16 @@ nonisolated enum RecipeImportValidation {
         let metadata = value.metadata
         let origins: [String:String]? = metadata.map { m in ["yield":m.yield.origin.rawValue,"prepMinutes":m.prepMinutes.origin.rawValue,"cookMinutes":m.cookMinutes.origin.rawValue,"totalMinutes":m.totalMinutes.origin.rawValue,"cuisine":m.cuisine.origin.rawValue] }
         let assessment = metadata.map { RecipeAllergenAssessment.derive(parts.flatMap(\.ingredients).map(\.displayText), hints: $0.allergenHints) }
-        let draft = RecipeContent(title: try optional(value.title, limit: 120) ?? (dishTitle.isEmpty ? "Recipe Draft" : dishTitle), description: value.description, cuisine: metadata?.cuisine.value, source: try optional(value.source, limit: 500), components: parts, yield: try metadata?.yield.value ?? optional(value.yield, limit: 100), prepMinutes: metadata?.prepMinutes.value, cookMinutes: metadata?.cookMinutes.value, elapsedMinutes: metadata?.totalMinutes.value, metadataOrigins: origins, allergens: assessment).preparedForSave()
+        var draft = RecipeContent(title: try optional(value.title, limit: 120) ?? (dishTitle.isEmpty ? "Recipe Draft" : dishTitle), description: value.description, cuisine: metadata?.cuisine.value, source: try optional(value.source, limit: 500), components: parts, yield: try metadata?.yield.value ?? optional(value.yield, limit: 100), prepMinutes: metadata?.prepMinutes.value, cookMinutes: metadata?.cookMinutes.value, elapsedMinutes: metadata?.totalMinutes.value, metadataOrigins: origins, allergens: assessment).preparedForSave()
+        // Diet as written, suggested from ingredient evidence (never Kosher/Halal); editable before Save.
+        let diet = RecipeDietInference.derive(parts.flatMap(\.ingredients).map(\.displayText))
+        draft.dietTags = diet
         guard (try? JSONEncoder().encode(draft).count).map({ $0 <= 40_000 }) == true, draft.isValidDraft else { throw RecipeImportFailure.invalid }
         var warnings = ["Review the ingredients, section assignments and method against your original text before saving. AI drafts can miss or change information; review quantities, methods and allergens before Save."]
         if metadata != nil { warnings.append("Servings, times and cuisine may include suggestions or estimates. Review and edit before saving. Allergen information requires checking ingredient labels.") }
         if parts.flatMap(\.ingredients).contains(where: { $0.quantity.isEmpty }) { warnings.append("Some ingredients have no definite quantity. The original wording is preserved.") }
         if parts.flatMap(\.steps).isEmpty { warnings.append("No method was identified. Add the instructions you want to keep.") }
+        if !diet.isEmpty { warnings.append("Diet was suggested from the ingredients as written. Check it in Details & source; product labels can change it.") }
         return RecipeImportResult(draft: draft, warnings: warnings, provider: provider)
     }
     static func manual(_ raw: String, dishTitle: String) -> RecipeImportResult {

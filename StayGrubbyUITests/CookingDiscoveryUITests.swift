@@ -105,11 +105,14 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         XCTAssertTrue(row("Smoky Sunday", in: app).exists)
         XCTAssertFalse(row("Sea Bass", in: app).exists)
         capture("Search results Dark", app: app)
+        // Grub Rank filters are Course and Cuisine only; Dietary and Avoid live in Food Bible.
+        XCTAssertFalse(app.buttons["ranking-filter-dietary"].exists); XCTAssertFalse(app.buttons["ranking-filter-avoid"].exists)
+        // Search alone shows the same X used for active filters.
+        XCTAssertTrue(app.buttons["clear-filters"].exists)
 
         // Chip geometry and row positions must not move when a filter becomes active.
-        let chipFrames = ["course", "cuisine", "dietary", "avoid"].map { app.buttons["ranking-filter-\($0)"].frame }
+        let chipFrames = ["course", "cuisine"].map { app.buttons["ranking-filter-\($0)"].frame }
         let sortFrame = app.buttons["ranking-sort"].frame, toggleFrame = app.allVersionsSwitch.frame
-        XCTAssertFalse(app.buttons["clear-filters"].exists)
         filters("course", in: app)
         // Multi-select: choosing keeps the sheet open until Done.
         select(app.buttons["filter-course-main"], in: app)
@@ -118,25 +121,13 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         XCTAssertEqual(app.buttons["filter-course-main"].value as? String, "Selected")
         app.buttons["filter-course-dessert"].tap()
         XCTAssertTrue(wait("value == 'Not selected'", on: app.buttons["filter-course-dessert"]))
-        XCTAssertTrue(app.buttons["filters-done"].exists)
         doneFilters(in: app)
-        XCTAssertEqual(["course", "cuisine", "dietary", "avoid"].map { app.buttons["ranking-filter-\($0)"].frame }, chipFrames)
+        XCTAssertEqual(["course", "cuisine"].map { app.buttons["ranking-filter-\($0)"].frame }, chipFrames)
         XCTAssertEqual(app.buttons["ranking-sort"].frame, sortFrame)
         XCTAssertEqual(app.allVersionsSwitch.frame, toggleFrame)
-        XCTAssertTrue(app.buttons["clear-filters"].exists)
         XCTAssertEqual(app.buttons["ranking-filter-course"].label, "Course, 1 active")
-        filters("dietary", in: app)
-        select(app.buttons["filter-dietary-kosher"], in: app); doneFilters(in: app)
-        filters("avoid", in: app)
-        select(app.buttons["filter-avoid-sesame"], in: app)
-        capture("Combined filters Dark", app: app); doneFilters(in: app)
         let golden = row("Golden sear", in: app)
-        XCTAssertTrue(golden.waitForExistence(timeout: 10))
-        XCTAssertTrue(golden.label.hasPrefix("Rank 2,"))
-        XCTAssertFalse(row("Smoky Sunday", in: app).exists)
-        XCTAssertTrue(app.rankingFilterLabel("course").contains("1 active"))
-        XCTAssertTrue(app.rankingFilterLabel("dietary").contains("1 active"))
-        XCTAssertTrue(app.rankingFilterLabel("avoid").contains("1 active"))
+        XCTAssertTrue(golden.waitForExistence(timeout: 10)); XCTAssertTrue(golden.label.hasPrefix("Rank 2,"))
         capture("Combined result Dark", app: app)
 
         transition(golden, to: app.navigationBars["Dish Details"], in: app)
@@ -144,58 +135,53 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         transition(app.navigationBars.buttons.firstMatch, to: app.rankingSearchField, in: app)
         XCTAssertEqual(app.rankingSearchField.value as? String, "chicken")
         XCTAssertTrue(app.buttons["clear-filters"].exists)
-        XCTAssertFalse(row("Smoky Sunday", in: app).exists)
 
         search("ramen", in: app)
         XCTAssertTrue(app.staticTexts["No filter matches"].waitForExistence(timeout: 10))
-        transition(app.buttons["clear-filters"], to: app.staticTexts["No search results"], in: app)
-        capture("No search results Dark", app: app)
-        transition(app.buttons["clear-search"], to: row("Apple Cake", in: app), in: app)
+        capture("No matches Dark", app: app)
+        // One X clears search and filters together, then disappears.
+        transition(app.buttons["clear-filters"], to: row("Apple Cake", in: app), in: app)
         XCTAssertTrue(row("Smoky Sunday", in: app).exists)
         XCTAssertFalse(app.buttons["clear-filters"].exists)
+        XCTAssertFalse(app.rankingFilterLabel("course").contains("active"))
     }
 
     @MainActor
     func testLargeTypeLightFiltersAndIndividualClearing() throws {
         let app = launch(largeType: true)
         capture("Full ranking Light Large Type", app: app)
-        filters("dietary", in: app)
-        select(app.buttons["filter-dietary-kosher"], in: app)
-        select(app.buttons["filter-dietary-vegan"], in: app); doneFilters(in: app)
-        filters("avoid", in: app)
-        select(app.buttons["filter-avoid-sesame"], in: app)
+        filters("course", in: app)
+        select(app.buttons["filter-course-dessert"], in: app)
+        select(app.buttons["filter-course-pastaNoodles"], in: app)
         capture("Filters Light Large Type", app: app); doneFilters(in: app)
-        XCTAssertTrue(row("Golden sear", in: app).exists)
+        XCTAssertTrue(row("Apple Cake", in: app).waitForExistence(timeout: 10))
         reach(row("Lemon Pasta", in: app), in: app)
-        XCTAssertTrue(row("Lemon Pasta", in: app).exists)
         XCTAssertFalse(row("Smoky Sunday", in: app).exists)
         capture("Filtered ranking Light Large Type", app: app)
-        filters("dietary", in: app)
-        let kosher = app.buttons["filter-dietary-kosher"]
-        XCTAssertEqual(kosher.value as? String, "Selected")
-        kosher.tap(); XCTAssertTrue(wait("value == 'Not selected'", on: kosher))
+        filters("course", in: app)
+        let dessert = app.buttons["filter-course-dessert"]
+        XCTAssertEqual(dessert.value as? String, "Selected")
+        dessert.tap(); XCTAssertTrue(wait("value == 'Not selected'", on: dessert))
         doneFilters(in: app)
-        reach(row("Lemon Pasta", in: app), in: app)
         XCTAssertTrue(row("Lemon Pasta", in: app).waitForExistence(timeout: 10))
-        XCTAssertFalse(row("Golden sear", in: app).exists)
+        XCTAssertFalse(row("Apple Cake", in: app).exists)
         reach(app.buttons["clear-filters"], in: app, scrollDown: true)
         transition(app.buttons["clear-filters"], to: row("Smoky Sunday", in: app), in: app)
         XCTAssertFalse(app.buttons["clear-filters"].exists)
     }
 
     @MainActor
-    func testEditingFromSearchUpdatesResultsWhilePreservingFiltersAndScore() throws {
+    func testEditingFromSearchUpdatesResultsWhilePreservingSearchAndScore() throws {
         let app = launch()
-        filters("dietary", in: app)
-        select(app.buttons["filter-dietary-kosher"], in: app); doneFilters(in: app)
         search("Golden", in: app)
         let golden = row("Golden sear", in: app)
         XCTAssertTrue(golden.waitForExistence(timeout: 10))
         let oldID = golden.identifier
         let oldScore = String(golden.label.split(separator: ",").last ?? "")
         transition(golden, to: app.navigationBars["Dish Details"], in: app)
-        transition(app.buttons["Edit Cook"], to: app.textFields["version-title"], in: app)
+        app.cookAction("detail-edit-cook").tap()
         let title = app.textFields["version-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
         reach(title, in: app); title.tap()
         XCTAssertTrue(wait("hasKeyboardFocus == true", on: title))
         title.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: "Golden sear".count) + "Crispy\n")
@@ -204,13 +190,12 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Cookbook · Zahav"].exists)
         transition(app.navigationBars.buttons.firstMatch, to: app.rankingSearchField, in: app)
         XCTAssertEqual(app.rankingSearchField.value as? String, "Golden")
-        XCTAssertTrue(app.staticTexts["No filter matches"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.rankingFilterLabel("dietary").contains("1 active"))
+        XCTAssertTrue(app.staticTexts["No search results"].waitForExistence(timeout: 10))
         transition(app.buttons["clear-search"], to: app.buttons[oldID], in: app)
         let updated = app.buttons[oldID]
         XCTAssertTrue(updated.label.contains("Crispy"))
         XCTAssertEqual(String(updated.label.split(separator: ",").last ?? ""), oldScore)
-        XCTAssertTrue(app.buttons["clear-filters"].exists)
+        XCTAssertFalse(app.buttons["clear-filters"].exists)
     }
 
     @MainActor
@@ -236,18 +221,13 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         transition(app.buttons["Cancel"], to: row("Apple Cake", in: app), in: app)
 
         transition(app.buttons["clear-filters"], to: row("Smoky Sunday", in: app), in: app)
-        filters("dietary", in: app)
-        select(app.buttons["filter-dietary-kosher"], in: app); doneFilters(in: app)
-        XCTAssertTrue(row("Golden sear", in: app).exists)
-        XCTAssertFalse(row("Smoky Sunday", in: app).exists)
-        capture("Dietary only", app: app)
-
-        transition(app.buttons["clear-filters"], to: row("Smoky Sunday", in: app), in: app)
-        filters("avoid", in: app)
-        select(app.buttons["filter-avoid-sesame"], in: app); doneFilters(in: app)
-        XCTAssertTrue(row("Golden sear", in: app).exists)
-        XCTAssertFalse(row("Sea Bass", in: app).exists)
-        capture("Avoid only", app: app)
+        // Grub Rank offers Course and Cuisine only.
+        XCTAssertFalse(app.buttons["ranking-filter-dietary"].exists); XCTAssertFalse(app.buttons["ranking-filter-avoid"].exists)
+        filters("course", in: app)
+        select(app.buttons["filter-course-main"], in: app); doneFilters(in: app)
+        XCTAssertTrue(row("Golden sear", in: app).waitForExistence(timeout: 10))
+        XCTAssertFalse(row("Apple Cake", in: app).exists)
+        capture("Main course only", app: app)
         search("chicken", in: app)
         XCTAssertTrue(row("Golden sear", in: app).waitForExistence(timeout: 10))
         XCTAssertFalse(row("Lemon Pasta", in: app).exists)

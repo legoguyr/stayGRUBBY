@@ -27,6 +27,9 @@ Status words: **Implemented** · **Implemented, pending deployment** · **Decide
 | 8 | ~~Explicit provenance associates automatically; loose matches are suggested~~ — **superseded by decision 11:** a Recipe belongs to its Dish by identity, so there is no relationship for the user to manage | §3 |
 | 9 | Recipe data is **as written**, Cooking Attempt data is **as made**. This now applies to Dietary as well as Contains | §5 |
 | 10 | Codex's exact Recipe-revision provenance, link-integrity and dated-reaction work is preserved. Protected ranking math is unchanged | §2.1, §9 |
+| 12 | **One canonical Dish universe** (Nov 9). Grub Rank and Food Bible are interface lenses over one set of Dishes, never separate Dish and Recipe databases. A Dish may hold Recipe data, cooks/ranking data, both, or (transiently) neither. When two identities turn out to be the same real-world Dish, they are **combined into one** (§3.4), never merely linked | §2, §3.4 |
+| 13 | **Recipe Diet is suggested from ingredient evidence** when a Recipe is imported/organized (Nov 9; supersedes "author-set only"): Vegan / Vegetarian / Dairy-Free / Gluten-Free only when the ingredients clearly support it; never Kosher or Halal; always editable | §5 |
+| 14 | **Grub Rank filters: Course and Cuisine** (plus Search, Sort, All Cooks). Food Bible keeps the deeper Recipe filters. Both use the same LEGO filter components and one clear X for search + filters | §6.1 |
 | 11 | **Dish and Recipe are two views of the same Dish identity** (like one post surfacing in different feeds). The user never manages a Dish↔Recipe relationship. Creating a Recipe in Food Bible creates its Dish; adding a Recipe from a Dish writes that Dish's Recipe side; Grub Rank and Food Bible show the same Dish. Dish Detail shows "View Recipe", not a second copy of the Dish. No standalone Rename; no Main Recipe workflow in V1. Grub List shows Dish/cook activity only | §2, §3, §6, §8 |
 
 ## 2. One Dish, separate records
@@ -80,6 +83,19 @@ Server actions: `save` accepts `recipeDishID` (new Recipe, or filling a missing/
 - `dish_recipes` (legacy family link), `dish_recipe_links` (D1 multi-Recipe + Main) and `recipe_cook_links` (current cook link) stay with their triggers and RLS so no data is lost and older builds keep working. The app no longer offers Link a Dish, Unlink, Set as Main or multiple Recipes per Dish.
 - The identity backfill used the D2 resolution (Main-Recipe Dish, exact-linked cook's Dish, related Dish, legacy link). If two Recipes resolved to one Dish, the Dish's Main kept it and the others stayed unassigned until cooked (production had none: 5 Recipes, 5 distinct Dishes).
 - Retire these structures only in a later, explicitly authorized cleanup once no supported build reads them.
+
+### 3.4 One canonical Dish universe — combining identities (owner decision 12)
+
+**Rule.** There is one Dish universe per account. A real-world Dish has exactly one Dish identity; its Recipe (as written), cooks (as made), ranking evidence, photos and future sharing/intelligence all hang off that one identity. Grub Rank shows the Dishes that have cooks; Food Bible shows the Dishes that have Recipe content; the same Dish appears in both when it has both.
+
+**Audit (Nov 9).** Two independent paths can create two identities for one real-world Dish: a Recipe created in Food Bible (Dish A, possibly ranked with Rank Now) and the same Dish ranked separately in Grub Rank (Dish B). The D3/F implementation already moved an *uncooked* Recipe's identity onto B (true reconciliation, not a link), but it (a) refused Recipes whose Dish A had cooks — leaving two identities — and (b) dropped A's Dish-level text. Both are fixed:
+
+- **Combine** (Dish Detail → Add Recipe → Use a Food Bible Recipe, offered for any owned Recipe on another Dish): `set_dish` moves the Recipe to B's identity (content and Recipe History unchanged), then `DishIdentityStore.combine(A, into: B)` runs as one synced edit:
+  - A's cooks move to B with their **IDs, ranked items, comparisons, assessments, photos, tags, cook notes, cooked dates and Recipe-used snapshots unchanged** (all evidence keys on cook / ranked-item / Recipe IDs, never on the Dish). They take B's next free sequence numbers, so only "Version N" fallback labels change. Global ranking order and scores never change.
+  - A's Dish text fills B's empty fields (description, Cuisine, Source); conflicting Private Notes are appended; a conflicting Source is kept as an "Also from:" note. Nothing the user wrote is dropped.
+  - A is deleted (synced tombstone). Nothing else referenced A: posts, shared-cooking events, reactions and provenance reference cooks, ranked items or Recipes.
+- **Not combined automatically:** similar names, or two Dishes the user never said are the same. Combining is always an explicit user act.
+- **Evidence for Personal Cooking Intelligence:** after combining, remake counts (cooks per Dish ID), taste/flavor preferences (ranked items + dated reactions), Course/Cuisine/ingredient preferences (Dish + cook snapshots + Recipe content), Recipe effectiveness (`recipe_cooks` revision → cook outcome), cooking improvement over time (cook dates per Dish), Discover recommendations and estimated cooking ability all read one consistent Dish identity. No merge alias table is stored: nothing outside the account graph referenced the removed identity, and the cooks themselves carry the history.
 
 ## 4. Cooking Attempts: final terminology and naming
 
@@ -137,7 +153,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 **Recipe Diet field rules:**
 
 - It is an additive optional key in the Recipe content JSON. It is part of revisions and post pinning like every other content field.
-- The author sets it in the Recipe editor. **Gemini does not propose it.** Recipe Creator contract 4 is frozen, and Diet suitability depends on product choices (stock, cheese rennet, Worcestershire). Unknown stays unknown.
+- **Suggested from ingredients (owner decision 13, supersedes "author-set only"):** when a Recipe is imported/organized, `RecipeDietInference` (deterministic, beside the allergen assessment; Recipe Creator contract 4 is unchanged) suggests Vegetarian (no meat, fish, gelatin or unclear stock/rennet cheese), Vegan (also no dairy, egg or honey), Dairy-Free (no dairy; plant milks allowed) and Gluten-Free (no gluten grains and nothing unclear such as plain flour, soy sauce, oats, stock or seasoning blends). Unknown stays unknown, Kosher/Halal are never inferred, the import review says so, and the author can change it in the editor.
 - D1 found the server previously **dropped unknown content keys silently**; `20261108171120_dish_recipe_links` accepts `dietary` additively (unique codes from `dairyFree`, `glutenFree`, `vegan`, `vegetarian`; stored sorted; Halal/Kosher rejected). **Stage F:** the Recipe editor's *Details & source* has a **Diet** row (Diet-only `DietarySelector`, with a note that product labels matter and Certification belongs to the cook); the reader shows "Diet as written"; `20261109002508_food_bible_diet_index` adds `dietary` to Food Bible index entries for the Diet filter.
 
 **Cooking from a Recipe (prefill, user-confirmed):**
@@ -164,17 +180,17 @@ Filters read the record the lens lists, use the Stage B chip/sheet grammar, and 
 
 | Filter | Grub Rank (as made) | Food Bible (as written) |
 | --- | --- | --- |
-| Search | ✅ (Dish, cook display name, Course, Dietary, Contains) | ✅ Recipe text |
+| Search | ✅ (Dish, cook display name, Course, Dietary, Contains) | ✅ Recipe text and Dish name |
 | Course | ✅ cook snapshot | ✅ |
 | Cuisine | ✅ Dish | ✅ |
-| Dietary | ✅ Diet + Certification (cook) | **Implemented (Stage F):** a "Diet" group (any selected diet matches). No Certification |
-| Avoid | ✅ cook Contains | ✅ Contains + Possible |
+| Dietary | — (removed Nov 9; Food Bible owns diet depth) | ✅ "Diet" group (as written; any selected diet matches). No Certification |
+| Avoid | — (removed Nov 9) | ✅ Contains + Possible |
 | Contains | — (Avoid covers it) | ✅ |
 | Source | — | ✅ |
 | Cooked / Not cooked yet | — | **Implemented (D2):** a "Cooked" group in the Filters sheet (Cooked, Not cooked yet), derived from relationships with no new data |
 | Photo | ✗ removed | ✗ removed |
 
-Grub Rank keeps its four direct chips. Food Bible has six groups and keeps the single Filters sheet (UI_ARCHITECTURE 5.4 rule).
+**Shared components (Nov 9):** both lenses use direct `SGFilterChip`s that open one group in `SGFilterGroupSheet` / `SGFilterGroupPage` (option rows `SGSelectionRow`, `DietaryChoices`, `SGAllergenChoices`), `SGBrowseSortMenu`, and one `SGIconButton` X that appears while search or any filter is active and clears both. Grub Rank: Course · Cuisine. Food Bible: Course · Cuisine · Diet · Cooked, then Contains · Avoid · Source.
 
 ## 7. Contextual flows
 

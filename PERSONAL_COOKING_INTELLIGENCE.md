@@ -55,6 +55,8 @@ Grounded in SwiftData models, `RecipeContent`, and the 41 `staygrubby` tables ve
 | Explicit reaction | 🟡 | Three-level whole-cook reaction (Liked / Fine / Didn't like). The follow-up records a private date, ID and kind for each new completed rank or re-rank in the existing diagnostics. Earlier initial/latest values are undated. Ingredient/flavor-level preferences remain unknown |
 | Timestamps | ✅ | Cook date, created/updated on cooks, comparisons, Recipes, revisions, posts, comments |
 | Cooking frequency / repetition | 📝 | Derivable from cook dates and versions per Dish; no stored aggregate (none needed yet) |
+| One canonical Dish identity (Nov 9) | ✅ | Every cook, Recipe revision, reaction and photo hangs off one Dish ID per real-world Dish; combining two identities moves cooks with all evidence intact (FOOD_ARCHITECTURE §3.4). Remake counts, improvement over time and Recipe effectiveness read that one ID |
+| Recipe Diet suggestions | ✅ | Deterministic ingredient-evidence classification at import (as written; editable; no Kosher/Halal). Diet as written vs cook Diet as made stays separable |
 | Cross-person "made by N people" / aggregate score (future, flag `dish_aggregate_scores` off) | 📝 | Derivable on demand from `recipe_cooks` per shared Recipe UUID plus each person's displayed score, counting each consenting person once; no stored aggregate, no cross-person ranking. See [FOOD_ARCHITECTURE §10](FOOD_ARCHITECTURE.md#10-future-compatibility-post-v1-nothing-here-is-authorized) |
 | Recipe ingredients | 🟡 | Components with ingredient lines and parsed fields; no canonical ingredient identity across Recipes |
 | Ingredient quantities | ✅ | Exact rational quantities, units, preparation via deterministic IngredientParser |

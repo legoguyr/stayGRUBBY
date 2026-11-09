@@ -148,9 +148,10 @@ struct AddRecipeFlow: View {
     private func finish() { onFinish(); dismiss() }
 }
 
-/// Dish Detail → Use a Food Bible Recipe: an owned Recipe whose Dish has no cooks yet becomes this
-/// Dish's Recipe. The Recipe keeps its content and history; only its Dish identity moves, and the
-/// empty Dish it leaves is removed. A cooked Dish's Recipe is never moved (that would orphan its cooks).
+/// Dish Detail → Use a Food Bible Recipe (FOOD_ARCHITECTURE §3.4): the Recipe's Dish and this Dish are
+/// the same real-world Dish, so they become one canonical Dish. The Recipe moves to this Dish's identity
+/// (content and Recipe History unchanged); if its old Dish was cooked, those cooks move here too with all
+/// ranking evidence, photos and provenance (`DishIdentityStore.combine`), and the old identity is removed.
 struct ExistingRecipePicker: View {
     let dish: Dish
     let done: () -> Void
@@ -167,8 +168,8 @@ struct ExistingRecipePicker: View {
     private var candidates: [CookbookEntry] {
         let local = Dictionary(uniqueKeysWithValues: dishes.map { ($0.id, $0) })
         return entries.filter { entry in
-            guard let id = entry.dishID, id != dish.id, let owner = local[id] else { return false }
-            return owner.attempts.isEmpty
+            guard let id = entry.dishID, id != dish.id, local[id] != nil else { return false }
+            return true
         }.filter { CookbookSearch.matches($0.searchableText, query: query) }
             .sorted { $0.recipeTitle.localizedStandardCompare($1.recipeTitle) == .orderedAscending }
     }
@@ -178,12 +179,12 @@ struct ExistingRecipePicker: View {
             LazyVStack(alignment: .leading, spacing: SGTheme.Space.small) {
                 if loading { SGLoadingState(label: "Loading your Recipes") }
                 if !loading && candidates.isEmpty {
-                    SGContentState(title: query.isEmpty ? "No uncooked Recipes" : "No matching Recipes", symbol: "book.closed",
-                                   message: query.isEmpty ? "Recipes you’ve saved but not cooked yet appear here." : "Try another search.") { EmptyView() }
+                    SGContentState(title: query.isEmpty ? "No other Recipes" : "No matching Recipes", symbol: "book.closed",
+                                   message: query.isEmpty ? "Your Food Bible Recipes on other Dishes appear here." : "Try another search.") { EmptyView() }
                 }
                 ForEach(candidates) { entry in
                     Button { choosing = entry } label: {
-                        SGDestinationLabel(title: entry.recipeTitle, subtitle: entry.cuisine ?? "", symbol: "book")
+                        SGDestinationLabel(title: entry.recipeTitle, subtitle: subtitle(entry), symbol: "book")
                     }.buttonStyle(.plain).disabled(busy).accessibilityIdentifier("existing-recipe-\(entry.recipeID)")
                 }
                 if let failure { Text(failure).font(.footnote).accessibilityIdentifier("existing-recipe-error") }
@@ -196,9 +197,24 @@ struct ExistingRecipePicker: View {
         .scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
         .navigationTitle("Use a Recipe").navigationBarTitleDisplayMode(.inline)
         .task { await load() }
-        .confirmationDialog("Use this Recipe for \(dish.name)?", isPresented: Binding(get: { choosing != nil }, set: { if !$0 { choosing = nil } }), titleVisibility: .visible) {
-            Button("Use Recipe") { if let choosing { Task { await use(choosing) } } }.accessibilityIdentifier("existing-recipe-confirm")
-        } message: { Text("It becomes this Dish’s Recipe and leaves Food Bible’s not-cooked list. Its content and Recipe History stay the same.") }
+        .confirmationDialog("Combine with \(dish.name)?", isPresented: Binding(get: { choosing != nil }, set: { if !$0 { choosing = nil } }), titleVisibility: .visible) {
+            Button(cooks(choosing) > 0 ? "Combine Dishes" : "Use Recipe") { if let choosing { Task { await use(choosing) } } }.accessibilityIdentifier("existing-recipe-confirm")
+        } message: { Text(confirmation(choosing)) }
+    }
+
+    private func cooks(_ entry: CookbookEntry?) -> Int {
+        guard let id = entry?.dishID else { return 0 }
+        return dishes.first { $0.id == id }?.attempts.count ?? 0
+    }
+    private func subtitle(_ entry: CookbookEntry) -> String {
+        let count = cooks(entry)
+        let name = entry.dishID.flatMap { id in dishes.first { $0.id == id }?.name }
+        return count == 0 ? "Not cooked yet" : "\(name ?? entry.dishTitle) · \(count == 1 ? "1 cook" : "\(count) cooks") — combines into this Dish"
+    }
+    private func confirmation(_ entry: CookbookEntry?) -> String {
+        let count = cooks(entry)
+        guard count > 0 else { return "It becomes this Dish’s Recipe. Its content and Recipe History stay the same." }
+        return "They’re the same Dish, so they become one: the Recipe and its \(count == 1 ? "cook" : "\(count) cooks") move to \(dish.name), with their rankings, photos and history unchanged. Notes and source are kept."
     }
 
     private func load() async {
@@ -214,8 +230,12 @@ struct ExistingRecipePicker: View {
             var payload = SocialPayload(); payload.recipeID = entry.recipeID; payload.recipeDishID = dish.id
             let moved = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "set_dish", payload))
             guard moved.dishID == dish.id else { throw URLError(.cannotParseResponse) }
-            // The Recipe's previous, never-cooked Dish identity is now empty; remove it locally (synced).
-            try? DishIdentityStore.removeIfUncooked(id: entry.dishID, context: modelContext)
+            // One canonical Dish: fold the Recipe's previous Dish identity into this one (cooks, ranking
+            // evidence, photos and Dish text move; nothing is dropped), or remove it if it was never cooked.
+            if let id = entry.dishID, let old = dishes.first(where: { $0.id == id }) {
+                if old.attempts.isEmpty { try DishIdentityStore.removeIfUncooked(id: id, context: modelContext) }
+                else { try DishIdentityStore.combine(old, into: dish, context: modelContext) }
+            }
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
             done()
         } catch { failure = DishRecipeService.message(for: error) }

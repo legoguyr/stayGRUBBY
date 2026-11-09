@@ -3,6 +3,9 @@ import SwiftData
 
 nonisolated enum CookingFilterGroup: String, Identifiable, CaseIterable {
     case course, cuisine, dietary, avoid
+    /// Grub Rank filters (owner decision Nov 9): Course and Cuisine only. Dietary, Avoid and the
+    /// other Recipe-depth filters live in Food Bible (FOOD_ARCHITECTURE §6.1).
+    static let grubRank: [CookingFilterGroup] = [.course, .cuisine]
     var id: String { rawValue }
     var title: String {
         switch self {

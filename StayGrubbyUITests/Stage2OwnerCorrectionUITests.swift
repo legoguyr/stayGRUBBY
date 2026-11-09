@@ -34,7 +34,8 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         let store = UUID().uuidString, app = launch(["--test-light"], store: store)
         app.revealCreation(); app.buttons["new-dish"].press(forDuration: 0.2)
         XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8))
-        let ids = ["dish-name", "version-title", "cook-dish-description", "cook-date", "cook-dish-private-notes", "cook-details"]
+        // Stage F grouping: This Dish (name, description, private notes), then This cook (name, date, Details).
+        let ids = ["dish-name", "cook-dish-description", "cook-dish-private-notes", "version-title", "cook-date", "cook-details"]
         let frames = ids.map { app.descendants(matching: .any).matching(identifier: $0).firstMatch.frame.minY }
         XCTAssertEqual(frames, frames.sorted())
         XCTAssertFalse(app.staticTexts["Custom tags"].exists); shot("Owner corrections compact entry light", app)
@@ -50,7 +51,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons["cook-details-done"].waitForExistence(timeout: 5))
         XCTAssertEqual(course.value as? String, "Soup")
         app.buttons["dish-cuisine"].press(forDuration: 0.2)
-        let search = app.searchFields.firstMatch; XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Italian")
+        let search = app.textFields["cuisine-search"]; XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap(); search.typeText("Italian")
         XCTAssertTrue(app.buttons["cuisine-option-italian"].waitForExistence(timeout: 5)); app.buttons["cuisine-option-italian"].press(forDuration: 0.2)
         app.buttons["dish-source-type"].press(forDuration: 0.2)
         XCTAssertTrue(app.buttons["source-choice-myOwn"].waitForExistence(timeout: 5)); app.buttons["source-choice-myOwn"].press(forDuration: 0.2)
@@ -107,7 +108,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             for _ in 0..<4 { if comments.isHittable && comments.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
             XCTAssertTrue(comments.isHittable); comments.press(forDuration: 0.2); XCTAssertTrue(app.navigationBars["Comments"].waitForExistence(timeout: 5)); app.buttons["Done"].tap()
             tab("Food Bible", app)
-            XCTAssertTrue(app.buttons["bible-filters-open"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
+            XCTAssertTrue(app.buttons["bible-filter-course"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["bible-sort"].isHittable)
             let count = app.staticTexts["bible-count"]
             for _ in 0..<5 { if count.isHittable && count.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.scrollViews["bible-scroll"].swipeUp() }
             XCTAssertTrue(count.isHittable); XCTAssertLessThanOrEqual(count.frame.maxY, app.tabBars.firstMatch.frame.minY)

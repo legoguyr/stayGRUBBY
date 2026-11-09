@@ -165,9 +165,9 @@ final class StageFAddRecipeUITests: StayGrubbyUITestCase {
         app.navigationBars.buttons.firstMatch.tap()
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'"))
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 8)); let total = rows.count
-        app.openBibleFilterGroup("diet"); XCTAssertTrue(app.buttons["bible-filter-option-vegan"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["bible-filter-option-kosher"].exists)
-        app.buttons["bible-filter-option-vegan"].tap(); app.buttons["filters-done"].tap()
+        app.openBibleFilterGroup("diet"); XCTAssertTrue(app.buttons["filter-dietary-vegan"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["filter-dietary-kosher"].exists)
+        app.buttons["filter-dietary-vegan"].tap(); app.buttons["filters-done"].tap()
         XCTAssertTrue(rows.matching(NSPredicate(format: "label CONTAINS 'Vegan Chili'")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertLessThan(rows.count, total)
         app.buttons["bible-clear-filters"].tap(); XCTAssertEqual(rows.count, total)

@@ -162,30 +162,15 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         }
         capture("Version unlock reaches integrated Profile", app)
     }
-    @MainActor func testSearchAndDietaryFilterCanFindLowerMatchingVersionInEitherMode() {
+    @MainActor func testSearchCanFindLowerMatchingVersionInEitherMode() {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--discovery-fixture", "--test-light"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
         let golden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Golden sear'")).firstMatch
         XCTAssertFalse(golden.exists)
-        app.openRankingFilterGroup("dietary"); XCTAssertTrue(app.buttons["filters-done"].firstMatch.waitForExistence(timeout: 15))
-        let kosher = app.buttons["filter-dietary-kosher"]
-        tap(kosher, app)
-        let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Selected'"), object: kosher)
-        if XCTWaiter.wait(for: [selected], timeout: 3) != .completed, kosher.value as? String != "Selected" {
-            app.activate(); kosher.tap()
-        }
-        let confirmed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == 'Selected'"), object: kosher)
-        XCTAssertEqual(XCTWaiter.wait(for: [confirmed], timeout: 10), .completed)
-        app.closeRankingFilters()
-        XCTAssertTrue(golden.waitForExistence(timeout: 10))
-        XCTAssertTrue(golden.label.hasPrefix("Rank 2,") && golden.label.contains("score locked"))
-        app.showAllVersions()
-        XCTAssertTrue(golden.exists)
-        tap(app.buttons["clear-filters"], app)
-        app.setRankingDisplay(allVersions: false)
-        XCTAssertFalse(golden.exists)
+        // Grub Rank has no Dietary filter (Food Bible owns that depth); search finds the lower cook.
+        XCTAssertFalse(app.buttons["ranking-filter-dietary"].exists)
         app.revealSearch()
         let field = app.rankingSearchField
         tap(field, app); field.typeText("Golden\n")
@@ -194,6 +179,11 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         app.showAllVersions()
         XCTAssertTrue(golden.exists)
         capture("Lower matching version retains global rank in search", app)
+        // The search X appears while text exists, clears on tap, then disappears.
+        let clear = app.buttons["header-clear-search"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 5)); clear.tap()
+        XCTAssertTrue(clear.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["clear-filters"].exists)
     }
 
     @MainActor func testGenuineRerankLeaderKeepsIndividualPrimaryAndOffersUpdatedTopThree() {
