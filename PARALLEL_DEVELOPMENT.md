@@ -51,6 +51,14 @@ If the owner has explicitly designated a clean, unpublished local `main` as the 
 3. Run `git merge --no-ff --no-commit REVIEWED_SHA` for one reviewed branch tip at a time. Preserve the actual agent commits so its branch can fast-forward later. Resolve any conflicts in the integration checkout, including canonical docs. Verify the combined result and run `git diff --cached --check` before committing. Use `git merge --abort` from the integration checkout if it cannot be completed safely.
 4. Push `main` normally when authorized. After publication, each agent runs the refresh steps in its own checkout. A push authentication failure leaves the integration committed locally. Use **GitHub Desktop → Push Origin**, then refresh the agent branches.
 
+**Interrupted fast-forward or checkout (seen November 8, 2026).** These checkouts live under `~/Documents`, which macOS can sync as an iCloud file-provider folder. A `git merge --ff-only` was interrupted partway and left the `main` working tree with some files already updated and some written empty, which the next attempt reported as "local changes". Never discard such changes on assumption. Instead:
+
+1. Compare every modified or untracked file against both the old `HEAD` and the target commit (`git show TARGET:path | md5`).
+2. Proceed only if each file equals the target, equals the old version, or is an empty or truncated copy. Anything else is independent work: stop and ask the owner.
+3. Write the target content for the remaining files (`git show TARGET:path > path`) and confirm the whole changed set matches the target.
+4. Fast-forward with a compare-and-swap ref update, `git update-ref refs/heads/main TARGET OLD_HEAD`, then `git read-tree HEAD`. Confirm `git status` is clean and the tree matches `HEAD`.
+5. Drop any stash only after verifying it holds only copies of the target, then build and test from the integration checkout.
+
 An agent branch can remain local for review on this Mac. A remote backup or PR may use the same agent branch if authorized. For PR integration, retain the actual commits with a merge commit so the same refresh procedure works.
 
 ## Historical worktrees
