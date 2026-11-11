@@ -40,7 +40,7 @@ struct AuthenticationGateView: View {
     @State private var showingPrivacyPolicy = false
 
     private var presentation: AuthenticationGatePresentation {
-        .init(state: session.state, setupFailed: setupFailed, isSigningOut: session.isSigningOut)
+        .init(state: session.state, setupFailed: setupFailed, isSigningOut: session.isSigningOut, failure: session.lastFailure)
     }
 
     var body: some View {

@@ -51,7 +51,7 @@ try {
  check(retired.includes(abandoned)&&!retired.includes(path2),'Expired draft cleanup preserves the active avatar');
  await op('object.get_authenticated');check(await counts(abandoned)===0&&await counts(path2)===1,'Expired draft loses reads; active version remains readable');
  await op('object.delete');await db.query("delete from storage.objects where bucket_id='profile-photos' and name=$1",[abandoned]);
- await rejects(()=>rpc('social_avatar','remove',{avatarPath:path}),'40001');
+ await rejects(()=>rpc('social_avatar','remove',{avatarPath:path}),'PT409');
  await rpc('social_avatar','remove',{avatarPath:path2});check((await rpc('social_identity','get')).avatarPath===null,'Remove clears active reference');
  await op('object.get_authenticated');check(await counts(path2)===0,'Removed avatar unreadable even owner download');
  await op('object.delete');await db.query("delete from storage.objects where bucket_id='profile-photos' and name=$1",[path2]);

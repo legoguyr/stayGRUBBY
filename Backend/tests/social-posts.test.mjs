@@ -12,7 +12,7 @@ try{
  await actor(0);const id=randomUUID(),payload={postID:id,attemptID:source.attempts[0],expectedRevision:0,confirmed:true};
  await rejects(()=>rpc('social_content','prepare',{...payload,confirmed:false}),'22023');
  await rejects(()=>rpc('social_content','prepare',{...payload,attemptID:other.attempts[0]}));
- await rejects(()=>rpc('social_content','prepare',{...payload,expectedRevision:999}),'40001');
+ await rejects(()=>rpc('social_content','prepare',{...payload,expectedRevision:999}),'PT409');
  const post=(await rpc('social_content','prepare',payload)).posts[0];
  check(post.scoreText==='5.5'&&post.published&&post.photoPath===null,'Unlocked score from server cache; no photo required');
  check(!('source_attempt_id' in post)&&!('attemptID' in post)&&!('notes' in post),'No private source linkage exposed');

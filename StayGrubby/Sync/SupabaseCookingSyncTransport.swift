@@ -46,7 +46,7 @@ extension SupabaseAccountBackend: AccountSyncBackend {
             // SQL errors can include user data: expose/persist only a fixed diagnostic code.
             switch error.code {
             case "0A000": throw CookingSyncError.rankingUpdateRequired
-            case "40001": throw CookingSyncError.conflict
+            case "40001", "PT409": throw CookingSyncError.conflict
             case "42501", "PGRST301", "PGRST302": throw CookingSyncError.authenticationRequired
             default: throw CookingSyncError.rejected
             }
@@ -57,4 +57,12 @@ extension SupabaseAccountBackend: AccountSyncBackend {
 nonisolated struct AuthorizedCookingTransport: SyncTransport {
     let sendOperation: @Sendable (SyncEnvelope) async throws -> SyncReceipt
     func send(_ envelope: SyncEnvelope) async throws -> SyncReceipt { try await sendOperation(envelope) }
+}
+
+/// A deterministic server conflict ("changed; reload", "Wait for cooking sync"). Functions raise
+/// PT409 (HTTP 409); 40001 is accepted from servers deployed before November 11, 2026. 40001 is
+/// never raised on purpose any more: PostgREST retries it without limit (P0 incident).
+nonisolated enum StayGrubbyConflict {
+    static let codes: Set<String> = ["PT409", "40001"]
+    static func matches(_ error: Error) -> Bool { (error as? PostgrestError)?.code.map(codes.contains) ?? false }
 }

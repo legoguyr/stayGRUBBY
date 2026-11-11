@@ -130,3 +130,54 @@ Owner-authorized. The connector applied `20261108234407_feature_flags` (local sc
 ## Food Bible Diet index — November 9, 2026 (Stage F)
 
 Owner-authorized. The connector applied `20261109002508_food_bible_diet_index` (local scaffold `20261109010000`, renamed byte-identically); all 47 hosted/local migration hashes match. Read path only: `library_index` entries gain each visible Recipe's `dietary` codes for the Food Bible Diet filter. Counts and content hashes of dishes (54), cooks (61), ranked items (61), comparisons (279), Recipes (5), revisions (23), used snapshots (16), posts (23), sync operations (130) and feature flags (0) were identical before and after; the renamed predecessor's body is byte-identical; anonymous users cannot execute the Recipe API and authenticated users cannot call the predecessor. No new advisor findings.
+
+## P0 incident: retry storm, read-only database — November 11, 2026
+
+**Symptoms.** Fresh TestFlight Sign in with Apple returned to "Let's try signing in again", a second phone could not restore its account, existing photos stopped loading, and sharing after ranking reported a connection failure.
+
+**Root cause.** PostgREST runs each RPC in a transaction and retries it **without limit** when PostgreSQL reports SQLSTATE `40001` (serialization failure). Sixteen StayGrubby functions raised `40001` for deterministic business conflicts ("Link changed; reload", "Media not accepted", "Wait for cooking sync", "Revision conflict", …). A request that hit one never returned: one pooled connection re-ran it forever.
+- **The loops.** Three `recipes` `link_cook` requests and one photo `media_backup` request had looped since November 7 at 01:18–01:34 UTC. A post-ranking `social_content` `prepare` ("Wait for cooking sync") joined them on November 11 at 01:25.
+- **Volume.** About 193 million rolled-back transactions since the server started on October 11, roughly 500 per second at the end. They generated about 7 GB of WAL a day: 61 GB archived through a 2 GB disk, plus host-side log volume.
+- **Read-only.** Platform "System" disk usage reached 95%, and Supabase set `default_transaction_read_only = on` at about 01:23 UTC on November 11.
+- **Consequences.** Auth could not write: Apple `id_token` sign-in and refresh-token rotation failed with `25006 cannot execute UPDATE/SELECT FOR UPDATE in a read-only transaction`. Storage authorization (`SELECT … FOR SHARE`) failed, so photos returned 400. Sharing could not write.
+- **Before read-only.** The loops still churned locks on the owner's account row and pinned pool connections. That is why photos and sharing degraded from November 7.
+
+**Repair.** `20261111020303_non_retryable_conflicts` (hosted version; local file identical) re-creates each affected function from its own definition with `PT409`. PostgREST returns PT409 once as HTTP 409 and never retries it. A guard in the migration, and `Backend/tests/schema.test.mjs`, fail if any function raises `40001`/`40P01`.
+- **Applying it.** The migration ran in one explicitly `read write` transaction during read-only mode, Supabase's documented override for remediation. The project-level flag itself was not changed.
+- **Effect.** PL/pgSQL recompiled the changed functions, so every looping request ended by itself. Rollbacks dropped from about 500 per second to 0, and WAL from about 80 KB/s to idle. No backend was terminated.
+- **Owner data.** Before/after count and content hashes of all 43 `staygrubby` tables were identical. Account identity, Dishes, cooks, ranked items, comparisons, Recipes, revisions, posts, social graph, media manifests and sync operations were unchanged.
+- **Photos.** All 42 active photo manifests have both stored objects (84 in `cooking-photos`). All four buckets remain private.
+
+**Not caused by data growth.** App data is about 3 MB and the entire database 31 MB. WAL on disk was 80 MB and Postgres logs 154 MB. The space was platform "System" usage from the storm, which only a project restart or Supabase can reclaim. Read-only mode is lifted from the dashboard once disk is below 95%.
+
+## Database capacity and health (permanent)
+
+**Rule.** Never raise SQLSTATE `40001`/`40P01` (or `serialization_failure`/`deadlock_detected`) from a StayGrubby function. Use `PT409` for "changed; reload" conflicts. Clients treat `PT409` and legacy `40001` as the same conflict (`StayGrubbyConflict`).
+
+**Check.** `DevelopmentTools/database_health.sql` is read-only and returns a JSON verdict. It covers read-only state, Postgres-visible disk (database, WAL, logs), retry-code functions, long-running/idle-in-transaction PostgREST backends, rollback ratio, dead tuples and the largest tables. Run it:
+- before every TestFlight/App Store candidate,
+- after every migration deployment,
+- whenever the dashboard disk graph moves.
+
+Read the dashboard's Disk Size Distribution at the same time, because Postgres cannot see the "System" category.
+
+**Thresholds** (dashboard disk, provisioned 2 GB as of November 11, 2026):
+
+| Disk used | Meaning | Action |
+| --- | --- | --- |
+| < 70% | Normal | None. |
+| 70–80% | Warning | Run the health check; find what grew (WAL, System, a table). No TestFlight upload until explained. |
+| 80–90% | Incident | Stop deployments and test traffic to production. Find and stop the writer (retry storm, runaway sync, test fixtures). Restart the project if System is inflated. |
+| 90–95% | Critical | As above, now. Owner decision on disk increase only after the cause is stopped. |
+| ≥ 95% | Supabase read-only | All sign-ins, restores, syncs, uploads and posts fail. Stop the cause, reclaim, then lift read-only from the dashboard. |
+
+**Data classes and retention.**
+- **Canonical product evidence is never pruned for capacity:** accounts, Dishes, cooks, ranked items, comparisons, Recipes and revisions, used snapshots, links, media manifests/objects, posts, comments, Hands, Tickets, friendships and Personal Cooking Intelligence inputs.
+- **Operational data may get bounded retention, but only via a reviewed migration that names the table:** `sync_operations` receipts (idempotency window), `recipe_import_reservations`/`usage`, unpublished social drafts (already cleaned after 1 day), `account_deletion_jobs` after completion, and Supabase-managed auth/audit tables.
+- **No automatic job may delete rows because disk is high.**
+
+**Expected growth.** About 10–50 KB of rows per active cook including comparisons, so 1,000 active beta users with 100 cooks each is about 1–5 GB over time. Photos live in Storage, not the database. Beta can run on the current disk once the storm is fixed. Before App Store V1, provision Pro (8 GB+ disk, auto-scaling) as a capacity decision, not as the fix for pathological growth.
+
+**New datasets.** Every new persistent table's migration header states its expected growth, whether it is canonical or operational, and its retention/cleanup rule.
+
+**Test traffic.** Automated tests use PGlite or mocks. The only production-touching tool is the administrator-gated `development-test-session`. A dedicated non-production Supabase project for live integration tests is a pre-V1 roadmap item.

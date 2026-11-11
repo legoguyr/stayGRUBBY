@@ -160,10 +160,20 @@ struct SocialPostComposer: View {
             }
             attemptedShare = true
             if originalPostID == nil { originalPostID = postID }
-            let post = try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
-                includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, scoreLocked: model.scoreText == nil, prepared: { post in
-                    savedPost = post; postID = post.id
-                })
+            func send(_ revision: Int) async throws -> SocialPost {
+                try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
+                    includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, scoreLocked: model.scoreText == nil, prepared: { post in
+                        savedPost = post; postID = post.id
+                    })
+            }
+            let post: SocialPost
+            do { post = try await send(revision) }
+            catch where StayGrubbyConflict.matches(error) {
+                // Right after ranking, follow-up sync operations can advance the account revision
+                // between readiness and prepare. Retry once with the newer accepted revision.
+                guard let newer = self.revision, newer != revision else { throw error }
+                post = try await send(newer)
+            }
             savedPost = post
             alreadyShared = post.id != originalPostID
             didPublish = true
@@ -172,8 +182,8 @@ struct SocialPostComposer: View {
         } catch is CancellationError {} catch {
             await reconcile()
             if !didPublish {
-                publicationError = (error as? PostgrestError)?.code == "40001"
-                    ? "Cooking changed on another device. Refresh cooking sync, then try again."
+                publicationError = StayGrubbyConflict.matches(error)
+                    ? "Your cooking is still syncing. Wait a moment, then publish again."
                     : "Couldn’t publish this post. Check your connection and retry."
             }
         }

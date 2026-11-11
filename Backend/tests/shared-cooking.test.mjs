@@ -25,7 +25,7 @@ try {
  await actor(1);check((await rpc('social_notifications','page')).notifications.some(n=>n.kind==='invited'&&n.targetID===eid),'Recipient gets invitation');
  const origin=await rpc('social_cooking','claim',{eventID:eid});
  check((await rpc('social_cooking','claim',{eventID:eid})).itemID===origin.itemID,'Join reserves one durable personal item identity');
- await rejects(()=>rpc('social_cooking','complete',{originID:origin.id}),'40001');
+ await rejects(()=>rpc('social_cooking','complete',{originID:origin.id}),'PT409');
  await db.exec('reset role');check(await fingerprint(1)===beforeB,'Claim/abandoned draft creates no private cook/item/evidence');
  await actor(2);await rpc('social_cooking','decline',{eventID:eid});await rejects(()=>rpc('social_cooking','claim',{eventID:eid}));
  await actor(3);await rejects(()=>rpc('social_cooking','complete',{originID:origin.id}));

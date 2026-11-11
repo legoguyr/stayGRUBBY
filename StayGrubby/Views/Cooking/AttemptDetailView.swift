@@ -234,7 +234,7 @@ struct EditCookingView: View {
             dismiss()
         } catch is CancellationError {} catch {
             if savedDraft {
-                selectionFailed = (error as? PostgrestError)?.code == "40001"
+                selectionFailed = StayGrubbyConflict.matches(error)
                 errorMessageForTagFailure()
             } else { self.error = error.localizedDescription }
         }

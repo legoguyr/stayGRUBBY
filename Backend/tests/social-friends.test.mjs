@@ -11,8 +11,8 @@ try{
  await rejects(()=>rpc('social_people','request',peer(3)));
  await rpc('social_people','request',peer(1));await rpc('social_people','request',peer(1));
  check((await rpc('social_people','outgoing')).people.length===1,'Duplicate request idempotent');
- await rejects(()=>rpc('social_people','accept',peer(1)),'40001');
- await actor(2);await rejects(()=>rpc('social_people','accept',peer(1)),'40001');
+ await rejects(()=>rpc('social_people','accept',peer(1)),'PT409');
+ await actor(2);await rejects(()=>rpc('social_people','accept',peer(1)),'PT409');
  await actor(1);check((await rpc('social_people','incoming')).people[0].id===users[0].id,'Recipient inbox');
  await rpc('social_people','request',peer(0));
  check((await rpc('social_people','friends')).people.length===1,'Crossed requests become mutual friendship');
@@ -29,7 +29,7 @@ try{
  await actor(0);check((await rpc('social_people','blocked')).people.length===1,'Only blocker sees own blocked list');
  await rpc('social_people','unblock',peer(1));check(!(await rpc('social_people','friends')).people.length,'Unblock never restores friendship');
  await rpc('social_people','request',peer(2));await actor(2);await rpc('social_people','decline',peer(0));
- await actor(0);await rejects(()=>rpc('social_people','request',peer(2)),'40001');
+ await actor(0);await rejects(()=>rpc('social_people','request',peer(2)),'PT409');
  await actor(2);await rpc('social_people','request',peer(0));await rpc('social_people','cancel',peer(0));
  await rpc('social_people','request',peer(0));await actor(0);await rpc('social_people','accept',peer(2));await rpc('social_people','remove',peer(2));
  check(!(await rpc('social_people','friends')).people.length,'Accept/remove works without cooking changes');

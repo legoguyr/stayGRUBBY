@@ -19,7 +19,7 @@ extension SupabaseAccountBackend: AccountPhotoBackend {
             return result
         } catch let error as PostgrestError {
             switch error.code {
-            case "40001": throw CookingPhotoError.obsolete
+            case "40001", "PT409": throw CookingPhotoError.obsolete
             case "42501", "PGRST301", "PGRST302": throw CookingPhotoError.authenticationRequired
             case "55000": throw CookingPhotoError.pending
             case "23505": throw CookingPhotoError.integrity

@@ -24,7 +24,7 @@ try {
  const originID=randomUUID(),payload={...recipe,peerID:users[1].id,originID,ownerID:users[3].id};
  check((await rpc('social_send','send',payload)).sent,'Send succeeds');
  check((await rpc('social_send','send',payload)).sent,'Retry succeeds idempotently');
- await rejects(()=>rpc('social_send','send',{...payload,peerID:users[2].id}),'40001');
+ await rejects(()=>rpc('social_send','send',{...payload,peerID:users[2].id}),'PT409');
  await actor(1);let inbox=await rpc('social_notifications','page');
  const notice=inbox.notifications.find(n=>n.kind==='recipe_shared');
  check(notice?.targetID===recipeID&&notice.actor.id===users[0].id,'Authorized actor/Recipe pointer reaches intended recipient');

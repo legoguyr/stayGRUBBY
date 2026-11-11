@@ -10,7 +10,7 @@ nonisolated struct AuthenticationGatePresentation {
     var retry: Retry?
     var signOutTitle: String?
 
-    init(state: AccountSessionState, setupFailed: Bool, isSigningOut: Bool) {
+    init(state: AccountSessionState, setupFailed: Bool, isSigningOut: Bool, failure: AccountFailureKind? = nil) {
         if isSigningOut {
             title = "Signing out…"
             message = "Finishing up on this device."
@@ -23,7 +23,7 @@ nonisolated struct AuthenticationGatePresentation {
             message = "Sign in with Apple to get started or return to your account."
         case .signInFailed:
             title = "Let’s try signing in again."
-            message = "Check your connection, then use Sign in with Apple below."
+            message = Self.failureMessage(failure, fallback: "Check your connection, then use Sign in with Apple below.")
             isError = true
         case .authorizingApple:
             title = "Continue with Apple…"
@@ -50,7 +50,7 @@ nonisolated struct AuthenticationGatePresentation {
             isError = true
         case .retryRequired(let step, _):
             title = step == .restoreSession ? "Couldn’t restore your account." : "Couldn’t finish account setup."
-            message = "Check your connection and try again. Your cooking library stays protected."
+            message = Self.failureMessage(failure, fallback: "Check your connection and try again. Your cooking library stays protected.")
             isError = true
             retry = .account
             signOutTitle = "Sign out"
@@ -66,6 +66,17 @@ nonisolated struct AuthenticationGatePresentation {
                 isWorking = true
             }
             signOutTitle = "Sign out"
+        }
+    }
+
+    /// Distinguishes no connection from a StayGrubby service problem; the short code helps support.
+    static func failureMessage(_ failure: AccountFailureKind?, fallback: String) -> String {
+        switch failure {
+        case .offline?: "You’re offline or the connection dropped. Reconnect and try again. Your cooking library stays protected. (\(AccountFailureKind.offline.supportCode))"
+        case .serviceUnavailable?: "StayGrubby is having trouble on our side. Nothing on your phone was changed. Try again in a few minutes. (\(AccountFailureKind.serviceUnavailable.supportCode))"
+        case .rejected?: "Apple sign-in couldn’t be confirmed. Use Sign in with Apple again. Your cooking library stays protected. (\(AccountFailureKind.rejected.supportCode))"
+        case .unknown?: fallback + " (\(AccountFailureKind.unknown.supportCode))"
+        case nil: fallback
         }
     }
 }

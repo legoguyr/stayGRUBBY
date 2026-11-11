@@ -104,7 +104,8 @@ struct CookbookPhoto: View {
     var cook: CookingAttempt? = nil
     var body: some View {
         if let media = (cook ?? dish?.cookbookRepresentativeCook)?.primaryImage {
-            DishPhoto(media: media, thumbnail: true, name: name)
+            // Full-size frames (Recipe hero, Food Bible card) use the 1200px display variant; the 360px thumbnail only for compact rows.
+            DishPhoto(media: media, thumbnail: compact, name: name)
         } else {
             SGPhotoPlaceholder().accessibilityLabel("No photo for \(name)")
         }

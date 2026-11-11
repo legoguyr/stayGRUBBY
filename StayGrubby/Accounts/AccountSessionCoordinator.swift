@@ -26,6 +26,8 @@ nonisolated enum AccountDeletionProgress: Equatable {
     private(set) var remoteSignOutFailed = false
     private(set) var isSigningOut = false
     private(set) var offlineResolution = false
+    /// Category of the latest sign-in/restore/setup failure (support code only, never server text).
+    private(set) var lastFailure: AccountFailureKind?
     private(set) var deletionProgress: AccountDeletionProgress = .idle
     private(set) var pendingLocalDeletionAccountID = AccountDeletionCleanupJournal.pendingAccountID
     var hasPendingAppleRequest: Bool { pendingApple != nil }
@@ -91,7 +93,7 @@ nonisolated enum AccountDeletionProgress: Equatable {
             let request = AppleSignInRequest(id: UUID(), hashedNonce: nonce.hash)
             pendingApple = (request, nonce); state = .authorizingApple
             return request
-        } catch { state = .signInFailed; return nil }
+        } catch { lastFailure = .unknown; state = .signInFailed; return nil }
     }
     func appleAuthorizationFailed(requestID: UUID, cancelled: Bool) {
         guard pendingApple?.request.id == requestID else { return }
@@ -115,7 +117,7 @@ nonisolated enum AccountDeletionProgress: Equatable {
             observe(service)
             await resolve(authenticated, generation: current, service: service)
         } catch {
-            if current == generation { authenticationWork = nil; state = .signInFailed }
+            if current == generation { authenticationWork = nil; lastFailure = AccountFailureKind.classify(error); state = .signInFailed }
         }
     }
     func restoreSession() async {
@@ -133,6 +135,7 @@ nonisolated enum AccountDeletionProgress: Equatable {
             else { state = .guest }
         } catch {
             guard current == generation, !Task.isCancelled else { return }
+            lastFailure = AccountFailureKind.classify(error)
             state = .retryRequired(.restoreSession, nil)
         }
     }
@@ -163,7 +166,7 @@ nonisolated enum AccountDeletionProgress: Equatable {
             let account = try await service.provision(for: identity)
             try account.validate(for: identity)
             guard current == generation, !Task.isCancelled else { return }
-            state = .resolved(account)
+            lastFailure = nil; state = .resolved(account)
         } catch {
             guard current == generation, !Task.isCancelled else { return }
             if let deletion = service as? any AccountDeletionBackend,
@@ -179,6 +182,7 @@ nonisolated enum AccountDeletionProgress: Equatable {
                 offlineResolution = true; state = .resolved(cached); return
             }
             // Never surface arbitrary SDK/server error text that might contain request credentials.
+            lastFailure = AccountFailureKind.classify(error)
             state = .retryRequired(.provision, identity)
         }
     }

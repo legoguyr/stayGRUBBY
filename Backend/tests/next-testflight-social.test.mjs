@@ -19,7 +19,7 @@ try {
  const prepare={attemptID:cook,postID,expectedRevision:0,confirmed:true,includeRankSnapshot:true,postDescription:'Shared explicitly'};
  await actor(0);
  check((await rpc('social_content','source',{attemptID:cook})).posts.length===0,'Unsynced/unpublished cook has no visible post');
- await rejects(()=>rpc('social_content','prepare',{...prepare,expectedRevision:99}),'40001');
+ await rejects(()=>rpc('social_content','prepare',{...prepare,expectedRevision:99}),'PT409');
  const published=(await rpc('social_content','prepare',prepare)).posts[0];
  check(published.published && published.scoreText && published.rankAtSharing===11 && published.rankedCountAtSharing===12 && !published.recipeID,'Server-derived tie order and eligible total on a post with no Recipe');
  const replay=(await rpc('social_content','prepare',{...prepare,postID:randomUUID()})).posts[0];
@@ -58,7 +58,7 @@ try {
  const first=await update(empty.selectionToken,[users[1].id]);
  check(first.event.participants[0].state==='pending' && first.selectedIDs[0]===users[1].id,'Adds invitation to previously shared cook');
  check((await update(empty.selectionToken,[users[1].id])).event.id===first.event.id,'Lost response retries stable event');
- await rejects(()=>update(empty.selectionToken,[users[2].id]),'40001');
+ await rejects(()=>update(empty.selectionToken,[users[2].id]),'PT409');
  await actor(1);
  await rejects(()=>rpc('social_cooking','edit_selection',{attemptID:cook}));
  check((await rpc('social_notifications','page')).notifications.filter(n=>n.targetID===first.event.id).length===1,'One Ticket for genuine addition');

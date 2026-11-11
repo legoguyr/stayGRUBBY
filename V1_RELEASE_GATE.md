@@ -30,6 +30,26 @@ Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e
 - [ ] Prepare and owner-approve a release TestFlight candidate; obtain owner approval before archive/build-number changes/upload/distribution.
 - [ ] Prepare App Store metadata/screenshots, reviewer instructions and final submission checklist. Obtain explicit owner approval before submission/publication.
 
+## Pre-TestFlight / pre-App Store smoke gate (every candidate)
+
+Added after the [November 11, 2026 P0 incident](supabase/README.md#p0-incident-retry-storm-read-only-database--november-11-2026): automated suites ran on PGlite/mocks and never exercised the hosted PostgREST retry behavior, the read-only database or physical Apple sign-in. **A TestFlight build is not release-ready until all of these pass on a production-like (Release) build against the hosted project:**
+
+1. Backend: `npm test` in `Backend/tests` passes, including the schema guard that no function raises a PostgREST-retried SQLSTATE.
+2. Database health: `DevelopmentTools/database_health.sql` shows no STOP verdict, and the dashboard Disk Size Distribution is below 70% (between 70% and 80% only with a written explanation).
+3. Fresh install → Sign in with Apple completes to the ready library.
+4. Existing-account sign-in restores the same account (same Dishes, cooks, Recipes and history).
+5. An existing private photo loads.
+6. A new photo backs up and loads after reinstall or on a second device.
+7. Ranking completes.
+8. Share immediately after ranking succeeds.
+9. The Grub List shows the post.
+10. A second device restores the account.
+
+Record the build, date, device and result here. A failure message on the gate screen now carries a support code (`SG-NET` connection, `SG-SVC` service, `SG-AUTH` sign-in, `SG-ERR` other) that points to the failing layer.
+
+- [ ] Smoke gate recorded for the next TestFlight candidate.
+- [x] November 11, 2026 incident repaired: `20261111020303_non_retryable_conflicts` deployed; all 48 hosted/local migrations aligned; all 43 table fingerprints unchanged; retry storm stopped. Owner physical acceptance pending.
+
 ## Recommended but deferrable
 
 - Additional device/text-size coverage beyond supported representative checks, low-impact copy/pixel refinements, expanded beta feedback and nonessential analytics.

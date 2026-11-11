@@ -71,7 +71,7 @@ try{
  await rejects(()=>insert(path+'anon',100),'42501','Anonymous upload denied');
  await rejects(()=>rpc('list',null),'42501','Anonymous manifest RPC denied');
  await actor(user,session,'object.delete_many');check((await db.query('delete from storage.objects where name=$1',[path])).rowCount===0,'Active backup cannot be purged through cleanup');
- await rejects(()=>rpc('cleaned'),'40001','Cannot mark active bytes cleaned');
+ await rejects(()=>rpc('cleaned'),'PT409','Cannot mark active bytes cleaned');
  if(native){
   await actor(user,session,'object.upload');await db.exec('begin');
   check((await db.query('select staygrubby.cooking_object_allowed($1,$2,$3) ok',['cooking-photos',path,'write'])).rows[0].ok,'Upload authorization holds shared account lock');
@@ -99,7 +99,7 @@ try{
  check((await db.query('select * from storage.objects')).rows.length===0,'Tombstone immediately blocks download before cleanup');
  await actor(user,session,'object.list');check((await db.query('select * from storage.objects')).rows.length===0,'Tombstone blocks enumeration');
  await actor(user,session,'object.upload');check((await db.query('update storage.objects set metadata=metadata where name=$1',[path])).rowCount===0,'Late upload retry cannot revive retired object');
- await rejects(()=>rpc('register'),'40001','Tombstoned manifest cannot revive');
+ await rejects(()=>rpc('register'),'PT409','Tombstoned manifest cannot revive');
  await actor(user,session,'object.delete_many');check((await db.query('select * from storage.objects')).rows.length===2,'Cleanup-specific SELECT only');
  await rejects(()=>rpc('cleaned'),'55000','Cleanup cannot acknowledge remaining objects');
  check((await db.query('delete from storage.objects where bucket_id=$1',['cooking-photos'])).rowCount===2,'A deletes own retired pair via emulated Storage transaction');

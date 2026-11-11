@@ -15,10 +15,10 @@ await rpc('recipes','ticket',{recipeID:id});await rpc('recipes','ticket',{recipe
 check((await rpc('recipes','list')).recipes.length===0,'ticket is not owned recipe');
 await db.exec('reset role');check((await db.query('select count(*) n from staygrubby.cooking_attempts')).rows[0].n===0,'ticket creates no cooking');check((await db.query('select count(*) n from staygrubby.ranked_items')).rows[0].n===0,'no ranked items');
 await actor(1);let claim=await rpc('recipes','begin',{recipeID:id,originID:origin});let again=await rpc('recipes','begin',{recipeID:id,originID:origin});check(claim.itemID===again.itemID,'claim retry stable');
-await rejects(()=>rpc('recipes','complete',{originID:origin}),'40001');
+await rejects(()=>rpc('recipes','complete',{originID:origin}),'PT409');
 await actor(2);await rejects(()=>rpc('recipes','complete',{originID:origin}));await rejects(()=>rpc('recipes','begin',{recipeID:id,originID:origin}));
 await actor(0);await rpc('recipes','save',{recipeID:id,recipe:{...content,title:'Edited soup'},visibility:'friends',expectedRevision:2});
-await rejects(()=>rpc('recipes','save',{recipeID:id,recipe:content,visibility:'friends',expectedRevision:2}),'40001');
+await rejects(()=>rpc('recipes','save',{recipeID:id,recipe:content,visibility:'friends',expectedRevision:2}),'PT409');
 await rejects(()=>rpc('recipes','save',{recipeID:randomUUID(),recipe:{...content,externalURL:'javascript:alert(1)'},visibility:'private'}),'22023');
 await actor(1);await rpc('recipes','unticket',{recipeID:id});check((await rpc('recipes','tickets')).tickets.length===0,'remove only own ticket');check((await rpc('recipes','get',{recipeID:id})).content.title==='Edited soup','recipe retained');
 const cook=await cooking(1);

@@ -14,7 +14,7 @@ import Supabase
     static func message(for error: Error) -> String {
         if error is URLError { return "Recipes need a connection. Try again when you’re online." }
         switch (error as? PostgrestError)?.code {
-        case "40001": return "This Dish changed or is still syncing. Try again."
+        case "40001", "PT409": return "This Dish changed or is still syncing. Try again."
         case "42501": return "This Recipe is unavailable."
         default: return "Couldn’t load the Recipe. Try again."
         }

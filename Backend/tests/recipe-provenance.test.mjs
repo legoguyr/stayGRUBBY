@@ -20,7 +20,7 @@ const postID=randomUUID();await rpc('social_content','prepare',{postID,attemptID
 await actor(1);const post=(await rpc('social_feed','post',{postID})).posts[0];check(post.recipeID===rid,'authorized post exposes recipe reference');
 const rerun=await rpc('social_cooking','recreate',{postID});check(rerun.recipeOriginID&&rerun.recipeSnapshot.source==='A cookbook','Run It Back keeps original recipe source');check(rerun.kind==='recreated'&&rerun.id!==origin.id,'social origin remains independent');
 check((await rpc('social_cooking','recreate',{postID})).recipeOriginID===rerun.recipeOriginID,'retry does not duplicate recipe origin');
-await rejects(()=>rpc('recipes','complete',{originID:rerun.recipeOriginID,attemptID:attempt}),'40001');
+await rejects(()=>rpc('recipes','complete',{originID:rerun.recipeOriginID,attemptID:attempt}),'PT409');
 await saved(1,b.ranking,rerun);await actor(1);await rpc('recipes','complete',{originID:rerun.recipeOriginID});await rpc('social_cooking','complete',{originID:rerun.id});
 const provenance=await rpc('social_cooking','own',{targetID:rerun.itemID});check(provenance.origins[0].creator.id===users[0].id,'social inspiration survives');
 check((await rpc('recipes','provenance',{targetID:rerun.itemID})).cooks[0].snapshot.source==='A cookbook','source attribution separate');
