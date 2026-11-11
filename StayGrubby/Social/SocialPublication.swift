@@ -24,8 +24,20 @@ import SwiftUI
         payload.omitScore = scoreLocked
         payload.includeRankSnapshot = true
         payload.includeRecipe = sharedRecipe != nil; payload.recipeID = sharedRecipe?.id; payload.sourceRevision = sharedRecipe?.revision
-        let response = try await request("social_content", "prepare", payload)
-        guard let post = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { throw AccountFoundationError.invalidResolution }
+        func prepare() async throws -> SocialPost {
+            let response = try await request("social_content", "prepare", payload)
+            guard let post = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first else { throw AccountFoundationError.invalidResolution }
+            return post
+        }
+        var post = try await prepare()
+        // The server keeps one active snapshot per cook. An unpublished draft left by an interrupted
+        // earlier share (Nov 11 2026 incident) can disagree with this share's photo choice; retire it
+        // and prepare once more with a fresh identity instead of failing.
+        if !post.published, (post.photoPath != nil) != includePhoto {
+            _ = try await request("social_content", "cancelDraft", .init(postID: post.id))
+            payload.postID = UUID()
+            post = try await prepare()
+        }
         try Task.checkCancellation(); try prepared(post)
         if post.published { return post }
         if let path = post.photoPath {

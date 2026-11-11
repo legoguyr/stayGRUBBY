@@ -154,6 +154,15 @@ Owner-authorized. The connector applied `20261109002508_food_bible_diet_index` (
 - **Log volume during the storm:** the CSV log rotated about every 5 minutes at about 127 MB per file uncompressed, roughly 36 GB a day through the host log pipeline. The remaining ~1.6 GB of System is outside Postgres and was escalated to Supabase support.
 - **Why not lift read-only and wait:** WAL may grow from 80 MB to its 128 MB floor (`min_wal_size`) once writes resume, which puts the disk at about 95% again. Lifting read-only is safe for data, but it will likely re-trip until System is reclaimed. Use the dashboard's temporary override only for verification windows.
 
+**Controlled writable window (03:05:33 to about 03:20 UTC, owner's 15-minute override).**
+- **Writes and data:** a rolled-back test insert succeeded. The 43-table fingerprint was identical to before the incident (`7aad4e45…`).
+- **Health check:** every verdict ok.
+- **Existing phone:** Sign in with Apple completed at 03:06:32 (`token` 200, `provision_account` 200) for the same auth user and account. Library open, cooking sync, ranking (5 comparisons, 1 photo) and private photo reads/backups all returned 200.
+- **Share:** the first attempt failed on the phone. Prepare keeps one active snapshot per cook, so it kept returning an unpublished draft (`bd3cc400…`) created at 01:25:56 by the share that got stuck in the storm. That draft expected a photo whose upload had failed during read-only mode. The draft had no stored photo, no Hands and no comments, so it was soft-deleted (`deleted_at`, the same as the built-in stale-draft cleanup). The next share published (`b9a00122…`, 03:13:52). The client now retires a draft whose photo choice disagrees with the share, then prepares once more.
+- **Not verified in this window:** fresh TestFlight install and second-phone restore (no time).
+- **Normal-use baseline** (owner actively using one phone plus monitoring queries, 520 s): about 2 commits/s, 4 rollbacks total (one the test insert), Postgres logs +2.5 KB (about 0.4 MB/day), WAL directory flat at 80 MB / 6 files. The WAL position advances by one 16 MB segment roughly every 2 minutes of activity (`archive_timeout = 120 s`), and segments are archived and recycled. The incident, by comparison, ran about 500 rollbacks/s, about 80 KB/s of WAL records and about 127 MB of log every 5 minutes.
+- **Cleanup:** nothing in Postgres was worth reclaiming. All app data is about 3 MB with negligible dead tuples, and VACUUM FULL or dropping compatibility functions would free kilobytes while risking old-client compatibility. The ~1.6 GB of System can only be reclaimed by Supabase (support ticket filed).
+
 **Not caused by data growth.** App data is about 3 MB and the entire database 31 MB. WAL on disk was 80 MB and Postgres logs 154 MB. The space was platform "System" usage from the storm, which only a project restart or Supabase can reclaim. Read-only mode is lifted from the dashboard once disk is below 95%.
 
 ## Database capacity and health (permanent)
