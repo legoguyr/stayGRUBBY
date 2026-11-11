@@ -148,6 +148,12 @@ Owner-authorized. The connector applied `20261109002508_food_bible_diet_index` (
 - **Owner data.** Before/after count and content hashes of all 43 `staygrubby` tables were identical. Account identity, Dishes, cooks, ranked items, comparisons, Recipes, revisions, posts, social graph, media manifests and sync operations were unchanged.
 - **Photos.** All 42 active photo manifests have both stored objects (84 in `cooking-photos`). All four buckets remain private.
 
+**Restart did not reclaim System (02:42 UTC).** After the owner's project restart, the dashboard still showed 1.86 GB of 2 GB used, mostly "System", and `default_transaction_read_only = on` persisted from `postgresql.auto.conf`.
+- **Storm stopped:** 0 rollbacks and 0 bytes of WAL over a sampled interval, with no busy PostgREST backends.
+- **Postgres-visible usage unchanged:** 31 MB of databases, 80 MB of WAL (6 segments), 154 MB of logs (12 files).
+- **Log volume during the storm:** the CSV log rotated about every 5 minutes at about 127 MB per file uncompressed, roughly 36 GB a day through the host log pipeline. The remaining ~1.6 GB of System is outside Postgres and was escalated to Supabase support.
+- **Why not lift read-only and wait:** WAL may grow from 80 MB to its 128 MB floor (`min_wal_size`) once writes resume, which puts the disk at about 95% again. Lifting read-only is safe for data, but it will likely re-trip until System is reclaimed. Use the dashboard's temporary override only for verification windows.
+
 **Not caused by data growth.** App data is about 3 MB and the entire database 31 MB. WAL on disk was 80 MB and Postgres logs 154 MB. The space was platform "System" usage from the storm, which only a project restart or Supabase can reclaim. Read-only mode is lifted from the dashboard once disk is below 95%.
 
 ## Database capacity and health (permanent)
