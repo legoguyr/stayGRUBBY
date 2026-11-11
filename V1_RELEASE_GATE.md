@@ -48,7 +48,9 @@ Added after the [November 11, 2026 P0 incident](supabase/README.md#p0-incident-r
 Record the build, date, device and result here. A failure message on the gate screen now carries a support code (`SG-NET` connection, `SG-SVC` service, `SG-AUTH` sign-in, `SG-ERR` other) that points to the failing layer.
 
 - [ ] Smoke gate recorded for the next TestFlight candidate.
-- [x] November 11, 2026 incident repaired: `20261111020303_non_retryable_conflicts` deployed; all 48 hosted/local migrations aligned; all 43 table fingerprints unchanged; retry storm stopped. Owner physical acceptance pending.
+- [x] November 11, 2026 incident repaired and accepted: `20261111020303_non_retryable_conflicts` deployed; all 48 hosted/local migrations aligned; all 43 table fingerprints unchanged; retry storm stopped. Owner physical acceptance PASSED on TestFlight Build 4: existing phone (sign-in, photos, sync, ranking, share), fresh install and second-phone restore.
+- [ ] Supabase reclaims the ~1.6 GB of platform "System" disk left by the incident (support ticket open); disk below 70% before the next TestFlight candidate.
+- [ ] Next TestFlight build carries the incident client fixes (PT409 conflicts, classified sign-in errors, share revision retry, stale share-draft retirement, sharp Recipe fallback photos) and passes the smoke gate above.
 
 ## Recommended but deferrable
 
