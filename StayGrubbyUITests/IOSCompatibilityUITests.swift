@@ -7,7 +7,7 @@ final class IOSCompatibilityUITests: StayGrubbyUITestCase {
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--stage5-review", "--social-review-feed", "--score-unlock-fixture", "10", "--test-light"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); XCTAssertEqual(app.tabBars.buttons.count, 4)
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         XCTAssertTrue(app.buttons["post-open-20000000-0000-0000-0000-000000000001"].waitForExistence(timeout: 10))
         app.tabBars.buttons["Food Bible"].tap()
         XCTAssertTrue(app.buttons["bible-add"].waitForExistence(timeout: 8))

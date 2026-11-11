@@ -9,10 +9,10 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
     }
     @MainActor private func notifications(_ app: XCUIApplication) {
         for _ in 0..<3 {
-            app.tabBars.buttons["Grub List"].tap()
-            if app.navigationBars["Grub List"].waitForExistence(timeout: 3) { break }
+            app.tabBars.buttons["The Pass"].tap()
+            if app.navigationBars["The Pass"].waitForExistence(timeout: 3) { break }
         }
-        XCTAssertTrue(app.navigationBars["Grub List"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["The Pass"].waitForExistence(timeout: 5), app.debugDescription)
         let link = app.buttons["notifications-open"]
         XCTAssertTrue(link.waitForExistence(timeout: 8), app.debugDescription)
         for _ in 0..<3 {
@@ -55,7 +55,7 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["choose-dish-Lemon Chicken Together"].exists)
     }
     @MainActor func testRunItBackEntryIsHiddenWithoutRemovingSharedCooking() throws {
-        let app = launch(["--test-light"]); app.tabBars.buttons["Grub List"].tap()
+        let app = launch(["--test-light"]); app.tabBars.buttons["The Pass"].tap()
         XCTAssertTrue(app.buttons["post-open-20000000-0000-0000-0000-000000000001"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["recreate-20000000-0000-0000-0000-000000000001"].exists)
         XCTAssertFalse(app.buttons["Run It Back"].exists)

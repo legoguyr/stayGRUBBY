@@ -16,7 +16,7 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         for _ in 0..<7 { if publish.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(publish.isHittable); publish.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "social-share-success").firstMatch.waitForExistence(timeout: 8)); app.buttons["social-share-done"].tap()
-        XCTAssertTrue(app.navigationBars["Share with Sous Chefs"].waitForNonExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(app.navigationBars["Post to The Pass"].waitForNonExistence(timeout: 8), app.debugDescription)
         app.buttons["ranking-result-close"].tap()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 8))
         app.tabBars.buttons["My Kitchen"].tap()
@@ -59,7 +59,7 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["Edit Cook"].exists)
     }
     @MainActor private func selectFeed(_ app: XCUIApplication) {
-        let feed = app.tabBars.buttons["Grub List"]
+        let feed = app.tabBars.buttons["The Pass"]
         for _ in 0..<3 {
             feed.tap()
             let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: feed)

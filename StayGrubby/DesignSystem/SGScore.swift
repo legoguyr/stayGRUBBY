@@ -9,7 +9,7 @@ enum SGScoreRole {
     case standard
     /// Result/composer summary: the same numerals followed by "/ 10".
     case outOfTen
-    /// Grub List card: numerals inside a quiet ring, scaled with Dynamic Type.
+    /// The Pass card: numerals inside a quiet ring, scaled with Dynamic Type.
     case medallion
 }
 

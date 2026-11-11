@@ -39,7 +39,7 @@ Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` shipped beta acquisition w
 
 ## Source, verification and deployment
 
-The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 5, 2026 for Product Closeout. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
+The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 11, 2026 (Recipes never post to The Pass). The hosted copy needs an authorized `deploy-production.sh` publish to match. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
 
 Run the production entry point from the repository root with an authenticated Wrangler:
 

@@ -34,7 +34,7 @@ final class SocialPostUITests: StayGrubbyUITestCase {
         let shareAgain = app.cookAction("share-with-friends")
         XCTAssertTrue(shareAgain.waitForExistence(timeout: 5))
         shareAgain.tap()
-        XCTAssertTrue(app.staticTexts["Already Shared"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Already on The Pass"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["social-share-publish"].exists)
         XCTAssertTrue(app.buttons["View Post"].exists)
     }

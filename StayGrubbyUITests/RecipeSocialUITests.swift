@@ -7,7 +7,7 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-feed", "--recipes-review", "--recipes-review-feed", "--test-light"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         let open = app.buttons["post-open-20000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(open.waitForExistence(timeout: 8)); open.tap()
         let recipe = app.buttons["post-recipe"]

@@ -2,8 +2,9 @@ import SwiftUI
 
 /// Semantic photo roles. Every food/Recipe/social image frame chooses one role so
 /// shape, corner and placeholder behave the same across Grub Rank, Food Bible,
-/// Grub List and Kitchens. Loading stays with the existing photo views
-/// (`DishPhoto`, `RecipePhoto`, `SocialPhoto`); this only frames and clips them.
+/// The Pass and Kitchens. Loading stays with the existing photo views
+/// (`DishPhoto`, `RecipePhoto`, `SocialPhoto`); this frames and clips them and
+/// names the stored rendition each frame needs (`usesThumbnailRendition`).
 enum SGPhotoRole {
     /// 86 pt square row thumbnail (Grub Rank rows).
     case thumbnail
@@ -11,12 +12,22 @@ enum SGPhotoRole {
     case compactThumbnail
     /// Square tile with flexible width (Signature Dishes, Kitchen post grids).
     case tile
-    /// 4:3 content card with flexible width (Grub List posts, Recipe activity).
+    /// 4:3 content card with flexible width (The Pass posts).
     case card
     /// Slightly portrait cookbook card (Food Bible grid).
     case cookbook
     /// Full-width detail hero with a fixed height (Dish/Recipe readers).
     case hero
+
+    /// One stored photo has two renditions (`LocalPhotoStore`): display (≤1,200 px) and thumbnail
+    /// (≤360 px). Only the fixed small frames (≤86 pt, ≤258 px at 3×) use the thumbnail; every
+    /// flexible-width frame uses display so a hero, card or tile never stretches a thumbnail.
+    var usesThumbnailRendition: Bool {
+        switch self {
+        case .thumbnail, .compactThumbnail: true
+        case .tile, .card, .cookbook, .hero: false
+        }
+    }
 
     var cornerRadius: CGFloat {
         switch self {

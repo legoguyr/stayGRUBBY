@@ -95,16 +95,16 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         let app=launch(["--bible-v2-empty"]);openRecipes(app)
         XCTAssertTrue(app.staticTexts["kitchen-recipes-empty"].waitForExistence(timeout:8));XCTAssertFalse(app.buttons["kitchen-recipes-all"].exists)
     }
-    @MainActor func testNewRecipeDefaultAndGrubListShowsNoRecipeOnlyActivity() {
+    @MainActor func testNewRecipeDefaultAndThePassShowsNoRecipeOnlyActivity() {
         let app=launch(["--test-light"]);app.tabBars.buttons["Food Bible"].tap();app.buttons["bible-add"].tap();XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:8));app.buttons["bible-manual"].tap()
         let toggle=app.switches["recipe-sharing"];reach(toggle,app);XCTAssertEqual(toggle.value as? String,"1");app.buttons["recipe-editor-cancel"].tap()
         XCTAssertTrue(app.buttons["bible-manual"].waitForExistence(timeout:5));app.navigationBars.buttons["Done"].tap()
-        // Grub List is Dish/cook activity only: a Sous Chef's new Recipe is not an activity item.
-        app.tabBars.buttons["Grub List"].tap()
+        // The Pass is Dish/cook activity only: a Sous Chef's new Recipe is not an activity item.
+        app.tabBars.buttons["The Pass"].tap()
         XCTAssertTrue(app.descendants(matching:.any)["grub-list"].waitForExistence(timeout:8))
         XCTAssertTrue(app.descendants(matching:.any).matching(NSPredicate(format:"identifier BEGINSWITH 'post-open-'")).firstMatch.waitForExistence(timeout:8), "Cook posts still appear")
         XCTAssertFalse(app.descendants(matching:.any).matching(NSPredicate(format:"identifier BEGINSWITH 'feed-recipe-'")).firstMatch.exists)
-        shot("Grub List without Recipe-only activity",app)
+        shot("The Pass without Recipe-only activity",app)
     }
     @MainActor func testEditCookTagsLoadSaveAndCancel() {
         let app = launch(["--test-light"])

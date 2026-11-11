@@ -71,9 +71,9 @@ final class ProductStructureUITests: StayGrubbyUITestCase {
         let caption = app.staticTexts["post-description-70000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(caption.waitForExistence(timeout: 8)); XCTAssertTrue(caption.label.contains("A new shared thought."))
         XCTAssertFalse(app.staticTexts["Personal Notes"].exists)
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         let preview = app.buttons["post-open-20000000-0000-0000-0000-000000000001"]
-        XCTAssertTrue(preview.waitForExistence(timeout: 8)); shot("Grub List preview Dark accessibility", app); preview.tap()
+        XCTAssertTrue(preview.waitForExistence(timeout: 8)); shot("The Pass preview Dark accessibility", app); preview.tap()
         XCTAssertTrue(app.navigationBars["Post"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["View Friendly Cook’s profile"].exists)
     }

@@ -59,7 +59,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--social-review-feed", "--stage3-review-sharing", "--test-light"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         let bell = app.buttons["notifications-open"]; XCTAssertTrue(bell.waitForExistence(timeout: 8)); bell.tap()
         let recipe = app.buttons["notification-50000000-0000-0000-0000-000000000007"]
         XCTAssertTrue(recipe.waitForExistence(timeout: 8)); recipe.tap()
@@ -101,7 +101,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
             let app = XCUIApplication()
             app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-feed", "--social-review-comment", appearance]
             app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-            app.tabBars.buttons["Grub List"].tap()
+            app.tabBars.buttons["The Pass"].tap()
             let comments = app.buttons["social-comments-20000000-0000-0000-0000-000000000001"]
             for _ in 0..<4 { if comments.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(comments.waitForExistence(timeout: 8)); comments.tap()

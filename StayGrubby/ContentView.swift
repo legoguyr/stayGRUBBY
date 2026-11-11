@@ -10,7 +10,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selection) {
             NavigationStack { SocialFeedView(isSelected: selection == .feed).modifier(SGPrimaryTabChrome()) }
-                .tabItem { Label("Grub List", systemImage: "house") }.tag(StayGrubbyTab.feed)
+                .tabItem { Label("The Pass", systemImage: "house") }.tag(StayGrubbyTab.feed)
 
             HomeView().modifier(SGPrimaryTabChrome())
                 .tabItem { Label("Grub Rank", systemImage: "chart.bar.fill") }

@@ -42,7 +42,7 @@ Added after the [November 11, 2026 P0 incident](supabase/README.md#p0-incident-r
 6. A new photo backs up and loads after reinstall or on a second device.
 7. Ranking completes.
 8. Share immediately after ranking succeeds.
-9. The Grub List shows the post.
+9. The The Pass shows the post.
 10. A second device restores the account.
 
 Record the build, date, device and result here. A failure message on the gate screen now carries a support code (`SG-NET` connection, `SG-SVC` service, `SG-AUTH` sign-in, `SG-ERR` other) that points to the failing layer.

@@ -30,7 +30,7 @@ Status words: **Implemented** · **Implemented, pending deployment** · **Decide
 | 12 | **One canonical Dish universe** (Nov 9). Grub Rank and Food Bible are interface lenses over one set of Dishes, never separate Dish and Recipe databases. A Dish may hold Recipe data, cooks/ranking data, both, or (transiently) neither. When two identities turn out to be the same real-world Dish, they are **combined into one** (§3.4), never merely linked | §2, §3.4 |
 | 13 | **Recipe Diet is suggested from ingredient evidence** when a Recipe is imported/organized (Nov 9; supersedes "author-set only"): Vegan / Vegetarian / Dairy-Free / Gluten-Free only when the ingredients clearly support it; never Kosher or Halal; always editable | §5 |
 | 14 | **Grub Rank filters: Course and Cuisine** (plus Search, Sort, All Cooks). Food Bible keeps the deeper Recipe filters. Both use the same LEGO filter components and one clear X for search + filters | §6.1 |
-| 11 | **Dish and Recipe are two views of the same Dish identity** (like one post surfacing in different feeds). The user never manages a Dish↔Recipe relationship. Creating a Recipe in Food Bible creates its Dish; adding a Recipe from a Dish writes that Dish's Recipe side; Grub Rank and Food Bible show the same Dish. Dish Detail shows "View Recipe", not a second copy of the Dish. No standalone Rename; no Main Recipe workflow in V1. Grub List shows Dish/cook activity only | §2, §3, §6, §8 |
+| 11 | **Dish and Recipe are two views of the same Dish identity** (like one post surfacing in different feeds). The user never manages a Dish↔Recipe relationship. Creating a Recipe in Food Bible creates its Dish; adding a Recipe from a Dish writes that Dish's Recipe side; Grub Rank and Food Bible show the same Dish. Dish Detail shows "View Recipe", not a second copy of the Dish. No standalone Rename; no Main Recipe workflow in V1. The Pass shows Dish/cook activity only | §2, §3, §6, §8 |
 
 ## 2. One Dish, separate records
 
@@ -242,7 +242,7 @@ Each part owns one record and is built by generalizing existing components (AGEN
 
 - **Dish Detail** (Grub Rank → `AttemptDetailView`): hero, `DishIdentityHeader`, cook metadata, Dish text, `DishRecipeRow`, cook provenance (tagged Sous Chefs named: "Cooked with Alex and Sam"), Source, Personal Notes, `DishCooksSection`. The Recipe is one row — the Dish photo and text are not repeated.
 - **Recipe face** (Food Bible card or View Recipe → `RecipeDetailView`): the Recipe reader for the Dish, with the Dish's cooks ("Your cooks of [Dish]") or a "Not cooked yet" eyebrow. The Dish shown is the Recipe's own Dish identity. No Link a Dish / Unlink actions.
-- **Grub List** shows Dish/cook activity only. Recipe-only activity (`recipe_created`) is not shown; a cook post can still offer its Recipe.
+- **The Pass** (formerly The Pass) shows intentionally posted cooks only. Recipe-only activity (`recipe_created`) is never shown and the client no longer models it (`PassPage`); a cook post can still offer its Recipe.
 - History: D2 (`9b28a33`) shipped a multi-Recipe Recipes section with Main Recipe; it was replaced the same day by this model. `20261108210256_food_bible_dish_resolution` (deployed) remains the fallback resolution for Recipes without a Dish identity.
 
 ## 9. Evidence preserved for Personal Cooking Intelligence
@@ -273,7 +273,7 @@ Each part owns one record and is built by generalizing existing components (AGEN
 - **B. Reuse:** existing `dishes` rows and sync, `recipes`, `recipe_cooks`; one added column. No merged table.
 - **C. Intelligence value:** a stable Dish ID ties Recipe revisions, cooks, remake counts and photos together.
 - **D. New data justified:** `recipes.dish_id` (+ unique per owner). Nothing speculative.
-- **E. Privacy:** Dish IDs are owner-private (cards expose `dishID` only to the owner); Grub List no longer shows Recipe-only activity.
+- **E. Privacy:** Dish IDs are owner-private (cards expose `dishID` only to the owner); The Pass no longer shows Recipe-only activity.
 - **F. Scalability:** one indexed column; per-entry lookups bounded by `library_index` pages.
 - **G. Docs/tests:** this document, the architecture overview, roadmap, UI architecture, release gate; backend `dish-recipe-identity` test; app unit/UI tests.
 

@@ -23,7 +23,7 @@ final class AccountEntryUITests: StayGrubbyUITestCase {
         XCTAssertEqual(app.tabBars.buttons.count, 4)
         XCTAssertTrue(app.tabBars.buttons["Grub Rank"].exists)
         XCTAssertTrue(app.tabBars.buttons["My Kitchen"].exists)
-        XCTAssertTrue(app.tabBars.buttons["Grub List"].exists)
+        XCTAssertTrue(app.tabBars.buttons["The Pass"].exists)
         let profile = app.tabBars.buttons["My Kitchen"]
         for _ in 0..<3 {
             profile.tap()

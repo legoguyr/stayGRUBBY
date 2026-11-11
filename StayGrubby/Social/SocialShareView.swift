@@ -8,7 +8,7 @@ struct SocialShareAction: View {
     @State private var showing = false
     var body: some View {
         if request != nil {
-            Button { showing = true } label: { Label("Share with Sous Chefs", systemImage: "person.2").frame(maxWidth: .infinity) }
+            Button { showing = true } label: { Label("Post to The Pass", systemImage: "person.2").frame(maxWidth: .infinity) }
                 .buttonStyle(SGButtonStyle()).accessibilityIdentifier("share-with-friends")
                 .accessibilityHint("Review and explicitly publish a separate friends-only cooking post.")
                 .sheet(isPresented: $showing) { SocialPostComposer(attempt: attempt, close: { showing = false }) }
@@ -65,7 +65,7 @@ struct SocialPostComposer: View {
             SGEditorialList {
                 if didPublish {
                     Section {
-                        Label(alreadyShared ? "Already Shared" : "Shared with Sous Chefs", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-share-success")
+                        Label(alreadyShared ? "Already on The Pass" : "Posted to The Pass", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-share-success")
                         Text("Your separate cooking post is available to eligible friends. Your private cooking and ranking are unchanged.")
                         if preservedExistingDescription {
                             Text("This cook was already shared. Its description was kept. To change it, use Edit Post in the post’s menu in My Kitchen.").accessibilityIdentifier("social-existing-description-preserved")
@@ -80,7 +80,7 @@ struct SocialPostComposer: View {
                         Button("Done", action: close).accessibilityIdentifier("social-share-done")
                     }
                 } else {
-                Section("Share with Sous Chefs") {
+                Section("Post to The Pass") {
                     Text("Your cooking stays private unless you publish here. This creates a separate post for your current eligible friends.")
                     Text(model.title).font(SGTheme.TypeRole.headline)
                     if let version = model.versionSubtitle { Text(version).foregroundStyle(.secondary) }
@@ -107,7 +107,7 @@ struct SocialPostComposer: View {
                             Text(publicationError).accessibilityIdentifier("social-share-error")
                             Button("Check again") { checkingPost = true; lookupGeneration += 1 }
                         }
-                        Button(busy ? "Sharing…" : "Publish to Sous Chefs") { Task { await publish() } }
+                        Button(busy ? "Posting…" : "Post to The Pass") { Task { await publish() } }
                             .disabled(busy || checkingPost || revision == nil || postDescription.unicodeScalars.count > 2000).accessibilityIdentifier("social-share-publish")
                     }
                 } else {
@@ -118,7 +118,7 @@ struct SocialPostComposer: View {
                 Text("The separate Share action opens the native image share sheet; it does not publish to Sous Chefs.").font(.footnote).foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Share with Sous Chefs").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Post to The Pass").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { if !didPublish { Button("Cancel") { Task { await cancel() } }.disabled(busy) } } }
             .interactiveDismissDisabled(busy).task { await load() }
             .task(id: lookup) { await reconcile() }
@@ -129,7 +129,13 @@ struct SocialPostComposer: View {
         }
     }
     private func load() async {
-        if !descriptionInitialized { postDescription = attempt.dish?.publicDescription ?? ""; descriptionInitialized = true }
+        if !descriptionInitialized {
+            postDescription = attempt.dish?.publicDescription ?? ""
+            // Posting a cook that has a photo includes it by default (owner decision, Nov 11 2026); the toggle
+            // stays visible to post without it. Off when the display bytes aren't on this device.
+            includePhoto = photo.map(SocialMediaRules.validJPEG) == true
+            descriptionInitialized = true
+        }
         guard let request else { return }
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }

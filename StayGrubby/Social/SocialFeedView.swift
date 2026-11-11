@@ -5,7 +5,8 @@ struct SocialFeedView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @Environment(\.scenePhase) private var scenePhase
-    @State private var posts: [GrubListActivity] = []
+    @State private var posts: [SocialPost] = []
+    @State private var cursor: PassPage.Cursor?
     @State private var identity: SocialIdentity?
     @State private var friendCount = 0
     @State private var loading = false
@@ -21,7 +22,7 @@ struct SocialFeedView: View {
     var body: some View {
         SGEditorialList {
             if request == nil {
-                ContentUnavailableView("Grub List", systemImage: "person.2", description: Text("Sign in to connect with friends. Your development cooking library remains private."))
+                ContentUnavailableView("The Pass", systemImage: "person.2", description: Text("Sign in to connect with friends. Your development cooking library remains private."))
             } else if let identity, !identity.isConfigured {
                 Section {
                     Text("Choose your profile name and username to connect. Your cooking stays private until you share it.")
@@ -37,20 +38,17 @@ struct SocialFeedView: View {
                         description: Text(friendCount == 0 ? "Find a Sous Chef to see what they cook." : "Cooks from your Sous Chefs will appear here."))
                     NavigationLink("Find Sous Chefs") { FriendsView() }.accessibilityIdentifier("feed-find-friends")
                 }
-                ForEach(posts) { activity in
-                    switch activity {
-                    case .cook(let post): SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
-                    case .recipe: EmptyView() // Grub List is Dish/cook activity only.
-                    }
+                ForEach(posts) { post in
+                    SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })
                 }.listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 if hasMore { Button("Load more posts") { Task { await load(more: true) } }.disabled(loading).accessibilityIdentifier("feed-more") }
             }
         }
         .accessibilityIdentifier("grub-list")
         .listStyle(.plain).background(SGTheme.ColorToken.background)
-        .navigationTitle("Grub List").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
+        .navigationTitle("The Pass").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Grub List") }
+            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "The Pass") }
             ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
             ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { SGToolbarIcon(symbol: "person.2") }.sgUtilityTint().accessibilityLabel("Sous Chefs") }.sgIndependentToolbarBackground()
         }
@@ -85,7 +83,7 @@ struct SocialFeedView: View {
     private func load(more: Bool = false) async {
         guard let request else { return }
         let token = UUID(); generation = token; loading = true; failed = false
-        let cursor = more ? posts.last : nil
+        let cursor = more ? self.cursor : nil
         if !more { hasMore = false }
         defer { if generation == token { loading = false } }
         do {
@@ -93,12 +91,12 @@ struct SocialFeedView: View {
             guard !Task.isCancelled, generation == token else { return }; identity = ownIdentity
             guard ownIdentity.isConfigured else { return }
             let people = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init()))
-            let next = try JSONDecoder().decode(GrubListPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
+            let next = try JSONDecoder().decode(PassPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, generation == token else { return }
             friendCount = people.people.count
-            // Grub List is Dish/cook activity only; Recipe-only activity is not shown. A cook post can still offer its Recipe.
-            let cooks = next.activities.filter { if case .cook = $0 { true } else { false } }
-            if more { let ids = Set(posts.map(\.id)); posts += cooks.filter { !ids.contains($0.id) } } else { posts = cooks }; hasMore = next.activities.count == 25
+            // The Pass is shared Cook activity only (PassPage drops legacy Recipe items; a cook post can still offer its Recipe).
+            if more { let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) } } else { posts = next.posts }
+            self.cursor = next.cursor ?? self.cursor; hasMore = next.hasMore
             await SocialPhotoCleanup.run(request: request, media: media)
         } catch is CancellationError { } catch {
             guard generation == token else { return }; posts = []; hasMore = false; failed = true
@@ -136,7 +134,8 @@ struct SocialFeedCard: View {
             else {
                 Button { navigate(.post(post.id)) } label: { foodIdentity }
                     .buttonStyle(.plain).accessibilityLabel("Open post: \(post.title)")
-                    .accessibilityValue(post.scoreText.map { "Score \($0)" + (post.sharedRankText.map { ", rank at sharing \($0)" } ?? "") } ?? "Score locked")
+                    .accessibilityValue([post.scoreText.map { "Score \($0)" + (post.sharedRankText.map { ", rank at sharing \($0)" } ?? "") } ?? "Score locked",
+                                         post.photoPath != nil ? "Food photo" : nil].compactMap { $0 }.joined(separator: ", "))
                     .accessibilityIdentifier("post-open-\(post.id)")
             }
             if let description = post.postDescription, !description.isEmpty {

@@ -76,7 +76,7 @@ private struct ProfileTopFood: View {
     @Environment(\.dynamicTypeSize) private var textSize
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title)
+            DishPhoto(media: food.attempt.primaryImage, thumbnail: SGPhotoRole.tile.usesThumbnailRendition, name: food.title)
                 .sgPhotoFrame(.tile)
                 .overlay(alignment: .topLeading) {
                     Text("#\(food.rank)").font(.subheadline.bold()).monospacedDigit()

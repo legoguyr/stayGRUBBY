@@ -41,9 +41,9 @@ Source of truth: `StayGrubby/DesignSystem/StayGrubbyTheme.swift` (`SGTheme`). Ch
 
 ## 4. App shell and navigation
 
-**Implemented:** `ContentView` owns four native tabs — **Grub List / Grub Rank (initial) / Food Bible / My Kitchen** — each with its own `NavigationStack`. Primary tabs show the compact official wordmark through `SGPrimaryBrandTitle`. Cooking forms are modal sheets. Onboarding/Sign in with Apple and account readiness sit above the shell. No fifth tab.
+**Implemented:** `ContentView` owns four native tabs — **The Pass / Grub Rank (initial) / Food Bible / My Kitchen** — each with its own `NavigationStack`. Primary tabs show the compact official wordmark through `SGPrimaryBrandTitle`. Cooking forms are modal sheets. Onboarding/Sign in with Apple and account readiness sit above the shell. No fifth tab.
 
-**Tickets** (in-app notifications, 🎟️): *Decided* — Tickets belongs to the Grub List experience. *Current Build 4 implementation* still also exposes Tickets in the My Kitchen header and puts the unread badge on the **My Kitchen** tab (`ContentView.swift`). Moving the entry point and badge to Grub List is Stage E work; do not add further My Kitchen Tickets surfaces.
+**Tickets** (in-app notifications, 🎟️): *Decided* — Tickets belongs to the The Pass experience. *Current Build 4 implementation* still also exposes Tickets in the My Kitchen header and puts the unread badge on the **My Kitchen** tab (`ContentView.swift`). Moving the entry point and badge to The Pass is Stage E work; do not add further My Kitchen Tickets surfaces.
 
 **Run It Back** entry points stay hidden pending redesign. **Want to Cook** has no V1 surface (approved post-V1 feature; see roadmap).
 
@@ -77,7 +77,7 @@ Retired in Stage B: `SGSelectionSheet` (→ `SGOptionSheet` / `SGFilterGroupPage
 | `.thumbnail` | 86 pt square | 12 | Grub Rank rows |
 | `.compactThumbnail` | 44 pt square | 10 | Dish/version selection, Dish Detail version rows |
 | `.tile` | square, flexible width | 12 | Signature Dishes, Kitchen post grid |
-| `.card` | 4:3, flexible width | 18 | Grub List posts, Recipe activity |
+| `.card` | 4:3, flexible width | 18 | The Pass posts |
 | `.cookbook` | 0.9 portrait, flexible width | 12 | Food Bible grid |
 | `.hero` | full width × 260 pt | 18 | Recipe reader, shared Recipe reader, Recipe history (Dish hero uses `SGHeroMedia` with the same corner) |
 
@@ -85,7 +85,7 @@ Flexible roles size a clear aspect box first, so loading never shifts layout. **
 
 ### 5.2 Score roles
 
-`.standard` (open semantic-colored rounded numerals: rows, Signature tiles, detail, versions), `.outOfTen` (same numerals + "/ 10": ranking result, composer summary), `.medallion` (Dynamic-Type-scaled ring: Grub List card). All use `ScoreColor` bands, announce "Score N", and fall back to `LockedScoreIndicator` (lock + "Score locked" + hint) when text is nil. Presentation only — no calibration, order or unlock logic lives here. Rendered exports keep brand red.
+`.standard` (open semantic-colored rounded numerals: rows, Signature tiles, detail, versions), `.outOfTen` (same numerals + "/ 10": ranking result, composer summary), `.medallion` (Dynamic-Type-scaled ring: The Pass card). All use `ScoreColor` bands, announce "Score N", and fall back to `LockedScoreIndicator` (lock + "Score locked" + hint) when text is nil. Presentation only — no calibration, order or unlock logic lives here. Rendered exports keep brand red.
 
 ### 5.3 Toolbar and action rules
 
@@ -125,7 +125,7 @@ An empty library shows no browse controls (and Grub Rank no search button). The 
 
 **Search.** In-content search uses `SGSearchField`; its X is the same `SGIconButton` control as the filter-row clear (appears while text exists, clears on tap, disappears when empty; `<identifier>-clear`). Library screens also show the filter-row X while search alone is active. System `.searchable` remains only in the Sous Chef pickers (system clear button). The Cuisine picker uses `SGSearchField` (Nov 9): a system search presentation inside a sheet could linger after dismissal and swallow taps.
 
-**Grub List.** Chronological, current Sous Chefs only. Card: person identity → title → 4:3 photo/fallback → description → Recipe availability → Hands 🙌 / Comments. Compact semantic score circle when unlocked. Stable post ages (calendar date after seven days). Grub List is Dish/cook activity only; Recipe-only activity is not shown (a cook post may offer View Recipe). Comments: detented sheet, keyboard-aware composer, overflow Delete/Report.
+**The Pass.** Chronological, current Sous Chefs only. Card: person identity → title → 4:3 photo/fallback → description → Recipe availability → Hands 🙌 / Comments. Compact semantic score circle when unlocked. Stable post ages (calendar date after seven days). The Pass is Dish/cook activity only; Recipe-only activity is not shown (a cook post may offer View Recipe). Comments: detented sheet, keyboard-aware composer, overflow Delete/Report.
 
 **My Kitchen / Sous Chef Kitchen.** Centered identity, Sous Chefs control, Signature Dishes trio (three square photos, aligned scores), Recipes entry, authorized posts. Visitor Kitchens show only authorized content, never private rankings/notes. *Decided (Stage E):* stats row **Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs**, no redundant mini-previews; visitor Kitchen uses the same structure with only authorized values. The current compact Recipes sheet will be replaced by navigation to Food Bible for the owner.
 
@@ -133,7 +133,7 @@ An empty library shows no browse controls (and Grub Rank no search button). The 
 
 ## 7. Vocabulary in UI
 
-Grub Rank · Signature Dish / Signature Dishes · Grub List · My Kitchen · Sous Chefs · Requests · Tag a Sous Chef 🧑‍🍳 · Hands 🙌 / Give Hands 🙌 · Tickets 🎟️ / New Ticket · Rank My Version · Post to Grub List (internal) vs **Share** (external). Restrained 86: `86 (Delete)`, `86 this Dish?`, "Are you sure you want to 86 this Dish? This can’t be undone.", `86 Dish / Recipe / Cook / Comment / Post`. `Delete Account` stays conventional. Utility words stay plain: Comments, Search, Settings, Edit, Share, New Dish, Cook Again, View Recipe, Re-rank, Block, Report. Never "Profile" for My Kitchen, nor "friends", "likes" or "notifications", in user-facing copy. (Open owner decision: the Settings identity editor — name, username, photo, discovery — is still titled "Profile"; renaming it is deferred to Stage E.) Keep "Your taste decides". Do not rename My Kitchen. Future achievements: Stars ⭐ (not implemented). *Implemented in D1 (November 8):* cooks replace "versions" in copy — Cook Name (fallback "Version N"), Cook Again, All Cooks (spoken "Show All Cooks of Each Dish"), "N cooks"; Recipe revisions are Recipe History; Rank My Version stays ([FOOD_ARCHITECTURE §4](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Accessibility identifiers keep their historical `version` names; only visible and spoken copy changed.
+Grub Rank · Signature Dish / Signature Dishes · The Pass · My Kitchen · Sous Chefs · Requests · Tag a Sous Chef 🧑‍🍳 · Hands 🙌 / Give Hands 🙌 · Tickets 🎟️ / New Ticket · Rank My Version · Post to The Pass (internal) vs **Share** (external). Restrained 86: `86 (Delete)`, `86 this Dish?`, "Are you sure you want to 86 this Dish? This can’t be undone.", `86 Dish / Recipe / Cook / Comment / Post`. `Delete Account` stays conventional. Utility words stay plain: Comments, Search, Settings, Edit, Share, New Dish, Cook Again, View Recipe, Re-rank, Block, Report. Never "Profile" for My Kitchen, nor "friends", "likes" or "notifications", in user-facing copy. (Open owner decision: the Settings identity editor — name, username, photo, discovery — is still titled "Profile"; renaming it is deferred to Stage E.) Keep "Your taste decides". Do not rename My Kitchen. Future achievements: Stars ⭐ (not implemented). *Implemented in D1 (November 8):* cooks replace "versions" in copy — Cook Name (fallback "Version N"), Cook Again, All Cooks (spoken "Show All Cooks of Each Dish"), "N cooks"; Recipe revisions are Recipe History; Rank My Version stays ([FOOD_ARCHITECTURE §4](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Accessibility identifiers keep their historical `version` names; only visible and spoken copy changed.
 
 ## 8. Score presentation
 
@@ -151,8 +151,8 @@ A true consolidation across screens, not per-screen polish. Candidate shared sys
 | B — Pickers / Search / Filtering | **Implemented November 7, 2026 — automated + Simulator checks passed, owner physical acceptance pending.** Owner review revision (same day): direct Grub Rank filter chips, separate Sort, All Versions toggle, Photo filter removed, Dietary note removed with Halal restored and alphabetized groups. Final owner correction (November 8): multi-select Course/Cuisine, sheets stay open until Done, active chips use color only (no count) with no layout movement; shared search field, option sheets, Dietary editor |
 | D1 — Unified Dish Foundation (run 1st; **implemented and deployed Nov 8**) | Dish Recipe links + Main Recipe, `Food` read model, association policy, `CookName` + Rename invariance, **terminology rebrand of existing screens** (Cook Name, Cook Again, All Cooks, Recipe History, "N cooks") |
 | D2 — Dish Detail (2nd; **implemented Nov 8**) | One Dish Detail from both lenses (replaces separate Dish/Recipe Detail consolidation); Cooks section with Rename; Main Recipe; Recipe-only state; Food Bible Cooked toggle |
-| C — Sharing (4th, after F) | Separate Post to Grub List from external Share; one Share action (image + short `#stayGRUBBY` message + exact link) inside `DishActions`; composer simplification |
-| E — Social / Kitchens | Grub List, Tickets relocation, My Kitchen stats, Sous Chef Kitchen, Sous Chefs, Requests |
+| C — Sharing (4th, after F) | Separate Post to The Pass from external Share; one Share action (image + short `#stayGRUBBY` message + exact link) inside `DishActions`; composer simplification |
+| E — Social / Kitchens | The Pass, Tickets relocation, My Kitchen stats, Sous Chef Kitchen, Sous Chefs, Requests |
 | F — Flows / Editors (3rd; **implemented Nov 8–9**) | `AddRecipeFlow` (New Dish + Recipe / Add to a Ranked Dish / Use a Food Bible Recipe), Rank Now and "Add a Recipe?" prompts, Cook Again start (Cook from the Recipe / Without), cook editor grouped This Dish / This cook, Recipe Diet (editor, reader, Food Bible filter, cook prefill), search clear button |
 | G — Copy / Celebrations / Final consolidation | Copy purge, ranking result/celebration states (after the score/order investigation), accessibility/consistency pass |
 
@@ -185,7 +185,7 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 | "Your dish is ranked!" used for low-score and re-rank results | G |
 | Unlock milestone replaces the new Dish's own result, so its rank/score is never shown | G |
 | Too Tough on a repeated pair gives no feedback (behavior protected; presentation only) | G |
-| Tagged Sous Chef leaves no visible trace on Dish Detail / Grub List card (decided: show collaborators on the card, wording not final, e.g. "Guy + Alex cooked this") | Dish Detail fixed in D2 ("Cooked with Alex and Sam"); Grub List card E |
+| Tagged Sous Chef leaves no visible trace on Dish Detail / The Pass card (decided: show collaborators on the card, wording not final, e.g. "Guy + Alex cooked this") | Dish Detail fixed in D2 ("Cooked with Alex and Sam"); The Pass card E |
 | ~~Pre-existing test failures (`RecipeImportUITests` relaunch, `SharedSocialUITests` Sous Chef toggle, `DishSourceUITests`)~~ — **resolved in Stage F:** all were obsolete tests (Edit moved into the Recipe actions menu; the avatar was tapped while under the pinned Continue bar; "Version 1" no longer labels a lone cook; Source and Edit Cook moved into Details and the "…" menu). Tests updated; no app defect | Done |
 | Rank My Version does not explain Recipe provenance or that it creates a new Dish rather than a version of an existing one (destinations decided in [FOOD_ARCHITECTURE §7.2](FOOD_ARCHITECTURE.md#72-cook-again-and-rank-my-version)) | F |
 | Recipe editor uses red for nearly everything | F |
@@ -196,13 +196,13 @@ Separately tracked (not UI, protected system, needs evidence first): the ingredi
 
 ## 11. Preserve
 
-Comparison screen; Initial Reaction; re-rank reuse of the ranking flow; #1 hero; editorial rank presentation; Signature Dishes trio; `ScoreColor` semantics; score lock; exported share cards (1080 × 1350 photo, 1080 × 1080 no-photo, Top 3 1080 × 1350); Send to Sous Chefs; Tag avatar interaction and eight-person limit; Comments mechanics; Recipe reader typography; serving scaling; Rank My Version; ingredient editing, paste/import, parser/reorder architecture; creator/source disclosure; canonical wordmark; cream/charcoal/red identity; accessibility targets; four-tab structure; chronological Grub List; Hands 🙌; restrained 86; Delete Account; Privacy Policy reader; "Your taste decides".
+Comparison screen; Initial Reaction; re-rank reuse of the ranking flow; #1 hero; editorial rank presentation; Signature Dishes trio; `ScoreColor` semantics; score lock; exported share cards (1080 × 1350 photo, 1080 × 1080 no-photo, Top 3 1080 × 1350); Send to Sous Chefs; Tag avatar interaction and eight-person limit; Comments mechanics; Recipe reader typography; serving scaling; Rank My Version; ingredient editing, paste/import, parser/reorder architecture; creator/source disclosure; canonical wordmark; cream/charcoal/red identity; accessibility targets; four-tab structure; chronological The Pass; Hands 🙌; restrained 86; Delete Account; Privacy Policy reader; "Your taste decides".
 
 ## 12. Verification for UI changes
 
 Follow AGENTS.md: build, directly affected UI tests and focused Simulator inspection in light/dark and at an accessibility text size for small UI; targeted Simulator flow verification for navigation/flow changes. Debug review fixtures require `--ui-test-store <UUID>` (isolated store and media root) and are compile-time excluded from Release; see [fixture rules](STAYGRUBBY_ARCHITECTURE.md#debug-fixtures-and-test-safety).
 
-**Stage A verification (November 7, 2026).** Debug build; 20 focused UI tests passed (score unlock, Kitchen/Account, Signature alignment, Tickets read-all, Food Bible empty state, Recipe share/Send, Dish Detail actions, re-rank result); full unit suite 390/396 with 6 failures that are pre-existing or order-dependent (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)). Simulator review of Grub Rank, Dish Detail, Food Bible, Recipe Detail, Grub List, Tickets and My Kitchen in light and dark, locked and unlocked scores, missing photos, and accessibility text size.
+**Stage A verification (November 7, 2026).** Debug build; 20 focused UI tests passed (score unlock, Kitchen/Account, Signature alignment, Tickets read-all, Food Bible empty state, Recipe share/Send, Dish Detail actions, re-rank result); full unit suite 390/396 with 6 failures that are pre-existing or order-dependent (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)). Simulator review of Grub Rank, Dish Detail, Food Bible, Recipe Detail, The Pass, Tickets and My Kitchen in light and dark, locked and unlocked scores, missing photos, and accessibility text size.
 
 **Stage B verification (November 7, 2026).** Debug build; unit suite unchanged from the documented baseline (390/396). UI: 29 affected tests run after updating them to the new Filters sheet / Sort & View structure (no assertion removed; group-count checks now read the sheet rows); 24 pass, including: discovery search/filter/creation, Polish result + Avoid flows, score calibration, review-environment sheet scaling, Signature and browse controls, Food Bible filters/sorting, display-mode persistence, large-type branding. Five failures are pre-existing (see [architecture — Verification](STAYGRUBBY_ARCHITECTURE.md#verification)); the Cuisine filter path they cannot reach was verified by hand. Simulator: Grub Rank populated/locked/empty, Filters sheet and group pages, active filters, Sort & View, search, All Versions, Food Bible + Filters, Details → Dietary editor, light/dark, accessibility text size.
 

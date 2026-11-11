@@ -183,7 +183,7 @@ struct DishActions: View {
         Menu {
             Button("Edit Cook", systemImage: "pencil", action: editCook).accessibilityIdentifier("detail-edit-cook")
             Button("Re-rank", systemImage: "arrow.triangle.2.circlepath", action: rerank).accessibilityIdentifier("detail-rerank")
-            if let shareWithSousChefs { Button("Share with Sous Chefs", systemImage: "person.2", action: shareWithSousChefs).accessibilityIdentifier("share-with-friends") }
+            if let shareWithSousChefs { Button("Post to The Pass", systemImage: "person.2", action: shareWithSousChefs).accessibilityIdentifier("share-with-friends") }
             Button("Edit Dish Description & Notes", systemImage: "text.alignleft", action: editDishText).accessibilityIdentifier("dish-text-edit")
             Button("86 Cook (Delete)", systemImage: "trash", role: .destructive, action: delete)
         } label: { SGToolbarIcon(symbol: "ellipsis") }

@@ -62,6 +62,9 @@ extension EnvironmentValues {
 }
 
 struct SocialPhoto: View {
+    /// Decode bound for shared photos. Uploads are the ≤1,200 px display rendition, so this never
+    /// downsamples them (1,024 px softened full-width cards, about 1,080 px wide at 3×).
+    static let maximumPixels = 2_048
     let path: String?
     @Environment(\.socialMedia) private var media
     @State private var image: UIImage?
@@ -76,7 +79,7 @@ struct SocialPhoto: View {
                 do {
                     let bytes = try await media(.download(path: path))
                     guard !Task.isCancelled, SocialMediaRules.validJPEG(bytes), let source = CGImageSourceCreateWithData(bytes as CFData, nil),
-                          let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 1024, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary)
+                          let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: SocialPhoto.maximumPixels, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary)
                     else { return }
                     image = UIImage(cgImage: thumbnail)
                 } catch { if !Task.isCancelled { image = nil } }

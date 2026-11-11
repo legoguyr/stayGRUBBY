@@ -133,7 +133,7 @@ final class SocialUXUITests: StayGrubbyUITestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [chosen], timeout: 5), .completed, XCUIApplication().debugDescription)
     }
     @MainActor private func selectFeed(_ app: XCUIApplication) {
-        let feed = app.tabBars.buttons["Grub List"]
+        let feed = app.tabBars.buttons["The Pass"]
         for _ in 0..<3 {
             feed.tap()
             let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "isSelected == true"), object: feed)

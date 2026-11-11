@@ -41,7 +41,7 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
     }
     @MainActor func testRunItBackKeepsRecipeAndSocialOriginSeparate() {
         let app = launch(["--test-light", "--social-review-feed", "--recipes-review-feed"])
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         let action = app.buttons["recreate-20000000-0000-0000-0000-000000000001"]
         for _ in 0..<5 { if action.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(action.waitForExistence(timeout: 8)); action.tap()

@@ -89,11 +89,11 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
             XCTAssertFalse(app.staticTexts["Private Notes"].exists)
             shot("Stage 2 authorized Kitchen \(appearance)", app)
             app.buttons["Done"].tap()
-            select("Grub List", app)
+            select("The Pass", app)
             let score = app.descendants(matching: .any).matching(identifier: "social-score").firstMatch
             XCTAssertTrue(score.waitForExistence(timeout: 8))
             XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS '/ 10'")).firstMatch.exists)
-            shot("Stage 2 food-first Grub List \(appearance)", app)
+            shot("Stage 2 food-first The Pass \(appearance)", app)
             app.terminate()
         }
     }

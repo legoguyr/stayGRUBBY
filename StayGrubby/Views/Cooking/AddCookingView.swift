@@ -61,7 +61,7 @@ struct AddCookingView: View {
                     CookingRankingResultView(attempt: savedAttempt, event: completionSnapshot,
                                              onClose: { onResultClose(); dismiss() })
                         .safeAreaInset(edge: .top) {
-                            if sharingUnavailable { Text("Your cook is saved privately. Sharing couldn’t be queued; use Share with Sous Chefs below to retry.").font(.footnote).padding() }
+                            if sharingUnavailable { Text("Your cook is saved privately. Sharing couldn’t be queued; use Post to The Pass below to retry.").font(.footnote).padding() }
                             SharedCookingPending(itemID: savedAttempt.rankedItemID)
                             if promptsForRecipe, savedAttempt.dish != nil { recipePrompt }
                         }

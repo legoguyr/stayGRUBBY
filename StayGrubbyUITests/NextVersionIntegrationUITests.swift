@@ -39,7 +39,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
             XCTAssertTrue(bell.isHittable); capture("Kitchen header \(appearance)", app)
             bell.tap(); XCTAssertTrue(app.navigationBars["Tickets"].waitForExistence(timeout: 8))
             capture("Order Up \(appearance)", app)
-            app.tabBars.buttons["Grub List"].tap()
+            app.tabBars.buttons["The Pass"].tap()
             let recipe = app.buttons["post-recipe"]
             for _ in 0..<5 { if recipe.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(recipe.isHittable); capture("Feed Recipe entry \(appearance)", app); recipe.tap()
@@ -63,7 +63,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
         XCTAssertTrue(bell.waitForExistence(timeout: 8)); XCTAssertTrue(bell.isHittable)
         XCTAssertTrue(app.buttons["settings-open"].isHittable)
         capture("Kitchen accessibility reduced motion", app)
-        app.tabBars.buttons["Grub List"].tap()
+        app.tabBars.buttons["The Pass"].tap()
         let recipe = app.buttons["post-recipe"]
         for _ in 0..<8 { if recipe.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(recipe.isHittable); recipe.tap()

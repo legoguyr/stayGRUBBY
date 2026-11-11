@@ -98,7 +98,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             for _ in 0..<8 { if exit.isHittable && exit.frame.maxY <= app.tabBars.firstMatch.frame.minY { break }; app.scrollViews["kitchen-scroll"].swipeUp() }
             XCTAssertTrue(exit.isHittable); XCTAssertLessThanOrEqual(exit.frame.maxY, app.tabBars.firstMatch.frame.minY)
             shot("Owner corrections Kitchen bottom clearance \(appearance)", app)
-            tab("Grub List", app)
+            tab("The Pass", app)
             let metadata = app.staticTexts.matching(identifier: "post-course-cuisine").matching(NSPredicate(format: "label == %@", "Main • Italian")).firstMatch
             XCTAssertTrue(metadata.waitForExistence(timeout: 8)); XCTAssertEqual(metadata.label,"Main • Italian")
             XCTAssertTrue(app.staticTexts["Just now"].exists)
@@ -121,7 +121,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Your Kitchen"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["profile-top-food-1"].exists); XCTAssertFalse(app.buttons["profile-share-top-three"].isEnabled)
         shot("Owner corrections empty Kitchen accessibility", app)
-        tab("Grub List", app); XCTAssertTrue(app.buttons["Set up Profile"].waitForExistence(timeout: 8))
+        tab("The Pass", app); XCTAssertTrue(app.buttons["Set up Profile"].waitForExistence(timeout: 8))
         tab("Food Bible", app); XCTAssertTrue(app.buttons["bible-empty-add"].waitForExistence(timeout: 8)); shot("Owner corrections empty Food Bible accessibility", app)
         tab("Grub Rank", app); app.revealCreation(); app.buttons["new-dish"].tap()
         fill("dish-name","Large-text soup",app)

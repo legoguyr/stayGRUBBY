@@ -64,7 +64,7 @@ struct CookedWithSelection: View {
                         Text(editing ? "Add or remove up to eight Sous Chefs. New invitations are sent when you save." : "Invite up to eight Sous Chefs after ranking. They choose whether to add their own cook.")
                             .font(.footnote).foregroundStyle(.secondary)
                         DisclosureGroup("What invitations share") {
-                            Text("Dish title, Course, Cuisine and public source attribution. Private notes, allergens and photos stay private. Tagging does not publish a Grub List post.")
+                            Text("Dish title, Course, Cuisine and public source attribution. Private notes, allergens and photos stay private. Tagging does not post to The Pass.")
                                 .font(.footnote).foregroundStyle(.secondary)
                         }
                     }

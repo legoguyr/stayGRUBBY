@@ -17,7 +17,7 @@ struct CookingSharingChoice: View {
     @Binding var selection: CookingSharingSelection
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            Toggle("Share with Sous Chefs", isOn: Binding(get: { selection.selected }, set: { selection.override = $0 }))
+            Toggle("Post to The Pass", isOn: Binding(get: { selection.selected }, set: { selection.override = $0 }))
                 .foregroundStyle(SGTheme.ColorToken.primaryText)
                 .disabled(selection.loading || selection.configured == false).accessibilityIdentifier("cook-share-with-friends")
             if selection.loading { ProgressView("Loading sharing default").font(.footnote) }

@@ -26,16 +26,19 @@ import Testing
         r.isOwner = true; r.content.originalCreator = "recipe author"; #expect(RecipeSharingPolicy.creatorCredit(r) == nil)
         #expect(r.revision == 7)
     }
-    @Test func distinctRecipeActivityDecodesWithNoCookOrScore() throws {
+    /// The Pass is shared Cook activity only: legacy server `recipe_created` items are never presented,
+    /// but still advance the cursor so a page of them cannot stall pagination.
+    @Test func passDropsRecipeActivityButKeepsItsCursor() throws {
         let recipe = UUID(), activity = UUID(), author = UUID()
         let json = """
         {"activities":[{"kind":"recipe_created","recipe":{"id":"\(activity)","createdAt":100,"isAuthor":false,"author":{"id":"\(author)","displayName":"Author","username":"author","relationship":"friends"},"entry":{"recipeID":"\(recipe)","dishTitle":"Soup","recipeTitle":"Soup","revision":3}}}]}
         """
-        let page = try JSONDecoder().decode(GrubListPage.self, from: Data(json.utf8))
-        guard case .recipe(let r) = page.activities.first else { Issue.record("Recipe activity decoded as cooking"); return }
-        #expect(r.entry.recipeID == recipe && r.id == activity && r.entry.dishID == nil)
-        let roundTrip = try JSONDecoder().decode(GrubListPage.self, from: JSONEncoder().encode(page))
-        #expect(roundTrip.activities[0].id == activity)
+        let page = try JSONDecoder().decode(PassPage.self, from: Data(json.utf8))
+        #expect(page.posts.isEmpty)
+        #expect(page.cursor == PassPage.Cursor(createdAt: 100, id: activity))
+        #expect(page.serverCount == 1 && !page.hasMore)
+        let roundTrip = try JSONDecoder().decode(PassPage.self, from: JSONEncoder().encode(page))
+        #expect(roundTrip.posts.isEmpty)
     }
     @Test func historicalForeignCreatorSurvivesDecodingWithoutChangingRecipeContent() throws {
         let json = """

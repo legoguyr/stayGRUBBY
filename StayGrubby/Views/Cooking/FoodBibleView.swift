@@ -100,12 +100,13 @@ struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID? }
 struct CookbookPhoto: View {
     var dish: Dish?
     var name: String
-    var compact = false
+    /// The frame this photo fills; it selects the stored rendition (never a stretched thumbnail).
+    var role: SGPhotoRole = .hero
     var cook: CookingAttempt? = nil
     var body: some View {
         if let media = (cook ?? dish?.cookbookRepresentativeCook)?.primaryImage {
-            // Full-size frames (Recipe hero, Food Bible card) use the 1200px display variant; the 360px thumbnail only for compact rows.
-            DishPhoto(media: media, thumbnail: compact, name: name)
+            // The Recipe shows its Dish's existing cook photo by reference: same stored asset, no copy.
+            DishPhoto(media: media, thumbnail: role.usesThumbnailRendition, name: name)
         } else {
             SGPhotoPlaceholder().accessibilityLabel("No photo for \(name)")
         }

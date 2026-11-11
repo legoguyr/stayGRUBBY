@@ -460,16 +460,19 @@ import SwiftData
             if action == "post" { return try JSONEncoder().encode(SocialPostsPage(posts: visible.filter { $0.id == payload.postID })) }
             if action == "activity_page" {
                 if ProcessInfo.processInfo.arguments.contains("--v1-closeout-review"), let id = recipes.values.first(where: { !$0.isOwner && $0.visibility == "friends" })?.id, recipeActivityTimes[id] == nil { recipeActivityTimes[id] = (UUID(),Date().timeIntervalSince1970) }
-                var activities = visible.map { GrubListActivity.cook($0) }
+                // Mirrors the deployed server: Cook posts interleaved with legacy `recipe_created` items,
+                // which The Pass must never present (PassPage keeps them for the cursor only).
+                var activities: [(createdAt: Double, id: UUID, item: Any)] = try visible.map { post in
+                    (post.createdAt, post.id, ["kind": "cook", "post": try JSONSerialization.jsonObject(with: JSONEncoder().encode(post))] as [String: Any])
+                }
                 for (id,stamp) in recipeActivityTimes {
                     guard let r = recipes[id], r.visibility == "friends", r.isOwner || people.contains(where: { $0.id == r.creator?.id && $0.relationship == .friends }) else { continue }
-                    let author = r.isOwner ? SocialPerson(id: UUID(uuidString:"10000000-0000-0000-0000-000000000099")!,displayName:identity.displayName,username:identity.username ?? "review_cook",relationship:.none) : r.creator!
-                    let entry = CookbookEntry(recipeID:id,dishTitle:r.content.title,recipeTitle:r.content.title,course:r.content.course,cuisine:r.content.cuisine,revision:r.revision,updatedAt:r.updatedAt,photoID:r.content.photoID)
-                    activities.append(.recipe(.init(id:stamp.id,createdAt:stamp.date,author:author,entry:entry,isAuthor:r.isOwner)))
+                    activities.append((stamp.date, stamp.id, ["kind": "recipe_created", "recipe": ["id": stamp.id.uuidString, "createdAt": stamp.date,
+                        "entry": ["recipeID": id.uuidString, "dishTitle": r.content.title, "recipeTitle": r.content.title, "revision": r.revision]]] as [String: Any]))
                 }
                 activities.sort { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
                 if let date = payload.beforeTime, let id = payload.beforeID { activities = activities.filter { $0.createdAt < date || ($0.createdAt == date && $0.id.uuidString < id.uuidString) } }
-                return try JSONEncoder().encode(GrubListPage(activities:Array(activities.prefix(25))))
+                return try JSONSerialization.data(withJSONObject: ["activities": activities.prefix(PassPage.pageSize).map(\.item)])
             }
             return try JSONEncoder().encode(SocialPostsPage(posts: visible))
         }

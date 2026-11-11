@@ -5,7 +5,7 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-trace", "--social-review-feed", "--stage3-comment-failure", "--test-dark"]
-        app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["Grub List"].tap()
+        app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["The Pass"].tap()
         let like = app.buttons["social-like-20000000-0000-0000-0000-000000000001"]
         for _ in 0..<3 { if like.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(like.waitForExistence(timeout: 8)); like.tap()

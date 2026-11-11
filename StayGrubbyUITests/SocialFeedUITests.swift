@@ -6,7 +6,7 @@ final class SocialFeedUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready"] + args
         app.launchWithReviewOptions()
-        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["Grub List"].tap()
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15)); app.tabBars.buttons["The Pass"].tap()
         return app
     }
     @MainActor func testFeedErrorRetryAndBlockRevokesVisiblePosts() throws {

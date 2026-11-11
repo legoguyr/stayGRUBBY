@@ -29,17 +29,19 @@ Use established vocabulary where appropriate:
 | Concept | Product wording |
 | --- | --- |
 | Ranking / #1 / Top 3 | Grub Rank / Signature Dish / Signature Dishes |
-| Friends Feed / Profile | Grub List / My Kitchen |
+| Friends Feed / Profile | The Pass / My Kitchen |
 | Friends / friend requests | Sous Chefs / Requests |
 | Cooked Together tagging | Tag a Sous Chef 🧑‍🍳 |
 | Likes / Like action | Hands 🙌 / Give Hands 🙌 |
 | Notifications / new notification / Recreate | Tickets 🎟️ / New Ticket / Run It Back (entry points hidden) |
-| Internal publish / external share | Post to Grub List / Share |
+| Internal publish / external share | Post to The Pass / Posted to The Pass / Share |
 | Cook from a Recipe | Rank My Version |
 | Cooking Attempt / its name / unnamed fallback | cook ("3 cooks") / Cook Name / Version N |
 | Make the Dish again / show every cook / Recipe revisions | Cook Again / All Cooks / Recipe History |
 | Delete (restrained) | 86 (Delete), 86 Dish/Recipe/Cook/Comment/Post; Delete Account stays conventional |
 | Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
+
+**The Pass** (owner decision, November 11, 2026; formerly "Grub List") is intentionally shared Cook activity from Sous Chefs; Recipes never appear there merely because they were created, imported or edited. Internal API/table/identifier names (`social_feed`, `activity_page`, `feed-*`, `StayGrubbyTab.feed`) stay stable.
 
 Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, Cook Again, View Recipe, Re-rank. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
 
