@@ -39,7 +39,7 @@ Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` shipped beta acquisition w
 
 ## Source, verification and deployment
 
-The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 11, 2026 (Recipes never post to The Pass). The hosted copy needs an authorized `deploy-production.sh` publish to match. It is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
+The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 11, 2026 (Recipes never post to The Pass). The hosted HTML matched a fresh canonical build byte-for-byte on November 12. The policy is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
 
 Run the production entry point from the repository root with an authenticated Wrangler:
 
@@ -48,6 +48,8 @@ sh Website/deploy-production.sh
 ```
 
 The script builds the public asset allowlist, runs the local tests and Wrangler dry run, deploys the Worker and assets using `Website/wrangler.jsonc`, then runs `python3 Website/verify_live_links.py`. A production publish is incomplete until the live gate passes. The Cloudflare Git build trigger for `main` must call this same script. An assets-only deploy (including `wrangler deploy --assets` or an assets-only dashboard upload) is invalid even if Home, Privacy and the static AASA file respond. The Worker owns `/beta`, profile, post and Recipe browser fallbacks.
+
+**Git publishes can deploy production.** As verified November 12, Cloudflare Workers Builds watches every path on `main` and successfully ran the canonical full deploy for `61d92ab`. If the current task does not authorize a website publish, hold the push until the owner has paused the trigger or narrowed and verified its watch paths. A narrowed trigger must cover the Worker and build scripts, static website sources, the canonical Privacy Policy and the official artwork used by `build.py`. Absence of a GitHub Actions workflow does not prove there is no deploy trigger.
 
 Use existing authentication. If Wrangler is unavailable during an incident, the authenticated Cloudflare connector can restore a previously verified full version after confirming the active deployment and the target's `fetch` handler and `ASSETS` binding. Run the same live gate immediately and verify the active version afterward. Keep the existing domain, disabled workers.dev/previews and public asset allowlist.
 
