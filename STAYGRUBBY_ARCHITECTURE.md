@@ -111,7 +111,7 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 ## Supabase system map
 
-Project **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17). Build 4 verified 41 hosted migrations. The branch adds the pending local Recipe cook lifecycle migration. Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).
+The app still points to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17), currently read-only on 48 audited migrations. The clean **#stayGRUBBY** target (`ayjflxstqmnuoiphbyek`) is empty. Its authorized setup must apply all 49 local migrations, including the verified account-erasure correction, before any data transfer. The [live preflight](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-preflight) records the remaining device, target access and cutover gates. Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).
 
 | Layer | Contents and boundary |
 | --- | --- |
