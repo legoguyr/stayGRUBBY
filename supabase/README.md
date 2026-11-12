@@ -14,6 +14,10 @@ The function fails closed before beginning database deletion if Apple configurat
 
 Current native application/Apple Client ID: `com.guyrettig.StayGrubby`. The project/source rename preserves the client-safe plist, pinned SDK and all hosted migrations/account behavior; see `../PROJECT_RENAME.md`. Initial setup/provider limitations below are historical, not instructions to revert the manually configured Apple provider.
 
+## Clean project migration
+
+The November 12 read-only audit identifies the source and clean target, classifies application and Auth records, and defines the rehearsal, import, verification and cutover gates. See the [Phase 1 runbook](CLEAN_MIGRATION_PHASE_1.md).
+
 ## Target and tooling
 
 Project: `StayGrubby`, reference `lgjxbpycphhsswxoncmz`, region `us-east-1`, PostgreSQL `17.11.0.003`. Preflight confirmed ACTIVE_HEALTHY, no application tables/migrations and zero Auth users. Repository was clean on main with Phase 3B commit `ff6c66ff88246b8cb8ddde78eb7d87a423747b6c`.
