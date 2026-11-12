@@ -16,7 +16,7 @@ Current native application/Apple Client ID: `com.guyrettig.StayGrubby`. The proj
 
 ## Clean project migration
 
-The November 12 read-only audit identifies the source and clean target, classifies application and Auth records, and defines the rehearsal, import, verification and cutover gates. See the [Phase 1 runbook](CLEAN_MIGRATION_PHASE_1.md).
+The November 12 read-only [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) identifies the two projects and records the migration inventory. The [Phase 2A rehearsal and live runbook](CLEAN_MIGRATION_PHASE_2A.md) record the successful disposable data and byte transfer, the existing account-erasure blocker and the remaining gates for real data.
 
 ## Target and tooling
 
