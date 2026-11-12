@@ -20,6 +20,9 @@ const catalogSQL = await readFile(new URL('../../DevelopmentTools/supabase_clean
 const fixture = JSON.parse(await readFile(new URL('./fixtures/swift-cooking-operations.json', import.meta.url)));
 const migrations = new URL('../../supabase/migrations/', import.meta.url);
 const files = (await readdir(migrations)).filter(name => name.endsWith('.sql')).sort();
+const erasureMigration = files.at(-1);
+assert(erasureMigration.endsWith('_erase_account_cooking_photo_manifests.sql'));
+const erasureSQL = await readFile(new URL(erasureMigration, migrations), 'utf8');
 const graphTables = [
     'accounts', 'auth_account_links', 'profiles', 'profile_routes',
     'rankings', 'account_libraries', 'dishes', 'dish_sources', 'ranked_items', 'cooking_attempts',
@@ -123,7 +126,7 @@ async function columns(db, table) {
 }
 async function apply(db) {
     await db.query("set time zone 'UTC'; set datestyle='ISO, YMD'; set extra_float_digits=3");
-    for (const file of files) {
+    for (const file of files.slice(0, -1)) {
         const sql = await readFile(new URL(file, migrations), 'utf8');
         const row = catalog.migrations.find(entry => file === entry.version + '_' + entry.name + '.sql');
         // The hosted ledger for the incident fix stores the SQL without its final newline.
@@ -164,7 +167,7 @@ try {
         assert.equal(await value(db, 'select count(*)::int value from auth.users'), 0, 'Refuse a nonempty Auth database');
         assert.equal(await value(db, 'select count(*)::int value from storage.objects'), 0, 'Refuse nonempty Storage');
     }
-    assert.equal(files.length, catalog.migrations.length);
+    assert.equal(files.length, catalog.migrations.length + 1);
     await apply(source);
     await apply(target);
     const structural = await snapshot(target);
@@ -181,6 +184,16 @@ try {
     assert.deepEqual(relevant(structural.policies), relevant(catalog.sourceCatalog.policies), 'All 30 application/Storage policies');
     check(relevant(structural.policies).length === 30, 'All 30 application/Storage policies');
     check(!structural.functions.some(entry => entry.mentions_retry_code), 'No unbounded retry error codes');
+    await target.query(erasureSQL);
+    const corrected = await snapshot(target);
+    corrected.tables = corrected.tables.filter(table => !platformLedger(table));
+    const erasure = corrected.functions.find(fn => fn.schema_name === 'staygrubby' && fn.name === 'erase_account_data');
+    const originalErasure = structural.functions.find(fn => fn.schema_name === 'staygrubby' && fn.name === 'erase_account_data');
+    check(erasure.definition_md5 !== originalErasure.definition_md5 && !erasure.mentions_retry_code,
+        'Fresh target loads the erasure correction before importing data');
+    erasure.definition_md5 = originalErasure.definition_md5;
+    assert.deepEqual(corrected, structural, 'Erasure body is the only catalog delta, including grants and FKs');
+    checks++;
     for (const db of [source, target]) {
         check(await value(db, `select md5(pg_get_functiondef('storage.allow_any_operation(text[])'::regprocedure))
             ='ccefb34283c346cc88e224d075bd5312' value`), 'Official Storage operation helper matches both hosted projects');
@@ -246,27 +259,43 @@ try {
     }
     await source.query('reset role');
     const peerAccount = await value(source, 'select account_id value from staygrubby.auth_account_links where auth_user_id=$1', [peer]);
+    const strangerAccount = await value(source, 'select account_id value from staygrubby.auth_account_links where auth_user_id=$1', [stranger]);
     await source.query('update development.recipe_test_identity set auth_user_id=$1 where singleton', [testUser]);
+    // Both accounts intentionally have the same local IDs, backed by different bytes.
+    await source.query("update staygrubby.accounts set sync_revision=1 where id=$1", [peerAccount]);
+    await source.query("insert into staygrubby.rankings(account_id,id,name,created_at_ref,role) values($1,$2,$3,$4,'global')",
+        [peerAccount, ranking.id, ranking.name, ranking.createdAt]);
+    await source.query("insert into staygrubby.account_libraries(account_id,library_key,global_ranking_id,bridge_version) values($1,'local',$2,1)", [peerAccount, ranking.id]);
+    await actor(source, 'source', peer);
+    for (const operation of fixture.operations.slice(0, 4)) {
+        await source.query('select api.apply_cooking_operation($1::jsonb)', [JSON.stringify({ ...operation, accountID: peerAccount })]);
+    }
     await actor(source, 'source', user);
     for (const operation of fixture.operations) {
         await source.query('select api.apply_cooking_operation($1::jsonb)', [JSON.stringify(operation)]);
     }
     const restore = db => value(db, 'select api.open_account_library() value');
+    async function applyDelta(upserts, deletions = []) {
+        const payload = Buffer.from(JSON.stringify({
+            upserts: upserts.map(({ entity, record }) => ({
+                reference: { entity, key: record.id },
+                data: Buffer.from(JSON.stringify(record)).toString('base64'),
+            })), deletions, rankingAssessmentVersion: 1, photoCollectionVersion: 1,
+        }));
+        return value(source, 'select api.apply_cooking_operation($1::jsonb) value', [JSON.stringify({
+            operationID: randomUUID(), storeID: randomUUID(), accountID: owner, kind: 'migrationRehearsalFixture',
+            expectedRevision: (await restore(source)).account.sync_revision,
+            payloadHash: sha(payload), payload: payload.toString('base64'),
+        })]);
+    }
     const initialRestore = await restore(source);
     const [first, second] = initialRestore.graph.items;
     const comparison = { id: randomUUID(), rankingID: ranking.id, firstItemID: first.id,
         secondItemID: second.id, preferredItemID: first.id, isTie: false, timestamp: 813546011 };
-    const payload = Buffer.from(JSON.stringify({ upserts: [{
-        reference: { entity: 'comparison', key: comparison.id },
-        data: Buffer.from(JSON.stringify(comparison)).toString('base64'),
-    }], deletions: [], rankingAssessmentVersion: 1 }));
-    await source.query('select api.apply_cooking_operation($1::jsonb)', [JSON.stringify({
-        operationID: randomUUID(), storeID: randomUUID(), accountID: owner, kind: 'rehearsalEvidence',
-        expectedRevision: initialRestore.account.sync_revision, payloadHash: sha(payload), payload: payload.toString('base64'),
-    })]);
+    await applyDelta([{ entity: 'comparison', record: comparison }]);
     const before = await restore(source);
-    const liveCook = before.graph.attempts[0];
     const media = before.graph.media[0];
+    const liveCook = before.graph.attempts.find(attempt => attempt.id === media?.attemptID);
     check(before.graph.deletions.length > 0 && before.graph.comparisons.length === 1 && media && liveCook, 'Synthetic Swift wire evidence and tombstones');
     await rpc(source, 'social_identity', 'save', { displayName: 'Fixture Owner', username: 'fixture_owner', discoverable: true });
     await actor(source, 'source', peer);
@@ -282,10 +311,10 @@ try {
     assert.equal(jpeg.readUInt16BE(), 0xffd8);
     assert.notEqual(sha(jpeg), sha(thumbnail));
     const approved = [];
-    async function add(bucket, key, bytes, permittedPeer = false, retain = true) {
+    async function add(bucket, key, bytes, { uid = user, visibleToSousChef = false, retain = true } = {}) {
         await ok(await request('source', 'storage', `/object/${bucket}/${key}`,
-            { role: 'authenticated', actor: user, method: 'POST', bytes }), 'Source ' + bucket + ' fixture upload');
-        const object = { bucket, key, path: `/object/authenticated/${bucket}/${key}`, bytes, permittedPeer };
+            { role: 'authenticated', actor: uid, method: 'POST', bytes }), 'Source ' + bucket + ' fixture upload');
+        const object = { bucket, key, path: `/object/authenticated/${bucket}/${key}`, bytes, uid, visibleToSousChef };
         if (retain) approved.push(object);
         return object;
     }
@@ -298,10 +327,48 @@ try {
     await add('cooking-photos', registration.thumbnailKey, thumbnail);
     await rpc(source, 'media_backup', 'complete', manifest);
 
+    // Model all three observed hosted states: active ready, retired ready and
+    // cleaned, and retired cleaned before upload completion.
+    const retired = [true, false].map(ready => ({ ready, id: randomUUID() }));
+    await applyDelta(retired.map(({ id }, index) => ({ entity: 'media', record: {
+        ...media, id, displayFilename: id + '-display.jpg', thumbnailFilename: id + '-thumbnail.jpg',
+        sortOrder: 10 + index,
+    } })));
+    for (const row of retired) {
+        row.manifest = { ...manifest, mediaID: row.id };
+        const backup = (await rpc(source, 'media_backup', 'register', row.manifest)).backups.find(item => item.mediaID === row.id);
+        row.keys = [backup.displayKey, backup.thumbnailKey];
+        if (row.ready) {
+            await add('cooking-photos', row.keys[0], jpeg, { retain: false });
+            await add('cooking-photos', row.keys[1], thumbnail, { retain: false });
+            await rpc(source, 'media_backup', 'complete', row.manifest);
+        }
+    }
+    await applyDelta([], retired.map(row => ({ entity: 'media', key: row.id })));
+    for (const row of retired) {
+        if (row.ready) await ok(await request('source', 'storage', '/object/cooking-photos', {
+            role: 'authenticated', actor: user, method: 'DELETE', json: { prefixes: row.keys },
+        }), 'Retired photo variants removed through Storage');
+        await rpc(source, 'media_backup', 'cleaned', row.manifest);
+    }
+
+    await actor(source, 'source', peer);
+    const peerLibrary = await restore(source);
+    const peerCook = peerLibrary.graph.attempts.find(attempt => attempt.id === liveCook.id);
+    check(peerCook && peerLibrary.graph.media[0].id === media.id, 'Peer fixture deliberately shares local cook and media UUIDs');
+    const peerManifest = { ...manifest, accountID: peerAccount, displayHash: sha(thumbnail),
+        thumbnailHash: sha(jpeg), displayBytes: thumbnail.length, thumbnailBytes: jpeg.length };
+    const peerBackup = (await rpc(source, 'media_backup', 'register', peerManifest)).backups[0];
+    await add('cooking-photos', peerBackup.displayKey, thumbnail, { uid: peer });
+    await add('cooking-photos', peerBackup.thumbnailKey, jpeg, { uid: peer });
+    await rpc(source, 'media_backup', 'complete', peerManifest);
+
+    await actor(source, 'source', user);
+
     const avatar = await rpc(source, 'social_avatar', 'prepare', { assetID: randomUUID() });
-    const excludedAvatar = await add('profile-photos', avatar.path, jpeg, false, false);
+    const excludedAvatar = await add('profile-photos', avatar.path, jpeg, { retain: false });
     const replacement = await rpc(source, 'social_avatar', 'prepare', { assetID: randomUUID() });
-    await add('profile-photos', replacement.path, thumbnail, true);
+    await add('profile-photos', replacement.path, thumbnail, { visibleToSousChef: true });
     await rpc(source, 'social_avatar', 'publish', { avatarPath: replacement.path });
 
     const recipeID = randomUUID();
@@ -310,29 +377,62 @@ try {
     const photo = await rpc(source, 'recipes', 'prepare_photo', { assetID, photoHash: sha(jpeg), photoBytes: jpeg.length });
     await add('recipe-photos', photo.path, jpeg);
     await rpc(source, 'recipes', 'complete_photo', { assetID });
-    await rpc(source, 'recipes', 'save', { recipeID, recipe: { ...recipe, photoID: assetID }, visibility: 'private' });
+    await rpc(source, 'recipes', 'save', { recipeID, recipe: { ...recipe, photoID: assetID }, visibility: 'friends' });
     await rpc(source, 'recipes', 'associate_cook', { recipeID, attemptID: liveCook.id,
         targetID: liveCook.rankedItemID, originID: randomUUID(), expectedRevision: 1 });
     const reservation = await rpc(source, 'recipes', 'begin', { originID: randomUUID(), recipeID });
+    await actor(source, 'source', peer);
+    const peerCookOrigin = randomUUID();
+    await rpc(source, 'recipes', 'associate_cook', { recipeID, attemptID: peerCook.id,
+        targetID: peerCook.rankedItemID, originID: peerCookOrigin, expectedRevision: 1 });
+    const peerRecipeID = randomUUID();
+    const copy = await rpc(source, 'recipes', 'fork', { recipeID, targetID: peerRecipeID, confirmed: true });
+    const peerAssetID = randomUUID();
+    const peerPhoto = await rpc(source, 'recipes', 'prepare_photo', {
+        assetID: peerAssetID, photoHash: sha(thumbnail), photoBytes: thumbnail.length,
+    });
+    await add('recipe-photos', peerPhoto.path, thumbnail, { uid: peer });
+    await rpc(source, 'recipes', 'complete_photo', { assetID: peerAssetID });
+    await rpc(source, 'recipes', 'save', { recipeID: peerRecipeID, expectedRevision: copy.revision,
+        recipe: { ...recipe, title: 'Peer’s own Recipe copy', photoID: peerAssetID } });
+    await rpc(source, 'social_identity', 'save', { displayName: 'Fixture Peer', username: 'fixture_peer', discoverable: false });
+    const peerAvatar = await rpc(source, 'social_avatar', 'prepare', { assetID: randomUUID() });
+    await add('profile-photos', peerAvatar.path, jpeg, { uid: peer, visibleToSousChef: true });
+    await rpc(source, 'social_avatar', 'publish', { avatarPath: peerAvatar.path });
+    const peerPostID = randomUUID();
+    const peerPost = (await rpc(source, 'social_content', 'prepare', { attemptID: peerCook.id, postID: peerPostID,
+        expectedRevision: peerLibrary.account.sync_revision, confirmed: true, includePhoto: true })).posts[0];
+    await add('social-photos', peerPost.photoPath, jpeg, { uid: peer, visibleToSousChef: true });
+    await rpc(source, 'social_content', 'publish', { postID: peerPostID });
+
+    await actor(source, 'source', user);
     await rpc(source, 'recipes', 'save', { recipeID, recipe: { ...recipe, title: 'Second lemon broth' },
-        expectedRevision: 1, removeRecipePhoto: true });
+        expectedRevision: 1, visibility: 'private', removeRecipePhoto: true });
     const postID = randomUUID();
     const post = (await rpc(source, 'social_content', 'prepare', { attemptID: liveCook.id, postID, confirmed: true,
-        expectedRevision: before.account.sync_revision, includePhoto: true })).posts[0];
-    await add('social-photos', post.photoPath, thumbnail, true);
+        expectedRevision: (await restore(source)).account.sync_revision, includePhoto: true })).posts[0];
+    await add('social-photos', post.photoPath, thumbnail, { visibleToSousChef: true });
     await rpc(source, 'social_content', 'publish', { postID });
     await actor(source, 'source', peer);
     await rpc(source, 'social_interactions', 'like', { postID });
     await rpc(source, 'social_interactions', 'comment', { postID, commentID: randomUUID(), body: 'Fixture comment' });
     await actor(source, 'source', user);
+    await rpc(source, 'social_interactions', 'like', { postID: peerPostID });
+    await rpc(source, 'social_interactions', 'comment', { postID: peerPostID, commentID: randomUUID(), body: 'Owner comment' });
     const replaySQL = 'select api.apply_cooking_operation($1::jsonb) value';
     const replayArgs = [JSON.stringify(fixture.operations[0])];
     const expectedReceipt = await value(source, replaySQL, replayArgs);
     const expectedRestore = await restore(source);
     await source.query('reset role');
+    const peerRecreationID = randomUUID();
+    await source.query(`insert into staygrubby.cooking_origins(id,account_id,kind,post_id,creator_id,item_id,attempt_id,completed_at)
+        values($1,$2,'recreated',$3,$4,$5,$6,now())`,
+    [peerRecreationID, peerAccount, postID, owner, peerCook.rankedItemID, peerCook.id]);
     const expectedGraph = await identityGraph(source);
     check(expectedGraph.length === 3 && expectedGraph.every(row => row.provider_id === row.subject && row.auth_id !== row.account_id), 'Source Apple subject and permanent identity graph');
-    check(await value(source, 'select bool_and(owner_id=$1::text) value from storage.objects', [user]), 'Source fixture uses owner-authenticated upload');
+    check(await value(source, `select bool_and(l.auth_user_id::text=o.owner_id) value from storage.objects o
+        join staygrubby.auth_account_links l on l.account_id::text=split_part(o.name,'/',1)`),
+    'Source fixture uses owner-authenticated uploads');
 
     const columnLists = new Map();
     const fileFor = table => join(exports, table + '.csv');
@@ -478,9 +578,9 @@ try {
         check(await copyObject(object, sha(object.bytes)), 'Retry keeps an exact match');
         await assert.rejects(() => copyObject(object, '0'.repeat(64)), /Source hash/);
         checks++;
-        await ok(await readObject('target', object, { role: 'authenticated', actor: user }), 'Original owner still authorized');
-        const peerRead = await readObject('target', object, { role: 'authenticated', actor: peer });
-        if (object.permittedPeer) await ok(peerRead, 'Sous Chef read allowed for ' + object.bucket);
+        await ok(await readObject('target', object, { role: 'authenticated', actor: object.uid }), 'Original owner still authorized');
+        const peerRead = await readObject('target', object, { role: 'authenticated', actor: object.uid === user ? peer : user });
+        if (object.visibleToSousChef) await ok(peerRead, 'Sous Chef read allowed for ' + object.bucket);
         else await unavailable(peerRead, 'Sous Chef read denied for ' + object.bucket);
         await unavailable(await readObject('target', object, { role: 'authenticated', actor: stranger }), 'Unrelated actor denied');
         await unavailable(await readObject('target', object, { role: 'anon' }), 'Anonymous denied');
@@ -502,46 +602,170 @@ try {
     check(await value(target, `select completed_at is not null and attempt_id=$2 and snapshot->>'title'=$3 and recipe_revision=1 value
         from staygrubby.recipe_cooks where id=$1`, [reservation.id, newCook, recipe.title]), 'Preserved reservation completes with original revision');
 
-    async function verifyDeletion(db, side, objects) {
-        await actor(db, side, user);
-        await db.query('select api.begin_account_deletion()');
-        await db.query('reset role; set role service_role');
-        await db.query("select api.advance_account_deletion($1,'apple_revoked')", [user]);
-        await db.query("select api.advance_account_deletion($1,'storage_cleared')", [user]);
-        await rejected(() => db.query('select api.erase_account_data($1)', [user]), '55000', 'Account erasure refuses existing bytes');
-        for (const bucket of new Set(objects.map(object => object.bucket))) {
-            const prefixes = objects.filter(object => object.bucket === bucket).map(object => object.key);
-            await ok(await request(side, 'storage', '/object/' + bucket, { method: 'DELETE', json: { prefixes } }),
-                'Privileged deletion by canonical path');
+    const erase = (db, uid) => value(db, 'select api.erase_account_data($1) value', [uid]);
+    const advance = (db, uid, stage) => value(db, 'select api.advance_account_deletion($1,$2) value', [uid, stage]);
+    const roleService = db => db.query('reset role; set role service_role');
+    const graphFingerprint = async db => {
+        const digests = [];
+        for (const table of [...tables, ...operationalTables, 'auth.sessions', 'storage.objects']) {
+            digests.push(await digestCopy(db, copyQuery(table, 'to_jsonb(t)::text')));
         }
-        check(await value(db, 'select count(*)=0 value from storage.objects'), 'No remaining object metadata');
-        for (const object of objects) await unavailable(await readObject(side, object), 'Removed bytes inaccessible');
-        await assert.rejects(() => db.query('select api.erase_account_data($1)', [user]),
-            { code: '23503', constraint: 'media_backups_account_id_media_id_fkey' },
-            'The canonical erasure RPC fails on the remaining media manifest');
+        return digests;
+    };
+    async function peerFingerprint(db) {
+        const rows = {};
+        for (const table of [
+            'accounts', 'auth_account_links', 'profiles', 'profile_routes', 'rankings', 'account_libraries',
+            'dishes', 'dish_sources', 'ranked_items', 'cooking_attempts', 'comparisons', 'tags', 'attempt_tags',
+            'media', 'media_backups', 'sync_operations', 'recipes', 'recipe_photos', 'social_posts',
+        ]) {
+            const ownerColumn = table === 'accounts' ? 'id' :
+                ['recipes', 'recipe_photos'].includes(table) ? 'owner_id' : table === 'social_posts' ? 'author_id' : 'account_id';
+            rows[table] = await value(db, `select jsonb_agg(to_jsonb(t) order by to_jsonb(t)::text) value
+                from staygrubby.${quote(table)} t where t.${quote(ownerColumn)}=$1`, [peerAccount]);
+        }
+        rows.revisions = await value(db, 'select jsonb_agg(to_jsonb(t) order by revision) value from staygrubby.recipe_revisions t where recipe_id=$1', [peerRecipeID]);
+        rows.recipeSnapshot = await value(db, "select to_jsonb(t)-'recipe_id' value from staygrubby.recipe_cooks t where id=$1", [peerCookOrigin]);
+        rows.fork = await value(db, "select to_jsonb(t)-'source_recipe_id'-'source_owner_id' value from staygrubby.recipe_forks t where recipe_id=$1", [peerRecipeID]);
+        rows.recreation = await value(db, "select to_jsonb(t)-'post_id'-'creator_id' value from staygrubby.cooking_origins t where id=$1", [peerRecreationID]);
+        rows.storage = await value(db, "select jsonb_agg(to_jsonb(t) order by bucket_id,name) value from storage.objects t where split_part(name,'/',1)=$1", [peerAccount]);
+        rows.auth = await value(db, `select jsonb_build_array(to_jsonb(u),to_jsonb(i),to_jsonb(s)) value from auth.users u
+            join auth.identities i on i.user_id=u.id join auth.sessions s on s.user_id=u.id where u.id=$1`, [peer]);
+        return rows;
+    }
+    async function deleteAuth(side, db, uid) {
+        await ok(await request(side, 'auth', '/admin/users/' + uid,
+            { method: 'DELETE', json: { should_soft_delete: false } }), 'Official Auth hard-deletes the user');
+        await unavailable(await request(side, 'auth', '/user', { role: 'authenticated', actor: uid }), 'Erased user token denied');
+        check(await value(db, `select not exists(select 1 from auth.users where id=$1)
+            and not exists(select 1 from auth.identities where user_id=$1)
+            and not exists(select 1 from auth.sessions where user_id=$1)
+            and not exists(select 1 from staygrubby.account_deletion_jobs where auth_user_id=$1) value`, [uid]),
+        'Auth user, identity, sessions and final job removed');
+    }
+    async function verifyDeletion(db, side, ownedObjects) {
+        const peerBefore = await peerFingerprint(db);
+        check(peerBefore.media.length > 0 && peerBefore.storage.length === 5 && peerBefore.comparisons.length > 0 &&
+            peerBefore.recipeSnapshot && peerBefore.fork && peerBefore.recreation, 'Peer has real independent and shared-origin data');
+        check(await value(db, `select convalidated and not condeferrable and confdeltype='a' value
+            from pg_constraint where conrelid='staygrubby.media_backups'::regclass
+            and conname='media_backups_account_id_media_id_fkey'`), 'Immediate validated NO ACTION FK remains');
+        const states = await value(db, `select jsonb_agg(jsonb_build_array(b.ready,b.cleaned,m.deleted_at is not null)
+            order by b.ready,b.cleaned) value from staygrubby.media_backups b join staygrubby.media m
+            on (m.account_id,m.id)=(b.account_id,b.media_id) where b.account_id=$1`, [owner]);
+        assert.deepEqual(states, [[false, true, true], [true, false, false], [true, true, true]], 'All observed hosted manifest states');
+        checks++;
+
+        await actor(db, side, user);
+        const job = await value(db, 'select api.begin_account_deletion() value');
+        assert.deepEqual(await value(db, 'select api.begin_account_deletion() value'), job, 'Begin retry reuses the job');
+        check(job.accountID === owner && job.state === 'requested' &&
+            job.objectKeys.every(key => key.startsWith(owner + '/')) && job.objectKeys.length === 2, 'Known keys contain only active owner variants');
+        await rejected(() => erase(db, peer), '42501', 'Authenticated caller cannot erase another account');
+        await roleService(db);
+        await rejected(() => advance(db, user, 'storage_cleared'), '55000', 'Stages cannot be skipped');
+        await advance(db, user, 'apple_revoked');
+        const firstBucket = ownedObjects[0].bucket;
+        const buckets = new Set(ownedObjects.map(object => object.bucket));
+        async function remove(bucket) {
+            const prefixes = ownedObjects.filter(object => object.bucket === bucket).map(object => object.key);
+            await ok(await request(side, 'storage', '/object/' + bucket, { method: 'DELETE', json: { prefixes } }),
+                'Storage deletion by canonical account path');
+        }
+        await remove(firstBucket);
+        await actor(db, side, user);
+        check((await value(db, 'select api.account_deletion_state() value')).state === 'apple_revoked',
+            'Interruption mid-Storage leaves the job resumable');
+        await roleService(db);
+        await rejected(() => erase(db, user), '55000', 'Erasure refuses an unfinished Storage stage');
+        await advance(db, user, 'storage_cleared');
+        await rejected(() => erase(db, user), '55000', 'Remaining bucket objects block the graph even with a recorded Storage checkpoint');
+        for (const bucket of buckets) await remove(bucket);
+        check(await value(db, "select count(*)=0 value from storage.objects where split_part(name,'/',1)=$1", [owner]),
+            'Storage leaves no erased-account object metadata');
+        for (const object of ownedObjects) await unavailable(await readObject(side, object), 'Removed bytes inaccessible');
+        await db.query('reset role');
+        const intact = await graphFingerprint(db);
+
+        if (side === 'source') {
+            await roleService(db);
+            await assert.rejects(() => erase(db, user), { code: '23503', constraint: 'media_backups_account_id_media_id_fkey' },
+                'Historical source implementation reproduces the exact blocker');
+            await db.query('reset role');
+            await db.query(erasureSQL);
+            assert.deepEqual(await graphFingerprint(db), intact, 'Installing the correction changes no data, including a pending erasure job');
+            checks += 2;
+        }
+
+        await db.query('begin');
+        await db.query("update staygrubby.accounts set status='active' where id=$1", [owner]);
+        await roleService(db);
+        await rejected(() => erase(db, user), '55000', 'An inconsistent job cannot erase an active account');
+        await db.query('rollback; reset role');
+
+        await db.query('begin');
+        await roleService(db);
+        check((await erase(db, user)).state === 'account_erased', 'Erasure reaches its completion checkpoint');
+        await db.query('reset role; rollback');
+        assert.deepEqual(await graphFingerprint(db), intact, 'Interrupted erasure rolls back manifests, account rows and job together');
+        checks++;
+        await roleService(db);
+        const erased = await erase(db, user);
+        check(erased.state === 'account_erased' && erased.accountID === owner, 'Retry commits the account graph without an FK violation');
+        assert.deepEqual(await erase(db, user), erased, 'Lost graph response repeats idempotently before Auth cleanup');
         checks++;
         await db.query('reset role');
-        check(await value(db, "select status='deleting' value from staygrubby.accounts where id=$1", [owner]), 'Blocked account remains in deletion');
-        check(await value(db, "select state='storage_cleared' value from staygrubby.account_deletion_jobs where auth_user_id=$1", [user]),
-            'Deletion checkpoint records irreversible byte cleanup');
-        check(await value(db, 'select count(*)=1 value from staygrubby.accounts where id=$1', [peerAccount]), 'Peer account preserved');
-    }
-    await verifyDeletion(source, 'source', [...approved, excludedAvatar]);
-    await verifyDeletion(target, 'target', approved);
 
-    // Diagnostic only. Prove the narrow cause on the disposable target without
-    // adding a migration, changing the RPC or retaining the manual cleanup.
-    await target.query('begin');
-    await target.query('delete from staygrubby.media_backups where account_id=$1', [owner]);
-    await target.query('set local role service_role');
-    await target.query('select api.erase_account_data($1)', [user]);
+        for (const table of [...graphTables, 'staygrubby.recipe_import_usage', 'staygrubby.recipe_import_reservations']) {
+            check(await value(db, `select not exists(select 1 from ${qualified(table)} t
+                where $1::text in (to_jsonb(t)->>'account_id',to_jsonb(t)->>'owner_id',to_jsonb(t)->>'author_id',
+                to_jsonb(t)->>'actor_id',to_jsonb(t)->>'recipient_id',to_jsonb(t)->>'creator_id',
+                to_jsonb(t)->>'reporter_id',to_jsonb(t)->>'target_account_id',to_jsonb(t)->>'source_owner_id',
+                to_jsonb(t)->>'blocker_id',to_jsonb(t)->>'blocked_id',to_jsonb(t)->>'low_id',
+                to_jsonb(t)->>'high_id',to_jsonb(t)->>'requester_id')
+                or ($2 and to_jsonb(t)->>'id'=$1) or to_jsonb(t)->>'recipe_id'=$3 or to_jsonb(t)->>'post_id'=$4) value`,
+            [owner, table === 'staygrubby.accounts', recipeID, postID]), 'No erased owner rows or live references in ' + table);
+        }
+        check(await value(db, "select account_id is null value from staygrubby.profile_routes where username='fixture_owner'"),
+            'Former handle remains unlinked');
+        check(await value(db, `select c.recipe_id is null and f.source_recipe_id is null and f.source_owner_id is null
+            and o.creator_id is null and o.post_id is null value
+            from staygrubby.recipe_cooks c cross join staygrubby.recipe_forks f cross join staygrubby.cooking_origins o
+            where c.id=$1 and f.recipe_id=$2 and o.id=$3`, [peerCookOrigin, peerRecipeID, peerRecreationID]),
+        'Peer history and independent Recipe copy detach from deleted live sources');
+        check(await value(db, `select not exists(select 1 from staygrubby.social_likes where post_id=$1)
+            and not exists(select 1 from staygrubby.social_comments where post_id=$1) value`, [peerPostID]),
+        'Deleted owner interactions disappear while the peer post survives');
+        await actor(db, side, user);
+        check((await value(db, 'select api.account_deletion_state() value')).state === 'account_erased',
+            'Existing Auth session can resume at the final checkpoint after a failed Auth cleanup');
+        await db.query('reset role');
+        await deleteAuth(side, db, user);
+        assert.deepEqual(await peerFingerprint(db), peerBefore, 'Peer account, Auth, library, evidence, Recipes, post, metadata and snapshots unchanged');
+        checks++;
+        for (const object of approved.filter(object => object.uid === peer)) {
+            const response = await ok(await readObject(side, object, { role: 'authenticated', actor: peer }), 'Peer still reads owned photo');
+            check(sha(Buffer.from(await response.arrayBuffer())) === sha(object.bytes), 'Peer photo SHA-256 unchanged');
+        }
+    }
+    const ownedObjects = approved.filter(object => object.uid === user);
+    await verifyDeletion(source, 'source', [...ownedObjects, excludedAvatar]);
+    await verifyDeletion(target, 'target', ownedObjects);
+
+    const peerBeforeNoPhotos = await peerFingerprint(target);
+    await actor(target, 'target', stranger);
+    const emptyJob = await value(target, 'select api.begin_account_deletion() value');
+    check(emptyJob.accountID === strangerAccount && emptyJob.objectKeys.length === 0, 'No-photo owner starts without backup keys');
+    await roleService(target);
+    await advance(target, stranger, 'apple_revoked');
+    await advance(target, stranger, 'storage_cleared');
+    check((await erase(target, stranger)).state === 'account_erased', 'No-photo account erases while peer Storage remains populated');
     await target.query('reset role');
-    check(await value(target, 'select count(*)=0 value from staygrubby.accounts where id=$1', [owner]), 'Scoped manifest cleanup unblocks account erasure');
-    check(await value(target, 'select count(*)=1 value from staygrubby.accounts where id=$1', [peerAccount]), 'Scoped cleanup preserves peer');
-    await target.query('rollback');
-    check(await value(target, 'select count(*)=1 value from staygrubby.media_backups where account_id=$1', [owner]), 'Diagnostic graph changes rolled back');
+    await deleteAuth('target', target, stranger);
+    check(await value(target, 'select not exists(select 1 from staygrubby.accounts where id=$1) value', [strangerAccount]), 'No-photo account removed');
+    assert.deepEqual(await peerFingerprint(target), peerBeforeNoPhotos, 'No-photo deletion also preserves peer');
+    checks++;
     console.log(`PASS ${checks} disposable assertions; ${files.length} migrations per database, ${tables.length} CSV/digest pairs, ${approved.length} actual objects in four buckets.`);
-    console.log('NO-GO: canonical account erasure fails after Storage cleanup on both source and target with media backup manifests.');
 } finally {
     await Promise.allSettled([source.end(), target.end()]);
 }
