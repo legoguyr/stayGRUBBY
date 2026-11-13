@@ -16,7 +16,7 @@ Current native application/Apple Client ID: `com.guyrettig.StayGrubby`. The proj
 
 ## Clean project migration
 
-The November 12 read-only [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) identifies the two projects and records the migration inventory. The [Phase 2A rehearsal and live runbook](CLEAN_MIGRATION_PHASE_2A.md) record the verified transfer and account-erasure correction. The old source has 48 migrations. Prepare the fresh target with all 49, ending in `20261112151401_erase_account_cooking_photo_manifests.sql`, before any import under separate authorization. Neither project received the correction during disposable verification. The [Phase 2B live record](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) confirms frozen source integrity, the owner’s device-outbox check and empty target hardening. Target replay and transfer are paused for the [owner’s Keychain setup](CLEAN_MIGRATION_PHASE_2A.md#resume-with-secure-operator-access) and authenticated operator checks. The password-free local profiles and verified CA are ready. No app endpoint has changed.
+The [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) records the frozen source and the approved inventory. [Phase 2B](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled the November 13 transfer of 1,077 database rows and 109 private JPEGs. The source retains its 48 migrations and original data. The closed target has all 49 migrations including the erasure correction, plus the two production Edge Functions with JWT verification. Hosted Apple/JWT acceptance and separate endpoint cutover approval remain pending.
 
 ## Target and tooling
 

@@ -30,7 +30,7 @@ When proposing work classify it as **required before V1**, **desirable but defer
 | 5 | **E — Social / Kitchens** | The Pass, Tickets relocated to The Pass, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards; cook names on cards per snapshot rules | Required |
 | 6 | **G — Copy / Celebrations / Final consolidation** | Copy purge, ranking result and celebrations (after the investigation concludes), accessibility/consistency | Required |
 
-**Operational gate (November 12).** Restore write service through the [clean Supabase migration](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) before expanding write-enabled beta access. Phase 2B tightened access on the empty target and is paused for verified operator connections. Endpoint cutover remains a separate approval. This does not change the product stage order.
+**Operational gate (November 13).** [Phase 2B transfer](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) is reconciled on the closed target. Complete controlled hosted Apple/JWT acceptance and separately approve endpoint cutover before expanding write-enabled beta access.
 
 Why this order:
 

@@ -111,7 +111,7 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 ## Supabase system map
 
-The app still points to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17), currently read-only on 48 audited migrations. The clean **#stayGRUBBY** target (`ayjflxstqmnuoiphbyek`) is empty. Its authorized setup must apply all 49 local migrations, including the verified account-erasure correction, before any data transfer. The [live migration record](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) records closed signups, manual Data API grants and verified automatic RLS for new public tables on the target. The owner cleared device outboxes; operator access, schema replay, transfer and hosted acceptance remain open. Tooling/history: [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md).
+The app still points to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17), read-only on 48 audited migrations. The closed **#stayGRUBBY** target (`ayjflxstqmnuoiphbyek`) has all 49 migrations, the reconciled eight Apple accounts and app graph, 109 private photos, and the two JWT-protected production functions. Target sign-in and public signup remain closed. Hosted Apple and valid/foreign JWT checks precede separately approved cutover. [Migration evidence](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) · [Backend tooling](Backend/README.md).
 
 | Layer | Contents and boundary |
 | --- | --- |
