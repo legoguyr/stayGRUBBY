@@ -4,7 +4,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 
 **Current state (November 7, 2026):** Build 1.0 (4) is uploaded to TestFlight (`c09c18e`). November 8: `agent/claude` integrated into local `main`; D1 Unified Dish Foundation implemented; the lifecycle and Dish Recipe links migrations are deployed. D2 Unified Dish Detail implemented and its Food Bible index migration deployed. One Dish identity (Dish and Recipe as two views of one Dish) implemented and deployed. Stage F complete (creation/linking, Cook Again start, grouped cook editor, Recipe Diet); its migrations are deployed and no feature flag is enabled. November 9: filter simplification, one-Dish-universe combine and import Diet suggestions. Next: C → E → G → V1 Release Gate → Release Candidate → App Store V1.
 
-**November 13 infrastructure checkpoint:** [Phase 2B](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) copied and reconciled 1,077 database rows and 109 photos to the closed Supabase target. The source remains read-only and is still the app endpoint. Hosted SQL staging checks passed and a signed iPhone staging build is ready. Native Apple/JWT acceptance and separate cutover approval are pending.
+**November 13 infrastructure checkpoint:** [Phase 2B](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) copied and reconciled 1,077 database rows and 109 photos to the closed Supabase target. The source remains read-only and is still the app endpoint. Native Apple sign-in, original-account restoration, photos and signed target library access passed on the owner’s iPhone. Cross-project JWT verification and separate cutover approval are pending.
 
 ## Read first
 
