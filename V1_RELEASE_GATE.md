@@ -20,7 +20,7 @@ Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e
 - [ ] Confirm current Privacy Policy, external-AI consent and actual social/cloud/photo/data processing; update App Store privacy disclosures accordingly.
 - [ ] Verify public Support/contact and policy destinations, contact ownership and response process. Stage 5 supplies Settings access, not an operations/compliance certification.
 - [ ] Complete age-rating/social-media/UGC considerations using current platform requirements during the gate.
-- [ ] Verify Sign in with Apple, account readiness/sign-out, offline ready-account behavior and App Review access strategy. Automated fixtures cannot establish physical Apple authorization.
+- [ ] Verify Sign in with Apple, account readiness/sign-out, offline ready-account behavior and App Review access strategy. The migration target passed hosted database account, photo and sync checks. Native Apple and signed HTTP JWT acceptance remain open. [Final staging acceptance](supabase/CLEAN_MIGRATION_PHASE_2A.md#final-staging-acceptance)
 - [ ] Disposition existing security advisories, including the leaked-password linter warning against the intended Apple-only Auth configuration. Do not change Auth settings merely to suppress a warning.
 - [ ] Review the production `development-test-session` Edge Function (v1, administrator-proof gated, JWT on): keep with documented justification or remove under separate authorization before public release.
 - [ ] Grub Rank score/order semantic consistency investigation concluded and its owner-approved presentation implemented (no ranking math change without explicit reopening). See [architecture](STAYGRUBBY_ARCHITECTURE.md#ranking--protected).
