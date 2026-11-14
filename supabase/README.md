@@ -16,7 +16,7 @@ Current native application/Apple Client ID: `com.guyrettig.StayGrubby`. The proj
 
 ## Clean project migration
 
-The [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) records the frozen source and the approved inventory. [Phase 2B](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled the November 13 transfer of 1,077 database rows and 109 private JPEGs. The source retains its 48 migrations and original data. The closed target has all 49 migrations including the erasure correction, plus the two production Edge Functions with JWT verification. Hosted Apple/JWT acceptance and separate endpoint cutover approval remain pending.
+The [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) records the frozen source and the approved inventory. [Phase 2B](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled the November 13 transfer of 1,077 database rows and 109 private JPEGs. The source retains its 48 migrations and original data. The target has all 49 migrations including the erasure correction and both production Edge Functions with JWT verification. Owner iPhone staging and issuer/signing-key separation passed. The local client candidate points to the target. Signed Edge Function verification and owner activation remain open.
 
 ## Target and tooling
 

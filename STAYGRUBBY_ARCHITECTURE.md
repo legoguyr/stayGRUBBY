@@ -111,7 +111,7 @@ Onboarding → native Sign in with Apple → Supabase Auth → permanent account
 
 ## Supabase system map
 
-The app still points to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17), read-only on 48 audited migrations. The closed **#stayGRUBBY** target (`ayjflxstqmnuoiphbyek`) has all 49 migrations, the reconciled eight Apple accounts and app graph, 109 private photos, and the two JWT-protected production functions. Target Apple sign-in is enabled for existing accounts and public signup stays closed. Hosted SQL verified account/library resolution, photo RLS and the sync conflict boundary. Owner iPhone staging confirmed native Apple sign-in and signed target library access. The known-valid source JWT check precedes separately approved cutover. [Migration evidence](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) · [Backend tooling](Backend/README.md).
+Installed production builds point to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1, PostgreSQL 17), read-only on 48 audited migrations. The local cutover candidate points to **#stayGRUBBY** (`ayjflxstqmnuoiphbyek`), with all 49 migrations, the eight reconciled Apple accounts, 109 imported photos and one authorized staging photo, and two JWT-protected functions. Target Apple sign-in is enabled for existing accounts and public signup stays closed. Owner iPhone staging confirmed original-account restore and signed library and photo access. Issuer and signing-key separation passed. Signed Edge Function checks and owner release approval remain open. [Migration evidence](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) · [Backend tooling](Backend/README.md).
 
 | Layer | Contents and boundary |
 | --- | --- |
