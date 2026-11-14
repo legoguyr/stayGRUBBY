@@ -30,7 +30,7 @@ When proposing work classify it as **required before V1**, **desirable but defer
 | 5 | **E — Social / Kitchens** | The Pass, Tickets relocated to The Pass, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards; cook names on cards per snapshot rules | Required |
 | 6 | **G — Copy / Celebrations / Final consolidation** | Copy purge, ranking result and celebrations (after the investigation concludes), accessibility/consistency | Required |
 
-**Operational gate (November 14).** The [local cutover candidate](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) builds against the migrated target. Owner iPhone staging and project signing-key separation passed. Complete signed Edge Function verification and obtain approval for the existing-install rollout before changing live beta access.
+**Operational gate (November 14).** [Build 1.0 (5)](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) targets the migrated project and is available to internal Alpha Testers only. The owner waived the two live signed Edge Function probes for this rollout. Confirm the owner's in-place update, then prioritize backend Storage protection and automated monitoring. Wider distribution requires separate approval.
 
 Why this order:
 
