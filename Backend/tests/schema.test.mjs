@@ -20,10 +20,52 @@ await db.exec(`create role authenticated; create role anon; create role service_
 await db.exec(storageStubSQL);
 const migrationDirectory = new URL('../../supabase/migrations/', import.meta.url);
 const migrations = (await readdir(migrationDirectory)).filter(name => name.endsWith('.sql')).sort();
-check(migrations.length === 49 && migrations.at(-1).endsWith('_erase_account_cooking_photo_manifests.sql') && migrations.some(name => name.endsWith('_non_retryable_conflicts.sql')) && migrations.some(name => name.endsWith('_food_bible_diet_index.sql')) && migrations.some(name => name.endsWith('_feature_flags.sql')) && migrations.some(name => name.endsWith('_dish_recipe_identity.sql')) && migrations.some(name => name.endsWith('_food_bible_dish_resolution.sql')) && migrations.some(name => name.endsWith('_dish_recipe_links.sql')) && migrations.some(name => name.endsWith('_recipe_cook_lifecycle.sql')) && migrations.some(name => name.endsWith('_ranking_assessment_client_guard.sql')) && migrations.some(name => name.endsWith('_dish_linked_recipe_components.sql')) && migrations.some(name => name.endsWith('_cookbook_search_index.sql')) && migrations.some(name => name.endsWith('_recipe_import_budget.sql')) && migrations.some(name => name.endsWith('_recipe_social_integration.sql')) && migrations.some(name => name.endsWith('_recipe_owned_copy_share_options.sql')) && migrations.some(name => name.endsWith('_stage3_directed_social_sharing.sql')) && migrations.some(name => name.endsWith('_stage4_recipe_cook_experience.sql')), 'Approved migration chain includes directed sharing and preserved Recipe foundations');
+check(migrations.length === 51 && migrations.at(-1).endsWith('_idempotent_acknowledgements.sql') && migrations.at(-2).endsWith('_storage_safeguards.sql') && migrations.at(-3).endsWith('_erase_account_cooking_photo_manifests.sql') && migrations.some(name => name.endsWith('_non_retryable_conflicts.sql')) && migrations.some(name => name.endsWith('_food_bible_diet_index.sql')) && migrations.some(name => name.endsWith('_feature_flags.sql')) && migrations.some(name => name.endsWith('_dish_recipe_identity.sql')) && migrations.some(name => name.endsWith('_food_bible_dish_resolution.sql')) && migrations.some(name => name.endsWith('_dish_recipe_links.sql')) && migrations.some(name => name.endsWith('_recipe_cook_lifecycle.sql')) && migrations.some(name => name.endsWith('_ranking_assessment_client_guard.sql')) && migrations.some(name => name.endsWith('_dish_linked_recipe_components.sql')) && migrations.some(name => name.endsWith('_cookbook_search_index.sql')) && migrations.some(name => name.endsWith('_recipe_import_budget.sql')) && migrations.some(name => name.endsWith('_recipe_social_integration.sql')) && migrations.some(name => name.endsWith('_recipe_owned_copy_share_options.sql')) && migrations.some(name => name.endsWith('_stage3_directed_social_sharing.sql')) && migrations.some(name => name.endsWith('_stage4_recipe_cook_experience.sql')), 'Approved migration chain includes directed sharing and preserved Recipe foundations');
 const initial = (await Promise.all(migrations.map(name => readFile(new URL(name, migrationDirectory), 'utf8')))).join('');
 check(initial === await readFile(new URL('../schema.sql', import.meta.url), 'utf8'), 'Reference and complete migration chain agree');
 for (const name of migrations) await db.exec(await readFile(new URL(name, migrationDirectory), 'utf8'));
+const capacitySignals = async metrics => (await db.query(
+  'select operations.capacity_signals($1::jsonb) as signals', [JSON.stringify(metrics)]
+)).rows[0].signals;
+check(Object.keys(await capacitySignals({ database_bytes:262143999, storage_bytes:699999999, app_rows_per_minute:null })).length===0,
+  'Quiet capacity samples and missing rate observations do not emit alarms');
+assert.deepEqual(await capacitySignals({ database_bytes:262144000, visible_disk_bytes:1200000000, storage_bytes:700000000, storage_unknown_sizes:1 }),
+  { database_bytes:'warning', visible_disk_bytes:'warning', storage_bytes:'warning', storage_unknown_sizes:'warning' });
+checks++;
+check((await capacitySignals({visible_disk_bytes:1400000000})).visible_disk_bytes==='incident',
+  'The disk floor includes an intermediate incident threshold');
+assert.deepEqual(await capacitySignals({ visible_disk_bytes:1600000000, wal_bytes:629145600, storage_bytes:900000000,
+  app_rows_per_minute:5000, wal_generated_bytes_per_minute:134217728, excess_rollbacks_per_minute:300 }),
+  { visible_disk_bytes:'critical', wal_bytes:'critical', storage_bytes:'critical', app_rows_per_minute:'critical',
+    wal_generated_bytes_per_minute:'critical', excess_rollbacks_per_minute:'critical' });
+checks++;
+check((await db.query("select bool_and(not has_schema_privilege(role,'operations','USAGE') and not has_table_privilege(role,'operations.capacity_state','SELECT') and not has_function_privilege(role,'operations.sample_capacity()','EXECUTE')) access_is_closed from unnest(array['anon','authenticated','service_role']) role")).rows[0].access_is_closed,
+  'The sampler and aggregate results are accessible only to database operators');
+const databasePath = (await db.query('show data_directory')).rows[0].data_directory;
+db.Module.FS_createPath(databasePath, 'log', true, true);
+await db.exec(`create schema cron;
+ create table cron.job (jobid integer primary key, jobname text, username text);
+ create table cron.job_run_details (runid integer primary key, jobid integer, end_time timestamptz);
+ insert into cron.job values (1,'staygrubby-capacity',current_user),(2,'other-job',current_user);
+ insert into cron.job_run_details select n,1,now()-interval '8 days' from generate_series(1,200) n;
+ insert into cron.job_run_details values (201,1,now()),(202,1,null),(203,2,now()-interval '9 days');`);
+check(Object.keys((await db.query('select operations.sample_capacity() as signals')).rows[0].signals).length===0,
+  'Collector runs against a quiet disposable PostgreSQL instance');
+const firstSample = (await db.query('select * from operations.capacity_state')).rows[0];
+check(firstSample.metrics.visible_disk_bytes > 0 && firstSample.metrics.storage_objects === 0,
+  'Collector separates local database/WAL size from object Storage');
+check((await db.query('select count(*)::int as n from cron.job_run_details where runid<=200')).rows[0].n===8,
+  'One run deletes at most 192 expired diagnostics');
+await db.exec("update operations.capacity_state set sampled_at=sampled_at-interval '5 minutes', metrics=metrics||'{\"app_row_changes\":-6000}'::jsonb");
+check((await db.query('select operations.sample_capacity() as signals')).rows[0].signals.app_rows_per_minute==='warning',
+  'A measured write burst emits a warning');
+const retainedRuns = (await db.query('select runid from cron.job_run_details order by runid')).rows.map(row => row.runid);
+assert.deepEqual(retainedRuns, [201,202,203]);
+checks++;
+check((await db.query('select count(*)::int as n from operations.capacity_state')).rows[0].n===1,
+  'Later measurements replace the one retained sample');
+await assert.rejects(db.exec("insert into operations.capacity_state values (false, now(), now(), '{}', '{}', null)"), { code:'23514' });
+checks++;
 await db.exec(`insert into auth.users(id) values('${ua}'),('${ub}');
  insert into staygrubby.accounts(id) values('${a}'),('${b}');
  insert into staygrubby.auth_account_links(auth_user_id,account_id) values('${ua}','${a}'),('${ub}','${b}');

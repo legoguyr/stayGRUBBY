@@ -30,7 +30,7 @@ When proposing work classify it as **required before V1**, **desirable but defer
 | 5 | **E — Social / Kitchens** | The Pass, Tickets relocated to The Pass, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards; cook names on cards per snapshot rules | Required |
 | 6 | **G — Copy / Celebrations / Final consolidation** | Copy purge, ranking result and celebrations (after the investigation concludes), accessibility/consistency | Required |
 
-**Operational gate (November 14).** [Build 1.0 (5)](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) targets the migrated project and is available to internal Alpha Testers only. The owner waived the two live signed Edge Function probes for this rollout. The owner verified the in-place update, account, library, photos and sync. Backend Storage protection and automated monitoring are the next development task. Wider distribution requires separate approval.
+**Operational gate (November 14).** [Build 1.0 (5)](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) targets the migrated project and is available to internal Alpha Testers only. The owner waived the two live signed Edge Function probes for this rollout. The owner verified the in-place update, account, library, photos and sync. The target [automatic capacity monitor](supabase/README.md#automatic-target-monitoring) runs on the migrated project. Approve the tested idempotent acknowledgment deployment separately and hand off [client sync backoff](supabase/README.md#next-ios-sync-handoff) before introducing server-side sync throttling. Wider distribution requires separate approval.
 
 Why this order:
 

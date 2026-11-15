@@ -16,7 +16,7 @@ Current native application/Apple Client ID: `com.guyrettig.StayGrubby`. The proj
 
 ## Clean project migration
 
-The [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) records the frozen source and the approved inventory. [Phase 2B](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled the November 13 transfer of 1,077 database rows and 109 private JPEGs. The source retains its 48 migrations and original data. The target has all 49 migrations including the erasure correction and both production Edge Functions with JWT verification. Owner iPhone staging and issuer/signing-key separation passed. The local client candidate points to the target. Signed Edge Function verification and owner activation remain open.
+The [Phase 1 audit](CLEAN_MIGRATION_PHASE_1.md) records the frozen source and the approved inventory. [Phase 2B](CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled the November 13 transfer of 1,077 database rows and 109 private JPEGs. The source retains its 48 migrations and original data. The target received 49 transfer migrations including the erasure correction, then the capacity monitor as its 50th. Both production Edge Functions retain JWT verification. Owner iPhone staging, issuer/signing-key separation, and the Build 5 in-place update passed. Build 5 is available to internal Alpha Testers only. The two live signed Edge Function probes remain waived for this rollout.
 
 ## Target and tooling
 
@@ -192,7 +192,36 @@ Read the dashboard's Disk Size Distribution at the same time, because Postgres c
 | 90–95% | Critical | As above, now. Owner decision on disk increase only after the cause is stopped. |
 | ≥ 95% | Supabase read-only | All sign-ins, restores, syncs, uploads and posts fail. Stop the cause, reclaim, then lift read-only from the dashboard. |
 
-**Data classes and retention.**
+### Automatic target monitoring
+
+`staygrubby-capacity` runs every five minutes in Supabase Cron with a 12-second statement timeout, a 2-second lock timeout and a nonblocking overlap guard. The operator-only `operations.capacity_state` table holds one latest sample. The job prunes up to 192 of its own completed run records older than seven days per run. There is no alert table, per-request telemetry, new credential, external vendor or user identifier. When consecutive samples are within 1–30 minutes, the collector also reports app relation and object byte growth and counter deltas. It discards negative rates and starts fresh after a database stats reset or restart.
+
+| Metric | Warning | Incident | Critical |
+| --- | --- | --- | --- |
+| PostgreSQL-visible disk floor (all databases + WAL + PostgreSQL logs) | 1.2 GB | 1.4 GB | 1.6 GB |
+| All database files | 250 MiB | — | 400 MiB |
+| Retained WAL | 300 MiB | — | 600 MiB |
+| Storage object bytes across buckets | 700 MB | — | 900 MB |
+| App row changes per minute | 1,000 | — | 5,000 |
+| WAL generated per minute | 32 MiB | — | 128 MiB |
+| Rollbacks in excess of commits per minute | 60 | — | 300 |
+| PostgREST transactions active or idle in transaction for over 30 seconds | 1 | — | 3 |
+| Storage objects with unknown size metadata | 1 | — | — |
+
+The dashboard baseline was approximately 0.29 GB / 2 GB, including 0.16 GB of platform System usage. At activation, PostgreSQL reported 134 MB visible (32.4 MB database, 100.7 MB WAL, 0.8 MB logs), including 3.1 MB of app relations within the database. Private Storage was 112 objects and 18,098,630 bytes, separate from database disk. The automatic disk thresholds use a conservative visible floor. Check full disk and System usage in Supabase Dashboard when investigating. The platform's 2 GB disk and 95% read-only threshold are distinct from the 500 MB Free database quota and 1 GB Storage quota.
+
+**Delivery and response.** Search the target's Postgres Logs for `staygrubby_capacity`. In the SQL Editor, `select sampled_at, signals, metrics from operations.capacity_state;` reads the latest result. The job emits a structured-by-field line at startup, on changes including recovery, and every six hours while a signal persists. Cron run history shows timeouts and failures, and the last sample timestamp shows staleness while the database is reachable. The Free project has no configured off-database alert destination. Supabase's billing email covers its quota notifications separately. PostgreSQL cannot report platform System growth or deliver a fresh alert while the database is unavailable. See [Supabase disk sizing](https://supabase.com/docs/guides/platform/database-size), [usage](https://supabase.com/docs/guides/platform/manage-your-usage/disk-size) and [plan observability](https://supabase.com/pricing).
+
+On a warning, identify the growing component using the latest sample, [health SQL](../DevelopmentTools/database_health.sql), and the Dashboard disk split. If app writes, WAL or rollbacks spike, stop the offending job or caller and pause releases and test traffic. Investigate any slow PostgREST transaction and resolve deterministic conflicts with `PT409`. If System grows independently, use the dashboard and Supabase support before considering a restart. At critical, notify the owner; require separate approval for interruption, disk/billing changes or a client rejection gate. The operator can temporarily disable this monitor by name in Supabase Cron if it is unhealthy. Recovery requires a fresh successful sample. Preserve receipts, canonical records and referenced objects through remediation.
+
+**Current write controls.** Ranking fitting and transient comparisons run on-device. The local journal stores durable deltas. The server stores one immutable receipt per accepted operation; retries reuse the receipt, and invalid stale operations use non-retrying conflict codes. Preserve receipt and tombstone history for offline devices. Cooking photo paths are content-addressed and immutable at manifest registration; bucket bounds and account/manifest checks remain in force. Social refresh and restore fetch existing state. Recipe imports already have an authenticated burst gate. The separate, pending `idempotent_acknowledgements` migration skips identical Ticket read/dismissal updates and already-confirmed photo completion/cleanup updates without changing authorization, preconditions or replies. An ambiguous Storage upload may still repeat the bytes in Build 5.
+
+### Next iOS sync handoff
+
+In Claude's worktree, coalesce repeated foreground/reachability refresh requests and use the cloud revision to avoid full graph load/hydration for an unchanged local graph. Keep a full reconcile on launch when necessary, after invalidation, when identity changes, or when a revision differs. With a lost upload response, check the existing manifest/object state before uploading again, then verify integrity and resume only missing work. Use bounded, jittered per-operation and per-photo automatic retries, with a visible saved-locally state and an explicit Retry or verified connectivity recovery to resume. Keep queued IDs, content hashes and pending local work intact. Teach supported clients to treat HTTP 429 and `Retry-After` as a recoverable cooldown before enabling a server-side write circuit breaker. Build 5 treats unfamiliar RPC errors as a permanent rejection, so a new throttle on structured sync would risk stranding its outbox.
+
+### Data classes and retention
+
 - **Canonical product evidence is never pruned for capacity:** accounts, Dishes, cooks, ranked items, comparisons, Recipes and revisions, used snapshots, links, media manifests/objects, posts, comments, Hands, Tickets, friendships and Personal Cooking Intelligence inputs.
 - **Operational data may get bounded retention, but only via a reviewed migration that names the table:** `sync_operations` receipts (idempotency window), `recipe_import_reservations`/`usage`, unpublished social drafts (already cleaned after 1 day), `account_deletion_jobs` after completion, and Supabase-managed auth/audit tables.
 - **No automatic job may delete rows because disk is high.**

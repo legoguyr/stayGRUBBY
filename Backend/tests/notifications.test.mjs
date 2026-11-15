@@ -12,6 +12,16 @@ try{
  await rejects(()=>rpc('social_notifications','create',{peerID:users[0].id,targetID:randomUUID()}),'22023');
  check((await rpc('social_notifications','page')).unread===0,'Other account sees no notices/count');
  await actor(0);check((await rpc('social_notifications','read',{targetID:notice})).unread===0,'Opening marks read');
+ await db.exec('reset role');
+ const noticeTuple=async()=> (await db.query('select ctid::text, read_at from staygrubby.social_notifications where id=$1',[notice])).rows[0];
+ const readTuple=await noticeTuple();
+ await actor(0);
+ await rpc('social_notifications','read',{targetID:notice});
+ await rpc('social_notifications','delete',{targetID:notice});
+ await db.exec('reset role');
+ const replayedTuple=await noticeTuple();
+ check(replayedTuple.ctid===readTuple.ctid && +replayedTuple.read_at===+readTuple.read_at,'Retrying read or dismissal does not rewrite the notification');
+ await actor(0);
  await rpc('social_people','accept',{peerID:users[1].id});
  check(!(await rpc('social_notifications','page')).notifications.some(n=>n.kind==='request'),'Invalid request target disappears');
  await actor(1);check((await rpc('social_notifications','page')).notifications[0].kind==='accepted','Requester gets accepted notification');

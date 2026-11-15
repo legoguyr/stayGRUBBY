@@ -56,7 +56,16 @@ try{
  await rejects(()=>insert(owner+'/unregistered.jpg',100),'42501','Unregistered object denied');
  await actor();check((await db.query('select * from storage.objects')).rows.length===2,'A reads owned active objects');
  await rpc('complete');check((await rpc('list',null)).backups[0].state==='ready','Both catalog sizes required');
+
+ const manifestTuple=async()=>{
+  await db.exec('reset role');
+  return (await db.query('select ctid::text from staygrubby.media_backups where account_id=$1 and media_id=$2',[owner,manifest.mediaID])).rows[0].ctid;
+ };
+ const readyTuple=await manifestTuple();
+ await actor();
  check((await rpc('complete')).backups[0].state==='ready','Complete retry idempotent');
+ check(await manifestTuple()===readyTuple,'Complete retry does not rewrite its manifest');
+ await actor();
  await actor(user,session,'object.upload');check((await db.query('update storage.objects set metadata=metadata where name=$1',[path])).rowCount===1,'Own upload retry can upsert');
  await actor(user,session,'object.sign');check((await db.query('select * from storage.objects')).rows.length===0,'No signed/public URL access path');
  await actor(other,otherSession);check((await db.query('select * from storage.objects')).rows.length===0,'B cannot download/enumerate A');
@@ -105,7 +114,12 @@ try{
  check((await db.query('delete from storage.objects where bucket_id=$1',['cooking-photos'])).rowCount===2,'A deletes own retired pair via emulated Storage transaction');
  check((await db.query('delete from storage.objects')).rowCount===0,'Duplicate cleanup idempotent');
  check((await rpc('cleaned')).backups.length===0,'Cleanup acknowledgement hides completed work');
+
+ const cleanedTuple=await manifestTuple();
+ await actor();
  check((await rpc('cleaned')).backups.length===0,'Cleanup acknowledgement retry idempotent');
+ check(await manifestTuple()===cleanedTuple,'Cleanup retry does not rewrite its manifest');
+ await actor();
  await db.exec('reset role');await db.query('delete from auth.sessions where id=$1',[session]);await actor();
  await rejects(()=>rpc('list',null),'42501','Revoked session cannot restore manifests');
  check((await db.query('select staygrubby.cooking_object_allowed($1,$2,$3) ok',['cooking-photos',path,'read'])).rows[0].ok===false,'Revoked Storage access denied');

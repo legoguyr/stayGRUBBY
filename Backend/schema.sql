@@ -5462,3 +5462,246 @@ end $$;
 
 notify pgrst,'reload schema';
 commit;
+-- Private, operational capacity telemetry. One rolling row (no user identifiers).
+-- Cron's own completed run metadata expires after seven days in batches of 192.
+-- Product tables, sync receipts, tombstones and Storage objects have no new retention.
+begin;
+
+create schema operations;
+revoke all on schema operations from public, anon, authenticated, service_role;
+
+create table operations.capacity_state (
+ singleton boolean primary key default true check (singleton),
+ sampled_at timestamptz not null,
+ stats_epoch timestamptz not null,
+ metrics jsonb not null,
+ signals jsonb not null,
+ last_alert_at timestamptz
+);
+alter table operations.capacity_state enable row level security;
+revoke all on table operations.capacity_state from public, anon, authenticated, service_role;
+
+create function operations.capacity_signals(sample jsonb) returns jsonb
+language sql immutable set search_path='' as $$
+ select coalesce(jsonb_object_agg(metric,
+   case when actual >= critical then 'critical' when actual >= incident then 'incident' else 'warning' end), '{}'::jsonb)
+ from (values
+  ('database_bytes', 262144000::bigint, null::bigint, 419430400::bigint),
+  ('wal_bytes', 314572800, null, 629145600),
+  -- A conservative floor for a 2 GB disk. System overhead is not visible to PostgreSQL.
+  ('visible_disk_bytes', 1200000000, 1400000000, 1600000000),
+  ('storage_bytes', 700000000, null, 900000000),
+  ('storage_unknown_sizes', 1, null, null),
+  ('app_rows_per_minute', 1000, null, 5000),
+  ('wal_generated_bytes_per_minute', 33554432, null, 134217728),
+  ('excess_rollbacks_per_minute', 60, null, 300),
+  ('long_or_idle_api_transactions', 1, null, 3)
+ ) as thresholds(metric, warning, incident, critical)
+ cross join lateral (select (sample->>metric)::numeric as actual) as measured
+ where actual >= warning
+$$;
+revoke all on function operations.capacity_signals(jsonb) from public, anon, authenticated, service_role;
+
+create function operations.sample_capacity() returns jsonb
+language plpgsql volatile set search_path='' as $$
+declare
+ previous operations.capacity_state%rowtype;
+ measured_at timestamptz := clock_timestamp();
+ epoch timestamptz;
+ metrics jsonb;
+ signals jsonb;
+ alert_at timestamptz;
+ minutes numeric;
+ commits bigint;
+ rollbacks bigint;
+ app_rows numeric;
+ wal_generated numeric;
+begin
+ if not pg_try_advisory_xact_lock(hashtextextended('staygrubby-capacity-monitor', 0)) then
+  return null;
+ end if;
+
+ select * into previous from operations.capacity_state;
+ with db as (
+  select (select sum(pg_database_size(oid)) from pg_database) bytes,
+   greatest(stats_reset, pg_postmaster_start_time()) epoch, xact_commit, xact_rollback
+  from pg_stat_database where datname = current_database()
+ ), wal as (
+  select coalesce(sum(size),0) bytes, (select wal_bytes from pg_stat_wal) generated from pg_ls_waldir()
+ ), app as (
+  select coalesce(sum(pg_total_relation_size(relid)),0) bytes,
+   coalesce(sum(n_tup_ins::numeric + n_tup_upd + n_tup_del),0) row_changes
+  from pg_stat_user_tables where schemaname = 'staygrubby'
+ ), buckets as (
+  select bucket_id, count(*) objects, coalesce(sum(size_bytes),0) bytes,
+   count(*) filter (where size_bytes is null) unknown_sizes
+  from (
+   select bucket_id, case when metadata->>'size' ~ '^[0-9]{1,18}$' then (metadata->>'size')::bigint end size_bytes
+   from storage.objects
+  ) objects
+  group by bucket_id
+ ), storage_totals as (
+  select coalesce(sum(objects),0) objects, coalesce(sum(bytes),0) bytes,
+   coalesce(sum(unknown_sizes),0) unknown_sizes,
+   coalesce(jsonb_object_agg(bucket_id,jsonb_build_object('objects',objects,'bytes',bytes,'unknown_sizes',unknown_sizes)),
+    '{}'::jsonb) by_bucket
+  from buckets
+ ), logs as (
+  select coalesce(sum(size),0) bytes from pg_ls_logdir()
+ )
+ select db.epoch, jsonb_build_object(
+  'database_bytes', db.bytes, 'wal_bytes', wal.bytes, 'postgres_log_bytes', logs.bytes,
+  'visible_disk_bytes', db.bytes + wal.bytes + logs.bytes,
+  'app_relation_bytes', app.bytes, 'app_row_changes', app.row_changes,
+  'storage_bytes', s.bytes, 'storage_objects', s.objects, 'storage_unknown_sizes', s.unknown_sizes,
+  'storage_by_bucket', s.by_bucket, 'commits', db.xact_commit, 'rollbacks', db.xact_rollback,
+  'wal_generated_bytes', wal.generated,
+  'long_or_idle_api_transactions', (
+   select count(*) from pg_stat_activity where usename = 'authenticator' and (
+    (state = 'active' and measured_at - xact_start > interval '30 seconds')
+    or (state like 'idle in transaction%' and measured_at - state_change > interval '30 seconds'))
+  )
+ ) into epoch, metrics
+ from db cross join wal cross join app cross join storage_totals s cross join logs;
+
+ minutes := extract(epoch from measured_at - previous.sampled_at) / 60;
+ if epoch = previous.stats_epoch and minutes between 1 and 30 then
+  commits := (metrics->>'commits')::bigint - (previous.metrics->>'commits')::bigint;
+  rollbacks := (metrics->>'rollbacks')::bigint - (previous.metrics->>'rollbacks')::bigint;
+  app_rows := (metrics->>'app_row_changes')::numeric - (previous.metrics->>'app_row_changes')::numeric;
+  wal_generated := (metrics->>'wal_generated_bytes')::numeric - (previous.metrics->>'wal_generated_bytes')::numeric;
+  metrics := metrics || jsonb_build_object(
+   'app_rows_per_minute', case when app_rows >= 0 then round(app_rows / minutes, 2) end,
+   'wal_generated_bytes_per_minute', case when wal_generated >= 0 then round(wal_generated / minutes, 2) end,
+   'excess_rollbacks_per_minute', case when commits >= 0 and rollbacks >= 0 then round(greatest(0, rollbacks - commits) / minutes, 2) end,
+   'app_relation_growth_bytes', (metrics->>'app_relation_bytes')::bigint - (previous.metrics->>'app_relation_bytes')::bigint,
+   'storage_growth_bytes', (metrics->>'storage_bytes')::bigint - (previous.metrics->>'storage_bytes')::bigint
+  );
+ end if;
+
+ signals := operations.capacity_signals(metrics);
+ alert_at := previous.last_alert_at;
+ if previous.sampled_at is null or signals <> previous.signals
+   or (signals <> '{}'::jsonb and (alert_at is null or measured_at - alert_at >= interval '6 hours')) then
+  raise log 'staygrubby_capacity signals=% previous=% database_bytes=% wal_bytes=% storage_bytes=%',
+   signals, previous.signals, metrics->>'database_bytes', metrics->>'wal_bytes', metrics->>'storage_bytes';
+  alert_at := measured_at;
+ end if;
+ insert into operations.capacity_state(singleton,sampled_at,stats_epoch,metrics,signals,last_alert_at)
+ values(true, measured_at, epoch, metrics, signals, alert_at)
+ on conflict (singleton) do update set sampled_at=excluded.sampled_at, stats_epoch=excluded.stats_epoch,
+  metrics=excluded.metrics, signals=excluded.signals, last_alert_at=excluded.last_alert_at;
+
+ -- pg_cron owns this table. Prune only this job's old, finished diagnostic rows.
+ if to_regclass('cron.job_run_details') is not null then
+  delete from cron.job_run_details where runid in (
+   select run.runid from cron.job_run_details run join cron.job job using (jobid)
+   where job.jobname = 'staygrubby-capacity' and job.username = current_user
+    and run.end_time < measured_at - interval '7 days' order by run.runid limit 192
+  );
+ end if;
+ return signals;
+end $$;
+revoke all on function operations.sample_capacity() from public, anon, authenticated, service_role;
+
+-- Supabase supplies pg_cron. Disposable runtimes without the extension can replay the schema.
+do $$
+begin
+ if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+  create extension if not exists pg_cron with schema pg_catalog;
+  perform cron.schedule('staygrubby-capacity', '*/5 * * * *',
+   'set statement_timeout = ''12s''; set lock_timeout = ''2s''; select operations.sample_capacity()');
+ end if;
+end $$;
+
+commit;
+-- Keep RPC signatures, validations, permissions and response shapes. Avoid writing
+-- an identical read flag or manifest flag when an acknowledged request is replayed.
+begin;
+create or replace function staygrubby.social_notifications_api(action text,payload jsonb default '{}'::jsonb) returns jsonb
+language plpgsql volatile security definer set search_path='' as $$
+declare owner uuid:=staygrubby.social_actor(); result jsonb; unread integer;
+begin
+ if octet_length(payload::text)>4096 then raise exception 'Invalid notifications request' using errcode='22023'; end if;
+ if action='read' then
+  if not staygrubby.social_notice_visible(owner,(payload->>'targetID')::uuid) then raise exception 'Notification unavailable' using errcode='42501'; end if;
+  update staygrubby.social_notifications set read_at=now() where id=(payload->>'targetID')::uuid and recipient_id=owner and read_at is null;
+ elsif action='readAll' then
+  update staygrubby.social_notifications n set read_at=now() where recipient_id=owner and read_at is null and staygrubby.social_notice_visible(owner,n.id);
+ elsif action='delete' then
+  -- Keep the dedupe tombstone: a delayed source retry must not recreate a dismissed notice.
+  update staygrubby.social_notifications set read_at=now() where id=(payload->>'targetID')::uuid and recipient_id=owner and read_at is null;
+ elsif action<>'page' then raise exception 'Unknown notification action' using errcode='22023'; end if;
+ select count(*) into unread from staygrubby.social_notifications n where recipient_id=owner and read_at is null and staygrubby.social_notice_visible(owner,n.id);
+ select coalesce(jsonb_agg(card order by created_at desc,id desc),'[]'::jsonb) into result from (
+  select n.created_at,n.id,jsonb_build_object('id',n.id,'kind',n.kind,'actor',staygrubby.social_person(owner,n.actor_id),'targetID',n.target_id,
+   'postID',case when n.kind in('like','recreated') then n.target_id when n.kind='comment' then (select post_id from staygrubby.social_comments where id=n.target_id) end,
+   'createdAt',extract(epoch from n.created_at),'read',n.read_at is not null) card
+  from staygrubby.social_notifications n where recipient_id=owner and staygrubby.social_notice_visible(owner,n.id)
+  and (payload->>'beforeTime' is null or(n.created_at,n.id)<(to_timestamp((payload->>'beforeTime')::double precision),(payload->>'beforeID')::uuid))
+  order by n.created_at desc,n.id desc limit 25) page;
+ return jsonb_build_object('notifications',result,'unread',unread);
+end $$;
+
+create or replace function staygrubby.media_backup(action text,manifest jsonb default null) returns jsonb
+language plpgsql volatile security definer set search_path='' as $$
+declare owner uuid; mid uuid; stored_media staygrubby.media%rowtype; stored_backup staygrubby.media_backups%rowtype; result jsonb;
+begin
+ owner := staygrubby.media_owner();
+ if owner is null then raise exception 'Authenticated account required' using errcode='42501'; end if;
+ if action='list' then perform 1 from staygrubby.accounts where id=owner for share;
+ else perform 1 from staygrubby.accounts where id=owner for update; end if;
+ if staygrubby.media_owner() is distinct from owner then raise exception 'Session unavailable' using errcode='42501'; end if;
+ if action is null or action not in ('list','register','complete','cleaned') then raise exception 'Invalid action' using errcode='22023'; end if;
+ if action<>'list' then
+  if (manifest->>'accountID')::uuid is distinct from owner then raise exception 'Account mismatch' using errcode='42501'; end if;
+  mid := (manifest->>'mediaID')::uuid;
+  select * into stored_media from staygrubby.media where account_id=owner and id=mid;
+  if not found then raise exception 'Media not accepted' using errcode='PT409'; end if;
+  if action in ('register','complete') and (stored_media.deleted_at is not null or not exists(
+    select 1 from staygrubby.cooking_attempts a join staygrubby.dishes d on d.account_id=a.account_id and d.id=a.dish_id
+    where a.account_id=owner and a.id=stored_media.attempt_id and a.deleted_at is null and d.deleted_at is null))
+  then raise exception 'Media retired' using errcode='PT409'; end if;
+  if action='register' then
+   if manifest->>'displayHash' !~ '^[0-9a-f]{64}$' or manifest->>'thumbnailHash' !~ '^[0-9a-f]{64}$'
+    or (manifest->>'displayBytes')::integer not between 1 and 2097152
+    or (manifest->>'thumbnailBytes')::integer not between 1 and 2097152
+   then raise exception 'Invalid integrity manifest' using errcode='22023'; end if;
+   insert into staygrubby.media_backups(account_id,media_id,display_hash,thumbnail_hash,display_bytes,thumbnail_bytes,display_key,thumbnail_key)
+   values(owner,mid,manifest->>'displayHash',manifest->>'thumbnailHash',(manifest->>'displayBytes')::integer,(manifest->>'thumbnailBytes')::integer,
+    owner::text || '/' || mid::text || '/display-' || (manifest->>'displayHash') || '.jpg',
+    owner::text || '/' || mid::text || '/thumbnail-' || (manifest->>'thumbnailHash') || '.jpg')
+   on conflict(account_id,media_id) do nothing;
+  end if;
+  select * into stored_backup from staygrubby.media_backups where account_id=owner and media_id=mid;
+  if not found then raise exception 'Manifest missing' using errcode='55000'; end if;
+  if (stored_backup.display_hash,stored_backup.thumbnail_hash,stored_backup.display_bytes,stored_backup.thumbnail_bytes) is distinct from
+   (manifest->>'displayHash',manifest->>'thumbnailHash',(manifest->>'displayBytes')::integer,(manifest->>'thumbnailBytes')::integer)
+  then raise exception 'Immutable manifest mismatch' using errcode='23505'; end if;
+  if action='complete' then
+   if not exists(select 1 from storage.objects where bucket_id='cooking-photos' and name=stored_backup.display_key
+     and (metadata->>'size')::bigint=stored_backup.display_bytes and metadata->>'mimetype'='image/jpeg')
+    or not exists(select 1 from storage.objects where bucket_id='cooking-photos' and name=stored_backup.thumbnail_key
+     and (metadata->>'size')::bigint=stored_backup.thumbnail_bytes and metadata->>'mimetype'='image/jpeg')
+   then raise exception 'Bytes not backed up' using errcode='55000'; end if;
+   update staygrubby.media_backups set ready=true where account_id=owner and media_id=mid and not ready;
+  elsif action='cleaned' then
+   if stored_media.deleted_at is null then raise exception 'Active media cannot be cleaned' using errcode='PT409'; end if;
+   if exists(select 1 from storage.objects where bucket_id='cooking-photos' and name in (stored_backup.display_key,stored_backup.thumbnail_key))
+   then raise exception 'Storage cleanup pending' using errcode='55000'; end if;
+   update staygrubby.media_backups set cleaned=true where account_id=owner and media_id=mid and not cleaned;
+  end if;
+ end if;
+ select coalesce(jsonb_agg(jsonb_build_object('accountID',b.account_id,'mediaID',b.media_id,
+  'displayHash',b.display_hash,'thumbnailHash',b.thumbnail_hash,'displayBytes',b.display_bytes,'thumbnailBytes',b.thumbnail_bytes,
+  'displayKey',b.display_key,'thumbnailKey',b.thumbnail_key,'state',
+  case when m.deleted_at is not null then 'deleted' when b.ready
+   and exists(select 1 from storage.objects o where o.bucket_id='cooking-photos' and o.name=b.display_key and (o.metadata->>'size')::bigint=b.display_bytes and o.metadata->>'mimetype'='image/jpeg')
+   and exists(select 1 from storage.objects o where o.bucket_id='cooking-photos' and o.name=b.thumbnail_key and (o.metadata->>'size')::bigint=b.thumbnail_bytes and o.metadata->>'mimetype'='image/jpeg')
+   then 'ready' else 'pending' end) order by b.media_id),'[]'::jsonb)
+ into result from staygrubby.media_backups b join staygrubby.media m on m.account_id=b.account_id and m.id=b.media_id
+ where b.account_id=owner and not b.cleaned and (action='list' or b.media_id=mid);
+ return jsonb_build_object('accountID',owner,'backups',result);
+end $$;
+
+commit;
