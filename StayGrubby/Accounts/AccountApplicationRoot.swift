@@ -67,7 +67,8 @@ struct AccountApplicationRoot: View {
                     do {
                         let token = try sync.connect(store: store, account: account,
                             send: { envelope in try await session.applyResolvedOperation(envelope) },
-                            load: { try await session.openResolvedLibrary() }, active: scenePhase == .active,
+                            load: { try await session.openResolvedLibrary() },
+                            cloudRevision: { try await session.resolvedCloudRevision() }, active: scenePhase == .active,
                             photos: try session.cookingPhotoTransport(),
                             remember: { try session.rememberReadyAccount($0) })
                         defer { sync.disconnect(token) }

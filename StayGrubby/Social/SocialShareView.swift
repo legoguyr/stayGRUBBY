@@ -197,7 +197,7 @@ struct SocialPostComposer: View {
     private func cancel() async {
         if attemptedShare && !didPublish, let request, let originalPostID {
             _ = try? await request("social_content", "cancelDraft", .init(postID: originalPostID))
-            await SocialPhotoCleanup.run(request: request, media: media)
+            await SocialPhotoCleanup.run(request: request, media: media, afterRetirement: true)
         }
         close()
     }

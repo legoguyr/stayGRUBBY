@@ -43,6 +43,9 @@ extension SupabaseAccountBackend: AccountSyncBackend {
             guard client.auth.currentSession?.user.id == user else { throw AccountFoundationError.identityChanged }
             return try JSONDecoder().decode(CookingOperationReceipt.self, from: response.data).validated(for: envelope)
         } catch let error as PostgrestError {
+            // A server cooldown is recoverable: keep it intact so the dispatcher honors its delay
+            // (never a permanent rejection that would strand the outbox).
+            if SyncRetryPolicy.cooldown(from: error) != nil { throw error }
             // SQL errors can include user data: expose/persist only a fixed diagnostic code.
             switch error.code {
             case "0A000": throw CookingSyncError.rankingUpdateRequired

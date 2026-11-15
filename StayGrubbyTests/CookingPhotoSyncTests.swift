@@ -2,6 +2,7 @@ import Foundation
 import SwiftData
 import Testing
 import UIKit
+import Supabase
 @testable import StayGrubby
 
 @MainActor private final class PhotoCloud: CookingPhotoTransport {
@@ -19,6 +20,8 @@ import UIKit
     var downloads = 0
     var failDownloadAt: Int?
     var removals = 0
+    var probes = 0
+    var catalogCalls = 0
     var registrations = 0
     var accepted: [UUID: (SyncEnvelope, SyncReceipt)] = [:]
     init(_ graph: CookingGraph) { self.graph = graph }
@@ -38,6 +41,7 @@ import UIKit
     }
     func catalog(action: String, manifest: CookingPhotoManifest?) async throws -> CookingPhotoCatalog {
         guard !offline else { throw CookingPhotoError.unavailable }
+        catalogCalls += 1
         if action == "register", let manifest {
             try manifest.validate(owner: graph.accountID!)
             guard graph.media.contains(where: { $0.id == manifest.mediaID }) else { throw CookingPhotoError.obsolete }
@@ -81,6 +85,10 @@ import UIKit
         guard !offline else { throw CookingPhotoError.unavailable }
         for path in paths { objects.removeValue(forKey: path) }; removals += 1
     }
+    func storedSize(path: String) async throws -> Int? {
+        guard !offline else { throw CookingPhotoError.unavailable }
+        probes += 1; return objects[path]?.count
+    }
     func snapshot(user: UUID) -> AccountLibrarySnapshot {
         .init(account: .init(formatVersion: 1, authUserID: user, accountID: graph.accountID!, syncRevision: revision, libraryState: .initialized), graph: graph)
     }
@@ -104,6 +112,7 @@ import UIKit
     func uploadPhoto(path: String, bytes: Data) async throws { try await cloud.upload(path:path,bytes:bytes) }
     func downloadPhoto(path: String) async throws -> Data { await duringDownload?();return try await cloud.download(path:path) }
     func removePhotos(paths: [String]) async throws { try await cloud.remove(paths:paths) }
+    func photoSize(path: String) async throws -> Int? { try await cloud.storedSize(path: path) }
 }
 
 @MainActor struct CookingPhotoSyncTests {
@@ -330,4 +339,112 @@ import UIKit
         #expect(try SyncJournal.pending(fresh.container.mainContext).isEmpty)
     }
 
+}
+
+/// November 15, 2026 sync optimization: no retransmission of stored bytes, no network for a settled
+/// library, and server cooldowns honored.
+extension CookingPhotoSyncTests {
+    @Test func lostUploadReplyReconcilesStoredObjectInsteadOfRetransmitting() async throws {
+        let directory = root(); defer { try? FileManager.default.removeItem(at: directory) }
+        let (store,cloud,account) = try setup(root: directory); _ = try create(store); try await flush(store,cloud)
+        cloud.loseUploadReply = true
+        do { _ = try await run(store,cloud,account); Issue.record("Lost reply unexpectedly succeeded") } catch CookingPhotoError.unavailable { }
+        #expect(cloud.uploads == 1) // the display object reached Storage; its reply was lost
+        let reopened = try LocalStoreStartup.openAccount(account.accountID, root: directory)
+        #expect(try await run(reopened,cloud,account))
+        #expect(cloud.uploads == 2, "Only the missing thumbnail is sent; the stored display object is verified, not re-uploaded")
+        #expect(cloud.objects.count == 2 && cloud.manifests.values.first?.state == "ready")
+    }
+
+    @Test func settledLibraryPhotoPassNeedsNoNetwork() async throws {
+        let directory = root(); defer { try? FileManager.default.removeItem(at: directory) }
+        let (store,cloud,account) = try setup(root: directory); _ = try create(store); try await flush(store,cloud)
+        #expect(try await run(store,cloud,account))
+        let journal = try CookingPhotoJournal.load(owner: account.accountID, root: store.mediaRoot!)
+        #expect(journal.settledRevision == (try SyncJournal.binding(store.container.mainContext))?.acceptedRevision)
+        let calls = (cloud.catalogCalls, cloud.uploads, cloud.downloads, cloud.probes)
+        #expect(try await run(store,cloud,account,force: false))
+        #expect(cloud.catalogCalls == calls.0 && cloud.uploads == calls.1 && cloud.downloads == calls.2 && cloud.probes == calls.3)
+        // A new revision (another photo) ends the settled state and the pass runs again.
+        _ = try create(store, color: .blue); try await flush(store,cloud)
+        #expect(try await run(store,cloud,account,force: false)); #expect(cloud.catalogCalls > calls.0 && cloud.objects.count == 4)
+    }
+
+    @Test func serverCooldownIsAFloorForThePhotoRetry() async throws {
+        let directory = root(); defer { try? FileManager.default.removeItem(at: directory) }
+        let (store,cloud,account) = try setup(root: directory); _ = try create(store); try await flush(store,cloud)
+        let throttled = ThrottledPhotoCloud(cloud, seconds: 900)
+        do { _ = try await CookingPhotoSync.run(store: store, account: account, transport: throttled, forceRetry: true, current: {}); Issue.record("Cooldown ignored") }
+        catch CookingPhotoError.cooldown(let seconds) { #expect(seconds == 900) }
+        let retry = try #require(try CookingPhotoJournal.load(owner: account.accountID, root: store.mediaRoot!).retryAt)
+        #expect(retry.timeIntervalSinceNow > 890)
+    }
+}
+
+@MainActor private final class ThrottledPhotoCloud: CookingPhotoTransport {
+    let base: PhotoCloud; let seconds: TimeInterval
+    init(_ base: PhotoCloud, seconds: TimeInterval) { self.base = base; self.seconds = seconds }
+    func catalog(action: String, manifest: CookingPhotoManifest?) async throws -> CookingPhotoCatalog { throw CookingPhotoError.cooldown(seconds) }
+    func upload(path: String, bytes: Data) async throws { try await base.upload(path: path, bytes: bytes) }
+    func download(path: String) async throws -> Data { try await base.download(path: path) }
+    func remove(paths: [String]) async throws { try await base.remove(paths: paths) }
+}
+
+@MainActor private final class CallCounter { var loads = 0, probes = 0 }
+private actor ThrottledSender {
+    var sends = 0
+    func send() throws -> SyncReceipt {
+        sends += 1; throw PostgrestError(hint: "retry after 120 seconds", code: "PT429", message: "Sync is cooling down")
+    }
+}
+
+extension CookingPhotoSyncTests {
+    private func settle(_ coordinator: CookingSyncCoordinator, until done: () -> Bool) async throws {
+        for _ in 0..<300 where !done() { try await Task.sleep(for: .milliseconds(10)) }
+        try await Task.sleep(for: .milliseconds(350)) // let any coalesced follow-up job finish
+    }
+
+    @Test func unchangedCloudRevisionSkipsLibraryDownloadAndPassiveTriggersAreCoalesced() async throws {
+        let directory = root(); defer { try? FileManager.default.removeItem(at: directory) }
+        let (store,cloud,account) = try setup(root: directory); _ = try create(store)
+        let counter = CallCounter(), coordinator = CookingSyncCoordinator()
+        try coordinator.connect(store: store, account: account, send: { try await cloud.apply($0) },
+            load: { counter.loads += 1; return cloud.snapshot(user: account.authUserID) },
+            cloudRevision: { counter.probes += 1; return cloud.revision }, photos: cloud)
+        defer { coordinator.disconnect() }
+        try await settle(coordinator) { coordinator.status == .current }
+        #expect(coordinator.status == .current && cloud.objects.count == 2)
+        let before = (counter.loads, counter.probes, cloud.catalogCalls)
+
+        // Nothing changed in the cloud: a probe, no library download, no photo catalog.
+        coordinator.request(); try await settle(coordinator) { counter.probes > before.1 }
+        #expect(counter.loads == before.0 && counter.probes == before.1 + 1 && cloud.catalogCalls == before.2)
+
+        // Foreground/connectivity right after a verified sync: nothing at all.
+        coordinator.request(passive: true); try await Task.sleep(for: .milliseconds(400))
+        #expect(counter.probes == before.1 + 1)
+
+        // Another device advanced the cloud: the full library is loaded once.
+        cloud.revision += 1
+        coordinator.request(); try await settle(coordinator) { counter.loads > before.0 }
+        #expect(counter.loads == before.0 + 1 && coordinator.status == .current)
+    }
+
+    @Test func serverCooldownPausesSyncEvenForExplicitRetryAndKeepsTheOutbox() async throws {
+        let directory = root(); defer { try? FileManager.default.removeItem(at: directory) }
+        let (store,cloud,account) = try setup(root: directory); _ = try create(store)
+        let sender = ThrottledSender(), coordinator = CookingSyncCoordinator()
+        try coordinator.connect(store: store, account: account, send: { _ in try await sender.send() },
+            load: { cloud.snapshot(user: account.authUserID) }, cloudRevision: { cloud.revision }, photos: cloud)
+        defer { coordinator.disconnect() }
+        try await settle(coordinator) { coordinator.cooldownUntil != nil }
+        #expect(await sender.sends == 1 && coordinator.status == .savedLocally)
+        let until = try #require(coordinator.cooldownUntil); #expect(until.timeIntervalSinceNow > 110)
+        let queued = try #require(try SyncJournal.pending(store.container.mainContext).first)
+        #expect(queued.lastError == "server-cooldown" && (queued.nextRetryAt?.timeIntervalSinceNow ?? 0) > 110)
+        coordinator.request(forceRetry: true); coordinator.request(passive: true)
+        try await Task.sleep(for: .milliseconds(400))
+        #expect(await sender.sends == 1, "No request is sent before the server's Retry-After")
+        #expect(try SyncJournal.pending(store.container.mainContext).count == 1)
+    }
 }

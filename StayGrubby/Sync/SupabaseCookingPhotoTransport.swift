@@ -6,6 +6,7 @@ import Supabase
     func uploadPhoto(path: String, bytes: Data) async throws
     func downloadPhoto(path: String) async throws -> Data
     func removePhotos(paths: [String]) async throws
+    func photoSize(path: String) async throws -> Int?
 }
 
 extension SupabaseAccountBackend: AccountPhotoBackend {
@@ -18,6 +19,7 @@ extension SupabaseAccountBackend: AccountPhotoBackend {
             guard client.auth.currentSession?.user.id == identity else { throw AccountFoundationError.identityChanged }
             return result
         } catch let error as PostgrestError {
+            if let seconds = SyncRetryPolicy.cooldown(from: error) { throw CookingPhotoError.cooldown(seconds) }
             switch error.code {
             case "40001", "PT409": throw CookingPhotoError.obsolete
             case "42501", "PGRST301", "PGRST302": throw CookingPhotoError.authenticationRequired
@@ -26,6 +28,7 @@ extension SupabaseAccountBackend: AccountPhotoBackend {
             default: throw CookingPhotoError.rejected
             }
         } catch let error as StorageError {
+            if let seconds = SyncRetryPolicy.cooldown(from: error) { throw CookingPhotoError.cooldown(seconds) }
             switch error.statusCode {
             case "401", "403": throw CookingPhotoError.authenticationRequired
             case "404": throw CookingPhotoError.pending
@@ -54,6 +57,14 @@ extension SupabaseAccountBackend: AccountPhotoBackend {
     func removePhotos(paths: [String]) async throws {
         try await photoRequest { _ = try await client.storage.from(CookingPhotoManifest.bucket).remove(paths: paths) }
     }
+    func photoSize(path: String) async throws -> Int? {
+        try await photoRequest {
+            let bucket = client.storage.from(CookingPhotoManifest.bucket)
+            guard try await bucket.exists(path: path) else { return nil }
+            let info = try await bucket.info(path: path)
+            return info.contentType == "image/jpeg" ? info.size : nil
+        }
+    }
 }
 
 /// Captures the exact resolved-account generation, not a free-standing SDK client.
@@ -71,5 +82,8 @@ extension SupabaseAccountBackend: AccountPhotoBackend {
     }
     func remove(paths: [String]) async throws {
         try authorize(); try await backend.removePhotos(paths: paths); try authorize()
+    }
+    func storedSize(path: String) async throws -> Int? {
+        try authorize(); let result = try await backend.photoSize(path: path); try authorize(); return result
     }
 }

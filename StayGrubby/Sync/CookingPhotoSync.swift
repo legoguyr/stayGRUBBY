@@ -13,6 +13,14 @@ import SwiftData
         else { throw SyncFoundationError.wrongAccount }
         var journal = try CookingPhotoJournal.load(owner: account.accountID, root: root)
         try current()
+        // Settled: same accepted revision as the last clean pass and every photo still on disk. Photo
+        // metadata only changes with a revision (structured sync), so there is nothing to list or move.
+        let acceptedRevision = try SyncJournal.binding(store.container.mainContext)?.acceptedRevision
+        if !forceRetry, let acceptedRevision, journal.settledRevision == acceptedRevision, !journal.hasOutstandingWork,
+           try CookingGraphExport.snapshot(context: store.container.mainContext).media.allSatisfy({ media in
+               try [false, true].allSatisfy { FileManager.default.fileExists(atPath: try CookingPhotoFiles.url(media: media, thumbnail: $0, root: root).path) }
+           }) { return true }
+        journal.settledRevision = nil
         let catalogKey = "00000000-0000-0000-0000-000000000000"
         if !forceRetry, let deadline = journal.entries[catalogKey]?.retryAt, deadline > .now { return false }
         var discovery = journal.entries[catalogKey] ?? .init()
@@ -25,7 +33,7 @@ import SwiftData
             journal.entries.removeValue(forKey: catalogKey); try journal.save(root: root)
         } catch {
             discovery.diagnostic = (error as? CookingPhotoError)?.diagnostic ?? "photo-network"
-            discovery.retryAt = .now.addingTimeInterval(min(300, pow(2,Double(min(discovery.attempts,8)))))
+            discovery.retryAt = SyncRetryPolicy.nextAttempt(after: error, attempt: discovery.attempts)
             journal.entries[catalogKey] = discovery; try journal.save(root: root); throw error
         }
         var complete = true
@@ -33,7 +41,7 @@ import SwiftData
         // even on another device or after an ambiguous deletion/restart.
         for retired in catalog.backups where retired.state == "deleted" {
             if !forceRetry, let deadline = journal.entries[retired.mediaID.uuidString]?.retryAt, deadline > .now { complete = false; continue }
-            try await checkpoint(retired, root: root, journal: &journal) {
+            try await checkpoint(retired, root: root, journal: &journal) { _, _ in
                 try current()
                 try await transport.remove(paths: [retired.displayKey, retired.thumbnailKey])
                 try current()
@@ -67,7 +75,7 @@ import SwiftData
                 continue
             }
             try descriptor.validate(owner: account.accountID)
-            try await checkpoint(descriptor, root: root, journal: &journal) {
+            try await checkpoint(descriptor, root: root, journal: &journal) { verified, markVerified in
                 @MainActor func stillLive() throws {
                     try current()
                     guard try CookingGraphExport.snapshot(context: store.container.mainContext).media.contains(media) else { throw CookingPhotoError.obsolete }
@@ -81,11 +89,18 @@ import SwiftData
                     try stillLive(); try registered.validate(owner: account.accountID)
                     guard let receipt = registered.backups.first(where: { $0.mediaID == media.id }),
                           descriptor.sameContent(as: receipt), receipt.state != "deleted" else { throw CookingPhotoError.integrity }
-                    for (path, bytes) in [(descriptor.displayKey, display), (descriptor.thumbnailKey, thumbnail)] {
-                        try stillLive(); try await transport.upload(path: path, bytes: bytes); try stillLive()
+                    for (path, bytes) in [(descriptor.displayKey, display), (descriptor.thumbnailKey, thumbnail)] where !verified.contains(path) {
+                        try stillLive()
+                        // Reconcile an ambiguous earlier attempt before retransmitting: content-addressed paths
+                        // only ever hold this manifest's bytes, so a same-size object needs verification, not upload.
+                        if try await transport.storedSize(path: path) != bytes.count {
+                            try stillLive(); try await transport.upload(path: path, bytes: bytes)
+                        }
+                        try stillLive()
                         // A Storage success response alone is not a content receipt.
                         let recovered = try await transport.download(path: path); try stillLive()
                         guard recovered == bytes else { throw CookingPhotoError.integrity }
+                        try markVerified(path)
                     }
                     let finished = try await transport.catalog(action: "complete", manifest: descriptor)
                     try stillLive(); try finished.validate(owner: account.accountID)
@@ -108,24 +123,30 @@ import SwiftData
         let liveIDs = Set(graph.media.map { $0.id.uuidString })
         let cleanupIDs = Set(catalog.backups.filter { $0.state == "deleted" }.map { $0.mediaID.uuidString })
         journal.entries = journal.entries.filter { liveIDs.contains($0.key) || (cleanupIDs.contains($0.key) && $0.value.phase != "cleaned") }
+        if complete, !journal.hasOutstandingWork { journal.settledRevision = acceptedRevision }
         try journal.save(root: root)
         return complete
     }
     private static func checkpoint(_ manifest: CookingPhotoManifest, root: URL, journal: inout CookingPhotoJournal,
-        action: () async throws -> Void) async throws {
+        action: (_ verified: Set<String>, _ markVerified: (String) throws -> Void) async throws -> Void) async throws {
         let key = manifest.mediaID.uuidString
         var entry = journal.entries[key] ?? .init()
         if let known = entry.manifest, !known.sameContent(as: manifest) { throw CookingPhotoError.integrity }
         entry.manifest = manifest; entry.phase = "transferring"; entry.attempts += 1
         journal.entries[key] = entry; try journal.save(root: root)
+        // Durable per-path progress: a crash or lost reply after one object never repeats it.
+        func markVerified(_ path: String) throws {
+            entry.verifiedPaths = Array(Set(entry.verifiedPaths ?? []).union([path])).sorted()
+            journal.entries[key] = entry; try journal.save(root: root)
+        }
         do {
-            try await action()
+            try await action(Set(entry.verifiedPaths ?? []), markVerified)
             entry.phase = manifest.state == "deleted" ? "cleaned" : "verified"
             entry.diagnostic = nil; entry.retryAt = nil
             journal.entries[key] = entry; try journal.save(root: root)
         } catch {
             entry.diagnostic = (error as? CookingPhotoError)?.diagnostic ?? (error is CancellationError ? "cancelled" : "photo-network")
-            entry.retryAt = .now.addingTimeInterval(min(300, pow(2, Double(min(entry.attempts,8)))))
+            entry.retryAt = SyncRetryPolicy.nextAttempt(after: error, attempt: entry.attempts)
             journal.entries[key] = entry; try journal.save(root: root)
             throw error
         }

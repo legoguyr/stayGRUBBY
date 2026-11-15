@@ -36,8 +36,14 @@ nonisolated struct SocialCleanupPage: Codable, Sendable {
     let paths: [Item]
 }
 @MainActor enum SocialPhotoCleanup {
-    static func run(request: SocialRequest, media: SocialMediaRequest?) async {
+    /// Routine sweeps (feed loads, polls) run at most this often; a delete/cancel runs immediately.
+    static let routineInterval: TimeInterval = 600
+    private static var lastRoutineRun: Date?
+    /// `cleanup` is a server write (it retires day-old drafts), so it must not ride every 30 s poll.
+    static func run(request: SocialRequest, media: SocialMediaRequest?, afterRetirement: Bool = false, now: Date = .now) async {
         guard let media else { return }
+        if !afterRetirement, let last = lastRoutineRun, now.timeIntervalSince(last) < routineInterval { return }
+        lastRoutineRun = now
         do {
             let page = try JSONDecoder().decode(SocialCleanupPage.self, from: await request("social_content", "cleanup", .init()))
             for item in page.paths.prefix(25) {
