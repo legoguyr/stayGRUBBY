@@ -2,6 +2,12 @@
 
 > Current overview: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). Required Apple/Supabase authentication, structured/photo sync and the four-tab social/cooking/Recipe shell are implemented. Sections below record successive account checkpoints: old guest/hidden-Feed/queued-only/no-photo boundaries and deployment counts are historical. Use [AGENTS.md](AGENTS.md) for verification and deployment authority.
 
+## Build 5 onboarding on the migrated target
+
+Native Apple authorization and the Supabase ID-token exchange precede permanent-account provisioning. `provision_account` uses the verified Auth session to return the existing account mapping or create one. Then `open_account_library` initializes an empty library for a first-time account or restores the existing account library. A fresh device or install still needs connectivity for those steps. Existing accounts can reopen a previously verified local library when the local account store and receipt are available.
+
+The target accepts new Apple accounts. Apple is the only enabled provider. On an onboarding failure, the TestFlight build, approximate local time, failure screen and displayed support code distinguish the Apple authorization prompt, Auth exchange and subsequent library setup. `SG-NET` indicates a connection failure; `SG-SVC` indicates a service failure. See [hosted evidence](supabase/CLEAN_MIGRATION_PHASE_2A.md#build-5-apple-signup-check).
+
 ## November 2 — isolated unattended development authentication
 
 The explicitly authorized test facility is outside all Xcode targets, absent from application/Release login behavior. A JWT-protected helper accepts only a five-minute, administrator-issued single-use capability and a fixed admin-marked/pinned test identity. Supported Auth Admin link generation and normal verification/refresh issue a real session for that identity; caller-selected targets, email collisions and user-editable markers cannot authorize access. Production email/anonymous sign-in stay disabled and Apple sign-in is unchanged. Two private/RLS development tables and service-only consume/bind RPCs are isolated from cooking/account ownership. No real credentials or protected provider keys are extracted. Local test-session files are mode 600 in a mode 700 directory outside Git. [Exact developer procedure, current exhausted budget and security boundaries](DevelopmentTools/README.md).
