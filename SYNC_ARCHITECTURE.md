@@ -11,7 +11,7 @@ Client-side; no schema, RPC or Storage policy change. Works with the deployed ba
 
 **Cooldown contract (handoff to Codex, required before any server throttle).** Supported clients recognize, as a recoverable pause:
 - **PostgREST:** raise SQLSTATE `PT429` (or `PT503` for maintenance) with the delay in seconds in the error `HINT`, for example `retry after 120`. Missing or unreadable delays default to 30 s; at most 1 hour is honored.
-- **Gateway/Storage:** HTTP 429/503 with `Retry-After`, as delta-seconds or an HTTP date.
+- **Gateway/Storage:** HTTP 429/503 uses `Retry-After` as delta-seconds or an HTTP date when the SDK exposes the raw HTTP response. The pinned Storage SDK also returns `StorageError` values without headers; those use a 30-second cooldown. Verify the actual transport behavior before enabling a server throttle.
 
 Build 5 and earlier treat these as a permanent rejection (*Sync needs review*, outbox kept), so a server-side write circuit breaker stays off until a build with this client is the minimum supported version. Never use `40001`/`40P01` for throttling.
 

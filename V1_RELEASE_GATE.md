@@ -1,6 +1,15 @@
 # StayGrubby V1 Release Gate
 
-Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e`). Sequence: Build 4 (complete) → unified Dish foundation and UI overhaul (D1 → D2 → F → C → E → G) → **this gate** → Release Candidate → App Store V1 ([roadmap](STAYGRUBBY_MASTER_ROADMAP.md)). The UI overhaul is the last normal product work before this gate; Discover, Personal Cooking Intelligence, Want to Cook and Collections are not V1 requirements. This gate authorizes no submission, upload, credential change, paid service or destructive real-account test. Record evidence/owner decisions here during the separately requested gate; unchecked items are not compliance claims.
+Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e`). Sequence: internal TestFlight → Connected UI Overhaul and near-term product work → **this gate** → Release Candidate → App Store V1 ([roadmap](STAYGRUBBY_MASTER_ROADMAP.md)). The UI overhaul is the last normal product work before this gate; Discover, Personal Cooking Intelligence, Want to Cook and Collections are not V1 requirements. This gate authorizes no submission, upload, credential change, paid service or destructive real-account test. Record evidence/owner decisions here during the separately requested gate; unchecked items are not compliance claims.
+
+## Build 6 internal candidate — November 15, 2026
+
+- [x] Combined `f7b0c19` with the previously deployed backend safeguards and the Build 5 target configuration. Generic iPhone Release compile succeeded with Xcode 27.2. Signing was disabled for the compile.
+- [x] Hosted read-only check confirmed both safeguards, a fresh healthy capacity sample, authenticated-only sync RPCs, private owner photo metadata operations and no structured sync throttle. The database health SQL returned six OK verdicts. Prior backend and migration verification remains the same.
+- [ ] Complete the physical smoke gate on a signed Build 6 candidate. Include a first-time Apple setup, existing-account in-place update with any pending local work preserved, a new private photo with restore/second-device read, and the ranking → immediate share → The Pass path. Confirm the Dashboard's full disk distribution in addition to PostgreSQL-visible health.
+- [ ] Confirm the next available App Store Connect build number at release time. Obtain separate approval for signing/archive and internal TestFlight upload/group assignment. The branch retains the checked-in build settings.
+
+Keep the write throttle off while Build 5 remains supported. Future changes require minimum-build enforcement and verification of the real cooldown response on supported client transports. The two signed Edge Function probes waived for Build 5 remain unverified; any Build 6 waiver requires an explicit decision.
 
 ## Hard V1 blockers / required gate evidence
 
@@ -48,7 +57,7 @@ Added after the [November 11, 2026 P0 incident](supabase/README.md#p0-incident-r
 Record the build, date, device and result here. A failure message on the gate screen now carries a support code (`SG-NET` connection, `SG-SVC` service, `SG-AUTH` sign-in, `SG-ERR` other) that points to the failing layer.
 
 - [ ] Smoke gate recorded for the next TestFlight candidate.
-- [ ] Next TestFlight candidate includes the November 15 sync-efficiency client. Before enabling any server write throttle, it must be the minimum supported build, because older builds treat a cooldown as a permanent rejection.
+- [ ] Build 6 candidate includes the November 15 sync-efficiency client. Before enabling any server write throttle, establish a compatible minimum supported build and verify transport cooldown behavior.
 - [x] November 11, 2026 incident repaired and accepted: `20261111020303_non_retryable_conflicts` deployed; all 48 hosted/local migrations aligned; all 43 table fingerprints unchanged; retry storm stopped. Owner physical acceptance PASSED on TestFlight Build 4: existing phone (sign-in, photos, sync, ranking, share), fresh install and second-phone restore.
 - [ ] Supabase reclaims the ~1.6 GB of platform "System" disk left by the incident (support ticket open); disk below 70% before the next TestFlight candidate.
 - [ ] Next TestFlight build carries the incident client fixes (PT409 conflicts, classified sign-in errors, share revision retry, stale share-draft retirement, sharp Recipe fallback photos) and passes the smoke gate above.
@@ -62,7 +71,7 @@ Record the build, date, device and result here. A failure message on the gate sc
 ## Post-V1 — not release blockers
 
 - Crop/reposition/advanced galleries/editing and optional photography improvements; existing upload/ownership/multi-photo/sync/restore remain V1.
-- Recipe Unit Conversion improvements (controls hidden), Saved Recipes/bookmarks (name TBD), privacy-aware Recipe Social History/Made X times, Run It Back redesign and broader Source integrations.
+- Recipe Unit Conversion improvements (controls hidden), detailed Recipe Social History beyond the near-term Makes and Saves counts, Run It Back redesign and broader Source integrations.
 - Want to Cook, Collections / Cooking Series, Stars, Personal Cooking Intelligence (Flavor/Ability Profiles), Discover, rich external link previews and meal planning (dormant).
 - Public discovery/feed, optional Contacts, referral/invite analytics, five-tier referral progression/rewards, manual entitlements/tester tooling, broader admin/follower/push/community/creator systems and monetization.
 - A referral counts only after an attributed genuinely new successful signup. Core functionality cannot require recruiting friends. Rewards are undecided; no AI daily allowance, billing or paid-provider setup is introduced by this roadmap.
