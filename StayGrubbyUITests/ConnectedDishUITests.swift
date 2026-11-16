@@ -40,7 +40,11 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         // The Recipe tab is the same page: header stays, Recipe content is already there.
         XCTAssertTrue(tabs.buttons["Recipe"].isSelected)
         XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 3))
-        XCTAssertTrue(app.descendants(matching: .any)["recipe-makes"].exists, "Verified local Makes line")
+        // MVP stabilization: the cook count is a plain header metric beside score and rank, never a control.
+        let count = app.descendants(matching: .any)["dish-cook-count"]
+        XCTAssertTrue(count.exists, "Verified cook count in the shared header"); XCTAssertTrue(count.label.hasPrefix("Cooked "), count.label)
+        XCTAssertFalse(app.buttons["dish-cook-count"].exists); XCTAssertFalse(app.descendants(matching: .any)["recipe-makes"].exists)
+        let recipeHeroOnRecipeTab = app.descendants(matching: .any)["recipe-hero"].exists
         XCTAssertFalse(app.buttons["recipe-fork"].exists)
         shot("Connected Dish page · Recipe tab", app)
         // Back and forth is immediate (no loading state) and the ranking is unchanged.
@@ -53,6 +57,9 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 2))
         }
         tabs.buttons["Dish & Ranking"].tap()
+        // One header photo for the page: the same source on both tabs.
+        XCTAssertEqual(app.descendants(matching: .any)["recipe-hero"].exists, recipeHeroOnRecipeTab)
+        XCTAssertEqual(app.descendants(matching: .any)["dish-cook-count"].label, count.label)
         XCTAssertEqual(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'overall'")).firstMatch.label, rankBefore)
         let cooks = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'version-row-'")).firstMatch
         reach(cooks, app)
@@ -88,5 +95,39 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier == 'recipe-save' AND label == 'Save Recipe'")).firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons.firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["bible-saved-empty"].waitForExistence(timeout: 8))
+    }
+
+    /// Read caching: switching tabs and coming back neither refetches nor shows a loading screen; pull to
+    /// refresh still refreshes (one request), and a content change makes the next appearance refresh.
+    @MainActor func testThePassAndFoodBibleReuseLoadedContentAcrossTabSwitches() throws {
+        let app = launch(["--recipes-review", "--stage5-review", "--request-log", "--test-light"])
+        let log = app.descendants(matching: .any)["review-request-log"]
+        func count(_ key: String) -> Int {
+            let entry = log.label.split(separator: " ").first { $0.hasPrefix(key + "=") }
+            return entry.flatMap { Int($0.split(separator: "=")[1]) } ?? 0
+        }
+        app.tabBars.buttons["The Pass"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["grub-list"].waitForExistence(timeout: 10))
+        let feedLoaded = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in count("social_feed.activity_page") >= 1 }, object: nil)
+        wait(for: [feedLoaded], timeout: 10)
+        app.tabBars.buttons["Food Bible"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch.waitForExistence(timeout: 10))
+        let feed = count("social_feed.activity_page"), bible = count("recipes.library_index")
+        XCTAssertGreaterThan(bible, 0)
+        for _ in 0..<3 {
+            app.tabBars.buttons["The Pass"].tap()
+            XCTAssertFalse(app.descendants(matching: .any)["Loading posts"].exists, "Posts stay on screen")
+            app.tabBars.buttons["Grub Rank"].tap()
+            app.tabBars.buttons["Food Bible"].tap()
+            XCTAssertFalse(app.descendants(matching: .any)["Opening your cookbook"].exists, "The cookbook stays on screen")
+        }
+        XCTAssertEqual(count("social_feed.activity_page"), feed, log.label)
+        XCTAssertEqual(count("recipes.library_index"), bible, log.label)
+        shot("Read caching · request log after tab switches", app)
+        // Pull to refresh is an explicit refresh: exactly one more cookbook read.
+        let start = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 420)), withVelocity: .slow, thenHoldForDuration: 0.6)
+        let refreshed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in count("recipes.library_index") == bible + 1 }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [refreshed], timeout: 10), .completed, log.label)
     }
 }

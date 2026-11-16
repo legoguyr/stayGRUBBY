@@ -8,6 +8,8 @@ import Supabase
 /// Dish name, the selected cook's name, its score and global rank.
 struct DishIdentityHeader: View {
     let attempt: CookingAttempt
+    /// Shows the Dish's verified cook count beside score and rank (the Dish page header).
+    var showsCookCount = false
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             SGEyebrow(text: globalRank == 1 ? "Signature Dish" : "From your Grub Rank")
@@ -16,16 +18,39 @@ struct DishIdentityHeader: View {
             if let name = attempt.meaningfulVersionLabel {
                 Text(name).font(SGTheme.TypeRole.body).foregroundStyle(.secondary).accessibilityIdentifier("detail-cook-name")
             }
-            HStack(spacing: SGTheme.Space.small) {
-                if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
-                if let globalRank { Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SGTheme.Space.small) { scoreAndRank; cookCount }
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    HStack(spacing: SGTheme.Space.small) { scoreAndRank }
+                    cookCount
+                }
             }
         }
+    }
+    @ViewBuilder private var scoreAndRank: some View {
+        if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
+        if let globalRank { Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize() }
+    }
+    @ViewBuilder private var cookCount: some View {
+        if showsCookCount, let dish = attempt.dish { DishCookCount(count: dish.attempts.count) }
     }
     private var globalRank: Int? {
         guard let item = attempt.rankedItem, let ordered = item.list?.orderedItems,
               let index = ordered.firstIndex(where: { $0.id == item.id }) else { return nil }
         return index + 1
+    }
+}
+
+/// The Dish's verified number of cooks (its local Cooking Attempts; nothing inferred or aggregated
+/// from the cloud). Informational only: the cooks themselves are listed on Dish & Ranking.
+struct DishCookCount: View {
+    let count: Int
+    var body: some View {
+        Label(count == 1 ? "Cooked once" : "Cooked \(count) times", systemImage: "fork.knife")
+            .font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(count == 1 ? "Cooked once" : "Cooked \(count) times")
+            .accessibilityIdentifier("dish-cook-count")
     }
 }
 

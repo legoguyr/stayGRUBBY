@@ -7,6 +7,7 @@ struct AccountApplicationRoot: View {
     @State private var retryID = 0
     @State private var featureFlags = FeatureFlags.off
     @State private var sync = CookingSyncCoordinator()
+    @State private var caches = AccountContentCacheRegistry()
     @Environment(\.scenePhase) private var scenePhase
     #if DEBUG
     @State private var development: DevelopmentLibraryAccess?
@@ -40,7 +41,7 @@ struct AccountApplicationRoot: View {
             await session.restoreSessionOnLaunch()
         }
         .task(id:session.state) {
-            if case .resolved = session.state {} else { sync.disconnect() }
+            if case .resolved = session.state {} else { sync.disconnect(); caches.reset() }
             await prepareAccess()
         }
         .onChange(of: scenePhase) { _, phase in sync.setActive(phase == .active) }
@@ -48,11 +49,24 @@ struct AccountApplicationRoot: View {
     }
     @ViewBuilder private var gatedContent: some View {
         if case .resolved(let account) = session.state, access.isReady(for:account), let store = access.store {
+            let cache = caches.cache(for: account.accountID, root: store.mediaRoot)
             ContentView().modelContainer(store.container).environment(\.cookingMediaRoot,store.mediaRoot)
                 .environment(\.scoreMilestoneScope, "account.\(account.accountID.uuidString.lowercased())")
                 .id(account.accountID)
                 .environment(\.recipeImportRequest, { raw in try await session.performRecipeImport(raw) })
-                .environment(\.socialMedia, { action in try await session.performSocialMedia(action) })
+                // Post photo and avatar downloads (immutable per path) go through the account's bounded cache.
+                // Recipe photos are cached by asset ID in `RecipePhoto`; their upload verification always
+                // reads Storage directly.
+                .environment(\.socialMedia, { action in
+                    let cacheable: Bool = switch action { case .download, .avatarDownload: true; default: false }
+                    guard cacheable, let path = action.paths.first else {
+                        let result = try await session.performSocialMedia(action)
+                        for path in action.paths { cache.media.remove("\(action.bucket)/\(path)") } // Removed bytes never linger.
+                        return result
+                    }
+                    return try await cache.media.load("\(action.bucket)/\(path)") { try await session.performSocialMedia(action) }
+                })
+                .environment(\.accountContentCache, cache)
                 .environment(\.socialRequest, { endpoint, action, payload in
                     try await session.performSocialRequest(endpoint: endpoint, action: action, payload: payload)
                 })

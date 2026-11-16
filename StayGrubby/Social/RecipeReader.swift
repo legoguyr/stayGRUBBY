@@ -93,8 +93,6 @@ struct RecipeReaderContent: View {
     var relatedDish: Dish?
     var linkedCook: CookingAttempt?
     var showsHeader = true
-    /// Embedded: the Dish page shows its cooks on the Dish & Ranking tab.
-    var showCooks: (() -> Void)? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.modelContext) private var context
     private var cooks: Int { relatedDish?.attempts.count ?? 0 }
@@ -117,7 +115,9 @@ struct RecipeReaderContent: View {
                     Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-attribution")
                     if !recipe.isOwner, let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(.subheadline) }
                 }
-                if recipe.isOwner, cooks > 0 { RecipeMakesLine(count: cooks, showCooks: showCooks) }
+                // The Dish's cook count sits in the Dish header beside score and rank; the standalone
+                // reader shows the same noninteractive count.
+                if showsHeader, recipe.isOwner, cooks > 0 { DishCookCount(count: cooks) }
                 if let description = recipe.content.description, !description.isEmpty { Text(description).font(.body).lineSpacing(6) }
             }
             Button { Task { await model.begin(context: context, request: request) } } label: { Label("Rank My Version", systemImage: "fork.knife").frame(maxWidth: .infinity) }
@@ -142,21 +142,6 @@ struct RecipeReaderContent: View {
                 Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private Recipe")").font(.caption).foregroundStyle(.secondary)
             }.font(.subheadline)
         }
-    }
-}
-
-/// Verified, local-only Makes: the owner's own cooks of this Dish (no cloud count, no inference).
-struct RecipeMakesLine: View {
-    let count: Int
-    var showCooks: (() -> Void)?
-    var body: some View {
-        let text = count == 1 ? "You’ve made this once" : "You’ve made this \(count) times"
-        Group {
-            if let showCooks {
-                Button(action: showCooks) { Label(text, systemImage: "fork.knife.circle") }.buttonStyle(.plain)
-                    .foregroundStyle(SGTheme.ColorToken.accent).accessibilityHint("Shows your cooks of this Dish")
-            } else { Label(text, systemImage: "fork.knife.circle") }
-        }.font(.subheadline.weight(.semibold)).frame(minHeight: 44, alignment: .leading).accessibilityIdentifier("recipe-makes")
     }
 }
 

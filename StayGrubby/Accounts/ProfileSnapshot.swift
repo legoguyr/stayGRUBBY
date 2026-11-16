@@ -21,6 +21,8 @@ import SwiftData
     let lastCookedAt: Date?
     let scores: ScoreUnlockState
     let topFoods: [Food]
+    /// The most recent ranked cooks (cooking history), newest first.
+    let recentCooks: [Food]
 
     init(context: ModelContext, list: RankingList?) {
         let entries = ScoreUnlockPolicy.entries(in: context, list: list)
@@ -30,6 +32,12 @@ import SwiftData
         dishCount = Set(entries.compactMap { $0.attempt.dish?.id }).count
         lastCookedAt = entries.compactMap { $0.attempt.cookedAt }.max()
         topFoods = entries.prefix(3).map { entry in
+            Food(attempt: entry.attempt, rank: entry.globalRank,
+                 scoreText: entry.attempt.rankedItem.flatMap { state.scoreText($0.score) })
+        }
+        recentCooks = entries.sorted {
+            ($0.attempt.cookedAt ?? $0.attempt.createdAt, $0.attempt.createdAt) > ($1.attempt.cookedAt ?? $1.attempt.createdAt, $1.attempt.createdAt)
+        }.prefix(3).map { entry in
             Food(attempt: entry.attempt, rank: entry.globalRank,
                  scoreText: entry.attempt.rankedItem.flatMap { state.scoreText($0.score) })
         }

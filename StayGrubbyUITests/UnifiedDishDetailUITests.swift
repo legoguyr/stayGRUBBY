@@ -48,9 +48,10 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.segmentedControls["dish-tabs"].buttons["Recipe"].isSelected)
         XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["recipe-not-cooked"].exists)
-        let makes = app.descendants(matching: .any)["recipe-makes"]; reach(makes, app)
+        XCTAssertTrue(app.descendants(matching: .any)["dish-cook-count"].exists, "Cook count beside score and rank")
+        XCTAssertFalse(app.descendants(matching: .any)["recipe-makes"].exists)
         app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
-        app.swipeDown(); app.swipeDown(); makes.tap()
+        app.swipeDown(); app.swipeDown(); app.segmentedControls["dish-tabs"].buttons["Dish & Ranking"].tap()
         XCTAssertTrue(app.segmentedControls["dish-tabs"].buttons["Dish & Ranking"].isSelected)
         let cooks = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'version-row-'")).firstMatch
         reach(cooks, app)

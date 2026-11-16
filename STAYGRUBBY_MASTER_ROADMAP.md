@@ -1,30 +1,84 @@
 # StayGrubby Master Roadmap
 
-**Canonical roadmap — updated November 15, 2026 for Build 6 preparation and the Connected UI Overhaul.** This is the only future-sequencing document. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization. Post-V1 order is not final: sequence by dependencies, tester feedback and capacity.
+**Canonical roadmap — updated November 16, 2026 for the accelerated public MVP.** This is the only future-sequencing document. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE.** Personal cooking and comparison ranking stay central. Recipes, engagement, recommendations, sponsorship and commerce never change personal ranking evidence or scores.
 
-When proposing work classify it as **required before V1**, **desirable but deferrable**, or **post-V1**. Only product coherence, safety/privacy/platform compliance, data integrity and a credible first public release justify moving something ahead of V1.
+## Development strategy — accelerated public MVP (owner decision, November 16, 2026)
 
-## NOW — Build 6 internal TestFlight preparation
+**Target: public App Store MVP in January 2027; stretch: December 2026.** Classify every item as **MVP Required**, **Post-launch Priority** or **Future Roadmap**. Nothing deferred is dropped: every Post-launch and Future item stays in this document.
 
-Build 5 is the owner-accepted internal baseline on the migrated Supabase target. The next candidate combines Claude's local-first sync work (`f7b0c19`) with the already deployed capacity monitor and acknowledgment write reductions (`5391519`, `7cffc50`). [Build 6 release gates](V1_RELEASE_GATE.md#build-6-internal-candidate--november-15-2026) govern approval, physical acceptance and rollout. Build 5 remains supported and server-side sync write throttling stays disabled.
+- **Finish and stabilize before expanding.** Completing, fixing and speeding up existing functionality outranks new features. A new feature enters the MVP only for product coherence, safety, privacy, platform compliance or data integrity.
+- **LEGO-style modules.** Reuse the existing ranking, Recipe, social, authentication, migration and sync systems. Build reusable interfaces and privacy boundaries for known future features, but do not implement distant backend features early (no speculative tables, counters or event streams).
+- **Operate cheaply.** Minimize Supabase storage, reads and writes: cache reads, coalesce requests, refresh only on change or staleness, never retry in storms.
+- **Verification.** Focused tests that reuse existing verified evidence; Debug and Release compilation each cycle; broader regression once per release candidate. **Physical iPhone testing is owner-led through Xcode** (install over the existing app, never uninstall). **External TestFlight is optional, not a release milestone.**
+- **Offline-first UX is not required.** Reliable local caching, data integrity and safe sync remain required.
 
-## NEXT — Connected UI Overhaul (high priority)
+### MVP phases and timeline
 
-- Connect **My Kitchen ↔ Grub Rank (Dish Rankings) ↔ Food Bible ↔ The Pass ↔ Sous Chef profiles**. Use one canonical Dish destination with **Dish & Ranking** and **Recipe** tabs, a shared header and immediate switching. Reuse the current Dish identity and preserve where each route came from. Show a linked Recipe preview on eligible cook posts in The Pass, with direct navigation to the Recipe tab. Preserve cook-only feed publication and require live Recipe access for the preview and destination.
-- Give Food Bible **My Recipes** and **Saved Recipes**. A save references the original Recipe and its creator. The new experience removes in-app copying of another creator's Recipe. Retain the user's existing copies and immutable as-made snapshots. **Make This** on an eligible Sous Chef Recipe starts the user's own cook and pins the exact Recipe revision and creator attribution. Personal ranking stays independent.
-- Add Recipe **Makes** and **Saves** counters and **Total Makes** alongside Dishes and Recipes in My Kitchen. Confirm the counting scope before enabling public totals. Count only eligible activity and enforce viewer access. Private bookmarks, private cooks and blocked relationships must not become inferable through counts.
-- Update the welcome screen and add the pasta-machine loading animation for actual loading states, with a Reduce Motion alternative.
-- **Phase 1 implemented November 15 (Claude; automated acceptance passed, owner physical acceptance pending):**
-  - **Dish page:** one Dish page with Dish & Ranking and Recipe tabs over a shared header, with immediate switching and one Recipe fetch. Grub Rank, My Kitchen and cook lists open it; Food Bible opens an owned Recipe's Dish on the Recipe tab.
-  - **Standalone reader:** links an owner's Recipe to its Dish.
-  - **Food Bible:** My Recipes / Saved Recipes, where saves are access-rechecked references (backend test added) and copying is retired from the new UI.
-  - **Makes:** My Kitchen Total Makes and a verified local Makes line on owned Recipes.
-- **Remaining for Phase 2:** owner-only `sourceAttemptID` on own post cards (open my Dish from my post); a Recipe preview on cook posts; Makes/Saves aggregate reads and public totals; Make This attribution on Saved Recipes; Saved Recipes paging; retiring the `fork` RPCs once no supported client needs them.
-- **Original Claude task brief:** build the shared Dish shell and immediate tab switching, then route Grub Rank, Food Bible, My Kitchen, The Pass and Sous Chef profiles through it. Use existing access-checked previews, destination DTOs and native navigation patterns. Verify transitions, back navigation, inaccessible Recipes and exact-revision links. Land this slice independently of bookmarks, counters or discovery backend readiness.
+| Phase | Window | Scope | Status |
+| --- | --- | --- | --- |
+| S1 — MVP stabilization | Nov 16 – Nov 30, 2026 | Connected UI Phase 1 plus stabilization: one Dish page, consistent Dish/Recipe photos, read caching for Food Bible and The Pass, Dish cook count. Connected UI cohesion: Recipe preview on the Dish page, Food Bible cook status, My Kitchen statistics that open Grub Rank, Last cooked and Recent Cooks. Fix reproducible defects from the one consolidated owner Xcode review. | **Implemented Nov 16 (Claude); automated acceptance passed; one consolidated owner physical review pending.** |
+| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Not started |
+| S3 — Release candidate and submission | Stretch: Dec 21 – 31, 2026; target: Jan 2027 | Release build, one proportionate regression and Release verification, owner physical acceptance through Xcode, App Store metadata and submission (each step needs explicit owner approval). Optional external TestFlight. | Not started |
+
+### MVP Required (public-release blockers)
+
+Full checklist and evidence: [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
+
+- **Stability and performance:** owner physical acceptance of Connected UI Phase 1 and the November 16 stabilization. This includes Saved Recipes once a Sous Chef shares a Recipe. Close any defect it finds.
+- **Moderation and safety:** UGC filtering; working Report/Block across posts, comments, Recipes, profiles and shared destinations; a staffed report → review → resolution process with auditable outcomes.
+- **Social onboarding:** a unique username and an explicit privacy choice for new accounts; a resumable completion flow for legacy accounts (from Very Near Term below). People discovery stays opt-in until this ships.
+- **Privacy and security:** focused review of audience rules, RLS, private Storage, account isolation, revocation, shared links and counts; App Store privacy disclosures matching actual processing (including external AI); disposition of security advisories and of the production `development-test-session` function.
+- **Account deletion:** account deletion with UGC/media cleanup reviewed on isolated test identities.
+- **Legal:** Terms of Use, Community Guidelines, and Recipe/allergen/serving/estimate disclaimers. Verify that the hosted Privacy Policy is current and that support/contact exists.
+- **App Store:** age rating and UGC answers, App Review sign-in access, production configuration/signing, no Release development bypass, homepage and `distribution.json` switch at release.
+- **Ranking presentation:** conclude the score/order consistency investigation and implement the owner-approved presentation (no math change without explicit reopening).
+- **Operations:** Supabase capacity plan (resolve the ~1.6 GB System disk, Pro/disk decision before launch), the automated daily health check with an alert, a non-production Supabase project for live integration tests, and the smoke gate on the release candidate.
+- **Finish what exists:** Sharing stage C (one Share action, Post to The Pass vs Share) and the copy/consistency pass (stage G) limited to existing surfaces.
+
+### Post-launch Priority
+
+- **Connected UI Phase 2:**
+  - open my Dish from my own post (owner-only `sourceAttemptID`)
+  - Recipe preview on cook posts
+  - Make This with exact-revision creator attribution
+  - Makes/Saves aggregates and public totals
+  - Saved Recipes paging
+  - retire the `fork` RPCs once no supported client uses them
+- **People and invitations:** people discovery for every account, improved Find Sous Chefs, invitation links, follow-request UX, threaded comment replies.
+- **Polish:** welcome screen update and the pasta-machine loading animation; a Dish identity for legacy Recipes created before Dish identity (one known on the owner account) so they open the Dish page.
+- **Retire legacy data:** stop writing and serving legacy `recipe_created` activity (migration).
+- **Notifications:** push notifications after reliable in-app Tickets.
+
+### Future Roadmap
+
+Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unchanged: Want to Cook, Recipe Social History, privacy-tier evolution, Collections, Scan/Share Sheet import, insights and Stars, unit conversion, photography, rich previews, Community Discover, personalization, referrals, Run It Back redesign, moderation growth, source taxonomy, Personal Cooking Intelligence and the rest.
+
+## Recent cycles
+
+- **Build 6 preparation (Nov 15).** Build 5 is the owner-accepted internal baseline on the migrated Supabase target. The Build 6 candidate combines the local-first sync work (`f7b0c19`) with the deployed capacity monitor and acknowledgment write reductions (`5391519`, `7cffc50`) ([gates](V1_RELEASE_GATE.md#build-6-internal-candidate--november-15-2026)). Under the accelerated plan, external TestFlight distribution is optional. Build 5 remains supported, and server-side sync write throttling stays disabled.
+- **Connected UI Phase 1 (Nov 15, `5862747`; integrated and pushed).** One Dish page with Dish & Ranking and Recipe tabs; Food Bible My Recipes / Saved Recipes (saves are access-rechecked references; copying retired from the new UI); My Kitchen Total Makes. The owner's Xcode test (Nov 16) confirmed tab switching, Link a Recipe, "Not cooked yet" and general navigation and sync. It reported:
+  - inconsistent Dish/Recipe photos and relationships
+  - an over-interactive Makes line
+  - slow, repeated reloads in Food Bible and The Pass
+- **MVP stabilization (Nov 16, Claude).** Hosted read-only audit: Recipe ↔ Dish linkage was already correct (every owned Recipe with a Dish identity points to a live cooked Dish; no conflicting legacy links). The defects were client-side:
+  - **Header photo flipped between tabs.** The two Dishes whose Recipe has its own photo showed the cook photo on Dish & Ranking and the Recipe photo on Recipe. Food Bible cards and the Dish page also picked different cooks.
+  - **Photos re-downloaded on every appearance.** Recipe photos were fetched (one RPC plus one download) each time they appeared, with no cache, and a failed fetch left an empty frame.
+  - **Screens cleared and refetched.** Food Bible and The Pass cleared and refetched on every tab switch, return from background and back navigation, and every Storage download bypassed caching.
+
+  The fixes:
+  - one stable header photo rule
+  - photo fallback to the Dish's own cook photo
+  - an account-scoped bounded read cache with request coalescing and change-based invalidation
+  - the noninteractive "Cooked N times" beside score and rank
+
+  See [Read caching](STAYGRUBBY_ARCHITECTURE.md#read-caching-mvp-stabilization-november-16-2026).
 
 ## VERY NEAR TERM — Social & Discovery
+
+*Classification (Nov 16): onboarding (username + privacy choice), reporting/blocking and moderation are **MVP Required**; discovery for all accounts, Find Sous Chefs, invitations, contact matching and threaded replies are **Post-launch Priority**.*
+
 
 - Make people discovery available to every account by default with no feature-level off switch. Keep Public/Private choices and existing content authorization independent of discovery. Define the minimum profile identity discoverable under each choice before rolling out changes to existing privacy settings.
 - Require a unique username and explicit privacy selection in new-account social onboarding. Photo and bio are optional. Legacy accounts with incomplete profiles get a resumable completion flow, with their accounts, existing choices and private cooking libraries preserved.
@@ -105,7 +159,7 @@ Data integrity before V1 includes authorizing and deploying the locally verified
 
 ## THEN — Release Candidate
 
-Final TestFlight release candidate, one proportionate broader regression and Release verification, physical acceptance (including two-device Universal Links and real-device photos/auth/sync/sharing). Archive, build-number change, upload and distribution each need explicit owner approval.
+Release candidate build (external TestFlight optional; owner physical testing through Xcode), one proportionate broader regression and Release verification, physical acceptance (including two-device Universal Links and real-device photos/auth/sync/sharing). Archive, build-number change, upload and distribution each need explicit owner approval.
 
 ## THEN — App Store V1
 
@@ -113,7 +167,7 @@ Metadata, screenshots, reviewer instructions, switch `Website/distribution.json`
 
 **V1 scope:** reliable cooking records, Grub Rank, Food Bible/Recipe workflows, My Kitchen, Sous Chefs, chronological The Pass, sharing, authentication/sync, privacy/account controls, moderation/compliance and polished dependable UX. **Not V1:** Discover, Personal Cooking Intelligence, Want to Cook, Collections, advanced recommendations.
 
-## POST-V1 — near / medium term (approved or established; order not final)
+## POST-V1 — near / medium term (Future Roadmap unless listed as Post-launch Priority above; order not final)
 
 - **Want to Cook** — cooking intention distinct from cooking; bookmark + attributed cooking workflow. Targets a Dish (cooked or Recipe-only) or a Recipe — the first candidate to justify a stored Food identity. [Concept](PERSONAL_COOKING_INTELLIGENCE.md#5-approved-future-concepts-not-implemented), [fit](FOOD_ARCHITECTURE.md#10-future-compatibility-post-v1-nothing-here-is-authorized)
 - **Recipe Social History** — an authorized detailed activity timeline beyond the near-term aggregate Makes and Saves.
@@ -163,4 +217,4 @@ Future planning lives **here** only. Historical stage plans and reviews ([NEXT_R
 
 ### Required first App Store release milestone
 
-**Build 4 → integration + lifecycle deployment → D1 Unified Dish Foundation → D2 Dish Detail → F → C → E → G (with the score/order investigation in parallel) → V1 Release Gate → Release Candidate → App Store V1 → post-V1.** App Store V1 is a concrete milestone that optional ideas must not keep postponing. No submission or distribution is authorized by a development checkpoint.
+**S1 MVP stabilization (Nov 2026) → S2 public-release requirements (Dec 2026) → S3 release candidate and App Store submission (stretch late Dec 2026, target Jan 2027) → Post-launch Priority → Future Roadmap.** App Store MVP is a concrete milestone that optional ideas must not keep postponing. The earlier Build 4 → D1 → D2 → F → C → E → G sequence is complete through F and filters; C and G continue only as MVP Required finishing work on existing surfaces. No submission or distribution is authorized by a development checkpoint.

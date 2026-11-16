@@ -134,12 +134,14 @@ nonisolated enum CookbookSearch {
     }
 }
 @MainActor enum CookbookIndex {
-    /// Older servers omit `cooked`; derive it from the exact cook link or the named local Dish.
+    /// Older servers omit `cooked`; derive it from the exact cook link or the named local Dish. A local
+    /// cook of the entry's Dish always counts (the local library is current even when a cached index is not).
     static func resolvingCooked(_ entries: [CookbookEntry], dishes: [UUID: Dish]) -> [CookbookEntry] {
         entries.map { entry in
-            guard entry.cooked == nil else { return entry }
+            let local = entry.dishID.flatMap { dishes[$0] }?.attempts.isEmpty == false
+            guard entry.cooked == nil || (entry.cooked == false && local) else { return entry }
             var value = entry
-            value.cooked = entry.linkedAttemptID != nil || entry.dishID.flatMap { dishes[$0] }?.attempts.isEmpty == false
+            value.cooked = entry.linkedAttemptID != nil || local
             return value
         }
     }

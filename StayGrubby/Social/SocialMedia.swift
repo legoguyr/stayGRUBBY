@@ -67,21 +67,26 @@ struct SocialPhoto: View {
     static let maximumPixels = 2_048
     let path: String?
     @Environment(\.socialMedia) private var media
+    @Environment(\.accountContentCache) private var cache
     @State private var image: UIImage?
+    @State private var imagePath: String?
+    private var cacheKey: String? { path.map { "post-image/\($0)" } }
     var body: some View {
         Group {
-            if let image { Image(uiImage: image).resizable().scaledToFill() }
+            if let shown = (imagePath == path ? image : nil) ?? cacheKey.flatMap({ cache?.media.image($0) }) { Image(uiImage: shown).resizable().scaledToFill() }
             else { SGPhotoPlaceholder() }
         }.clipped().accessibilityHidden(true)
             .task(id: path) {
-                image = nil
+                guard imagePath != path || image == nil else { return }
+                image = nil; imagePath = nil
                 guard let path, let media else { return }
+                if let key = cacheKey, let hit = cache?.media.image(key) { image = hit; imagePath = path; return }
                 do {
                     let bytes = try await media(.download(path: path))
-                    guard !Task.isCancelled, SocialMediaRules.validJPEG(bytes), let source = CGImageSourceCreateWithData(bytes as CFData, nil),
-                          let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: SocialPhoto.maximumPixels, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary)
-                    else { return }
-                    image = UIImage(cgImage: thumbnail)
+                    guard !Task.isCancelled, SocialMediaRules.validJPEG(bytes),
+                          let decoded = RemoteMediaCache.decode(bytes, maximumPixels: SocialPhoto.maximumPixels) else { return }
+                    if let key = cacheKey { cache?.media.storeImage(decoded, key: key) }
+                    image = decoded; imagePath = path
                 } catch { if !Task.isCancelled { image = nil } }
             }
     }

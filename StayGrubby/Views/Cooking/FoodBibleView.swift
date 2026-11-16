@@ -7,6 +7,7 @@ struct FoodBibleView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accountContentCache) private var cache
     @Query private var dishes: [Dish]
     @State private var entries: [CookbookEntry] = []
     @State private var query = ""
@@ -61,9 +62,11 @@ struct FoodBibleView: View {
             .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
             .navigationTitle("Food Bible").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Food Bible") }; ToolbarItem(placement: .primaryAction) { Button("Add Recipe", systemImage: "plus") { choosing = true }.accessibilityIdentifier("bible-add") }.sgIndependentToolbarBackground() }
-            .task { await load() }.refreshable { await load() }
-            .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
-            .onChange(of: phase) { _, next in generation = UUID(); entries = []; if next == .active { Task { await load() } } }
+            // Read caching (MVP stabilization): tab switches, back navigation and returning to the app show
+            // the cookbook at once; it refreshes in the background only when stale or after a change.
+            .task { await load(onlyIfStale: true) }.refreshable { await load() }
+            .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in cache?.invalidateRecipes(); Task { await load() } }
+            .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load(onlyIfStale: true) } } }
             .sheet(item: $filterGroup) { group in SGFilterGroupSheet { RecipeFilterView(filters: $filters, group: group, entries: entries) } }
             .sheet(isPresented: $choosing) { AddRecipeFlow(context: .library, entries: entries) }
             // Connected UI: an owned Recipe whose Dish is on this device opens that Dish's page on its
@@ -73,8 +76,8 @@ struct FoodBibleView: View {
                 else { RecipeDetailView(id: route.recipeID, dishID: route.dishID) }
             }
             .navigationDestination(item: $openingSaved) { RecipeDetailView(id: $0) }
-            .onChange(of: library) { _, next in if next == .saved && !savedLoaded { Task { await loadSaved() } } }
-            .onReceive(NotificationCenter.default.publisher(for: .recipeSavesChanged)) { _ in if savedLoaded { Task { await loadSaved() } } }
+            .onChange(of: library) { _, next in if next == .saved { Task { await loadSaved(onlyIfStale: true) } } }
+            .onReceive(NotificationCenter.default.publisher(for: .recipeSavesChanged)) { _ in cache?.savedRecipes.invalidate(); if savedLoaded { Task { await loadSaved() } } }
     }
     /// Same LEGO filter grammar as Grub Rank (`SGFilterChip` → `SGFilterGroupSheet`, Sort, one clear X);
     /// Food Bible offers the deeper Recipe groups. Chips wrap into two even rows.
@@ -145,31 +148,39 @@ struct FoodBibleView: View {
             if !saved.isEmpty { Text(saved.count == 1 ? "1 Saved Recipe" : "\(saved.count) Saved Recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-saved-count") }
         }.padding(SGTheme.Space.margin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
     }
-    private func loadSaved() async {
+    private func loadSaved(onlyIfStale: Bool = false) async {
+        if !savedLoaded, let cached = cache?.savedRecipes.value { saved = cached; savedLoaded = true }
+        if onlyIfStale, savedLoaded, cache?.savedRecipes.isFresh() == true { return }
         guard let request else { savedFailed = true; return }
         let token = UUID(); savedGeneration = token; savedFailed = false
         do {
             let page = try JSONDecoder().decode(TicketsPage.self, from: await request("recipes", "tickets", .init()))
             guard !Task.isCancelled, savedGeneration == token else { return }
-            saved = page.tickets; savedLoaded = true
-        } catch is CancellationError {} catch { if savedGeneration == token { savedFailed = true } }
+            saved = page.tickets; savedLoaded = true; cache?.savedRecipes.store(page.tickets)
+        } catch is CancellationError {} catch { if savedGeneration == token, !savedLoaded { savedFailed = true } }
     }
     private func unsave(_ id: UUID) async {
         guard let request else { return }
         var payload = SocialPayload(); payload.recipeID = id
-        do { _ = try await request("recipes", "unticket", payload); await loadSaved() } catch { savedFailed = true }
+        do { _ = try await request("recipes", "unticket", payload); cache?.savedRecipes.invalidate(); await loadSaved() } catch { savedFailed = true }
     }
     private func filterChips(_ groups: [RecipeFilterGroup]) -> some View {
         ForEach(groups) { group in
             SGFilterChip(title: group.rawValue, count: filters.count(group), identifier: "bible-filter-\(group.rawValue.lowercased())") { filterGroup = group }
         }
     }
-    private func load() async {
+    private func load(onlyIfStale: Bool = false) async {
+        if entries.isEmpty, let cached = cache?.cookbook.value { entries = cached; loading = false }
+        if onlyIfStale, !entries.isEmpty || cache?.cookbook.hasValue == true, cache?.cookbook.isFresh() == true { loading = false; return }
         guard let request else { failed = true; loading = false; return }
         let token = UUID(); generation = token; loading = true; failed = false
         defer { if generation == token { loading = false } }
-        do { let next = try await CookbookIndex.load(request: request); guard !Task.isCancelled, generation == token else { return }; entries = next }
-        catch is CancellationError {} catch { if generation == token { entries = []; failed = true } }
+        do {
+            let next = try await CookbookIndex.load(request: request); guard !Task.isCancelled, generation == token else { return }
+            entries = next; cache?.cookbook.store(next)
+        }
+        // A failed background refresh keeps the cookbook already shown.
+        catch is CancellationError {} catch { if generation == token, entries.isEmpty { failed = true } }
     }
 }
 struct CookbookRoute: Hashable { let recipeID: UUID; let dishID: UUID? }
@@ -212,6 +223,11 @@ struct CookbookCard: View {
     let entry: CookbookEntry
     var dish: Dish?
     private var title: String { dish?.name ?? entry.recipeTitle }
+    private var status: String? {
+        guard let dish else { return entry.cooked == false ? "Not cooked yet" : nil }
+        let count = dish.attempts.count
+        return count == 0 ? "Not cooked yet" : count == 1 ? "Cooked once" : "Cooked \(count) times"
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
             RecipePhoto(id: entry.photoID, dish: dish, name: entry.recipeTitle, cook: dish?.attempts.first { $0.id == entry.linkedAttemptID }, exactCookLink: entry.linkedAttemptID != nil).sgPhotoFrame(.cookbook).accessibilityHidden(true)
@@ -221,7 +237,9 @@ struct CookbookCard: View {
             if title != entry.recipeTitle { Text(entry.recipeTitle).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
             let metadata = [entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
             if !metadata.isEmpty { Text(metadata).font(.caption).foregroundStyle(.secondary) }
-        }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([title, title == entry.recipeTitle ? nil : entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
+            // The Dish's verified local cook count (same wording as the Dish page header).
+            if let status { Text(status).font(.caption.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("bible-cook-status-\(entry.recipeID)") }
+        }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([title, title == entry.recipeTitle ? nil : entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }, status].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")
     }
 }
 // Presentation-only selection, reusing existing media without copying files or relationships.

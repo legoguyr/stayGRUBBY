@@ -83,6 +83,32 @@ Completed initial ranks and re-ranks record a private dated reaction in the exis
 - Every Dish route opens one Dish page with **Dish & Ranking** and **Recipe** tabs over a shared header. Switching is immediate, and the Dish's Recipe is fetched once per page.
 - Food Bible separates **My Recipes** from **Saved Recipes**, which are access-rechecked references through `recipe_tickets`; the new UI makes no copies.
 - My Kitchen shows **Total Makes** from verified local cooks.
+- **MVP stabilization (November 16, 2026).**
+  - The Dish page header photo is fixed for the page. Tab switches never change it.
+  - The Dish header shows a noninteractive **Cooked N times** beside score and rank, replacing the Recipe tab's Makes line.
+  - A Recipe photo that can't load falls back to the Dish's own cook photo.
+
+### Read caching (MVP stabilization, November 16, 2026)
+
+`AccountContentCache` (one per signed-in account, created in `AccountApplicationRoot`, injected as `\.accountContentCache`) is a convenience layer, never a source of truth.
+
+- **Last good results:** it keeps the cookbook index, the Saved Recipes list, The Pass's first page (with identity and Sous Chef count) and each Dish's Recipe (bounded to 200 Dishes, oldest evicted).
+- **Display:** screens show the cached value at once and refresh in the background only when it is older than 120 seconds, on pull to refresh or Retry, or after a change. A failed background refresh keeps what is shown.
+- **Invalidation:** `socialContentChanged`, `recipeSavesChanged` and `socialEngagementChanged` withdraw freshness everywhere, even for screens that did not observe the change. Values stay on screen until the refresh lands.
+- **Food Bible "cooked" state:** a local cook of the entry's Dish marks it cooked even when the cached index predates the cook.
+- **Removed behavior:** tab switches, back navigation and returning from the background no longer clear Food Bible or The Pass.
+
+`RemoteMediaCache` holds immutable remote media:
+- **What it caches:** post photos and avatars by Storage path; Recipe photos by asset ID, which also skips the descriptor RPC.
+- **Tiers:** decoded images and bytes in memory (48 MB each), and bytes on disk at `<account root>/RemoteMediaCache` (120 MB, least-recently-used trimming to 80%).
+- **Disk safety:** the directory is excluded from backup and uses file protection. It is removed with the account and never shared between accounts.
+- **Coalescing:** concurrent loads of one key share one request.
+- **Freshness of bytes:** upload verification downloads (Recipe photos) always read Storage directly. Upload and remove calls evict the affected keys.
+- **Access:** cached bytes are only ever shown where a freshly authorized post, profile or Recipe card references them.
+
+Rules for future reads:
+- Use these caches instead of adding per-screen ones.
+- Cloud rows and the local SwiftData library remain canonical.
 
 Detail: [FOOD_ARCHITECTURE §3.3a and §8.1](FOOD_ARCHITECTURE.md#81-the-dish-page--dish--ranking-and-recipe-tabs-current-connected-ui-phase-1-november-15-2026).
 

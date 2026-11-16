@@ -22,6 +22,7 @@ struct DishView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @Environment(\.returnToRankings) private var returnToRankings
+    @Environment(\.accountContentCache) private var cache
     @State private var recipe = RecipeReaderModel()
     @State private var sharingSocial = false
     @State private var editing = false
@@ -80,10 +81,10 @@ struct DishView: View {
                 }.sgIndependentToolbarBackground()
             }
         }
-        .task(id: dish?.id) { await loadRecipe() }
+        .task(id: dish?.id) { await loadRecipe(onlyIfStale: true) }
         .refreshable { await loadRecipe() }
         .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await loadRecipe() } }
-        .onChange(of: phase) { _, next in recipe.cancelPending(); if next == .active { Task { await loadRecipe() } } }
+        .onChange(of: phase) { _, next in recipe.cancelPending(); if next == .active { Task { await loadRecipe(onlyIfStale: true) } } }
         .onChange(of: recipe.deleted) { _, deleted in
             // An uncooked Dish leaves with its Recipe; a cooked Dish stays and shows Link a Recipe.
             if deleted, (dish?.attempts.isEmpty ?? true) { dismiss() } else if deleted { recipe.deleted = false; tab = .ranking }
@@ -116,22 +117,23 @@ struct DishView: View {
         .deferRemoteCookingUpdates()
     }
 
+    /// One header photo for the whole page: switching tabs never changes it (MVP stabilization,
+    /// November 16, 2026). Opened from a cook, that cook's photo leads; otherwise the Dish's photo is its
+    /// Recipe's own photo, else the Dish's representative cook photo — the same rule as its Food Bible
+    /// card. Every option is an existing stored asset shown by reference, never a copy.
     @ViewBuilder private var header: some View {
-        if tab == .recipe, let value = recipe.recipe {
-            // Recipe tab: a Recipe-owned photo takes precedence over the linked cook's photo (same rule as
-            // the standalone reader). Either way it is the one stored asset, never a copy.
-            RecipePhoto(id: value.content.photoID, dish: dish, name: value.content.title,
-                        cook: value.linkedAttemptID.flatMap { id in dish?.attempts.first { $0.id == id } }, exactCookLink: value.linkedAttemptID != nil)
-                .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
-        } else if let media = shownCook?.primaryImage {
+        if let media = cook?.primaryImage {
             SGHeroMedia(media: media, name: dishName)
-        } else if let photoID = recipe.recipe?.content.photoID {
-            // The header photo is the Recipe's own photo here: one stored asset, the Recipe's hero.
-            RecipePhoto(id: photoID, dish: dish, name: dishName).sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
+        } else if let value = recipe.recipe {
+            // Exactly the Food Bible card's photo: the Recipe's own photo, else its linked/representative cook's.
+            RecipePhoto(id: value.content.photoID, dish: dish, name: dishName, cook: linkedCook(value), exactCookLink: value.linkedAttemptID != nil)
+                .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
+        } else if let media = dish?.cookbookRepresentativeCook?.primaryImage ?? shownCook?.primaryImage {
+            SGHeroMedia(media: media, name: dishName)
         } else {
             SGHeroMedia(media: nil, name: dishName)
         }
-        if let shownCook { DishIdentityHeader(attempt: shownCook) }
+        if let shownCook { DishIdentityHeader(attempt: shownCook, showsCookCount: true) }
         else {
             VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                 SGEyebrow(text: "Not cooked yet").accessibilityIdentifier("dish-not-cooked")
@@ -148,9 +150,7 @@ struct DishView: View {
                 Text("Offline. Showing your previously opened Recipe. Changes need a connection to save.")
                     .font(.subheadline).accessibilityIdentifier("recipe-error")
             }
-            RecipeReaderContent(model: recipe, recipe: value, relatedDish: dish,
-                                linkedCook: value.linkedAttemptID.flatMap { id in dish?.attempts.first { $0.id == id } },
-                                showsHeader: false, showCooks: { tab = .ranking })
+            RecipeReaderContent(model: recipe, recipe: value, relatedDish: dish, linkedCook: linkedCook(value), showsHeader: false)
         } else if recipe.failed {
             SGContentState(title: "Recipe unavailable", symbol: "wifi.exclamationmark", message: "Recipes need a connection. Your Dish and ranking are unchanged.") {
                 Button("Retry") { Task { await loadRecipe() } }.buttonStyle(SGButtonStyle())
@@ -164,9 +164,17 @@ struct DishView: View {
         }
     }
 
-    private func loadRecipe() async {
+    private func linkedCook(_ value: Recipe) -> CookingAttempt? { value.linkedAttemptID.flatMap { id in dish?.attempts.first { $0.id == id } } }
+
+    /// The Dish's Recipe: shown at once from the account cache when known, then refreshed in the
+    /// background only when stale or after a change (`onlyIfStale` false: pull to refresh, edits, links).
+    private func loadRecipe(onlyIfStale: Bool = false) async {
         guard let dish else { return }
+        let cached = cache?.dishRecipe(dish.id)
+        if !recipe.loaded, let cached, cached.hasValue { recipe.recipe = cached.value ?? nil; recipe.loaded = true }
+        if onlyIfStale, cached?.isFresh() == true { return }
         await recipe.load(dishID: dish.id, request: request)
+        if recipe.loaded, !recipe.failed { cache?.storeDishRecipe(recipe.recipe, for: dish.id) }
     }
 }
 
@@ -227,14 +235,22 @@ private struct DishRankingTab: View {
     @ViewBuilder private var recipeSummary: some View {
         if request != nil {
             if let value = recipe.recipe {
+                // A compact preview of what the Recipe tab holds (title when it differs, time, yield,
+                // ingredient count), not a second copy of the tab control.
                 Button(action: openRecipe) {
                     HStack(spacing: SGTheme.Space.small) {
-                        Label("View Recipe", systemImage: "book").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                        VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                            Label("View Recipe", systemImage: "book").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                            if let summary = DishRecipePreview.summary(value, dishName: dish?.name) {
+                                Text(summary).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                    .accessibilityIdentifier("dish-recipe-summary")
+                            }
+                        }
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right").foregroundStyle(.secondary)
                     }.frame(minHeight: 44).contentShape(Rectangle())
                 }.buttonStyle(.plain)
-                    .accessibilityLabel(value.content.title == dish?.name ? "View Recipe" : "View Recipe, \(value.content.title)")
+                    .accessibilityLabel(["View Recipe", DishRecipePreview.summary(value, dishName: dish?.name)].compactMap { $0 }.joined(separator: ", "))
                     .accessibilityIdentifier("dish-view-recipe")
             } else if recipe.loaded, dish != nil {
                 Button(action: addRecipe) { Label("Add Recipe", systemImage: "plus").frame(minHeight: 44) }
@@ -269,6 +285,23 @@ private struct DishRankingTab: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
         }.padding(.vertical, SGTheme.Space.medium)
+    }
+}
+
+/// One line describing the Dish's Recipe on Dish & Ranking.
+enum DishRecipePreview {
+    static func summary(_ recipe: Recipe, dishName: String?) -> String? {
+        let content = recipe.content
+        let ingredients = content.components.map { $0.reduce(0) { $0 + $1.ingredients.count } } ?? content.ingredients.count
+        let minutes = content.elapsedMinutes ?? ((content.prepMinutes ?? 0) + (content.cookMinutes ?? 0))
+        let parts: [String?] = [
+            content.title.caseInsensitiveCompare(dishName ?? "") == .orderedSame ? nil : content.title,
+            minutes > 0 ? "\(minutes) min" : nil,
+            content.yield.flatMap { $0.isEmpty ? nil : $0 },
+            ingredients > 0 ? (ingredients == 1 ? "1 ingredient" : "\(ingredients) ingredients") : nil,
+        ]
+        let text = parts.compactMap { $0 }.joined(separator: " · ")
+        return text.isEmpty ? nil : text
     }
 }
 

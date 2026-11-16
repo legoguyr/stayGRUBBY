@@ -5,32 +5,75 @@ struct ProfileCookingContent: View {
     let snapshot: ProfileSnapshot
     let ranking: RankingList?
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.selectTab) private var selectTab
     @State private var titleHeight: CGFloat = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.large) {
             topFoods
             cookingSnapshot
+            recentCooks
         }
     }
 
+    /// Compact Kitchen statistics (Connected UI, November 16, 2026). Each opens the place it counts:
+    /// Dishes Ranked and Total Makes open Grub Rank. Counts are verified local data, never cloud estimates.
     private var cookingSnapshot: some View {
-        HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-            statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count")
-                .frame(maxWidth: .infinity)
-            statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count") // verified local cooks, never a cloud estimate
-                .frame(maxWidth: .infinity)
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            HStack(alignment: .top, spacing: SGTheme.Space.medium) {
+                statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count") { selectTab(.rankings) }
+                    .frame(maxWidth: .infinity)
+                statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count") { selectTab(.rankings) }
+                    .frame(maxWidth: .infinity)
+            }
+            if let last = snapshot.lastCookedAt {
+                Text("Last cooked \(last.formatted(date: .abbreviated, time: .omitted))")
+                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).accessibilityIdentifier("profile-last-cooked")
+            }
         }.padding(.vertical, SGTheme.Space.xSmall)
     }
 
-    private func statistic(_ count: Int, title: String, identifier: String) -> some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-            Text(count, format: .number).font(SGTheme.TypeRole.title).monospacedDigit()
-            Text(title).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+    private func statistic(_ count: Int, title: String, identifier: String, open: @escaping () -> Void) -> some View {
+        Button(action: open) {
+            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                Text(count, format: .number).font(SGTheme.TypeRole.title).monospacedDigit()
+                Text(title).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
         }
+        .buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.primaryText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(count) \(title.lowercased())")
+        .accessibilityHint("Opens Grub Rank").accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(identifier)
+    }
+
+    /// Cooking history: the newest ranked cooks, each opening its Dish page.
+    @ViewBuilder private var recentCooks: some View {
+        if !snapshot.recentCooks.isEmpty {
+            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                SGSectionHeader(title: "Recent Cooks")
+                ForEach(snapshot.recentCooks) { food in
+                    NavigationLink(value: food.attempt.id) {
+                        HStack(spacing: SGTheme.Space.small) {
+                            DishPhoto(media: food.attempt.primaryImage, thumbnail: true, name: food.title).sgPhotoFrame(.compactThumbnail)
+                            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                                Text(food.title).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                                    .lineLimit(textSize.isAccessibilitySize ? nil : 1)
+                                Text(food.attempt.cookedAt?.formatted(date: .abbreviated, time: .omitted) ?? "Date unknown")
+                                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                            Text("#\(food.rank)").font(SGTheme.TypeRole.secondary).monospacedDigit().foregroundStyle(.secondary)
+                            SGScore(text: food.scoreText, identifier: "profile-recent-score-\(food.id)")
+                            Image(systemName: "chevron.right").foregroundStyle(.secondary).accessibilityHidden(true)
+                        }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .ignore).accessibilityLabel(food.accessibilityLabel)
+                    .accessibilityHint("Opens the Dish").accessibilityIdentifier("profile-recent-cook-\(food.id)")
+                }
+            }
+        }
     }
 
     private var topFoods: some View {

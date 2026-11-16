@@ -19,7 +19,9 @@ import Testing
         #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: ownedPhoto, cook: first, dish: dish, exactLink: true) == nil)
         #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: first, dish: dish, exactLink: true)?.primaryImage?.id == firstImage.id)
         #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: second, dish: dish, exactLink: true)?.primaryImage?.id == secondImage.id)
-        #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: nil, dish: dish, exactLink: true) == nil)
+        // An exact link whose cook is gone falls back to the viewer's own Dish photo, never an empty frame.
+        #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: nil, dish: dish, exactLink: true)?.id == dish.cookbookRepresentativeCook?.id)
+        #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: nil, dish: nil, exactLink: true) == nil)
         #expect(RecipePhotoPolicy.fallbackCook(ownedPhoto: nil, cook: nil, dish: dish, exactLink: false)?.id == dish.cookbookRepresentativeCook?.id)
         #expect(try CookingGraphExport.snapshot(context: f.context) == before)
         // Replacing a Recipe photo changes no cook-owned identity/media.
