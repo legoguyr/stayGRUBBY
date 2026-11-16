@@ -1,18 +1,44 @@
 # StayGrubby Master Roadmap
 
-**Canonical roadmap — reconciled November 7, 2026 at Build 4 (`c09c18e`).** This is the only future-sequencing document. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization. Post-V1 order is not final: sequence by dependencies, tester feedback and capacity.
+**Canonical roadmap — updated November 15, 2026 for Build 6 preparation and the Connected UI Overhaul.** This is the only future-sequencing document. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization. Post-V1 order is not final: sequence by dependencies, tester feedback and capacity.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE.** Personal cooking and comparison ranking stay central. Recipes, engagement, recommendations, sponsorship and commerce never change personal ranking evidence or scores.
 
 When proposing work classify it as **required before V1**, **desirable but deferrable**, or **post-V1**. Only product coherence, safety/privacy/platform compliance, data integrity and a credible first public release justify moving something ahead of V1.
 
-## NOW — Build 4 / TestFlight
+## NOW — Build 6 internal TestFlight preparation
 
-**Complete.** StayGrubby 1.0 (4) is uploaded and processing; owner controls tester groups, notes and notifications. Owner physical acceptance passed for ranking, Already Shared, Recipe navigation/sharing, Edit Cook tagging and Universal Links. The November 7 production website regression (assets-only publish) is recovered and guarded by `Website/deploy-production.sh`. Tester feedback continues; Build 4 functionality reopens only for genuine regressions. [Architecture: Build 4](STAYGRUBBY_ARCHITECTURE.md#current-state--build-4).
+Build 5 is the owner-accepted internal baseline on the migrated Supabase target. The next candidate combines Claude's local-first sync work (`f7b0c19`) with the already deployed capacity monitor and acknowledgment write reductions (`5391519`, `7cffc50`). [Build 6 release gates](V1_RELEASE_GATE.md#build-6-internal-candidate--november-15-2026) govern approval, physical acceptance and rollout. Build 5 remains supported and server-side sync write throttling stays disabled.
 
-## NEXT — Unified Dish foundation, then UI overhaul
+## NEXT — Connected UI Overhaul (high priority)
 
-**Final implementation sequence (Final Unified Food Architecture Reconciliation, November 8, 2026).** The old order put Stage C (Sharing) first. It is replaced, because building sharing, editors and social screens on the separate Dish Detail / Recipe Detail structure would mean building them twice. The unified Dish foundation now comes first. Specification: [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md). Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan). The letters are kept for continuity with completed work; **run them in the order of this table.**
+- Connect **My Kitchen ↔ Grub Rank (Dish Rankings) ↔ Food Bible ↔ The Pass ↔ Sous Chef profiles**. Use one canonical Dish destination with **Dish & Ranking** and **Recipe** tabs, a shared header and immediate switching. Reuse the current Dish identity and preserve where each route came from. Show a linked Recipe preview on eligible cook posts in The Pass, with direct navigation to the Recipe tab. Preserve cook-only feed publication and require live Recipe access for the preview and destination.
+- Give Food Bible **My Recipes** and **Saved Recipes**. A save references the original Recipe and its creator. The new experience removes in-app copying of another creator's Recipe. Retain the user's existing copies and immutable as-made snapshots. **Make This** on an eligible Sous Chef Recipe starts the user's own cook and pins the exact Recipe revision and creator attribution. Personal ranking stays independent.
+- Add Recipe **Makes** and **Saves** counters and **Total Makes** alongside Dishes and Recipes in My Kitchen. Confirm the counting scope before enabling public totals. Count only eligible activity and enforce viewer access. Private bookmarks, private cooks and blocked relationships must not become inferable through counts.
+- Update the welcome screen and add the pasta-machine loading animation for actual loading states, with a Reduce Motion alternative.
+- **Next Claude task:** build the shared Dish shell and immediate tab switching, then route Grub Rank, Food Bible, My Kitchen, The Pass and Sous Chef profiles through it. Use existing access-checked previews, destination DTOs and native navigation patterns. Verify transitions, back navigation, inaccessible Recipes and exact-revision links. Land this slice independently of bookmarks, counters or discovery backend readiness.
+
+## VERY NEAR TERM — Social & Discovery
+
+- Make people discovery available to every account by default with no feature-level off switch. Keep Public/Private choices and existing content authorization independent of discovery. Define the minimum profile identity discoverable under each choice before rolling out changes to existing privacy settings.
+- Require a unique username and explicit privacy selection in new-account social onboarding. Photo and bio are optional. Legacy accounts with incomplete profiles get a resumable completion flow, with their accounts, existing choices and private cooking libraries preserved.
+- Improve **Find Sous Chefs** with better bounded search using public profile fields. Add personalized invitation links and native sharing. Investigate optional, consent-based contact matching before collecting anything. Plan share/invitation achievements around genuinely new qualified signups and keep participation voluntary. Avoid rewards for raw sending volume.
+- Carry forward follow-request UX improvements for the existing mutual Sous Chef relationship, threaded comment replies, reporting/blocking and moderation. Public rollout still requires the privacy and moderation gates below.
+
+### Backend dependencies for the connected experience
+
+| Area | Reuse now | Required before the dependent feature ships |
+| --- | --- | --- |
+| Dish and Recipe navigation | Owner-scoped Dish identity, `recipes.dish_id`, Recipe revisions, cook-post pointers, authorized profile/Recipe routes and existing owner recipe indexes | Shared UI routes and a safe unavailable state. Keep post-pinned revisions distinct from the current Recipe. |
+| Saved Recipes and Make This | Private, idempotent `recipe_tickets` bookmark relation and existing save/remove/list actions. The Recipe reader checks current access. `recipe_cooks` already records the exact revision, source creator and accepted cook. | Check list paging and behavior after unshare, blocking or deletion before resurfacing legacy bookmarks. Keep My Recipes ownership separate. Retire the foreign-copy action in the new UI and make a compatibility decision for still-supported clients before changing its RPC. |
+| Makes and Saves | Accepted completed cook provenance and unique account/Recipe bookmark pairs. Recipe and cook audiences and block rules already exist. | Define eligible completed cooks, save attribution and profile totals. Add narrowly scoped aggregate reads only when the surfaces need them. Private raw rows, identities, snapshots and counts of hidden events are excluded from public responses. No speculative counters or event stream. |
+| Discovery and profile completion | Existing profiles, case-insensitive unique handles, handle reservation, avatar Storage, bounded username search, blocks, mutual relationship/request state and owner identity RPC. | Privacy-aware search projections separate from today's `discoverable` opt-in, plus explicit privacy selection, completion handling and optional bio. Preserve legacy private access during rollout. No blind discoverability backfill. |
+| Invites and optional contact matching | Native share sheets, profile/deep-link routes and optional parsed `ref` parameter. Existing shared-cook invitations and Tickets are in-app flows. | Issue and redeem safe attribution once on genuine signup, with expiry, deduplication and abuse limits. Explicit consent, purpose and retention are prerequisites for optional Contacts exploration. No address book collection or new identity matching store in this phase. |
+| Social safety | Existing request transitions, block enforcement, flat comments, report APIs and moderation states. | Thread parentage and visibility checks for replies, followed by focused authorization, reporting and staffed moderation review before public launch. |
+
+## Existing Dish and UI foundations
+
+**Foundation sequence recorded November 8, 2026.** The current priorities above extend the approved Dish identity and its existing UI foundation. The unified Dish foundation now comes first. Specification: [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md). Plan, component candidates and the queued defect list: [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md#9-system-wide-ui-overhaul--plan). The table preserves the original stage labels and their scope.
 
 | Order | Stage | Scope | V1 |
 | --- | --- | --- | --- |
@@ -31,7 +57,7 @@ When proposing work classify it as **required before V1**, **desirable but defer
 | 5 | **E — Social / Kitchens** | The Pass, Tickets relocated to The Pass, My Kitchen stats (Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs), Sous Chef Kitchen, Requests; tagged collaborators on cards; cook names on cards per snapshot rules | Required |
 | 6 | **G — Copy / Celebrations / Final consolidation** | Copy purge, ranking result and celebrations (after the investigation concludes), accessibility/consistency | Required |
 
-**Operational gate (November 14).** [Build 1.0 (5)](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) targets the migrated project and is available to internal Alpha Testers only. The owner waived the two live signed Edge Function probes for this rollout. The owner verified the in-place update, account, library, photos and sync. The target [automatic capacity monitor](supabase/README.md#automatic-target-monitoring) runs on the migrated project. The repeat-acknowledgment write reduction is live. Build 5 [Apple-only new-account signup](supabase/CLEAN_MIGRATION_PHASE_2A.md#build-5-apple-signup-check) is enabled and has produced new linked accounts. Hand off [client sync backoff](supabase/README.md#next-ios-sync-handoff) before introducing server-side sync throttling. Wider distribution requires separate approval.
+**Operational gate (November 14).** [Build 1.0 (5)](supabase/CLEAN_MIGRATION_PHASE_2A.md#endpoint-cutover-and-rollback) targets the migrated project and is available to internal Alpha Testers only. The owner waived the two live signed Edge Function probes for this rollout. The owner verified the in-place update, account, library, photos and sync. The target [automatic capacity monitor](supabase/README.md#automatic-target-monitoring) runs on the migrated project. The repeat-acknowledgment write reduction is live. Build 5 [Apple-only new-account signup](supabase/CLEAN_MIGRATION_PHASE_2A.md#build-5-apple-signup-check) is enabled and has produced new linked accounts. The [client sync changes](SYNC_ARCHITECTURE.md#current--local-first-sync-efficiency-november-15-2026) are included in the Build 6 candidate. The server remains compatible with Build 5. Wider distribution requires separate approval.
 
 Why this order:
 
@@ -61,7 +87,7 @@ D1 (a) and (d)/(e) touch different files and can be split across the two agent l
 - Explicit provenance associates automatically; loose matches are suggested.
 - As written vs as made applies to Diet as well as Contains.
 
-The checkpoint `6214900` was reconciled with Codex `a6de6b8` (exact-revision provenance, link lifecycle, dated reactions — all preserved). Saved Recipes, Want to Cook, Collections, contextual rank boards, Scan Recipe and Share Sheet import remain **post-V1**: the architecture constrains them but does not authorize them.
+The checkpoint `6214900` was reconciled with Codex `a6de6b8` (exact-revision provenance, link lifecycle, dated reactions — all preserved). Saved Recipes and attributed Make This move into the connected experience above. Want to Cook, Collections, contextual rank boards, Scan Recipe and Share Sheet import remain **post-V1**.
 
 Each stage: implement → focused verification → owner acceptance where needed → update canonical docs as decisions become durable.
 
@@ -84,8 +110,7 @@ Metadata, screenshots, reviewer instructions, switch `Website/distribution.json`
 ## POST-V1 — near / medium term (approved or established; order not final)
 
 - **Want to Cook** — cooking intention distinct from cooking; bookmark + attributed cooking workflow. Targets a Dish (cooked or Recipe-only) or a Recipe — the first candidate to justify a stored Food identity. [Concept](PERSONAL_COOKING_INTELLIGENCE.md#5-approved-future-concepts-not-implemented), [fit](FOOD_ARCHITECTURE.md#10-future-compatibility-post-v1-nothing-here-is-authorized)
-- **Saved Recipes** refinement — bookmarks to a Sous Chef's original, attribution preserved; depends on access-control maturity
-- **Recipe Social History / recreation statistics** — precise, privacy-safe "Made X times"
+- **Recipe Social History** — an authorized detailed activity timeline beyond the near-term aggregate Makes and Saves.
 - **Privacy/access-control evolution** — account maximum audience Public / Sous Chefs Only / Private with per-item visibility bounded by it; new items private by default
 - **Collections / Cooking Series** (name not final) — Collection ↔ Dish many-to-many thematic context (members may be Recipe-only Dishes), distinct from a Dish's cooks; contextual rank boards are projections of the one global ranking
 - **Scan Recipe** and **Share Sheet import** — additional Import Recipe sources feeding the same Gemini → review → Save pipeline
@@ -93,7 +118,7 @@ Metadata, screenshots, reviewer instructions, switch `Website/distribution.json`
 - **Recipe unit conversion** when reliable (implementation retained, controls hidden)
 - **Photography** — crop/reposition, advanced gallery, editing
 - **Rich external previews** — explicit share-safe preview artifact; never public general buckets; documented cache/revocation limits
-- **Discover** as a major update (distinct Dishes & Rankings / Recipes areas)
+- **Community Discover** as a major update (distinct Dishes & Rankings / Recipes areas). Basic people discovery is near-term.
 - **Early personalization** — interpretable, cost-efficient
 - **Push notifications** (APNs) after reliable in-app Tickets
 - **Referrals** — counts only a genuinely new attributed signup; rewards undecided; core functionality never requires recruiting
@@ -101,7 +126,6 @@ Metadata, screenshots, reviewer instructions, switch `Website/distribution.json`
 - **Moderation/administration growth** — roles separate from entitlements; broader dashboards only when scale requires
 - **Source taxonomy** — My Own, Online, Cookbook, Restaurant, Friend / Family, Sous Chef, Other; optional metadata later
 - Dedicated Recipe-only posts, feed filters, automatic Recipe-update posts (deferred)
-- Launch/loading polish (planned pasta-machine animation) under an explicit polish cycle
 
 ## LONG TERM
 
