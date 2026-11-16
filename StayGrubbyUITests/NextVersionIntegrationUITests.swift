@@ -22,7 +22,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
         XCTAssertFalse(post.buttons["recipe-edit"].exists)
         post.terminate()
         let current = launch(["--review-profile-url", "staygrubby://open/r/60000000-0000-0000-0000-000000000001"])
-        XCTAssertTrue(current.staticTexts["recipe-title"].waitForExistence(timeout: 12))
+        XCTAssertTrue(current.waitForRecipeReader(timeout: 12))
         current.revealRecipeActions(); XCTAssertTrue(current.buttons["recipe-edit"].exists)
         current.terminate()
         let missing = launch(["--review-profile-url", "https://staygrubby.com/p/ffffffff-ffff-ffff-ffff-ffffffffffff"])
@@ -44,7 +44,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
             for _ in 0..<5 { if recipe.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(recipe.isHittable); capture("Feed Recipe entry \(appearance)", app); recipe.tap()
             XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
-            XCTAssertTrue(app.buttons["shared-recipe-fork"].isHittable)
+            XCTAssertTrue(app.buttons["shared-recipe-open-current"].isHittable)
             capture("Shared Recipe primary actions \(appearance)", app)
             app.tabBars.buttons["Food Bible"].tap()
             let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch
@@ -68,7 +68,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
         for _ in 0..<8 { if recipe.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(recipe.isHittable); recipe.tap()
         XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
-        let copy = app.buttons["shared-recipe-fork"]
+        let copy = app.buttons["shared-recipe-open-current"]
         for _ in 0..<6 { if copy.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(copy.isHittable); capture("Shared Recipe accessibility", app)
     }

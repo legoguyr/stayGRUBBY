@@ -1,7 +1,7 @@
 import XCTest
 
 final class RecipeSocialUITests: StayGrubbyUITestCase {
-    @MainActor func testSharedRecipeReaderHasNoOwnerControlsAndSavesIndependentCopy() {
+    @MainActor func testSharedRecipeReaderHasNoOwnerControlsAndSavesAReference() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-feed", "--recipes-review", "--recipes-review-feed", "--test-light"]
@@ -23,11 +23,15 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["recipe-link"].exists)
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.55)).tap()
         XCTAssertTrue(app.buttons["recipe-send-friend"].waitForNonExistence(timeout:5))
-        let fork = app.buttons["shared-recipe-fork"]
-        for _ in 0..<6 { if fork.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(fork.isHittable); fork.tap()
-        app.revealRecipeActions(); XCTAssertTrue(app.buttons["recipe-edit"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["recipe-title"].exists)
+        // Connected UI: no in-app copy. The current Recipe opens with Save (a reference), still not owned.
+        let current = app.buttons["shared-recipe-open-current"]
+        for _ in 0..<6 { if current.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(current.isHittable); current.tap()
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
+        XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["recipe-fork"].exists, "No in-app copy action")
+        // In this fixture the post's current Recipe is the viewer's own, so it offers no Save of itself.
+        XCTAssertFalse(app.buttons["recipe-save"].exists)
     }
     @MainActor func testComposerRecipeChoiceStartsOffAndCancelDoesNotPublish() {
         continueAfterFailure = false

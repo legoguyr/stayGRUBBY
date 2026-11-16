@@ -16,7 +16,13 @@ Build 5 is the owner-accepted internal baseline on the migrated Supabase target.
 - Give Food Bible **My Recipes** and **Saved Recipes**. A save references the original Recipe and its creator. The new experience removes in-app copying of another creator's Recipe. Retain the user's existing copies and immutable as-made snapshots. **Make This** on an eligible Sous Chef Recipe starts the user's own cook and pins the exact Recipe revision and creator attribution. Personal ranking stays independent.
 - Add Recipe **Makes** and **Saves** counters and **Total Makes** alongside Dishes and Recipes in My Kitchen. Confirm the counting scope before enabling public totals. Count only eligible activity and enforce viewer access. Private bookmarks, private cooks and blocked relationships must not become inferable through counts.
 - Update the welcome screen and add the pasta-machine loading animation for actual loading states, with a Reduce Motion alternative.
-- **Next Claude task:** build the shared Dish shell and immediate tab switching, then route Grub Rank, Food Bible, My Kitchen, The Pass and Sous Chef profiles through it. Use existing access-checked previews, destination DTOs and native navigation patterns. Verify transitions, back navigation, inaccessible Recipes and exact-revision links. Land this slice independently of bookmarks, counters or discovery backend readiness.
+- **Phase 1 implemented November 15 (Claude; automated acceptance passed, owner physical acceptance pending):**
+  - **Dish page:** one Dish page with Dish & Ranking and Recipe tabs over a shared header, with immediate switching and one Recipe fetch. Grub Rank, My Kitchen and cook lists open it; Food Bible opens an owned Recipe's Dish on the Recipe tab.
+  - **Standalone reader:** links an owner's Recipe to its Dish.
+  - **Food Bible:** My Recipes / Saved Recipes, where saves are access-rechecked references (backend test added) and copying is retired from the new UI.
+  - **Makes:** My Kitchen Total Makes and a verified local Makes line on owned Recipes.
+- **Remaining for Phase 2:** owner-only `sourceAttemptID` on own post cards (open my Dish from my post); a Recipe preview on cook posts; Makes/Saves aggregate reads and public totals; Make This attribution on Saved Recipes; Saved Recipes paging; retiring the `fork` RPCs once no supported client needs them.
+- **Original Claude task brief:** build the shared Dish shell and immediate tab switching, then route Grub Rank, Food Bible, My Kitchen, The Pass and Sous Chef profiles through it. Use existing access-checked previews, destination DTOs and native navigation patterns. Verify transitions, back navigation, inaccessible Recipes and exact-revision links. Land this slice independently of bookmarks, counters or discovery backend readiness.
 
 ## VERY NEAR TERM — Social & Discovery
 

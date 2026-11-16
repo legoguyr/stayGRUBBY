@@ -12,7 +12,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
     @MainActor private func recipe(_ title: String, _ app: XCUIApplication) {
         let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-' AND label CONTAINS %@", title)).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 8), app.debugDescription); entry.press(forDuration: 0.2)
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
     }
     @MainActor private func action(_ id: String, _ app: XCUIApplication) {
         let menu = app.buttons["recipe-actions"]; XCTAssertTrue(menu.waitForExistence(timeout: 5)); menu.tap()
@@ -77,7 +77,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         let app = launch(["--test-dark"]); recipe("Braised Short Ribs", app)
         action("recipe-edit", app)
         XCTAssertTrue(app.buttons["recipe-photo-remove"].waitForExistence(timeout: 5)); app.buttons["recipe-photo-remove"].tap(); app.buttons["recipe-save"].tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
         let hero = app.descendants(matching: .any).matching(identifier: "recipe-hero").firstMatch
         func photo(_ value: String) {
             XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", value), object: hero)], timeout: 8), .completed)
@@ -96,7 +96,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         for _ in 0..<4 { if source.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(source.isHittable); XCTAssertEqual(source.value as? String, "The Home Cookbook")
         source.tap(); source.typeText(" notes"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8)); photo("Recipe photo")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8)); photo("Recipe photo")
         shot("Stage 4 exact cook fallback and independent Recipe replacement", app)
     }
 
@@ -111,7 +111,7 @@ final class Stage4RecipeUITests: StayGrubbyUITestCase {
         for _ in 0..<6 { if make.isHittable && make.frame.maxY < app.tabBars.firstMatch.frame.minY { break }; app.swipeUp() }
         make.tap(); XCTAssertTrue(app.navigationBars["Rank My Version"].waitForExistence(timeout:8))
         XCTAssertTrue(app.staticTexts["inherited-dish-name"].waitForExistence(timeout:5)); XCTAssertEqual(app.staticTexts["inherited-dish-name"].label,"Braised Short Ribs with Polenta")
-        app.buttons["Cancel"].tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
+        app.buttons["Cancel"].tap(); XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
         app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
     }
 

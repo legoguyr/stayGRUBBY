@@ -221,7 +221,8 @@ import SwiftData
             }
             if action == "fork_provenance" { return Data(#"{"provenance":null}"#.utf8) }
             if action == "save", recipeSaveFailures > 0 { recipeSaveFailures -= 1; throw URLError(.notConnectedToInternet) }
-            if action == "get" { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
+            // Offline after the first Recipe read, whether it came from the reader (`get`) or the Dish page (`dish`).
+            if ["get", "dish"].contains(action) { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
             if ["prepare_photo", "complete_photo", "photo"].contains(action), let id = payload.assetID {
                 if action == "prepare_photo", let hash = payload.photoHash { recipePhotos[id] = .init(id: id, path: "10000000-0000-0000-0000-000000000099/\(id.uuidString.lowercased()).jpg", sha256: hash, ready: false) }
                 guard let previous = recipePhotos[id] else { throw URLError(.resourceUnavailable) }

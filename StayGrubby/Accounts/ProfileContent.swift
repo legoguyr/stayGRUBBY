@@ -18,7 +18,7 @@ struct ProfileCookingContent: View {
         HStack(alignment: .top, spacing: SGTheme.Space.medium) {
             statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count")
                 .frame(maxWidth: .infinity)
-            statistic(snapshot.rankedEntryCount, title: "Ranked entries", identifier: "profile-entry-count")
+            statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count") // verified local cooks, never a cloud estimate
                 .frame(maxWidth: .infinity)
         }.padding(.vertical, SGTheme.Space.xSmall)
     }

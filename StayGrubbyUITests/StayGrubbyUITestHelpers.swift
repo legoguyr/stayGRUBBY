@@ -181,3 +181,16 @@ extension XCUIApplication {
         notNow.tap(); return true
     }
 }
+
+// Connected UI Phase 1: a Recipe opens either in the standalone reader or on the Dish page's Recipe tab,
+// whose shared header carries the Dish name (the Recipe title shows separately only when it differs).
+extension XCUIApplication {
+    @MainActor @discardableResult func waitForRecipeReader(timeout: TimeInterval = 8) -> Bool {
+        buttons["recipe-make"].waitForExistence(timeout: timeout)
+    }
+    /// The Recipe's title as shown: its own title line, else the Dish page header it equals.
+    @MainActor var recipeReaderTitle: String {
+        let own = staticTexts["recipe-title"]
+        return own.exists ? own.label : staticTexts["dish-title"].label
+    }
+}

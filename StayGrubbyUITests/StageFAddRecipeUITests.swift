@@ -84,7 +84,7 @@ final class StageFAddRecipeUITests: StayGrubbyUITestCase {
         let confirm = app.buttons.matching(identifier: "existing-recipe-confirm").firstMatch; XCTAssertTrue(confirm.waitForExistence(timeout: 5)); confirm.tap()
         XCTAssertTrue(app.buttons["dish-view-recipe"].waitForExistence(timeout: 10))
         app.buttons["dish-view-recipe"].tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 10)); XCTAssertEqual(app.staticTexts["recipe-title"].label, "Grandma Stew Method")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 10)); XCTAssertEqual(app.recipeReaderTitle, "Grandma Stew Method")
         XCTAssertFalse(app.descendants(matching: .any)["recipe-not-cooked"].exists)
         // The empty Recipe-only Dish is gone: Food Bible lists the Recipe once, under the ranked Dish.
         app.tabBars.buttons["Food Bible"].tap()
