@@ -104,7 +104,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         for _ in 0..<12 { if entries.exists { break }; app.swipeUp() }
         XCTAssertTrue(entries.exists)
         XCTAssertEqual(entries.label,
-                       "12 ranked entries", "Re-rank must not count as another entry in Profile")
+                       "12 total makes", "Re-rank must not count as another entry in Profile")
         for _ in 0..<8 { if top.isHittable { break }; app.swipeDown() }
         tap(top, app)
         XCTAssertTrue(app.cells.matching(identifier: "actionGroupCell").matching(NSPredicate(format: "label == 'Copy'")).firstMatch.waitForExistence(timeout: 15))
@@ -150,7 +150,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         let entries = app.descendants(matching: .any).matching(identifier: "profile-entry-count").firstMatch
         for _ in 0..<12 { if entries.exists { break }; app.swipeUp() }
         XCTAssertTrue(entries.waitForExistence(timeout: 15))
-        XCTAssertEqual(entries.label, "10 ranked entries")
+        XCTAssertEqual(entries.label, "10 total makes")
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "profile-dish-count").firstMatch.label,
                        dishCountBefore, "The tenth independently ranked version is not a new Dish")
         XCTAssertTrue(app.buttons["profile-share-top-three"].isEnabled)

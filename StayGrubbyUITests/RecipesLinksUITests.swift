@@ -21,7 +21,7 @@ final class RecipesLinksUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["bible-tickets"].exists)
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'"))
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 8)); rows.firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
         XCTAssertFalse(app.buttons["recipe-ticket"].exists)
         XCTAssertFalse(app.buttons["Save Ticket 🎟️"].exists)
         XCTAssertFalse(app.buttons["Remove Ticket"].exists)

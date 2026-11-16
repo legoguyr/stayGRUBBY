@@ -44,14 +44,18 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         reach(view, app); shot("D3 Dish View Recipe light", app)
         XCTAssertFalse(app.descendants(matching: .any)["MAIN RECIPE"].exists)
         view.tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 10))
+        // Connected UI: the Recipe is the same Dish page's Recipe tab; cooks stay on Dish & Ranking.
+        XCTAssertTrue(app.segmentedControls["dish-tabs"].buttons["Recipe"].isSelected)
+        XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["recipe-not-cooked"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["dish-cook-count"].exists, "Cook count beside score and rank")
+        XCTAssertFalse(app.descendants(matching: .any)["recipe-makes"].exists)
+        app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
+        app.swipeDown(); app.swipeDown(); app.segmentedControls["dish-tabs"].buttons["Dish & Ranking"].tap()
+        XCTAssertTrue(app.segmentedControls["dish-tabs"].buttons["Dish & Ranking"].isSelected)
         let cooks = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'version-row-'")).firstMatch
         reach(cooks, app)
-        let heading = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Your cooks of'")).firstMatch
-        XCTAssertTrue(heading.exists)
-        XCTAssertTrue(rowLabel.contains(heading.label.replacingOccurrences(of: "Your cooks of ", with: "")), "\(heading.label) vs \(rowLabel)")
-        app.revealRecipeActions(); XCTAssertFalse(app.buttons["recipe-link"].exists)
+        XCTAssertFalse(rowLabel.isEmpty)
         shot("D3 Recipe face of the same Dish light", app)
     }
 
@@ -73,7 +77,9 @@ final class UnifiedDishDetailUITests: StayGrubbyUITestCase {
         XCTAssertGreaterThanOrEqual(notCooked, 1); XCTAssertLessThan(notCooked, total)
         do {
             rows.firstMatch.press(forDuration: 0.2)
-            XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 10))
+            // A Recipe-only Dish opens its Dish page on the Recipe tab, marked not cooked yet.
+            XCTAssertTrue(app.segmentedControls["dish-tabs"].buttons["Recipe"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.descendants(matching: .any)["dish-not-cooked"].waitForExistence(timeout: 5))
             XCTAssertTrue(app.descendants(matching: .any)["recipe-not-cooked"].waitForExistence(timeout: 5))
             shot("D2 Not cooked yet dark", app)
             app.navigationBars.buttons.firstMatch.tap()

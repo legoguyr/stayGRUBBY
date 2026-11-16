@@ -5,6 +5,7 @@ struct SocialFeedView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accountContentCache) private var cache
     @State private var posts: [SocialPost] = []
     @State private var cursor: PassPage.Cursor?
     @State private var identity: SocialIdentity?
@@ -32,7 +33,7 @@ struct SocialFeedView: View {
                 if loading && posts.isEmpty { ProgressView("Loading posts") }
                 if failed {
                     Text("Couldn’t load posts. Check your connection and retry.").accessibilityIdentifier("feed-error")
-                    Button("Retry") { revision += 1 }.accessibilityIdentifier("feed-retry")
+                    Button("Retry") { refresh() }.accessibilityIdentifier("feed-retry")
                 } else if !loading && posts.isEmpty {
                     ContentUnavailableView("Nothing shared yet", systemImage: "fork.knife",
                         description: Text(friendCount == 0 ? "Find a Sous Chef to see what they cook." : "Cooks from your Sous Chefs will appear here."))
@@ -56,25 +57,30 @@ struct SocialFeedView: View {
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
         .refreshable { await load() }
         .onSocialRefresh { if isSelected { await load(poll: true) } }
-        .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in if isSelected { Task { await load() } } }
+        .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in cache?.pass.invalidate(); if isSelected { Task { await load() } } }
+        // Read caching (MVP stabilization): leaving the tab or the app keeps the posts. Returning shows them
+        // at once and refreshes in the background only when they are stale or something changed.
         .task(id: "\(isSelected):\(revision)") {
-            guard isSelected else { generation = UUID(); posts = []; return }
-            await load()
+            guard isSelected else { generation = UUID(); return }
+            if posts.isEmpty, identity == nil, let snapshot = cache?.pass.value { restore(snapshot) }
+            // Fresh and unchanged (an empty feed counts): nothing to fetch. `refresh()` withdraws freshness.
+            if cache?.pass.isFresh() == true { return }
+            await load(poll: cache?.pass.hasValue == true && identity?.isConfigured == true)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in posts = []; revision += 1 }
+        .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in refresh() }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active && isSelected { revision += 1 }
-            else { generation = UUID(); posts = [] }
+            if phase == .active && isSelected && cache?.pass.isFresh() != true { Task { await load(poll: identity?.isConfigured == true) } }
+            else if phase != .active { generation = UUID() }
         }
         .onDisappear { generation = UUID() }
-        .sheet(item: $person, onDismiss: { revision += 1 }) { person in
+        .sheet(item: $person, onDismiss: { refresh() }) { person in
             NavigationStack {
-                FriendProfileView(person: person) { revision += 1 }
+                FriendProfileView(person: person) { refresh() }
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } }
             }
         }
-        .sheet(isPresented: $editingIdentity, onDismiss: { revision += 1 }) {
-            if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0; revision += 1 } }
+        .sheet(isPresented: $editingIdentity, onDismiss: { refresh() }) {
+            if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0; refresh() } }
         }
         .confirmationDialog("86 this Post?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { post in
             Button("86 Post", role: .destructive) { Task { await delete(post) } }
@@ -94,7 +100,10 @@ struct SocialFeedView: View {
             if reuse, let known = identity { ownIdentity = known }
             else { ownIdentity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
             guard !Task.isCancelled, generation == token else { return }; identity = ownIdentity
-            guard ownIdentity.isConfigured else { return }
+            guard ownIdentity.isConfigured else {
+                // Not set up yet: remember that too, so tab switches don't re-ask until something changes.
+                cache?.pass.store(PassSnapshot(posts: [], cursor: nil, hasMore: false, identity: ownIdentity, friendCount: 0)); return
+            }
             var people: SocialPeoplePage?
             if !reuse { people = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init())) }
             let next = try JSONDecoder().decode(PassPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
@@ -103,16 +112,24 @@ struct SocialFeedView: View {
             // The Pass is shared Cook activity only (PassPage drops legacy Recipe items; a cook post can still offer its Recipe).
             if more { let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) } } else { posts = next.posts }
             self.cursor = next.cursor ?? self.cursor; hasMore = next.hasMore
+            if !more { cache?.pass.store(PassSnapshot(posts: next.posts, cursor: next.cursor, hasMore: next.hasMore, identity: ownIdentity, friendCount: friendCount)) }
             await SocialPhotoCleanup.run(request: request, media: media)
         } catch is CancellationError { } catch {
-            guard generation == token else { return }; posts = []; hasMore = false; failed = true
+            // A failed background refresh keeps what is already shown.
+            guard generation == token else { return }; if posts.isEmpty { hasMore = false }; failed = true
         }
+    }
+    /// An explicit or change-driven refresh: withdraw freshness and re-run the load.
+    private func refresh() { cache?.pass.invalidate(); revision += 1 }
+    private func restore(_ snapshot: PassSnapshot) {
+        posts = snapshot.posts; cursor = snapshot.cursor; hasMore = snapshot.hasMore
+        identity = snapshot.identity; friendCount = snapshot.friendCount
     }
     private func delete(_ post: SocialPost) async {
         guard let request else { return }
         do {
             _ = try await request("social_content", "delete", .init(postID: post.id))
-            posts.removeAll { $0.id == post.id }
+            posts.removeAll { $0.id == post.id }; cache?.pass.value?.posts.removeAll { $0.id == post.id }
             await SocialPhotoCleanup.run(request: request, media: media, afterRetirement: true)
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
         } catch is CancellationError { } catch { posts = []; failed = true }
@@ -152,8 +169,10 @@ struct SocialFeedCard: View {
                 if let metadata = post.metadata { SocialPostMetadata(metadata: metadata) }
             }
             if post.recipeID != nil && post.published && post.moderationState == "active" {
+                // Same inline Recipe action as the Dish page; opens the Recipe as it was when posted.
                 Button { navigate(.recipe(post.id)) } label: { Label("View Recipe", systemImage: "book.closed") }
-                    .frame(minHeight: SGTheme.Size.minimumTap).accessibilityIdentifier("post-recipe")
+                    .buttonStyle(RecipeInlineAction()).accessibilityHint("Opens the Recipe used for this cook")
+                    .accessibilityIdentifier("post-recipe")
             }
             if let provenance = post.provenance {
                 if provenance.kind == "recreated", let creator = provenance.creator {

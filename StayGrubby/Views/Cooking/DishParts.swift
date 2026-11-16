@@ -8,24 +8,49 @@ import Supabase
 /// Dish name, the selected cook's name, its score and global rank.
 struct DishIdentityHeader: View {
     let attempt: CookingAttempt
+    /// Shows the Dish's verified cook count beside score and rank (the Dish page header).
+    var showsCookCount = false
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             SGEyebrow(text: globalRank == 1 ? "Signature Dish" : "From your Grub Rank")
             Text(attempt.dish?.name ?? "Dish").font(SGTheme.TypeRole.hero)
-                .fixedSize(horizontal: false, vertical: true)
+                .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("dish-title")
             if let name = attempt.meaningfulVersionLabel {
                 Text(name).font(SGTheme.TypeRole.body).foregroundStyle(.secondary).accessibilityIdentifier("detail-cook-name")
             }
-            HStack(spacing: SGTheme.Space.small) {
-                if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
-                if let globalRank { Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: SGTheme.Space.small) { scoreAndRank; cookCount }
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                    HStack(spacing: SGTheme.Space.small) { scoreAndRank }
+                    cookCount
+                }
             }
         }
+    }
+    @ViewBuilder private var scoreAndRank: some View {
+        if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
+        if let globalRank { Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize() }
+    }
+    @ViewBuilder private var cookCount: some View {
+        if showsCookCount, let dish = attempt.dish { DishCookCount(count: dish.attempts.count) }
     }
     private var globalRank: Int? {
         guard let item = attempt.rankedItem, let ordered = item.list?.orderedItems,
               let index = ordered.firstIndex(where: { $0.id == item.id }) else { return nil }
         return index + 1
+    }
+}
+
+/// The Dish's verified number of cooks (its local Cooking Attempts; nothing inferred or aggregated
+/// from the cloud). Informational only: the cooks themselves are listed on Dish & Ranking.
+struct DishCookCount: View {
+    let count: Int
+    var body: some View {
+        Label(count == 1 ? "Cooked once" : "Cooked \(count) times", systemImage: "fork.knife")
+            .font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize()
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(count == 1 ? "Cooked once" : "Cooked \(count) times")
+            .accessibilityIdentifier("dish-cook-count")
     }
 }
 
@@ -97,78 +122,6 @@ struct DishCooksSection: View {
         .accessibilityLabel([cook.meaningfulVersionLabel.map { "\($0), cook of \(dish.name)" } ?? dish.name, "rank \(rank)"].joined(separator: ", "))
         .accessibilityIdentifier("version-row-\(cook.id)")
         .accessibilityHint(current ? "Current cook" : "Opens this cook")
-    }
-}
-
-/// The Dish's Recipe side on Dish Detail: one "View Recipe" row, or Add Recipe when the Dish
-/// has none. Dish and Recipe are one Dish, so the Recipe is not repeated here (photo, body).
-/// The selected cook's exact "Recipe used" revision stays separate provenance.
-struct DishRecipeRow: View {
-    let dish: Dish
-    var attempt: CookingAttempt? = nil
-    /// Tells the host the Dish's Recipe, if any (Cook Again start; keeps the Dish when its last cook is 86'd).
-    var recipeKnown: ((Recipe?) -> Void)? = nil
-    @Environment(\.socialRequest) private var request
-    @Environment(\.scenePhase) private var phase
-    @State private var recipe: Recipe?
-    @State private var usedRecipe: RecipeCookSnapshot?
-    @State private var loaded = false
-    @State private var failure: String?
-    @State private var adding = false
-    @State private var generation = UUID()
-
-    var body: some View {
-        if request != nil {
-            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                if let recipe {
-                    NavigationLink { RecipeDetailView(id: recipe.id, dishID: dish.id) } label: {
-                        HStack(spacing: SGTheme.Space.small) {
-                            Label("View Recipe", systemImage: "book").font(SGTheme.TypeRole.headline)
-                                .foregroundStyle(SGTheme.ColorToken.primaryText)
-                            Spacer(minLength: 0)
-                            Image(systemName: "chevron.right").foregroundStyle(.secondary)
-                        }.frame(minHeight: 44).contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(recipe.content.title == dish.name ? "View Recipe" : "View Recipe, \(recipe.content.title)")
-                    .accessibilityIdentifier("dish-view-recipe")
-                } else if loaded {
-                    Button { adding = true } label: { Label("Add Recipe", systemImage: "plus").frame(minHeight: 44) }
-                        .buttonStyle(RecipeInlineAction()).accessibilityIdentifier("dish-add-recipe")
-                }
-                if let usedRecipe, usedRecipe.recipeID != recipe?.id || usedRecipe.revision != recipe?.revision {
-                    NavigationLink { RecipeSnapshotView(cook: usedRecipe) } label: {
-                        Label("Recipe used for this cook · revision \(usedRecipe.revision)", systemImage: "clock")
-                    }.frame(minHeight: 44).accessibilityIdentifier("cook-recipe-snapshot")
-                }
-                if let failure {
-                    Text(failure).font(.footnote).accessibilityIdentifier("cook-recipe-error")
-                    Button("Retry Recipe") { Task { await load() } }
-                }
-            }
-            .task(id: "\(dish.id):\(attempt?.id.uuidString ?? "")") { await load() }
-            .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
-            .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load() } } }
-            .onDisappear { generation = UUID() }
-            .sheet(isPresented: $adding, onDismiss: { Task { await load() } }) { AddRecipeFlow(context: .dish(dish)) }
-        }
-    }
-
-    private func load() async {
-        guard let request else { return }
-        let token = UUID(); generation = token
-        do {
-            struct DishResponse: Decodable { var recipe: Recipe? }
-            var payload = SocialPayload(); payload.dishID = dish.id
-            let next = try JSONDecoder().decode(DishResponse.self, from: await request("recipes", "dish", payload)).recipe
-            var used: RecipeCookSnapshot?
-            if let attempt { used = try? await DishRecipeService.usedRecipe(for: attempt.id, dishID: dish.id, request: request) }
-            guard !Task.isCancelled, generation == token else { return }
-            recipe = next; usedRecipe = used; loaded = true; failure = nil; recipeKnown?(next)
-        } catch is CancellationError {} catch {
-            guard generation == token else { return }
-            failure = DishRecipeService.message(for: error)
-        }
     }
 }
 

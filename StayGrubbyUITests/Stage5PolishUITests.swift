@@ -26,7 +26,7 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         let privateRecipe=app.buttons["kitchen-recipe-60000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(privateRecipe.waitForExistence(timeout:8));XCTAssertEqual(app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'kitchen-recipe-'")).count,3)
         XCTAssertFalse(app.staticTexts["PRIVATE RECIPE MUST STAY HIDDEN"].exists);shot("Closeout owned Recipes sheet light",app)
-        privateRecipe.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertEqual(app.staticTexts["recipe-title"].label,"Lemon Soup Recipe")
+        privateRecipe.tap();XCTAssertTrue(app.waitForRecipeReader(timeout: 8));XCTAssertEqual(app.recipeReaderTitle,"Lemon Soup Recipe")
         XCTAssertFalse(app.buttons["recipe-units"].exists);XCTAssertTrue(app.images["recipe-sharing-off"].exists)
         app.openRecipeAction("recipe-edit")
         let toggle=app.switches["recipe-sharing"];reach(toggle,app);XCTAssertEqual(toggle.value as? String,"0")
@@ -47,7 +47,7 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
             app.buttons["kitchen-recipes-search-clear"].tap(); search.tap(); search.typeText("lemon")
             if app.keyboards.buttons["Search"].exists { app.keyboards.buttons["Search"].tap() }
             cards.firstMatch.tap()
-            XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8))
+            XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
             // This fixture is private: inactive Share remains secondary by design.
             XCTAssertTrue(app.images["recipe-sharing-off"].exists)
             app.revealRecipeActions(); app.buttons["recipe-edit"].tap()
@@ -61,7 +61,7 @@ final class Stage5PolishUITests: StayGrubbyUITestCase {
         let friend=app.buttons["friend-person-friend_cook"];XCTAssertTrue(friend.waitForExistence(timeout:8));friend.tap();openRecipes(app)
         let card=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'kitchen-recipe-' AND label CONTAINS 'Sous Chef Lemon Cake'")).firstMatch;reach(card,app)
         XCTAssertFalse(app.staticTexts["PRIVATE RECIPE MUST STAY HIDDEN"].exists);shot("Closeout authorized Recipes sheet dark accessibility",app)
-        card.tap();XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertTrue(app.buttons["recipe-share-link"].exists)
+        card.tap();XCTAssertTrue(app.waitForRecipeReader(timeout: 8));XCTAssertTrue(app.buttons["recipe-share-link"].exists)
         app.revealRecipeActions();XCTAssertFalse(app.buttons["recipe-edit"].exists);XCTAssertFalse(app.buttons["recipe-delete"].exists)
         let send=app.buttons["recipe-send-friend"];XCTAssertTrue(send.waitForExistence(timeout:5),app.debugDescription);send.press(forDuration:0.2);let recipient=app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'send-recipient-'")).firstMatch
         XCTAssertTrue(recipient.waitForExistence(timeout:8));reach(recipient,app);recipient.tap();app.buttons["social-send-confirm"].tap()

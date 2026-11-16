@@ -85,7 +85,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
 
     @MainActor func testEmptyProfileHasIntentionalContentLockedShareAndDevelopmentExit() {
         let app = launch(0)
-        XCTAssertEqual(countLabel("profile-entry-count", in: app), "0 ranked entries")
+        XCTAssertEqual(countLabel("profile-entry-count", in: app), "0 total makes")
         XCTAssertEqual(countLabel("profile-dish-count", in: app), "0 dishes ranked")
         XCTAssertTrue(element("profile-empty", in: app).exists)
         XCTAssertFalse(element("profile-top-food-1", in: app).exists)
@@ -104,7 +104,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
     @MainActor func testOneAndTwoEntriesNeedNoPhotosOrPlaceholderFoods() {
         for count in [1, 2] {
             let app = launch(count)
-            XCTAssertEqual(countLabel("profile-entry-count", in: app), "\(count) ranked entries")
+            XCTAssertEqual(countLabel("profile-entry-count", in: app), "\(count) total makes")
             XCTAssertTrue(element("profile-building-top-three", in: app).exists)
             for rank in 1...count {
                 let row = element("profile-top-food-\(rank)", in: app)
@@ -119,7 +119,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
 
     @MainActor func testLockedDarkAccessibilityProfileCountsVersionsWithoutScoreLeaks() {
         let app = launch(9, appearance: "--test-dark", large: true)
-        XCTAssertEqual(countLabel("profile-entry-count", in: app), "9 ranked entries")
+        XCTAssertEqual(countLabel("profile-entry-count", in: app), "9 total makes")
         XCTAssertEqual(countLabel("profile-dish-count", in: app), "8 dishes ranked")
         capture("Profile dark accessibility identity", app: app)
         for rank in 1...3 {
@@ -139,7 +139,7 @@ final class ProfileUITests: StayGrubbyUITestCase {
 
     @MainActor func testUnlockedProfileKeepsPermanentNativeTopThreeSharing() {
         let app = launch(10, appearance: "--test-dark")
-        XCTAssertEqual(countLabel("profile-entry-count", in: app), "10 ranked entries")
+        XCTAssertEqual(countLabel("profile-entry-count", in: app), "10 total makes")
         XCTAssertEqual(countLabel("profile-dish-count", in: app), "9 dishes ranked")
         for rank in 1...3 {
             let label = element("profile-top-food-\(rank)", in: app).label

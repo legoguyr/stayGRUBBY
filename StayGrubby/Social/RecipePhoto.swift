@@ -30,12 +30,19 @@ nonisolated struct RecipePhotoDescriptor: Codable, Sendable {
     }
 }
 @MainActor enum RecipePhotoPolicy {
+    /// The cook whose photo stands in when the Recipe has no photo of its own: the linked cook when it
+    /// has a photo, else the Dish's representative cook (`dish` is always the viewer's own Dish). An exact
+    /// link to a cook that was 86'd or has no photo no longer leaves an empty frame (MVP stabilization).
     static func fallbackCook(ownedPhoto: UUID?, cook: CookingAttempt?, dish: Dish?, exactLink: Bool) -> CookingAttempt? {
         guard ownedPhoto == nil else { return nil }
-        return cook ?? (exactLink ? nil : dish?.cookbookRepresentativeCook)
+        if let cook, cook.primaryImage != nil { return cook }
+        return dish?.cookbookRepresentativeCook ?? cook
     }
 }
-/// Recipe bytes take precedence; linked cook photography remains a read-only fallback.
+/// Recipe bytes take precedence; linked cook photography remains a read-only fallback, also shown
+/// when the Recipe photo can't be fetched (never an empty frame when the Dish has a photo).
+/// Recipe photo assets are immutable per ID (a replacement is a new asset), so verified bytes and the
+/// decoded image are cached by asset ID in the account cache: no repeat RPC or download, no flash.
 struct RecipePhoto: View {
     let id: UUID?
     var dish: Dish? = nil
@@ -45,23 +52,41 @@ struct RecipePhoto: View {
     var preview: Data? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
-    @State private var loaded: Data?
+    @Environment(\.accountContentCache) private var cache
+    @State private var loaded: UIImage?
     @State private var loadedID: UUID?
     @State private var unavailable = false
-    private var fallbackCook: CookingAttempt? { RecipePhotoPolicy.fallbackCook(ownedPhoto: id, cook: cook, dish: dish, exactLink: exactCookLink) }
+    private var fallbackCook: CookingAttempt? { RecipePhotoPolicy.fallbackCook(ownedPhoto: unavailable ? nil : id, cook: cook, dish: dish, exactLink: exactCookLink) }
+    static func cacheKey(_ id: UUID) -> String { "recipe-asset/\(id.uuidString.lowercased())" }
+    private var image: UIImage? {
+        if let preview { return UIImage(data: preview) }
+        guard let id else { return nil }
+        if loadedID == id, let loaded { return loaded }
+        return cache?.media.image(Self.cacheKey(id))
+    }
     var body: some View {
         Group {
-            if let image = (preview ?? (loadedID == id ? loaded : nil)).flatMap(UIImage.init(data:)) { Image(uiImage: image).resizable().scaledToFill() }
-            else if id != nil {
-                SGPhotoPlaceholder().overlay { if !unavailable { ProgressView() } }
-            } else { CookbookPhoto(name: name, cook: fallbackCook) }
+            if let image { Image(uiImage: image).resizable().scaledToFill() }
+            else if id != nil && !unavailable { SGPhotoPlaceholder().overlay { ProgressView() } }
+            else { CookbookPhoto(dish: dish, name: name, cook: fallbackCook) }
         }.clipped().accessibilityElement(children: .ignore).accessibilityLabel("Photo for \(name)")
-            .accessibilityValue(preview != nil || (loadedID == id && loaded != nil) ? "Recipe photo" : id != nil ? "Recipe photo unavailable" : fallbackCook?.primaryImage != nil ? (exactCookLink || cook != nil ? "Linked cook photo" : "Dish family photo") : "StayGrubby placeholder")
+            .accessibilityValue(image != nil ? "Recipe photo" : fallbackCook?.primaryImage != nil ? (exactCookLink || cook != nil ? "Linked cook photo" : "Dish family photo") : id != nil && !unavailable ? "Recipe photo loading" : "StayGrubby placeholder")
             .task(id: id) {
-                loaded = nil; loadedID = nil; unavailable = false
-                guard let id else { return }
+                unavailable = false
+                guard let id else { loaded = nil; loadedID = nil; return }
+                if loadedID == id, loaded != nil { return }
+                let key = Self.cacheKey(id)
+                if let hit = cache?.media.image(key) { loaded = hit; loadedID = id; return }
                 guard let request, let media else { unavailable = true; return }
-                do { let bytes = try await RecipePhotoService.download(id, request: request, media: media); try Task.checkCancellation(); loaded = bytes; loadedID = id }
+                do {
+                    let bytes: Data
+                    if let cache { bytes = try await cache.media.load(key) { try await RecipePhotoService.download(id, request: request, media: media) } }
+                    else { bytes = try await RecipePhotoService.download(id, request: request, media: media) }
+                    guard let decoded = RemoteMediaCache.decode(bytes) else { throw AccountFoundationError.invalidResolution }
+                    // Cache before the cancellation check: a view that moved on still leaves the image ready.
+                    cache?.media.storeImage(decoded, key: key)
+                    try Task.checkCancellation(); loaded = decoded; loadedID = id
+                }
                 catch is CancellationError {} catch { unavailable = true }
             }
     }

@@ -156,7 +156,10 @@ import SwiftData
     private var feedSeeded = false
     private var recipeSaveFailures = ProcessInfo.processInfo.arguments.contains("--recipe-save-failure") ? 1 : 0
     private var recipeReads = 0
+    /// Read-caching evidence (`--request-log`): how many times each endpoint/action ran.
+    var requestCounts: [String: Int] = [:]
     func request(_ endpoint: String, _ action: String, _ payload: SocialPayload) async throws -> Data {
+        requestCounts["\(endpoint).\(action)", default: 0] += 1
         // Opt-in diagnostics for isolated fixtures only; never log payloads/identities.
         if ProcessInfo.processInfo.arguments.contains("--social-review-trace") { NSLog("SOCIAL_REVIEW %@ %@", endpoint, action) }
         if endpoint == "profile_link" {
@@ -221,7 +224,8 @@ import SwiftData
             }
             if action == "fork_provenance" { return Data(#"{"provenance":null}"#.utf8) }
             if action == "save", recipeSaveFailures > 0 { recipeSaveFailures -= 1; throw URLError(.notConnectedToInternet) }
-            if action == "get" { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
+            // Offline after the first Recipe read, whether it came from the reader (`get`) or the Dish page (`dish`).
+            if ["get", "dish"].contains(action) { recipeReads += 1; if recipeReads > 1 && ProcessInfo.processInfo.arguments.contains("--recipe-offline-after-open") { throw URLError(.notConnectedToInternet) } }
             if ["prepare_photo", "complete_photo", "photo"].contains(action), let id = payload.assetID {
                 if action == "prepare_photo", let hash = payload.photoHash { recipePhotos[id] = .init(id: id, path: "10000000-0000-0000-0000-000000000099/\(id.uuidString.lowercased()).jpg", sha256: hash, ready: false) }
                 guard let previous = recipePhotos[id] else { throw URLError(.resourceUnavailable) }
@@ -533,12 +537,21 @@ import SwiftData
 }
 struct SocialReviewModifier: ViewModifier {
     @State private var review = SocialReview()
+    @State private var cache = AccountContentCache(mediaDirectory: nil)
     @Environment(AppLinkRouter.self) private var links
     @Environment(\.modelContext) private var context
     func body(content: Content) -> some View {
         let configuration = DebugReviewConfiguration.current
         if configuration.socialReview {
-            content.environment(\.socialMedia, { action in
+            content.environment(\.accountContentCache, cache)
+                .overlay(alignment: .topLeading) {
+                    if ProcessInfo.processInfo.arguments.contains("--request-log") {
+                        // Invisible, accessibility-only evidence for read-caching UI tests.
+                        Text(review.requestCounts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: " "))
+                            .font(.system(size: 1)).opacity(0.01).accessibilityIdentifier("review-request-log")
+                    }
+                }
+                .environment(\.socialMedia, { action in
                 if action.isDownload { if let data = review.avatars[action.paths[0]] { return data }; throw URLError(.fileDoesNotExist) }
                 if case .avatarUpload(let path, let bytes) = action { review.avatars[path] = bytes }
                 if case .recipeUpload(let path, let bytes) = action { review.avatars[path] = bytes }

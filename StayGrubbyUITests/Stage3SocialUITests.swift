@@ -7,7 +7,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--stage3-review-sharing", "--stage3-send-failure", "--v1-multi-send-review", "--test-dark", "--review-profile-url", "https://staygrubby.com/r/60000000-0000-0000-0000-000000000001"]
         app.launchWithReviewOptions()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 15), app.debugDescription)
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 15), app.debugDescription)
         let toolbar = XCTAttachment(screenshot: app.screenshot()); toolbar.name = "Recipe active Share and overflow accent red, dark"; toolbar.lifetime = .keepAlways; add(toolbar)
         app.openRecipeAction("recipe-send-friend")
         XCTAssertTrue(app.navigationBars["Send to Sous Chefs"].waitForExistence(timeout: 5))
@@ -28,7 +28,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         app.buttons["social-send-done"].tap()
         XCTAssertTrue(app.navigationBars["Recipe"].waitForExistence(timeout: 5))
         app.terminate(); app.launchArguments = app.launchArguments.map { $0 == "--test-dark" ? "--test-light" : $0 }
-        app.launchWithReviewOptions(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 15))
+        app.launchWithReviewOptions(); XCTAssertTrue(app.waitForRecipeReader(timeout: 15))
         let light = XCTAttachment(screenshot: app.screenshot()); light.name = "Recipe active Share and overflow accent red, light"; light.lifetime = .keepAlways; add(light)
         XCTAssertTrue(app.buttons["recipe-share-link"].exists && app.buttons["recipe-actions"].exists)
     }
@@ -63,7 +63,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         let bell = app.buttons["notifications-open"]; XCTAssertTrue(bell.waitForExistence(timeout: 8)); bell.tap()
         let recipe = app.buttons["notification-50000000-0000-0000-0000-000000000007"]
         XCTAssertTrue(recipe.waitForExistence(timeout: 8)); recipe.tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout: 8)); XCTAssertEqual(app.staticTexts["recipe-title"].label, "Lemon Soup Recipe")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8)); XCTAssertEqual(app.recipeReaderTitle, "Lemon Soup Recipe")
         app.navigationBars.buttons["Tickets"].tap()
         XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 New Ticket")
         let post = app.buttons["notification-50000000-0000-0000-0000-000000000008"]

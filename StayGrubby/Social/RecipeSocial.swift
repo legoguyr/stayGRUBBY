@@ -101,8 +101,6 @@ struct SharedRecipeView: View {
     @State private var failed = false
     @State private var busy = false
     @State private var generation = UUID()
-    @State private var copyID = UUID()
-    @State private var copiedID: UUID?
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
@@ -115,8 +113,11 @@ struct SharedRecipeView: View {
                     if let creator = value.creator { Text("Recipe shared by \(creator.displayName)").font(.subheadline) }
                     if let cook = value.cook { Text("Cooked by \(cook.displayName)").font(.subheadline) }
                     Text("Shared revision \(value.revision). The current Recipe may have changed.").font(.footnote).foregroundStyle(.secondary)
-                    Button("Save a Private Copy") { Task { await fork() } }.buttonStyle(SGButtonStyle()).disabled(busy).accessibilityIdentifier("shared-recipe-fork")
-                    Text("A copy is yours to edit independently. The original stays with its creator. Private copies and completed cook snapshots remain yours if sharing later stops. Add your own photo to a copy.").font(.footnote).foregroundStyle(.secondary)
+                    // Connected UI: no in-app copies of another creator's Recipe. Open the current Recipe
+                    // (live access check) to save a reference or Rank My Version there.
+                    NavigationLink { RecipeDetailView(id: value.recipeID) } label: {
+                        Label("Open Recipe to Save", systemImage: "bookmark").frame(maxWidth: .infinity)
+                    }.buttonStyle(SGButtonStyle()).disabled(busy).accessibilityIdentifier("shared-recipe-open-current")
                     RecipeReadingBody(content: value.content, allowScaling: true)
                     if let source = value.content.source { Text("Source · \(source)") }
                     if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
@@ -136,7 +137,6 @@ struct SharedRecipeView: View {
             }
             .task(id: postID) { await load() }.refreshable { await load() }
             .onSocialRefresh { if !busy { await load() } }
-            .navigationDestination(item: $copiedID) { RecipeDetailView(id: $0) }
             .onChange(of: phase) { _, next in generation = UUID(); value = nil; if next == .active { Task { await load() } } }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
             .onDisappear { generation = UUID(); value = nil }
@@ -147,13 +147,6 @@ struct SharedRecipeView: View {
             let next = try JSONDecoder().decode(SharedRecipe.self, from: await request("recipes", "shared_post", .init(postID: postID)))
             guard !Task.isCancelled, token == generation else { return }; value = next
         } catch is CancellationError {} catch { if token == generation { value = nil; failed = true } }
-    }
-    private func fork() async {
-        guard let request else { return }; busy = true; defer { busy = false }
-        do {
-            let next = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "fork_post", .init(targetID: copyID, postID: postID, confirmed: true)))
-            try Task.checkCancellation(); copiedID = next.id; NotificationCenter.default.post(name: .socialContentChanged, object: nil)
-        } catch is CancellationError {} catch { value = nil; failed = true }
     }
 }
 

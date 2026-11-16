@@ -84,6 +84,10 @@ Server actions: `save` accepts `recipeDishID` (new Recipe, or filling a missing/
 - The identity backfill used the D2 resolution (Main-Recipe Dish, exact-linked cook's Dish, related Dish, legacy link). If two Recipes resolved to one Dish, the Dish's Main kept it and the others stayed unassigned until cooked (production had none: 5 Recipes, 5 distinct Dishes).
 - Retire these structures only in a later, explicitly authorized cleanup once no supported build reads them.
 
+### 3.3a Saved Recipes are references, never copies (Connected UI Phase 1)
+
+Food Bible has **My Recipes** (owned, including any copies made before November 15, 2026) and **Saved Recipes** (another Sous Chef's Recipe bookmarked through the private `recipe_tickets` relation). A save stores only the reference: the creator keeps ownership and credit, nothing is copied, and every read rechecks access. Unsharing, blocking or leaving Sous Chefs shows *Recipe unavailable* with Remove; deletion removes the save (backend test `saved-recipes.test.mjs`). The new UI no longer offers *Save a Private Copy* (reader) or the shared-post copy; the post reader's *Open Recipe to Save* opens the current Recipe instead. The `fork`/`fork_post` RPCs and existing copies stay for compatibility with supported clients.
+
 ### 3.4 One canonical Dish universe — combining identities (owner decision 12)
 
 **Rule.** There is one Dish universe per account. A real-world Dish has exactly one Dish identity; its Recipe (as written), cooks (as made), ranking evidence, photos and future sharing/intelligence all hang off that one identity. Grub Rank shows the Dishes that have cooks; Food Bible shows the Dishes that have Recipe content; the same Dish appears in both when it has both.
@@ -238,11 +242,18 @@ Each part owns one record and is built by generalizing existing components (AGEN
 | `AddRecipeFlow(context:)` (F) | `RecipeCreationChoice`, `RecipeImportView`, `RecipeEditor` | §7.1 |
 | `CookEditor` (F) | `CookingMetadataForm`, `CookingDetailsSheet`, `SGOptionSheet`, `SGFormSection` | §7.3 |
 
-### 8.1 Dish Detail and the Recipe face (current)
+### 8.1 The Dish page — Dish & Ranking and Recipe tabs (current, Connected UI Phase 1, November 15, 2026)
 
-- **Dish Detail** (Grub Rank → `AttemptDetailView`): hero, `DishIdentityHeader`, cook metadata, Dish text, `DishRecipeRow`, cook provenance (tagged Sous Chefs named: "Cooked with Alex and Sam"), Source, Personal Notes, `DishCooksSection`. The Recipe is one row — the Dish photo and text are not repeated.
-- **Recipe face** (Food Bible card or View Recipe → `RecipeDetailView`): the Recipe reader for the Dish, with the Dish's cooks ("Your cooks of [Dish]") or a "Not cooked yet" eyebrow. The Dish shown is the Recipe's own Dish identity. No Link a Dish / Unlink actions.
-- **The Pass** (formerly The Pass) shows intentionally posted cooks only. Recipe-only activity (`recipe_created`) is never shown and the client no longer models it (`PassPage`); a cook post can still offer its Recipe.
+- **One canonical Dish page** (`DishView`; `AttemptDetailView` is the compatibility entry for every cook route). A shared header shows the hero photo, Dish name, score and global rank. The header photo is fixed for the page; switching tabs never changes it (MVP stabilization, November 16, 2026):
+  - **Opened from a cook:** that cook's photo.
+  - **Otherwise:** the Recipe's own photo, else the Dish's representative cook photo. This is the same rule as the Dish's Food Bible card, so the card and the page match.
+  - **Recipe photo unavailable:** falls back to the Dish's cook photo, never an empty frame.
+
+  Every option references one stored asset, never a copy. Beside score and rank, the header shows the noninteractive **Cooked N times**, the verified count of the Dish's Cooking Attempts. A native segmented control switches **Dish & Ranking** and **Recipe**. Both tabs read state the page already holds: the Dish's Recipe (`recipes dish`) is shown from the account read cache when known and refreshed in the background only when stale, on refresh or after a change, so switching is immediate and makes no request. The toolbar follows the tab: `DishActions` and Share on Dish & Ranking, Recipe sharing and owner management on Recipe.
+- **Dish & Ranking:** cook metadata, Dish text, a one-row Recipe preview (*View Recipe* with the Recipe title when it differs, time, yield and ingredient count; it switches tabs. *Add Recipe* opens `AddRecipeFlow`), the exact "Recipe used for this cook · revision N" when it differs, provenance, Source, Personal Notes and every cook with Cook Again. A Recipe-only Dish shows *Not ranked yet* with Rank My Version.
+- **Recipe:** the shared reader (`RecipeReaderContent`, the same component as the standalone `RecipeDetailView`) without repeating the header; ingredients, steps, serving scaling, attribution, revision and visibility, Rank My Version, and no separate Makes line: the cook count lives in the shared header. No Recipe yet: **Link a Recipe** (`AddRecipeFlow`).
+- **Routes:** Grub Rank rows, My Kitchen and cook lists open the Dish page on Dish & Ranking. A Food Bible card for an owned Recipe whose Dish is on the device opens it on Recipe; otherwise the standalone reader, which offers *Open [Dish]* for an owner's Recipe with a local Dish. Other creators' Recipes, Saved Recipes, deep links and The Pass's post Recipes use the standalone reader, which checks live access.
+- **The Pass** (formerly Grub List) shows intentionally posted cooks only. Recipe-only activity (`recipe_created`) is never shown and the client no longer models it (`PassPage`); a cook post can still offer its Recipe.
 - History: D2 (`9b28a33`) shipped a multi-Recipe Recipes section with Main Recipe; it was replaced the same day by this model. `20261108210256_food_bible_dish_resolution` (deployed) remains the fallback resolution for Recipes without a Dish identity.
 
 ## 9. Evidence preserved for Personal Cooking Intelligence

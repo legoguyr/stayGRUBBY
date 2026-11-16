@@ -46,7 +46,7 @@ final class FoodBibleV2UITests: StayGrubbyUITestCase {
         app.openRecipeAction("recipe-edit"); XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText(" updated"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
         app.openRecipeAction("recipe-history"); XCTAssertTrue(app.buttons["recipe-version-1"].waitForExistence(timeout:8)); app.buttons["recipe-version-1"].tap()
         reach(app.buttons["recipe-restore"],app:app); screenshot(app,"Recipe history and restore dark"); app.buttons["recipe-restore"].tap(); app.buttons["Create New Current Revision"].tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8)); XCTAssertEqual(app.staticTexts["recipe-title"].label,"Independent Soup")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8)); XCTAssertEqual(app.recipeReaderTitle,"Independent Soup")
         app.openRecipeAction("recipe-save-new"); XCTAssertTrue(title.waitForExistence(timeout:8)); title.tap(); title.typeText(" copy"); app.buttons["recipe-keyboard-done"].tap(); app.buttons["recipe-save"].tap()
         app.terminate(); app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20)); openBible(app)
         let cards = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")); XCTAssertTrue(cards.firstMatch.waitForExistence(timeout:8)); XCTAssertEqual(cards.count,2); XCTAssertTrue(app.buttons[identity].exists)
@@ -60,15 +60,15 @@ final class FoodBibleV2UITests: StayGrubbyUITestCase {
         let yield = app.textFields["recipe-yield"]; reach(yield,app:app); yield.tap(); yield.typeText("Serves 4"); app.buttons["recipe-keyboard-done"].tap()
         app.buttons["recipe-save"].tap(); app.skipRankPrompt()
         let card = app.buttons.matching(NSPredicate(format:"identifier BEGINSWITH 'bible-entry-'")).firstMatch
-        XCTAssertTrue(card.waitForExistence(timeout:8)); card.tap(); XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8))
+        XCTAssertTrue(card.waitForExistence(timeout:8)); card.tap(); XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
         let hero = app.otherElements["recipe-hero"]
         XCTAssertEqual(XCTWaiter.wait(for:[XCTNSPredicateExpectation(predicate:NSPredicate(format:"value == 'Recipe photo'"),object:hero)],timeout:8),.completed)
         reach(app.steppers["recipe-servings"],app:app); app.steppers["recipe-servings"].buttons["recipe-servings-Increment"].tap(); XCTAssertEqual(app.steppers["recipe-servings"].value as? String,"5",app.debugDescription)
         app.openRecipeAction("recipe-edit"); XCTAssertTrue(yield.waitForExistence(timeout:8)); XCTAssertEqual(yield.value as? String,"Serves 4")
         reach(app.buttons["recipe-photo-remove"],app:app); app.buttons["recipe-photo-remove"].tap(); app.buttons["recipe-save"].tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8)); screenshot(app,"Recipe photo removed with branded fallback; serving projection never saved")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8)); screenshot(app,"Recipe photo removed with branded fallback; serving projection never saved")
         app.terminate();app.launchWithReviewOptions();XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:20));openBible(app);XCTAssertTrue(card.waitForExistence(timeout:8));card.tap()
-        XCTAssertTrue(app.staticTexts["recipe-title"].waitForExistence(timeout:8));XCTAssertEqual(hero.value as? String,"StayGrubby placeholder")
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8));XCTAssertEqual(hero.value as? String,"StayGrubby placeholder")
     }
 
 }

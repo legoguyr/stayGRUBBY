@@ -25,6 +25,7 @@ struct ContentView: View {
             .tabItem { Label("My Kitchen", systemImage: "person") }.badge(activity.unread).tag(StayGrubbyTab.profile)
         }
         .tint(SGTheme.ColorToken.accent)
+        .environment(\.selectTab, { selection = $0 })
         .onChange(of: links.ownKitchenRequests) { _, _ in selection = .profile }
         .modifier(AppLinkPresentation())
         .modifier(SocialActivityHost(coordinator: activity))
@@ -39,6 +40,14 @@ struct ContentView: View {
 }
 
 enum StayGrubbyTab: Hashable { case feed, rankings, bible, profile }
+
+/// Switches the root tab (Connected UI: My Kitchen statistics open Grub Rank and Food Bible).
+private struct SelectTabKey: EnvironmentKey { static let defaultValue: (StayGrubbyTab) -> Void = { _ in } }
+extension EnvironmentValues {
+    var selectTab: (StayGrubbyTab) -> Void {
+        get { self[SelectTabKey.self] } set { self[SelectTabKey.self] = newValue }
+    }
+}
 
 #Preview {
     ContentView().environment(AppLinkRouter()).environment(AccountSessionCoordinator()).modelContainer(try! ModelContainer(for: AppPersistence.schema,

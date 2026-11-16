@@ -79,6 +79,39 @@ Completed initial ranks and re-ranks record a private dated reaction in the exis
 
 ## Food Bible and Recipes — Architecture V2
 
+**Connected UI Phase 1 (November 15, 2026).**
+- Every Dish route opens one Dish page with **Dish & Ranking** and **Recipe** tabs over a shared header. Switching is immediate, and the Dish's Recipe is fetched once per page.
+- Food Bible separates **My Recipes** from **Saved Recipes**, which are access-rechecked references through `recipe_tickets`; the new UI makes no copies.
+- My Kitchen shows **Total Makes** from verified local cooks.
+- **MVP stabilization (November 16, 2026).**
+  - The Dish page header photo is fixed for the page. Tab switches never change it.
+  - The Dish header shows a noninteractive **Cooked N times** beside score and rank, replacing the Recipe tab's Makes line.
+  - A Recipe photo that can't load falls back to the Dish's own cook photo.
+
+### Read caching (MVP stabilization, November 16, 2026)
+
+`AccountContentCache` (one per signed-in account, created in `AccountApplicationRoot`, injected as `\.accountContentCache`) is a convenience layer, never a source of truth.
+
+- **Last good results:** it keeps the cookbook index, the Saved Recipes list, The Pass's first page (with identity and Sous Chef count) and each Dish's Recipe (bounded to 200 Dishes, oldest evicted).
+- **Display:** screens show the cached value at once and refresh in the background only when it is older than 120 seconds, on pull to refresh or Retry, or after a change. A failed background refresh keeps what is shown.
+- **Invalidation:** `socialContentChanged`, `recipeSavesChanged` and `socialEngagementChanged` withdraw freshness everywhere, even for screens that did not observe the change. Values stay on screen until the refresh lands.
+- **Food Bible "cooked" state:** a local cook of the entry's Dish marks it cooked even when the cached index predates the cook.
+- **Removed behavior:** tab switches, back navigation and returning from the background no longer clear Food Bible or The Pass.
+
+`RemoteMediaCache` holds immutable remote media:
+- **What it caches:** post photos and avatars by Storage path; Recipe photos by asset ID, which also skips the descriptor RPC.
+- **Tiers:** decoded images and bytes in memory (48 MB each), and bytes on disk at `<account root>/RemoteMediaCache` (120 MB, least-recently-used trimming to 80%).
+- **Disk safety:** the directory is excluded from backup and uses file protection. It is removed with the account and never shared between accounts.
+- **Coalescing:** concurrent loads of one key share one request.
+- **Freshness of bytes:** upload verification downloads (Recipe photos) always read Storage directly. Upload and remove calls evict the affected keys.
+- **Access:** cached bytes are only ever shown where a freshly authorized post, profile or Recipe card references them.
+
+Rules for future reads:
+- Use these caches instead of adding per-screen ones.
+- Cloud rows and the local SwiftData library remain canonical.
+
+Detail: [FOOD_ARCHITECTURE §3.3a and §8.1](FOOD_ARCHITECTURE.md#81-the-dish-page--dish--ranking-and-recipe-tabs-current-connected-ui-phase-1-november-15-2026).
+
 Recipe means **how I make something**; Dish means **what I cooked and ranked**. Either exists alone. (This section describes the current Build 4 implementation; the decided unified presentation is in [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md).) Food Bible indexes Recipe UUIDs once each (standalone owned Recipes plus eligible Recipes linked to the caller's Dishes) through bounded `library_index` pagination. Add Recipe offers **Paste Recipe / Add Manually**, neither requiring a Dish. Recipe Detail keeps **Rank My Version** primary, with compact Share/Send and overflow (Edit, Version History, Save as New, Link a Dish, 86 Recipe). Linking uses the photographic Dish/version selector. New Recipe creation plus exact linking is atomic.
 
 Owner-private `recipe_cook_links`: at most one current cook per Recipe and one current Recipe per cook, compare-and-swap guarded. A current link is a deliberate association, not proof a Recipe was used. Cook Detail distinguishes **Recipe used** (immutable snapshot) from **Linked Recipe** or legacy family link. Never infer which Recipe an old cook used from today's link.
@@ -185,7 +218,7 @@ Reuse `StayGrubby/DesignSystem` and asset-catalog artwork. Logo red **#F10607** 
 
 Follow AGENTS.md's minimum-confidence table.
 
-**Known unit-test debt (observed November 7, 2026 at `cfe67df`, unchanged by UI Stage A):** `CuisineTests.dishEditsInheritanceAndFiltersNeverChangeRankingEvidence` and `Stage2CookingEntryTests.editingAndCancellingDraftsPreserveEvidenceAndOriginalCookNotes` fail their exact item/comparison snapshot equality; `RankingsPresentationTests.normalTopThreeOmitsMilestoneClaimWhileActualUnlockMayIncludeIt` and `SharingPresentationTests.nativeCompletionDeliversSuccessfulSaveAfterItsCallback` still expect image-only share items, while exports now carry image + caption; (`DishSourceTests.simplifiedSourceOptionsAndOriginalURLsPersistWithoutRankingChanges` passes since Halal returned to the Dietary options in the Stage B owner revision.) Pre-existing UI-test debt confirmed on a clean `941a949` export (unchanged by UI Stage B): `CookingDiscoveryUITests.testEditingFromSearchUpdatesResultsWhilePreservingFiltersAndScore` and `PolishUITests.testContainsEditPersistenceAndAvoidAnySelectionWithIndependentClear` still look for a top-level "Edit Cook" button (now in the Dish Detail overflow), both `CuisineUITests` tests cannot reach `dish-cuisine`, and `V1RevisionUITests.testLockedLargeTypeRerankCancellationAndVersionThresholdCrossing` fails its re-rank action path; both `Phase2CReviewUITests` comparison/detail tests also look for top-level "Re-rank" / "Edit Cook" buttons (confirmed failing on `941a949`). Also stale on a clean `1fde015` export (November 11): `ProductStructureUITests.testFourTabsKitchenFriendsHitAreaAndSingleProfileEditor` expects a Food Bible empty state the Recipe fixture no longer has, and `DesignReviewUITests.testSocialRecipeAndEditorInBothAppearances` taps a top-level `recipe-edit` that D3 moved into the Recipe actions menu. Update these tests to the current overflow/Details navigation before the release gate. Diagnose before the release gate. The two evidence-snapshot failures touch protected ranking tests: establish whether the test or the behavior is stale before changing either. In particular: documentation-only changes need consistency/link/secret checks only; website deployments need `deploy-production.sh` and its live gate; schema work needs migration/hash, RLS/security tests and fingerprints; release candidates need one broader regression and Release verification.
+**Known unit-test debt (observed November 7, 2026 at `cfe67df`, unchanged by UI Stage A):** `CuisineTests.dishEditsInheritanceAndFiltersNeverChangeRankingEvidence` and `Stage2CookingEntryTests.editingAndCancellingDraftsPreserveEvidenceAndOriginalCookNotes` fail their exact item/comparison snapshot equality; `RankingsPresentationTests.normalTopThreeOmitsMilestoneClaimWhileActualUnlockMayIncludeIt` and `SharingPresentationTests.nativeCompletionDeliversSuccessfulSaveAfterItsCallback` still expect image-only share items, while exports now carry image + caption; (`DishSourceTests.simplifiedSourceOptionsAndOriginalURLsPersistWithoutRankingChanges` passes since Halal returned to the Dietary options in the Stage B owner revision.) Pre-existing UI-test debt confirmed on a clean `941a949` export (unchanged by UI Stage B): `CookingDiscoveryUITests.testEditingFromSearchUpdatesResultsWhilePreservingFiltersAndScore` and `PolishUITests.testContainsEditPersistenceAndAvoidAnySelectionWithIndependentClear` still look for a top-level "Edit Cook" button (now in the Dish Detail overflow), both `CuisineUITests` tests cannot reach `dish-cuisine`, and `V1RevisionUITests.testLockedLargeTypeRerankCancellationAndVersionThresholdCrossing` fails its re-rank action path; both `Phase2CReviewUITests` comparison/detail tests also look for top-level "Re-rank" / "Edit Cook" buttons (confirmed failing on `941a949`). Also stale on a clean `1fde015` export (November 11): `ProductStructureUITests.testFourTabsKitchenFriendsHitAreaAndSingleProfileEditor` expects a Food Bible empty state the Recipe fixture no longer has, and `DesignReviewUITests.testSocialRecipeAndEditorInBothAppearances` taps a top-level `recipe-edit` that D3 moved into the Recipe actions menu. Also stale on clean `1ba0b0c` (November 16): `RecipesLinksUITests.testRunItBackKeepsRecipeAndSocialOriginSeparate` expects a Run It Back entry point that is intentionally hidden. Update these tests to the current overflow/Details navigation before the release gate. Diagnose before the release gate. The two evidence-snapshot failures touch protected ranking tests: establish whether the test or the behavior is stale before changing either. In particular: documentation-only changes need consistency/link/secret checks only; website deployments need `deploy-production.sh` and its live gate; schema work needs migration/hash, RLS/security tests and fingerprints; release candidates need one broader regression and Release verification.
 
 ## Task-specific source map
 
