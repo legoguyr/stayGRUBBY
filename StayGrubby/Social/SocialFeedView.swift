@@ -55,7 +55,7 @@ struct SocialFeedView: View {
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
         .refreshable { await load() }
-        .onSocialRefresh { if isSelected { await load() } }
+        .onSocialRefresh { if isSelected { await load(poll: true) } }
         .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in if isSelected { Task { await load() } } }
         .task(id: "\(isSelected):\(revision)") {
             guard isSelected else { generation = UUID(); posts = []; return }
@@ -80,20 +80,26 @@ struct SocialFeedView: View {
             Button("86 Post", role: .destructive) { Task { await delete(post) } }
         } message: { _ in Text("This removes the shared post and can’t be undone. Your private cook, photo and ranking stay intact.") }
     }
-    private func load(more: Bool = false) async {
+    /// `poll`: the 30 s foreground refresh. It re-reads only the first feed page; identity and Sous Chefs
+    /// already loaded on this screen are reused (they change through their own screens, which notify).
+    private func load(more: Bool = false, poll: Bool = false) async {
         guard let request else { return }
         let token = UUID(); generation = token; loading = true; failed = false
         let cursor = more ? self.cursor : nil
         if !more { hasMore = false }
         defer { if generation == token { loading = false } }
         do {
-            let ownIdentity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init()))
+            let reuse = (poll || more) && identity?.isConfigured == true
+            let ownIdentity: SocialIdentity
+            if reuse, let known = identity { ownIdentity = known }
+            else { ownIdentity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
             guard !Task.isCancelled, generation == token else { return }; identity = ownIdentity
             guard ownIdentity.isConfigured else { return }
-            let people = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init()))
+            var people: SocialPeoplePage?
+            if !reuse { people = try JSONDecoder().decode(SocialPeoplePage.self, from: await request("social_people", "friends", .init())) }
             let next = try JSONDecoder().decode(PassPage.self, from: await request("social_feed", "activity_page", .init(beforeTime: cursor?.createdAt, beforeID: cursor?.id)))
             guard !Task.isCancelled, generation == token else { return }
-            friendCount = people.people.count
+            if let people { friendCount = people.people.count }
             // The Pass is shared Cook activity only (PassPage drops legacy Recipe items; a cook post can still offer its Recipe).
             if more { let ids = Set(posts.map(\.id)); posts += next.posts.filter { !ids.contains($0.id) } } else { posts = next.posts }
             self.cursor = next.cursor ?? self.cursor; hasMore = next.hasMore
@@ -107,7 +113,7 @@ struct SocialFeedView: View {
         do {
             _ = try await request("social_content", "delete", .init(postID: post.id))
             posts.removeAll { $0.id == post.id }
-            await SocialPhotoCleanup.run(request: request, media: media)
+            await SocialPhotoCleanup.run(request: request, media: media, afterRetirement: true)
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
         } catch is CancellationError { } catch { posts = []; failed = true }
     }

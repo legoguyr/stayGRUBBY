@@ -1,3 +1,20 @@
+# Current — local-first sync efficiency (November 15, 2026)
+
+Client-side; no schema, RPC or Storage policy change. Works with the deployed backend and with Build 5 clients unchanged.
+
+- **Revision probe instead of a full download.** Before `open_account_library`, the worker calls `provision_account` (read-only for an existing account, a few bytes) and compares its `sync_revision` with the binding's accepted revision. The download and hydration are skipped only when the revision is unchanged **and** the local graph still equals the accepted snapshot. Every server write to the cooking graph (`apply_cooking_operation`, library bootstrap) bumps the revision, so an unchanged revision means an unchanged cloud graph. Any difference, a restoration, an identity change or a probe failure takes the full reconcile path as before.
+- **Coalesced triggers.** Connectivity triggers sync only on an offline→online transition (`ReachabilityTransitions`), not on every route/interface update. Foreground and connectivity are *passive* triggers: within 20 s of a verified-current sync with nothing queued they do nothing. Local commits and explicit Retry still sync immediately; overlapping requests still collapse into one follow-up job.
+- **Settled photo pass.** `CookingPhotoJournal.settledRevision` records the accepted revision at the last photo pass that finished with no outstanding work. While it is unchanged and every photo's files are on disk, the pass makes no request (it used to call `media_backup list` on every sync).
+- **No retransmission after an ambiguous upload.** Each object path is checked first with a metadata-only `info` probe; an existing object of the expected size is verified by download, not uploaded again. Verified paths are journaled per manifest (`verifiedPaths`), so a retry after a crash or lost reply resumes only the missing object. Content-addressed paths, register/complete receipts, the byte-for-byte verification, replacement, deletion, cleanup and restore are unchanged.
+- **Bounded retries and server cooldowns (`SyncRetryPolicy`).** Structured operations, photo transfers and catalog discovery share exponential backoff with ±20% jitter, capped at five minutes. After eight consecutive failures automatic timers stop; queued work, IDs and hashes stay intact and resume on connectivity recovery, foreground, a new local change or Retry. A server cooldown is recoverable, never a rejection: the worker sends nothing until it passes, even for an explicit Retry, and the outbox shows *Saved on this device · Sync pending*.
+- **Social polling.** The 30 s foreground refresh of The Pass re-reads only the feed page (identity and Sous Chefs are reused), and the `social_content cleanup` write runs at most every 10 minutes routinely, immediately after a delete or cancelled draft.
+
+**Cooldown contract (handoff to Codex, required before any server throttle).** Supported clients recognize, as a recoverable pause:
+- **PostgREST:** raise SQLSTATE `PT429` (or `PT503` for maintenance) with the delay in seconds in the error `HINT`, for example `retry after 120`. Missing or unreadable delays default to 30 s; at most 1 hour is honored.
+- **Gateway/Storage:** HTTP 429/503 with `Retry-After`, as delta-seconds or an HTTP date.
+
+Build 5 and earlier treat these as a permanent rejection (*Sync needs review*, outbox kept), so a server-side write circuit breaker stays off until a build with this client is the minimum supported version. Never use `40001`/`40P01` for throttling.
+
 # Current Phase 3D Part 2 — private photo sync
 
 > Current overview: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). Structured and private photo sync are implemented and physically reviewed. Old two-tab/hidden-Feed and pending-photo-review statements below describe their dated checkpoints. Protocol/outbox contracts remain applicable; [AGENTS.md](AGENTS.md) governs risk-based verification, rather than automatic full historical regression.

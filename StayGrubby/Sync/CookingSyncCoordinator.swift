@@ -27,6 +27,16 @@ import Network
     @ObservationIgnored private var owner: ProvisionedAccount?
     @ObservationIgnored private var send: (@Sendable (SyncEnvelope) async throws -> SyncReceipt)?
     @ObservationIgnored private var load: (@MainActor () async throws -> AccountLibrarySnapshot)?
+    /// Cheap cloud-revision probe; when it matches the accepted local graph the full library load is skipped.
+    @ObservationIgnored private var cloudRevision: (@MainActor () async throws -> Int)?
+    /// Server-requested pause (429/503/PT429/PT503 Retry-After). No sync request is sent before it.
+    @ObservationIgnored private(set) var cooldownUntil: Date?
+    /// The last time the library was verified current; passive triggers right after it are skipped.
+    @ObservationIgnored private(set) var lastCurrentAt: Date?
+    /// Network counters for verification (requests this coordinator caused).
+    @ObservationIgnored private(set) var fullLoads = 0
+    @ObservationIgnored private(set) var revisionProbes = 0
+    static let passiveRefreshInterval: TimeInterval = 20
     @ObservationIgnored private var remember: (@MainActor (ProvisionedAccount) throws -> Void)?
     @ObservationIgnored private var photos: (any CookingPhotoTransport)?
     @ObservationIgnored private var jobID: UUID?
@@ -40,7 +50,8 @@ import Network
 
     @discardableResult func connect(store: LocalStoreSession, account: ProvisionedAccount,
         send: @escaping @Sendable (SyncEnvelope) async throws -> SyncReceipt,
-        load: @escaping @MainActor () async throws -> AccountLibrarySnapshot, active: Bool = true,
+        load: @escaping @MainActor () async throws -> AccountLibrarySnapshot,
+        cloudRevision: (@MainActor () async throws -> Int)? = nil, active: Bool = true,
         photos: (any CookingPhotoTransport)? = nil,
         remember: @escaping @MainActor (ProvisionedAccount) throws -> Void = { _ in }) throws -> UUID {
         disconnect()
@@ -49,15 +60,19 @@ import Network
         else { throw SyncFoundationError.wrongAccount }
         let token = UUID(); connection = token; self.active = active
         self.store = store; owner = account; self.send = send; self.load = load; self.remember = remember
+        self.cloudRevision = cloudRevision; cooldownUntil = nil; lastCurrentAt = nil
         self.photos = photos
         observer = NotificationCenter.default.addObserver(forName: .cookingSyncWorkCommitted, object: store.container, queue: .main) { [weak self] _ in
             guard let coordinator = self else { return }
             Task { @MainActor in coordinator.request() }
         }
         let path = NWPathMonitor(); monitor = path
+        // Only a transition back to connectivity is a reason to sync; interface/route updates while
+        // already online are not (they used to re-run the full sync on every update).
+        let reachability = ReachabilityTransitions()
         path.pathUpdateHandler = { [weak self] value in
-            if value.status == .satisfied, let coordinator = self {
-                Task { @MainActor in coordinator.request() }
+            if reachability.restored(value.status == .satisfied), let coordinator = self {
+                Task { @MainActor in coordinator.request(passive: true) }
             }
         }
         path.start(queue: DispatchQueue(label: "StayGrubby.cooking-sync-connectivity"))
@@ -69,19 +84,31 @@ import Network
         connection = nil; job?.cancel(); job = nil; jobID = nil; retry?.cancel(); retry = nil
         if let observer { NotificationCenter.default.removeObserver(observer) }; observer = nil
         monitor?.cancel(); monitor = nil
-        store = nil; owner = nil; send = nil; load = nil; remember = nil; photos = nil; requested = false; holds.removeAll(); status = .idle
+        store = nil; owner = nil; send = nil; load = nil; cloudRevision = nil; remember = nil; photos = nil
+        requested = false; holds.removeAll(); status = .idle; cooldownUntil = nil; lastCurrentAt = nil
     }
     func setActive(_ value: Bool) {
         active = value
-        if value { request() }
+        if value { request(passive: true) }
         else { job?.cancel(); job = nil; jobID = nil; retry?.cancel(); retry = nil }
     }
     var hasActiveRestoreLease: Bool { !holds.isEmpty }
     func hold(_ id: UUID) { holds.insert(id) }
     func release(_ id: UUID) { holds.remove(id); if holds.isEmpty { request() } }
-    func request(forceRetry: Bool = false) {
+    /// `passive`: foreground or connectivity recovery, not a new local change or an explicit Retry.
+    func request(forceRetry: Bool = false, passive: Bool = false) {
         guard active, let token = connection, let store, let owner, let send, let load else { return }
         if job != nil { requested = true; return }
+        // A server cooldown is honored even for an explicit Retry; work stays queued locally.
+        if let until = cooldownUntil, until > .now {
+            if status != .savedLocally, status != .idle { status = .savedLocally }
+            scheduleRetry(store: store, token: token); return
+        }
+        cooldownUntil = nil
+        if passive, !forceRetry, status == .current, let last = lastCurrentAt,
+           Date.now.timeIntervalSince(last) < Self.passiveRefreshInterval,
+           (try? SyncJournal.pending(store.container.mainContext).isEmpty) == true { return }
+        let cloudRevision = self.cloudRevision
         retry?.cancel(); retry = nil; requested = false
         let work = UUID(); jobID = work
         let photoTransport = photos
@@ -118,7 +145,10 @@ import Network
                 if !(try SyncJournal.pending(context)).isEmpty || !self.holds.isEmpty || context.hasChanges {
                     self.status = .savedLocally
                     self.scheduleRetry(store: store, token: token)
+                } else if try await self.cloudUnchanged(context: context, probe: cloudRevision, token: token) {
+                    graphReady = true // Same cloud revision as the accepted local graph: nothing to download.
                 } else {
+                    self.fullLoads += 1
                     let snapshot = try await load(); try Task.checkCancellation()
                     guard self.connection == token else { return }
                     try snapshot.validate(for: owner)
@@ -145,12 +175,16 @@ import Network
                             guard self.connection == token, self.active else { throw CancellationError() }
                         })
                     if !complete { self.status = .savedLocally; self.scheduleRetry(store: store, token: token) }
-                    else if graphReady, (try SyncJournal.pending(context)).isEmpty, !context.hasChanges { self.status = .current }
+                    else if graphReady, (try SyncJournal.pending(context)).isEmpty, !context.hasChanges { self.markCurrent() }
                 } else if graphReady {
-                    self.status = .current
+                    self.markCurrent()
                 }
             } catch {
                 guard self.connection == token, !Task.isCancelled else { return }
+                if let seconds = SyncRetryPolicy.cooldown(from: error) {
+                    self.cooldownUntil = Date.now.addingTimeInterval(seconds)
+                    self.status = .savedLocally; self.scheduleRetry(store: store, token: token); return
+                }
                 switch error {
                 case CookingPhotoError.integrity, CookingPhotoError.rejected: self.status = .needsReview
                 case CookingPhotoError.authenticationRequired: self.status = .signInRequired
@@ -168,14 +202,33 @@ import Network
 
         }
     }
+    private func markCurrent() { status = .current; lastCurrentAt = .now }
+
+    /// True when the accepted local graph is intact and the cloud is still at its revision.
+    private func cloudUnchanged(context: ModelContext, probe: (@MainActor () async throws -> Int)?, token: UUID) async throws -> Bool {
+        guard let probe, let binding = try SyncJournal.binding(context), !binding.restorationRequired,
+              binding.acceptedRevision >= 0, let accepted = binding.acceptedSnapshotData,
+              try CookingGraph.decode(accepted).canonicalized() == CookingGraphExport.snapshot(context: context).canonicalized()
+        else { return false }
+        let expected = binding.acceptedRevision
+        revisionProbes += 1
+        let revision = try await probe(); try Task.checkCancellation()
+        guard connection == token else { throw CancellationError() }
+        return revision == expected
+    }
+
+    /// Automatic timers are bounded: after `SyncRetryPolicy.automaticAttemptLimit` consecutive failures
+    /// work waits for connectivity recovery, foreground, a new local change or an explicit Retry.
     private func scheduleRetry(store: LocalStoreSession, token: UUID) {
         let context = ModelContext(store.container)
-        let operationDeadline = (try? SyncJournal.pending(context).first)?.nextRetryAt
+        let limit = SyncRetryPolicy.automaticAttemptLimit
+        let operationDeadline = (try? SyncJournal.pending(context).first).flatMap { $0.attemptCount < limit ? $0.nextRetryAt : nil }
         let photoDeadline: Date?
         if let root = store.mediaRoot, let owner = store.scope.accountID {
-            photoDeadline = (try? CookingPhotoJournal.load(owner: owner, root: root))?.retryAt
+            photoDeadline = (try? CookingPhotoJournal.load(owner: owner, root: root))?.entries.values
+                .filter { $0.attempts < limit }.compactMap(\.retryAt).min()
         } else { photoDeadline = nil }
-        guard let deadline = [operationDeadline, photoDeadline].compactMap({ $0 }).min() else { return }
+        guard let deadline = [operationDeadline, photoDeadline, cooldownUntil].compactMap({ $0 }).min() else { return }
         retry?.cancel()
         retry = Task { [weak self] in
             do { try await Task.sleep(for: .seconds(max(1, deadline.timeIntervalSinceNow))) }
@@ -183,6 +236,18 @@ import Network
             guard self?.connection == token else { return }
             self?.request()
         }
+    }
+}
+
+/// Remembers the last reachability so only offline→online transitions trigger a sync.
+nonisolated final class ReachabilityTransitions: @unchecked Sendable {
+    private let lock = NSLock()
+    private var satisfied: Bool?
+    /// True exactly when connectivity is regained (not on the first report, not while already online).
+    func restored(_ now: Bool) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let previous = satisfied; satisfied = now
+        return now && previous == false
     }
 }
 

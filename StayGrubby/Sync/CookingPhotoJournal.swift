@@ -9,9 +9,15 @@ nonisolated struct CookingPhotoJournal: Codable {
         var attempts = 0
         var diagnostic: String?
         var retryAt: Date?
+        /// Object paths whose bytes are already stored and verified for this manifest. A retry after an
+        /// ambiguous failure resumes only the missing work (optional: older journals decode as nil).
+        var verifiedPaths: [String]?
     }
     let accountID: UUID
     var entries: [String: Entry] = [:]
+    /// The accepted cloud revision at the last photo pass that finished with nothing outstanding.
+    /// While the revision is unchanged and every photo is on disk, the pass needs no network.
+    var settledRevision: Int?
     static func url(root: URL) -> URL { root.appendingPathComponent("CookingPhotoTransfers.json") }
     static func load(owner: UUID, root: URL) throws -> Self {
         let file = url(root: root)
@@ -30,4 +36,8 @@ nonisolated struct CookingPhotoJournal: Codable {
         try JSONEncoder().encode(self).write(to: Self.url(root: root), options: .atomic)
     }
     var retryAt: Date? { entries.values.compactMap(\.retryAt).min() }
+    /// Anything not yet verified/cleaned, or waiting on a retry.
+    var hasOutstandingWork: Bool {
+        entries.values.contains { !["verified", "cleaned"].contains($0.phase) || $0.retryAt != nil || $0.diagnostic != nil }
+    }
 }

@@ -240,6 +240,19 @@ nonisolated enum AccountDeletionProgress: Equatable {
         else { throw AccountFoundationError.identityChanged }
         return receipt
     }
+    /// The cloud library revision only (`provision_account`, read-only for an existing account, a few bytes):
+    /// lets sync skip the full `open_account_library` download when nothing changed in the cloud.
+    func resolvedCloudRevision() async throws -> Int {
+        try Task.checkCancellation()
+        guard case .resolved(let account) = state, let service = backend else { throw AccountFoundationError.accountNotResolved }
+        let current = generation
+        let probe = try await service.provision(for: AuthenticatedIdentity(userID: account.authUserID))
+        try Task.checkCancellation()
+        guard current == generation, case .resolved(let latest) = state, latest.accountID == account.accountID,
+              latest.authUserID == account.authUserID, probe.accountID == account.accountID, probe.authUserID == account.authUserID
+        else { throw AccountFoundationError.identityChanged }
+        return probe.syncRevision
+    }
     func cookingPhotoTransport() throws -> any CookingPhotoTransport {
         guard case .resolved(let account) = state, let service = backend as? any AccountPhotoBackend
         else { throw AccountFoundationError.accountNotResolved }

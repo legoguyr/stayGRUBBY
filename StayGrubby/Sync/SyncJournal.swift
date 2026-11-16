@@ -209,8 +209,10 @@ nonisolated protocol SyncTransport: Sendable {
                 if let saved = try SyncJournal.pending(context).first(where: { $0.id == envelope.operationID }) {
                     // Never persist arbitrary SDK/network text which could contain credentials.
                     saved.lastError = error is CancellationError ? "cancelled" :
+                        SyncRetryPolicy.cooldown(from: error) != nil ? "server-cooldown" :
                         (error as? CookingSyncError)?.diagnosticCode ?? "transport-or-receipt-failure"
-                    saved.nextRetryAt = Date.now.addingTimeInterval(min(300, pow(2, Double(min(saved.attemptCount, 8)))))
+                    // Bounded, jittered backoff; a server Retry-After is a floor, never shortened.
+                    saved.nextRetryAt = SyncRetryPolicy.nextAttempt(after: error, attempt: saved.attemptCount)
                     try context.save()
                 }
                 throw error

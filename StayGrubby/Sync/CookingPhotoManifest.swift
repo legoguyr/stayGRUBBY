@@ -4,6 +4,8 @@ import UniformTypeIdentifiers
 
 nonisolated enum CookingPhotoError: Error, Equatable {
     case integrity, pending, rejected, obsolete, authenticationRequired, unavailable
+    /// A server-requested pause (seconds); recoverable, never a rejection.
+    case cooldown(TimeInterval)
     var diagnostic: String {
         switch self {
         case .integrity: "photo-integrity"
@@ -12,6 +14,7 @@ nonisolated enum CookingPhotoError: Error, Equatable {
         case .obsolete: "photo-obsolete"
         case .authenticationRequired: "photo-authentication"
         case .unavailable: "photo-network"
+        case .cooldown: "photo-cooldown"
         }
     }
 }
@@ -69,6 +72,12 @@ nonisolated struct CookingPhotoCatalog: Codable, Sendable {
     func upload(path: String, bytes: Data) async throws
     func download(path: String) async throws -> Data
     func remove(paths: [String]) async throws
+    /// The stored object's byte size, or nil when it doesn't exist. Metadata only, no download.
+    func storedSize(path: String) async throws -> Int?
+}
+extension CookingPhotoTransport {
+    /// Transports without a metadata probe report "unknown", which keeps the upload path.
+    func storedSize(path: String) async throws -> Int? { nil }
 }
 
 nonisolated enum CookingPhotoFiles {

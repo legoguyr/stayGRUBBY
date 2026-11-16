@@ -210,7 +210,7 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
             do { _ = try await request("social_content", "delete", .init(postID: intent.postID)) }
             catch { if token == generation { failed.insert(item) }; return }
             guard token == generation else { return }
-            await SocialPhotoCleanup.run(request: request, media: media)
+            await SocialPhotoCleanup.run(request: request, media: media, afterRetirement: true)
         }
         guard token == generation else { return }
         intents.removeAll { $0.id == item }; failed.remove(item)
