@@ -161,6 +161,7 @@ import Supabase
     private var directedSendFailures = ProcessInfo.processInfo.arguments.contains("--stage3-send-failure") ? 1 : 0
     private var feedFailures = ProcessInfo.processInfo.arguments.contains("--social-review-feed-error") ? 1 : 0
     private var feedSeeded = false
+    private var passRedesignSeeded = false
     private var recipeSaveFailures = ProcessInfo.processInfo.arguments.contains("--recipe-save-failure") ? 1 : 0
     private var recipeReads = 0
     /// Read-caching evidence (`--request-log`): how many times each endpoint/action ran.
@@ -463,6 +464,20 @@ import Supabase
                 posts.append(SocialPost(id: UUID(uuidString: "20000000-0000-0000-0000-000000000001")!, author: people[0], title: "Harissa Chicken with Roasted Peppers", versionTitle: "Grilled with lemon", scoreText: "8.6", achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: nil, published: true, isAuthor: false, moderationState: "active"))
                 if ProcessInfo.processInfo.arguments.contains("--compact-layout-review") {
                     posts[posts.count - 1].metadata = .init(course: "main", cuisine: CuisineCatalog.resolve("Italian"))
+                }
+            }
+            // The Pass redesign review: a long caption, a source, and the creator's other shared cooks of the
+            // same Dish (one with a locked score) plus an unrelated Dish that must not be grouped.
+            if !passRedesignSeeded, ProcessInfo.processInfo.arguments.contains("--pass-redesign-review"), let index = posts.firstIndex(where: { $0.id == UUID(uuidString: "20000000-0000-0000-0000-000000000001")! }) {
+                passRedesignSeeded = true
+                let now = Date().timeIntervalSince1970
+                posts[index].postDescription = "Marinated overnight in harissa, garlic and lemon, then charred hard on a ripping-hot grill pan. The peppers roasted underneath in the chicken juices until they slumped. Next time: more lemon at the end and a handful of mint."
+                posts[index].metadata = .init(course: "main", cuisine: CuisineCatalog.resolve("Moroccan"), source: .init(type: "cookbook", name: "Weeknight Fire", author: "A. Cook", recipe: "Harissa Chicken", page: "112"))
+                for (suffix, version, score, age, title) in [("a1", "Charred and smoky", "9.1", 2.0, "Harissa Chicken with Roasted Peppers"),
+                                                            ("a2", "Weeknight version", nil, 1.0, "harissa chicken with roasted peppers"),
+                                                            ("a3", "Lemon rice", "7.0", 0.5, "Lemon Rice")] as [(String, String, String?, Double, String)] {
+                    posts.append(SocialPost(id: UUID(uuidString: "20000000-0000-0000-0000-0000000000" + suffix)!, author: people[0], title: title, versionTitle: version, scoreText: score, achievement: nil,
+                                            createdAt: now - 86_400 * age, photoPath: nil, published: true, isAuthor: false, moderationState: "active"))
                 }
             }
             if ProcessInfo.processInfo.arguments.contains("--social-review-comment"), let seed = posts.first, comments[seed.id] == nil {

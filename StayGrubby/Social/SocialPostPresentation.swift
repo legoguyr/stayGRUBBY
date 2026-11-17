@@ -17,4 +17,11 @@ nonisolated enum SocialPostPresentation {
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         return parts.isEmpty ? nil : parts.joined(separator: " • ")
     }
+    /// "Cooked with …" or "Inspired by …" for a post's Shared Cooking provenance.
+    static func provenance(_ value: SocialProvenance?) -> String? {
+        guard let value else { return nil }
+        if value.kind == "recreated", let creator = value.creator { return "Inspired by \(creator.displayName)" }
+        if let people = value.people, !people.isEmpty { return "Cooked with " + ListFormatter.localizedString(byJoining: people.map(\.displayName)) }
+        return nil
+    }
 }

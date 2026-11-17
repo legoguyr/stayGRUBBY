@@ -136,102 +136,94 @@ struct SocialFeedView: View {
     }
 }
 
+/// One cook on The Pass (November 17, 2026 redesign): who cooked, the Dish and its photo, the score they
+/// shared, and their description as a caption — readable without another tap. Dish Details holds the rest.
 struct SocialFeedCard: View {
     let post: SocialPost
     var profile: () -> Void
     var delete: () -> Void
-    var isDetail = false
     var navigate: (SocialPostRoute) -> Void = { _ in }
+    private var active: Bool { post.published && post.moderationState == "active" }
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             HStack(alignment: .center, spacing: SGTheme.Space.small) {
-                if post.isAuthor { authorIdentity }
-                else {
-                    Button(action: profile) { authorIdentity }.buttonStyle(.plain)
-                        .accessibilityLabel("View \(post.author.displayName)’s profile")
-                }
+                SocialPostAuthor(post: post, profile: profile)
                 Spacer(minLength: 4)
                 SocialPostActions(post: post, delete: delete)
             }
-            if isDetail { foodIdentity }
-            else {
-                Button { navigate(.post(post.id)) } label: { foodIdentity }
-                    .buttonStyle(.plain).accessibilityLabel("Open post: \(post.title)")
-                    .accessibilityValue([post.scoreText.map { "Score \($0)" + (post.sharedRankText.map { ", rank at sharing \($0)" } ?? "") } ?? "Score locked",
-                                         post.photoPath != nil ? "Food photo" : nil].compactMap { $0 }.joined(separator: ", "))
-                    .accessibilityIdentifier("post-open-\(post.id)")
-            }
+            Button { navigate(.post(post.id)) } label: { foodIdentity }
+                .buttonStyle(.plain).accessibilityLabel("Open Dish Details: \(post.title)")
+                .accessibilityValue([post.versionTitle, post.scoreText.map { "Score \($0)" + (post.sharedRankText.map { ", rank at sharing \($0)" } ?? "") } ?? "Score locked",
+                                     post.photoPath != nil ? "Food photo" : nil].compactMap { $0 }.joined(separator: ", "))
+                .accessibilityIdentifier("post-open-\(post.id)")
             if let description = post.postDescription, !description.isEmpty {
-                Text(description).font(SGTheme.TypeRole.body).lineLimit(isDetail ? nil : 3)
-                    .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("post-description-\(post.id)")
+                SocialPostCaption(post: post, description: description)
             }
-            if isDetail {
-                if let metadata = post.metadata { SocialPostMetadata(metadata: metadata) }
+            if let line = SocialPostPresentation.provenance(post.provenance) {
+                Text(line).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if let recipeID = post.recipeID, post.published && post.moderationState == "active" {
-                // The post links the creator's Recipe (never a copy): View Recipe opens its latest version,
-                // access-checked by the server on every open. The posted revision stays readable from the post.
-                Button { navigate(.currentRecipe(recipeID)) } label: { Label("View Recipe", systemImage: "book.closed") }
-                    .buttonStyle(RecipeInlineAction()).accessibilityHint("Opens the latest version of the linked Recipe")
-                    .accessibilityIdentifier("post-recipe")
-                if isDetail, let revision = post.recipeRevision {
-                    Button { navigate(.recipe(post.id)) } label: { Text("Recipe as posted · revision \(revision)") }
-                        .font(.footnote).buttonStyle(.borderless).frame(minHeight: SGTheme.Size.minimumTap)
-                        .accessibilityIdentifier("post-recipe-as-posted")
-                }
-            }
-            if let provenance = post.provenance {
-                if provenance.kind == "recreated", let creator = provenance.creator {
-                    Label("Inspired by \(creator.displayName)", systemImage: "arrow.triangle.branch").font(.subheadline)
-                } else if let people = provenance.people, !people.isEmpty {
-                    Text("Cooked with " + people.map(\.displayName).joined(separator: ", ")).font(.subheadline).fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            if post.scoreText == nil { Label("Score locked", systemImage: "lock").font(.subheadline).foregroundStyle(.secondary) }
-            if let achievement = post.achievement { Text(achievement).font(.subheadline) }
+            if let achievement = post.achievement { Text(achievement).font(SGTheme.TypeRole.secondary) }
+            if let recipeID = post.recipeID, active { SocialPostRecipeLink(recipeID: recipeID, navigate: navigate) }
             if !post.published { Text("Unpublished photo draft").foregroundStyle(.secondary) }
             if post.moderationState != "active" { Text("Hidden by moderation").foregroundStyle(.secondary) }
-            if post.published && post.moderationState == "active" { SocialEngagementView(post: post) }
+            if active { SocialEngagementView(post: post) }
         }
         .padding(.vertical, SGTheme.Space.medium)
         .overlay(alignment: .bottom) { SGTheme.ColorToken.border.frame(height: SGTheme.Size.border) }
         .buttonStyle(.borderless)
         .accessibilityElement(children: .contain).accessibilityIdentifier("feed-post-\(post.id)")
     }
-    private var authorIdentity: some View {
-        HStack(spacing: SGTheme.Space.small) {
-            SocialAvatar(name: post.author.displayName, path: post.author.avatarPath, size: 40)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(post.isAuthor ? "You" : post.author.displayName).font(SGTheme.TypeRole.headline)
-                    .foregroundStyle(SGTheme.ColorToken.primaryText)
-                Text(SocialPostPresentation.timestamp(post.date)).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-            }
-        }.frame(minHeight: SGTheme.Size.minimumTap)
-    }
     private var foodIdentity: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            HStack(alignment: .center, spacing: SGTheme.Space.small) {
-                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            // No placeholder for a post without a photo: the Dish name leads instead of an empty frame.
+            if post.photoPath != nil { SocialPhoto(path: post.photoPath).sgPhotoFrame(.card).accessibilityHidden(true) }
+            HStack(alignment: .top, spacing: SGTheme.Space.small) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                     Text(post.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
+                    if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary.weight(.medium)).foregroundStyle(.secondary) }
                     if let metadata = SocialPostPresentation.metadata(post.metadata) {
-                        Text(metadata).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("post-course-cuisine")
+                        Text(metadata).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("post-course-cuisine")
                     }
-                    if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
                 }.frame(maxWidth: .infinity, alignment: .leading)
-                if let score = post.scoreText {
-                    VStack(alignment: .trailing, spacing: SGTheme.Space.xSmall) {
-                        SocialScoreMedallion(text: score)
-                        if let rank = post.sharedRankText {
-                            Text(rank).font(SGTheme.TypeRole.secondary).monospacedDigit()
-                                .accessibilityLabel("Rank at sharing: \(rank)")
-                        }
+                SocialPostScore(post: post)
+            }
+        }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+    }
+}
+
+/// Instagram-style caption: the creator's name, then their description, trimmed to two lines with an
+/// in-place **more**. Expanding is local presentation only (no request, nothing stored).
+struct SocialPostCaption: View {
+    let post: SocialPost
+    let description: String
+    var collapsedLines = 2
+    @State private var expanded = false
+    @State private var truncated = false
+    private var text: Text {
+        Text(post.isAuthor ? "You" : post.author.displayName).fontWeight(.semibold) + Text(" ") + Text(description)
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+            text.font(SGTheme.TypeRole.body).lineLimit(expanded ? nil : collapsedLines)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    // Whether the full caption fits in the collapsed height decides if "more" is offered.
+                    ViewThatFits(in: .vertical) {
+                        text.font(SGTheme.TypeRole.body).fixedSize(horizontal: false, vertical: true).hidden()
+                            .onAppear { truncated = false }
+                        Color.clear.onAppear { truncated = true }
                     }
                 }
+                .accessibilityIdentifier("post-description-\(post.id)")
+            if truncated && !expanded {
+                Button("more") { expanded = true }
+                    .font(SGTheme.TypeRole.secondary.weight(.semibold)).foregroundStyle(.secondary)
+                    .frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading)
+                    .accessibilityLabel("Show full description").accessibilityIdentifier("post-caption-more-\(post.id)")
             }
-            SocialPhoto(path: post.photoPath).sgPhotoFrame(.card)
-                .accessibilityHidden(true)
-        }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }
     }
 }
 
