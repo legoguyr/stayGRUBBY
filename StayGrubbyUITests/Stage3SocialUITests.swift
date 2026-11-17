@@ -68,7 +68,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
         XCTAssertEqual(app.staticTexts["notifications-unread"].label, "1 New Ticket")
         let post = app.buttons["notification-50000000-0000-0000-0000-000000000008"]
         XCTAssertTrue(post.waitForExistence(timeout: 8)); post.tap()
-        XCTAssertTrue(app.navigationBars["Post"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 8))
         let send = app.buttons["post-send-friend"]
         let actions = app.buttons["post-actions-20000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(actions.waitForExistence(timeout: 8)); actions.tap()
@@ -108,7 +108,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
             let input = app.textFields["comment-body"]
             XCTAssertTrue(input.waitForExistence(timeout: 5)); input.tap(); input.typeText("Saved as a draft")
             XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-            XCTAssertTrue(app.staticTexts["A friendly cooking comment"].exists)
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "A friendly cooking comment")).firstMatch.exists)
             XCTAssertLessThanOrEqual(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
             XCTAssertTrue(app.buttons["comment-send"].isHittable)
             let a = XCTAttachment(screenshot: app.screenshot()); a.name = "Stage 3 Comments keyboard \(appearance)"; a.lifetime = .keepAlways; add(a)

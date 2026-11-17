@@ -74,7 +74,7 @@ final class ProductStructureUITests: StayGrubbyUITestCase {
         app.tabBars.buttons["The Pass"].tap()
         let preview = app.buttons["post-open-20000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(preview.waitForExistence(timeout: 8)); shot("The Pass preview Dark accessibility", app); preview.tap()
-        XCTAssertTrue(app.navigationBars["Post"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.navigationBars["Dish Details"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.buttons["View Friendly Cook’s profile"].exists)
     }
 

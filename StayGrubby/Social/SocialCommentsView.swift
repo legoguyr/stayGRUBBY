@@ -35,6 +35,12 @@ struct SocialEngagementView: View {
                     .accessibilityLabel("Comments").accessibilityValue("\(current.commentCount ?? 0) comments").accessibilityIdentifier("social-comments-\(post.id)")
             }.disabled(busy || failed).frame(minHeight: 44)
             if failed { Text("Post unavailable or connection interrupted.").font(.footnote); Button("Refresh post") { Task { await update(nil) } } }
+            if let count = current.commentCount, count > 0, !failed {
+                Button { showingComments = true } label: {
+                    Text(count == 1 ? "View 1 comment" : "View all \(count) comments").font(SGTheme.TypeRole.secondary)
+                        .foregroundStyle(.secondary).frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading)
+                }.accessibilityIdentifier("social-view-comments-\(post.id)")
+            }
         }
         .onChange(of: post.commentCount) { _, _ in latest = nil }
         .onChange(of: post.likeCount) { _, _ in latest = nil }
@@ -81,33 +87,15 @@ struct SocialCommentsView: View {
     var body: some View {
         NavigationStack {
             SGEditorialList {
-                if let post { Text(post.title).font(.headline) }
-                if loading && comments.isEmpty { ProgressView("Loading comments") }
+                if let post { header(post).listRowSeparator(.hidden) }
+                if loading && comments.isEmpty { ProgressView("Loading comments").frame(maxWidth: .infinity) }
                 if failed {
                     Text("Comments unavailable. The post or your access may have changed, or your connection was interrupted.")
                     Button("Retry") { Task { await load() } }.accessibilityIdentifier("comments-retry")
-                } else if !loading && comments.isEmpty { Text("No comments yet. Start a conversation.") }
-                ForEach(comments) { comment in
-                    VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                        HStack(alignment: .top) {
-                            if comment.isAuthor { SocialPersonLabel(person: comment.author, size: 36) }
-                            else { Button { person = comment.author } label: { SocialPersonLabel(person: comment.author, size: 36) }.buttonStyle(.plain) }
-                            if comment.canDelete {
-                                Button { deleting = comment; confirmingDelete = true } label: {
-                                    Image(systemName: "trash").frame(width: 44, height: 44)
-                                }.accessibilityLabel("86 Comment (Delete)").accessibilityIdentifier("comment-delete-\(comment.id)")
-                            }
-                            if !comment.isAuthor {
-                                Button { reporting = comment } label: {
-                                    Image(systemName: "flag").frame(width: 44, height: 44)
-                                }.accessibilityLabel("Report comment").accessibilityIdentifier("social-report-comment")
-                            }
-                        }
-                        Text(comment.body).font(SGTheme.TypeRole.body).fixedSize(horizontal: false, vertical: true)
-                        Text(SocialPostPresentation.timestamp(comment.date)).font(.caption).foregroundStyle(.secondary)
-                    }.buttonStyle(.borderless).padding(.vertical, SGTheme.Space.small)
-                        .accessibilityElement(children: .contain).accessibilityIdentifier("social-comment-\(comment.id)")
+                } else if !loading && comments.isEmpty {
+                    Text("No comments yet. Start a conversation.").foregroundStyle(.secondary).accessibilityIdentifier("comments-empty")
                 }
+                ForEach(comments) { comment in row(comment) }
                 if hasMore { Button("Load more comments") { Task { await load(more: true) } }.disabled(loading || busy) }
             }.navigationTitle("Comments").navigationBarTitleDisplayMode(.inline)
                 .scrollDismissesKeyboard(.interactively)
@@ -154,11 +142,67 @@ struct SocialCommentsView: View {
             deletionRequest = nil
         }
     }
+    /// What the comments are about, with Hands, so the sheet works on its own (no trip to another screen).
+    private func header(_ post: SocialPost) -> some View {
+        HStack(alignment: .center, spacing: SGTheme.Space.small) {
+            if post.photoPath != nil { SocialPhoto(path: post.photoPath).sgPhotoFrame(.compactThumbnail) }
+            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                Text(post.title).font(SGTheme.TypeRole.headline).lineLimit(2)
+                Text(post.isAuthor ? "Your cook" : post.author.displayName).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+            Button { Task { await hands(post) } } label: {
+                HStack(spacing: 4) {
+                    Text("🙌")
+                    Text("\(post.likeCount ?? 0)").monospacedDigit()
+                }.font(SGTheme.TypeRole.body.weight(.semibold)).padding(.horizontal, SGTheme.Space.small)
+                    .frame(minHeight: SGTheme.Size.minimumTap)
+                    .background(post.liked == true ? SGTheme.ColorToken.selected : SGTheme.ColorToken.surface, in: Capsule())
+            }.buttonStyle(.plain).disabled(busy)
+                .accessibilityLabel(post.liked == true ? "Remove Hands" : "Give Hands").accessibilityValue("\(post.likeCount ?? 0) Hands")
+                .accessibilityIdentifier("comments-hands")
+        }.padding(.vertical, SGTheme.Space.xSmall)
+    }
+    /// Instagram-style row: avatar, name and comment as one paragraph, then time and quiet actions.
+    private func row(_ comment: SocialComment) -> some View {
+        HStack(alignment: .top, spacing: SGTheme.Space.small) {
+            if comment.isAuthor { SocialAvatar(name: comment.author.displayName, path: comment.author.avatarPath, size: 32) }
+            else {
+                Button { person = comment.author } label: { SocialAvatar(name: comment.author.displayName, path: comment.author.avatarPath, size: 32) }
+                    .buttonStyle(.plain).accessibilityLabel("View \(comment.author.displayName)’s profile")
+            }
+            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                (Text(comment.isAuthor ? "You" : comment.author.displayName).fontWeight(.semibold) + Text(" ") + Text(comment.body))
+                    .font(SGTheme.TypeRole.body).fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: SGTheme.Space.medium) {
+                    Text(SocialPostPresentation.timestamp(comment.date)).foregroundStyle(.secondary)
+                    if comment.canDelete {
+                        Button("86") { deleting = comment; confirmingDelete = true }
+                            .accessibilityLabel("86 Comment (Delete)").accessibilityIdentifier("comment-delete-\(comment.id)")
+                    }
+                    if !comment.isAuthor {
+                        Button("Report") { reporting = comment }
+                            .accessibilityLabel("Report comment").accessibilityIdentifier("social-report-comment")
+                    }
+                }.font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(minHeight: SGTheme.Size.minimumTap)
+            }.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .buttonStyle(.borderless).padding(.vertical, SGTheme.Space.xSmall)
+        .accessibilityElement(children: .contain).accessibilityIdentifier("social-comment-\(comment.id)")
+    }
+    private func hands(_ current: SocialPost) async {
+        guard let request else { return }; busy = true
+        defer { busy = false }
+        do {
+            let response = try await request("social_interactions", current.liked == true ? "unlike" : "like", .init(postID: postID))
+            if let next = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first { post = next }
+            NotificationCenter.default.post(name: .socialEngagementChanged, object: nil)
+        } catch is CancellationError { } catch { failed = true }
+    }
     private var composer: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             if deliveryFailed { Text("Couldn’t send. Your comment is still here.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("comment-send-error") }
             HStack(alignment: .bottom, spacing: SGTheme.Space.small) {
-                TextField("Write a comment", text: $text, axis: .vertical).lineLimit(1...4)
+                TextField("Add a comment…", text: $text, axis: .vertical).lineLimit(1...4)
                     .focused($writingComment).accessibilityIdentifier("comment-body").sgField()
                     .onChange(of: text) { _, _ in if !busy { commentID = UUID(); deliveryFailed = false } }
                 Button { Task { await send() } } label: {

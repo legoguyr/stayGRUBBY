@@ -114,7 +114,7 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         for _ in 0..<4 { if row.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap()
         XCTAssertTrue(app.navigationBars["Comments"].waitForExistence(timeout: 8), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["A friendly cooking comment"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "A friendly cooking comment")).firstMatch.waitForExistence(timeout: 5))
         app.navigationBars["Comments"].buttons["Done"].tap()
         let profile = app.buttons["View Friendly Cook’s profile"]
         XCTAssertTrue(profile.waitForExistence(timeout: 8)); profile.tap()

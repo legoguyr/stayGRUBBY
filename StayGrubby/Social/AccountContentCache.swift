@@ -23,8 +23,11 @@ import CryptoKit
     var pass = CachedRead<PassSnapshot>()
     /// The Dish's own Recipe (nil = known to have none), keyed by Dish identity. Bounded.
     private var dishRecipes: [UUID: CachedRead<Recipe?>] = [:]
+    /// One page of a creator's shared posts, keyed by author (Dish Details' other cooks). Bounded.
+    private var authorPostPages: [UUID: CachedRead<[SocialPost]>] = [:]
     private var inFlight: [String: Task<Data, Error>] = [:]
     static let dishRecipeLimit = 200
+    static let authorPostsLimit = 30
 
     private var observers: [NSObjectProtocol] = []
 
@@ -35,13 +38,13 @@ import CryptoKit
         let center = NotificationCenter.default
         observers = [
             center.addObserver(forName: .socialContentChanged, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.invalidateRecipes(); self?.pass.invalidate() }
+                MainActor.assumeIsolated { self?.invalidateRecipes(); self?.pass.invalidate(); self?.invalidateAuthorPosts() }
             },
             center.addObserver(forName: .recipeSavesChanged, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.savedRecipes.invalidate() }
             },
             center.addObserver(forName: .socialEngagementChanged, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.pass.invalidate() }
+                MainActor.assumeIsolated { self?.pass.invalidate(); self?.invalidateAuthorPosts() }
             },
         ]
     }
@@ -55,6 +58,15 @@ import CryptoKit
         }
         dishRecipes[dishID] = CachedRead(value: recipe, fetchedAt: now)
     }
+    func authorPosts(_ authorID: UUID) -> CachedRead<[SocialPost]>? { authorPostPages[authorID] }
+    func storeAuthorPosts(_ posts: [SocialPost], for authorID: UUID, now: Date = .now) {
+        if authorPostPages[authorID] == nil, authorPostPages.count >= Self.authorPostsLimit,
+           let oldest = authorPostPages.min(by: { ($0.value.fetchedAt ?? .distantPast) < ($1.value.fetchedAt ?? .distantPast) })?.key {
+            authorPostPages.removeValue(forKey: oldest)
+        }
+        authorPostPages[authorID] = CachedRead(value: posts, fetchedAt: now)
+    }
+    func invalidateAuthorPosts() { for key in authorPostPages.keys { authorPostPages[key]?.invalidate() } }
     /// A content change (create/edit/delete/link/save) makes every cached Recipe read stale; the next
     /// appearance refreshes in the background while still showing what it had.
     func invalidateRecipes() {

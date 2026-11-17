@@ -24,7 +24,7 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["comment-send-error"].waitForExistence(timeout: 5))
         XCTAssertEqual(body.value as? String, "Looks delicious!"); send.tap()
         XCTAssertTrue(deletion.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["Looks delicious!"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Looks delicious!")).firstMatch.exists)
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
         deletion.tap()
         let confirm = app.sheets["86 this Comment?"].buttons["86 Comment"]
@@ -32,7 +32,7 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         confirm.press(forDuration: 0.2)
         XCTAssertTrue(app.staticTexts["No comments yet. Start a conversation."].waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(deletion.waitForNonExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Looks delicious!"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Looks delicious!")).firstMatch.exists)
         app.navigationBars["Comments"].buttons["Done"].tap()
         XCTAssertTrue(like.waitForExistence(timeout: 5))
         let comments = app.buttons["social-comments-20000000-0000-0000-0000-000000000001"]
@@ -40,6 +40,6 @@ final class SocialInteractionUITests: StayGrubbyUITestCase {
         XCTAssertEqual(XCTWaiter.wait(for: [emptyCount], timeout: 5), .completed)
         comments.tap()
         XCTAssertTrue(app.staticTexts["No comments yet. Start a conversation."].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Looks delicious!"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Looks delicious!")).firstMatch.exists)
     }
 }

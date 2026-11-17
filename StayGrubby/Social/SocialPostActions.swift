@@ -99,22 +99,3 @@ struct SocialPostDescriptionEditor: View {
         } catch is CancellationError {} catch { failed = true }
     }
 }
-
-struct SocialPostMetadata: View {
-    let metadata: SharedCookingMetadata
-    var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            if let course = metadata.course.flatMap(DishCategory.init(rawValue:)) { Text("Course · \(course.label)").font(.subheadline) }
-            if let cuisine = metadata.cuisine { Text("Cuisine · \(cuisine.label)").font(.subheadline) }
-            if let source = metadata.source {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Source").font(.subheadline.weight(.semibold))
-                    if let name = source.name, !name.isEmpty { Text(name) }
-                    if let author = source.author, !author.isEmpty { Text(author) }
-                    if let recipe = source.recipe, !recipe.isEmpty { Text(recipe) }
-                    if let page = source.page, !page.isEmpty { Text("Page \(page)") }
-                }.font(.subheadline)
-            }
-        }.foregroundStyle(.secondary)
-    }
-}

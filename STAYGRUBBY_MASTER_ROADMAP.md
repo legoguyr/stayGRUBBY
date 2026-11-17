@@ -90,6 +90,16 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
     - deploy the verified `owned_recipe_share_option` fallback to `recipes.dish_id`. The existing owned-post lookup resolves the cook server-side, so post cards need no extra private identifier.
     - optionally, a post-card field for the latest accessible revision, so cards can label "updated since posted"
 
+- **The Pass redesign — feed, comments and Dish Details (Nov 17, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or write added.
+  - Cards lead with the Dish, photo and score and show the description as an expandable caption.
+  - Comments stay in a sheet with Hands.
+  - Dish Details shows the facts, Recipe and the creator's other shared cooks of the Dish (Recent / Highest Rated; locked scores never ranked) ([UI](UI_ARCHITECTURE.md)).
+  - **Backend dependencies (Codex, Post-launch Priority unless noted):**
+    - a viewer-safe Dish key on post cards (or a `social_feed` Dish-posts action), so other cooks group by exact Dish identity rather than the title snapshot and include more than one page
+    - a cooked-at snapshot on posts, so Dish Details can show the cooking date instead of the shared date
+    - an optional comment Hands field (comment likes do not exist)
+  - **Future (post-V1, not designed):** a *Shop This Dish* section (equipment, specialty ingredients, creator recommendations, affiliate links) fits as another Dish Details section. It needs its own privacy, disclosure and legal review before any product data exists.
+
 ## VERY NEAR TERM — Social & Discovery
 
 *Classification (Nov 16): onboarding (username + privacy choice), reporting/blocking and moderation are **MVP Required**; discovery for all accounts, Find Sous Chefs, invitations, contact matching and threaded replies are **Post-launch Priority**.*
