@@ -70,7 +70,7 @@ final class Phase2CReviewUITests: StayGrubbyUITestCase {
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         app.showAllVersions()
         tap(row("Smoky Sunday", app: app), app: app)
-        tap(app.buttons["Re-rank"], app: app)
+        app.cookAction("detail-rerank").tap()
         XCTAssertTrue(app.buttons["Liked it"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["It was fine"].exists && app.buttons["Didn't like it"].exists)
         tap(app.buttons["It was fine"], app: app)
@@ -87,7 +87,7 @@ final class Phase2CReviewUITests: StayGrubbyUITestCase {
         // This normal session stops on sufficient adjacent-tie evidence and
         // persists automatically. Undo was verified before that terminal step.
         XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].exists)
+        XCTAssertTrue(app.staticTexts["Re-ranked"].exists)
         XCTAssertTrue(app.staticTexts["result-rank"].exists)
         XCTAssertFalse(app.staticTexts["result-score"].exists)
         XCTAssertFalse(app.buttons["Save Answers"].exists || app.buttons["Save Score"].exists)

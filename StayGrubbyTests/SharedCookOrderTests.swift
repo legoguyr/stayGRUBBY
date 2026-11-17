@@ -30,4 +30,13 @@ struct SharedCookOrderTests {
                 "Unlocked scores high to low; locked cooks follow, never ranked")
         #expect(SharedCookOrder.score(locked) == nil)
     }
+    /// The Dish identity integration point: the only place "same Dish" is decided until the server
+    /// supplies a viewer-safe Dish key.
+    @Test func sameDishIsTheSingleIdentitySeam() {
+        let shown = post("Crème Brûlée", score: nil, age: 0)
+        #expect(SharedCookLookup.sameDish(post("creme  brulee", score: nil, age: 1), as: shown), "Case, accents and spacing fold")
+        #expect(!SharedCookLookup.sameDish(post("Crème Caramel", score: nil, age: 1), as: shown))
+        let sam = SocialPerson(id: UUID(), displayName: "Sam", username: "sam", relationship: .friends)
+        #expect(!SharedCookLookup.sameDish(post("Crème Brûlée", score: nil, age: 1, author: sam), as: shown), "Never another creator's cook")
+    }
 }

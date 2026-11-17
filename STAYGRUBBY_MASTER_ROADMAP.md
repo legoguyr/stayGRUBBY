@@ -90,12 +90,31 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
     - deploy the verified `owned_recipe_share_option` fallback to `recipes.dish_id`. The existing owned-post lookup resolves the cook server-side, so post cards need no extra private identifier.
     - optionally, a post-card field for the latest accessible revision, so cards can label "updated since posted"
 
+- **MVP UI stabilization and experience milestone (Nov 17, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or write added.
+  - Baseline UI failures root-caused (no app defect, no assertion removed):
+    - the Food Bible test expected an empty library from a fixture that seeds an owned Recipe (Food Bible lists every owned Recipe since V2)
+    - the Recipe-sharing test tapped the row's centre, which lands on the label; the switch itself is now tapped
+  - Two stale Re-rank tests now open Re-rank from the Dish actions menu.
+  - The Pass / Dish Details polish:
+    - shared loading and error states
+    - 86 returns to where the post was opened
+    - the duplicate shared date was removed
+    - refresh on return only when stale
+    - the comments sheet has no keyboard pill over Send, and a failed Hands tap no longer hides the comments
+    - `SharedCookLookup` is the single Dish identity integration point
+  - Core flow fixes from the UI defect queue:
+    - re-ranks say *Re-ranked*
+    - the score-unlock milestone follows the cook's own result (Continue)
+    - Edit Cook Save and the result Done are full width
+    - the share composer copy says Sous Chefs and is shorter
+  - Still open: Add Manually nested navigation (needs an embedded `RecipeEditor` mode; coordinate with Codex), low-score result wording (owner decision), result-screen button stack and composer Publish placement (Stage G/C).
+
 - **The Pass redesign — feed, comments and Dish Details (Nov 17, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or write added.
   - Cards lead with the Dish, photo and score and show the description as an expandable caption.
   - Comments stay in a sheet with Hands.
   - Dish Details shows the facts, Recipe and the creator's other shared cooks of the Dish (Recent / Highest Rated; locked scores never ranked) ([UI](UI_ARCHITECTURE.md)).
   - **Backend dependencies (Codex, Post-launch Priority unless noted):**
-    - a viewer-safe Dish key on post cards (or a `social_feed` Dish-posts action), so other cooks group by exact Dish identity rather than the title snapshot and include more than one page
+    - a viewer-safe Dish key on post cards (or a `social_feed` Dish-posts action), so other cooks group by exact Dish identity rather than the title snapshot and include more than one page. Client integration point: `SharedCookLookup` in `DishPostDetails.swift` (replace `candidates` / `cached` / `sameDish` only)
     - a cooked-at snapshot on posts, so Dish Details can show the cooking date instead of the shared date
     - an optional comment Hands field (comment likes do not exist)
   - **Future (post-V1, not designed):** a *Shop This Dish* section (equipment, specialty ingredients, creator recommendations, affiliate links) fits as another Dish Details section. It needs its own privacy, disclosure and legal review before any product data exists.

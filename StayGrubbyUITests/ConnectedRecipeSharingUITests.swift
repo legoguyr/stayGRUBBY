@@ -45,8 +45,7 @@ final class ConnectedRecipeSharingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["post-recipe-private-note"].exists)
         shot("Composer · private Recipe attachment", app)
         reach(toggle, app)
-        let control = toggle.switches.firstMatch
-        XCTAssertTrue(control.waitForExistence(timeout: 5)); control.tap()
+        XCTAssertTrue(toggle.waitUntilSettled()); toggle.tapSwitchControl()
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: toggle)], timeout: 5), .completed)
         XCTAssertFalse(app.staticTexts["post-recipe-linked-note"].exists, "A private Recipe keeps its sharing note until posted")
         let publish = app.buttons["social-share-publish"]; reach(publish, app); publish.tap()
@@ -72,7 +71,7 @@ final class ConnectedRecipeSharingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.descendants(matching: .any)["social-share-success"].waitForExistence(timeout: 15))
         let add = app.buttons["social-add-recipe-to-post"]; reach(add, app); add.tap()
         let addToggle = app.switches["post-include-recipe"]
-        XCTAssertTrue(addToggle.waitForExistence(timeout: 10)); addToggle.switches.firstMatch.tap()
+        XCTAssertTrue(addToggle.waitForExistence(timeout: 10)); XCTAssertTrue(addToggle.waitUntilSettled()); addToggle.tapSwitchControl()
         let confirm = app.buttons["post-share-recipe"]; XCTAssertTrue(confirm.waitForExistence(timeout: 5)); XCTAssertTrue(confirm.isEnabled)
         shot("Add Recipe to an existing post", app)
         confirm.tap()

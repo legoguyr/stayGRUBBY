@@ -123,7 +123,7 @@ final class SharingPresentationUITests: StayGrubbyUITestCase {
         tap(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch, app)
         tap(app.cookAction("detail-rerank"), app)
         tap(app.buttons["Liked it"], app)
-        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Re-ranked"].waitForExistence(timeout: 20))
         XCTAssertEqual(app.staticTexts["result-dish-title"].label, "Matzo Ball Soup")
         XCTAssertTrue(app.staticTexts["result-rank"].exists)
         XCTAssertFalse(app.staticTexts["result-score"].exists)

@@ -83,11 +83,18 @@ struct SocialCommentsView: View {
     @State private var deletionRequest: SocialComment?
     @State private var reporting: SocialComment?
     @State private var deliveryFailed = false
+    @State private var handsFailed = false
     @Environment(\.dynamicTypeSize) private var textSize
     var body: some View {
         NavigationStack {
             SGEditorialList {
-                if let post { header(post).listRowSeparator(.hidden) }
+                if let post {
+                    header(post).listRowSeparator(.hidden)
+                    if handsFailed {
+                        Text("Couldn’t update Hands. Try again.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
+                            .listRowSeparator(.hidden).accessibilityIdentifier("comments-hands-error")
+                    }
+                }
                 if loading && comments.isEmpty { ProgressView("Loading comments").frame(maxWidth: .infinity) }
                 if failed {
                     Text("Comments unavailable. The post or your access may have changed, or your connection was interrupted.")
@@ -102,17 +109,14 @@ struct SocialCommentsView: View {
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     if post != nil && !failed { composer }
                 }
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") { writingComment = false }.accessibilityIdentifier("comment-keyboard-done")
-                    }
-                }
+                // No keyboard-accessory Done: on iOS 26 its floating pill covered Send (UI defect queue).
+                // Scrolling the comments or sending dismisses the keyboard.
+                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
                 .refreshable { await load() }.task { await load() }
                 .onSocialRefresh { if !busy && !writingComment { await load() } }
+                // Comments stay on screen while the app is briefly inactive; returning refreshes them.
                 .onChange(of: scenePhase) { _, phase in
-                    generation = UUID(); comments = []; post = nil
+                    generation = UUID()
                     if phase == .active { Task { await load() } }
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
@@ -190,13 +194,16 @@ struct SocialCommentsView: View {
         .accessibilityElement(children: .contain).accessibilityIdentifier("social-comment-\(comment.id)")
     }
     private func hands(_ current: SocialPost) async {
-        guard let request else { return }; busy = true
+        guard let request else { return }; busy = true; handsFailed = false
         defer { busy = false }
         do {
             let response = try await request("social_interactions", current.liked == true ? "unlike" : "like", .init(postID: postID))
             if let next = try JSONDecoder().decode(SocialPostsPage.self, from: response).posts.first { post = next }
             NotificationCenter.default.post(name: .socialEngagementChanged, object: nil)
-        } catch is CancellationError { } catch { failed = true }
+        } catch is CancellationError { } catch {
+            // Hands didn't change: the button keeps its state, and the comments stay readable.
+            handsFailed = true
+        }
     }
     private var composer: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
@@ -242,7 +249,7 @@ struct SocialCommentsView: View {
         } catch is CancellationError { } catch { if generation == token { deliveryFailed = true } }
     }
     private func remove(_ comment: SocialComment) async {
-        guard let request else { return }; busy = true
+        guard let request else { return }; busy = true; handsFailed = false
         defer { busy = false }
         do { _ = try await request("social_interactions", "deleteComment", .init(postID: postID, commentID: comment.id)); await load(); NotificationCenter.default.post(name: .socialEngagementChanged, object: nil) }
         catch is CancellationError { } catch { failed = true }

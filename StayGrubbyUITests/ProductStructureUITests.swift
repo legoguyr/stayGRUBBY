@@ -10,12 +10,15 @@ final class ProductStructureUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.tabBars.buttons["Grub Rank"].isSelected)
         XCTAssertEqual(app.tabBars.buttons.count, 4); XCTAssertFalse(app.tabBars.buttons["Tickets"].exists)
         app.tabBars.buttons["Food Bible"].tap()
-        XCTAssertTrue(app.buttons["bible-empty-add"].waitForExistence(timeout: 8))
+        // `--recipes-review` seeds one owned, uncooked Recipe; Food Bible lists every owned Recipe
+        // independently of cooking (empty-state coverage lives in FoodBibleUITests).
+        XCTAssertTrue(app.buttons["bible-entry-60000000-0000-0000-0000-000000000001"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["bible-empty-add"].exists)
         XCTAssertFalse(app.segmentedControls["recipe-library-mode"].exists)
         XCTAssertTrue(app.buttons["bible-add"].exists)
         XCTAssertFalse(app.buttons["bible-tickets"].exists)
         XCTAssertFalse(app.staticTexts["Want to cook"].exists)
-        shot("Cookbook Empty Light, Tickets deferred", app)
+        shot("Cookbook Light, Tickets deferred", app)
         app.tabBars.buttons["My Kitchen"].tap()
         XCTAssertTrue(app.staticTexts["@review_cook"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["recipes-open"].exists)
