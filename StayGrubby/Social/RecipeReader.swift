@@ -156,6 +156,8 @@ struct RecipeReaderToolbar: ToolbarContent {
                     Button("Recipe History", systemImage: "clock") { model.management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                     Button("Save as New Recipe", systemImage: "document.on.document") { model.management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                     Button("86 Recipe (Delete)", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
+                } else {
+                    SocialReportButton(kind: "recipe", targetID: recipe.id)
                 }
             }
         }

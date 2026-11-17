@@ -163,10 +163,10 @@ Build 4 and earlier point to **`lgjxbpycphhsswxoncmz`** ("StayGrubby", us-east-1
 | Private cores | Security-definer functions with fixed search paths; not executable by clients. |
 | `development` schema | `recipe_test_identity`, `recipe_test_login`; closed to clients, service-only RPCs. |
 | Storage | `cooking-photos`, `profile-photos`, `recipe-photos`, `social-photos` — **all private**, JPEG only, 2 MB. Reads authorized through ownership or current Recipe/post access. |
-| Edge Functions | `recipe-import` v27 (Gemini); `delete-account` v7; `development-test-session` v1 (see below). |
+| Edge Functions | Migrated target: `recipe-import` and `delete-account`, both deployed with JWT verification. |
 | Advisors (Nov 7) | 28 INFO "RLS enabled, no policy" (intended); 1 WARN leaked-password protection (release-gate disposition; Auth is Apple-only). |
 
-**`development-test-session` is deployed to production.** It mints a session for a single marked development identity only after a project administrator issues a random 256-bit proof (SHA-256 stored, five-minute expiry, single use); JWT verification stays on; the development tables are closed. It exists for authorized live Recipe Creator regression. Its continued presence in production is a release-gate review item. [DevelopmentTools/README.md](DevelopmentTools/README.md).
+**Development sessions.** The migrated target does not deploy `development-test-session`. The default Function config excludes it from deploy and serve. Its proof-gated implementation is available only with an explicit disposable environment override. [Development tooling](DevelopmentTools/README.md).
 
 **Conflict errors (permanent, Nov 11 2026 incident):** functions raise `PT409` for deterministic "changed; reload" conflicts, never `40001`/`40P01`, which PostgREST retries without limit. The schema test enforces this; clients accept PT409 and legacy 40001 (`StayGrubbyConflict`). The migrated target now samples PostgreSQL capacity, private bucket usage and write churn every five minutes. The database-only `operations` schema retains the latest aggregate sample. [Thresholds, alert delivery and retention](supabase/README.md#automatic-target-monitoring).
 
@@ -182,7 +182,7 @@ Optional display name, editable @username, discoverability off by default, priva
 
 **Tickets:** in-app only, no APNs. One account-mounted foreground coordinator polls every 30 s (60 s after failures); background/sign-out cancels it. Kinds: `request`, `accepted`, `invited`, `joined`, `recreated`, `like` (Hands), `comment`, `recipe_shared`, `post_shared`. `api.social_send` delivers an authorized Recipe/post pointer to current Sous Chefs with existing access (100/hour bound, idempotent); it grants nothing and is not chat.
 
-Comprehensive UGC filtering and an operated moderation process remain V1 release-gate work. Detail: [SOCIAL_ARCHITECTURE.md](SOCIAL_ARCHITECTURE.md).
+The local public MVP moderation candidate adds exact-revision Recipe reports, an authenticated staff queue and audited hide/dismiss decisions. Clients can pass the visible Recipe revision and receive a refreshable conflict if it changed. The populated local upgrade preserved existing data, including ranking evidence, and verified report permissions, visibility, audit and erasure. Gateway and staff rehearsal, deployment, UGC filtering and operator response remain V1 release-gate work. [Moderation API contracts and runbook](PUBLIC_MVP_MODERATION.md).
 
 ## Recipe + Social Integration — current contract
 

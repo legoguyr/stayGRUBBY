@@ -230,4 +230,4 @@ Claude's `f7b0c19` implements revision probes, coalesced triggers, photo reconci
 
 **New datasets.** Every new persistent table's migration header states its expected growth, whether it is canonical or operational, and its retention/cleanup rule.
 
-**Test traffic.** Automated tests use PGlite or mocks. The only production-touching tool is the administrator-gated `development-test-session`. A dedicated non-production Supabase project for live integration tests is a pre-V1 roadmap item.
+**Test traffic.** Automated tests use PGlite or mocks. The migrated target excludes `development-test-session` and default Function configuration skips it. Use a disposable environment for any separately approved live testing. [Moderation rollout and authentication checks](../PUBLIC_MVP_MODERATION.md).
