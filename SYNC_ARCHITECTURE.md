@@ -25,7 +25,7 @@ The authenticated foreground worker now complements the structured durable outbo
 
 # Phase 3D Part 1 — private structured cooking sync
 
-Production retains required native Apple authentication, permanent-account resolution and ready account-store gating. There is no production guest/demo mode. Current navigation is Rankings and Profile; Feed remains hidden. The historical foundation sections below are superseded by this current implementation.
+Production retains required native Apple authentication, permanent-account resolution and ready account-store gating. There is no production guest/demo mode. This phase originally exposed Rankings and Profile. The [current navigation](STAYGRUBBY_ARCHITECTURE.md#navigation) is maintained in the product architecture. The historical foundation sections below describe their earlier checkpoints.
 
 ## Responsibilities and operation lifecycle
 
@@ -177,6 +177,6 @@ DishTransfer carries optional `cuisine: {id, label}`; old snapshots omit it safe
 
 ## Recipe/Tickets account data
 
-Recipes and Tickets are a separate cloud-backed account workspace behind `api.recipes`; they do not change the private `CookingGraph`, SwiftData schema or atomic cooking sync protocol. After account restore/sign-in, native screens fetch the same owner-scoped canonical Recipe/Ticket records. Recipe management currently needs a network connection; it does not claim the offline caching/edit guarantees of private cooking.
+Recipes and Tickets are a separate cloud-backed account workspace behind `api.recipes`. The local moderation candidate keeps personal Recipe access on the live account owner resolver and checks social eligibility separately when sharing. Recipes and Tickets do not change the private `CookingGraph`, SwiftData schema or atomic cooking sync protocol. After account restore/sign-in, native screens fetch the same owner-scoped canonical Recipe/Ticket records. Recipe management currently needs a network connection; it does not claim the offline caching/edit guarantees of private cooking.
 
 Recipe → Cook uses an account-owned reservation and immutable snapshot/revision, then the unchanged private cooking transaction/ranking flow. `SharedCookingOutbox.json` adds an optional `recipeOriginID` (legacy journal decoding remains supported). The owner-bound durable worker completes it only when a matching saved cook exists and structured sync is ready; retries never create private cooks. Ordinary account erasure cascades owned Recipe/Ticket/origin records, nullifies cross-account Recipe references and keeps the survivor's independently ranked private history. No new photo transport or bucket is involved. Details and evidence: [RECIPE_TICKETS_SHARING_REVIEW.md](RECIPE_TICKETS_SHARING_REVIEW.md).

@@ -3,6 +3,7 @@ import Foundation
 import SwiftData
 import Observation
 import Testing
+import Supabase
 @testable import StayGrubby
 
 @MainActor struct SocialPublicationTests {
@@ -150,6 +151,36 @@ import Testing
         #expect(worker.status(item) == .shared && review.posts.count == 1)
         worker.disconnect()
     }
+    @Test func screenedAutomaticShareDoesNotReplayAfterRelaunch() async throws {
+        let container = try memory(), context = container.mainContext
+        _ = try CookingStore.prepare(context: context)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString), owner = UUID()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let worker = SocialPublicationCoordinator()
+        var attempts = 0
+        let request: SocialRequest = { _, _, _ in
+            attempts += 1
+            throw PostgrestError(code: "PT422", message: "Text needs review")
+        }
+        worker.connect(context: context, root: root, accountID: owner, request: request, media: nil, sync: nil)
+        let item = UUID()
+        #expect(worker.record(itemID: item, includePhoto: false))
+        let cook = try create(context, itemID: item)
+        worker.privateSaveFinished(cook)
+        _ = try accept(context, owner: owner)
+        let before = try CookingGraphExport.snapshot(context: context)
+        await worker.retryNow()
+        #expect(worker.status(item) == .contentReview)
+        #expect(attempts == 1)
+        worker.disconnect()
+        worker.connect(context: context, root: root, accountID: owner, request: request, media: nil, sync: nil)
+        await worker.retryNow()
+        #expect(worker.status(item) == .contentReview)
+        #expect(attempts == 1)
+        #expect(try CookingGraphExport.snapshot(context: context) == before)
+        worker.disconnect()
+    }
+
     @Test func failedSocialPhotoRetryUsesOnePostAndNoPrivateWrites() async throws {
         let review = SocialReview(), item = UUID(), attempt = UUID()
         let request: SocialRequest = { try await review.request($0, $1, $2) }

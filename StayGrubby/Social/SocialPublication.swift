@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import Supabase
 
 /// One publication implementation shared by manual composition and completed-cook intents.
 @MainActor enum SocialPostPublisher {
@@ -55,6 +56,7 @@ nonisolated struct SocialPublicationIntent: Codable, Equatable, Identifiable, Se
     var postID: UUID
     let includePhoto: Bool
     let createdAt: Date
+    var contentReviewRequired: Bool? = nil
     var scoreWasLocked: Bool? = nil // Unknown older records are treated conservatively as locked.
 }
 nonisolated struct SocialPublicationJournal: Codable, Sendable {
@@ -82,7 +84,7 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
 }
 
 @MainActor @Observable final class SocialPublicationCoordinator {
-    enum Status: Equatable { case pending, sharing, failed, review, shared }
+    enum Status: Equatable { case pending, sharing, failed, review, contentReview, shared }
     private(set) var intents: [SocialPublicationIntent] = []
     private var completed = Set<UUID>()
     private var failed = Set<UUID>()
@@ -148,7 +150,8 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
     }
     func status(_ item: UUID) -> Status? {
         if completed.contains(item) { return .shared }
-        guard intents.contains(where: { $0.id == item }) else { return nil }
+        guard let intent = intents.first(where: { $0.id == item }) else { return nil }
+        if intent.contentReviewRequired == true { return .contentReview }
         if reviewRequired.contains(item) { return .review }
         if failed.contains(item) || storageFailed { return .failed }
         return publishing == item ? .sharing : .pending
@@ -179,6 +182,7 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
         guard sync?.status != .signInRequired else { return }
         for intent in intents {
             guard token == generation, !Task.isCancelled else { return }
+            guard intent.contentReviewRequired != true else { continue }
             guard let attempt = (try? context.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.rankedItemID == intent.id }),
                   let revision = CookPublicationReadiness.revision(for: attempt, binding: try? SyncJournal.binding(context))
             else { continue }
@@ -199,7 +203,12 @@ nonisolated struct SocialPublicationJournal: Codable, Sendable {
                 intents.removeAll { $0.id == intent.id }; completed.insert(intent.id); try persist()
                 NotificationCenter.default.post(name: .socialContentChanged, object: nil)
             } catch is CancellationError { return }
-            catch { if token == generation { failed.insert(intent.id) } }
+            catch let error as PostgrestError where error.code == "PT422" {
+                if token == generation, let index = intents.firstIndex(where: { $0.id == intent.id }) {
+                    intents[index].contentReviewRequired = true
+                    do { try persist() } catch { storageFailed = true }
+                }
+            } catch { if token == generation { failed.insert(intent.id) } }
             if token == generation { publishing = nil }
         }
     }
@@ -268,8 +277,10 @@ struct SocialPublicationStatus: View {
                 switch state {
                 case .shared: Label("Posted to The Pass", systemImage: "checkmark.circle").accessibilityIdentifier("automatic-share-success")
                 case .sharing: ProgressView("Posting to The Pass…")
-                case .review:
-                    Text("Your score is now unlocked. Review this pending share before publishing.")
+                case .review, .contentReview:
+                    Text(state == .contentReview
+                         ? "This post contains text that can’t be shared. Review and edit it, or keep the cook private."
+                         : "Your score is now unlocked. Review this pending share before publishing.")
                     if let attempt = coordinator.pendingAttempts.first(where: { $0.rankedItemID == itemID }) {
                         SocialShareAction(attempt: attempt)
                     }

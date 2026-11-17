@@ -19,7 +19,7 @@
 | Phase | Window | Scope | Status |
 | --- | --- | --- | --- |
 | S1 — MVP stabilization | Nov 16 – Nov 30, 2026 | Connected UI Phase 1 plus stabilization: one Dish page, consistent Dish/Recipe photos, read caching for Food Bible and The Pass, Dish cook count. Connected UI cohesion: Recipe preview on the Dish page, Food Bible cook status, My Kitchen statistics that open Grub Rank, Last cooked and Recent Cooks. Fix reproducible defects from the one consolidated owner Xcode review. | **Implemented Nov 16 (Claude); automated acceptance passed; one consolidated owner physical review pending.** |
-| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Deployment, staffed rehearsal and filtering are pending. |
+| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Owner-private authorization and text screening passed local verification. Image screening, staffed rehearsal and deployment are pending. |
 | S3 — Release candidate and submission | Stretch: Dec 21 – 31, 2026; target: Jan 2027 | Release build, one proportionate regression and Release verification, owner physical acceptance through Xcode, App Store metadata and submission (each step needs explicit owner approval). Optional external TestFlight. | Not started |
 
 ### MVP Required (public-release blockers)
@@ -27,14 +27,14 @@
 Full checklist and evidence: [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
 
 - **Stability and performance:** owner physical acceptance of Connected UI Phase 1 and the November 16 stabilization. This includes Saved Recipes once a Sous Chef shares a Recipe. Close any defect it finds.
-- **Moderation and safety:** deploy and exercise the locally implemented report → review → resolution workflow across posts, comments, Recipes and profiles. Verify blocking across shared destinations, add UGC filtering and staff the response process. [Moderation runbook](PUBLIC_MVP_MODERATION.md).
+- **Moderation and safety:** deploy and exercise the locally implemented report → review → resolution workflow across posts, comments, Recipes and profiles with the verified owner-private Recipe fix and prospective text screening. Complete the prepublication image decision and signed staged acceptance, then staff the response process. [Moderation runbook](PUBLIC_MVP_MODERATION.md).
 - **Social onboarding:** a unique username and an explicit privacy choice for new accounts; a resumable completion flow for legacy accounts (from Very Near Term below). People discovery stays opt-in until this ships.
 - **Privacy and security:** focused review of audience rules, RLS, private Storage, account isolation, revocation, shared links and counts; App Store privacy disclosures matching actual processing (including external AI); disposition of security advisories and a signed Edge Function gateway smoke test. The migrated target excludes the development session function.
 - **Account deletion:** account deletion with UGC/media cleanup reviewed on isolated test identities.
 - **Legal:** Terms of Use, Community Guidelines, and Recipe/allergen/serving/estimate disclaimers. Verify that the hosted Privacy Policy is current and that support/contact exists.
 - **App Store:** age rating and UGC answers, App Review sign-in access, production configuration/signing, no Release development bypass, homepage and `distribution.json` switch at release.
 - **Ranking presentation:** conclude the score/order consistency investigation and implement the owner-approved presentation (no math change without explicit reopening).
-- **Operations:** Supabase capacity plan (resolve the ~1.6 GB System disk, Pro/disk decision before launch), the automated daily health check with an alert, a non-production Supabase project for live integration tests, and the smoke gate on the release candidate.
+- **Operations:** Confirm current migrated-project Dashboard disk headroom, wire and prove the external capacity alert, run signed integration in disposable non-production infrastructure, and exercise the release candidate smoke gate. [Backend readiness and priorities](BACKEND_MVP_READINESS.md#shortest-path-to-public-release).
 - **Finish what exists:** Sharing stage C (one Share action, Post to The Pass vs Share) and the copy/consistency pass (stage G) limited to existing surfaces.
 
 ### Post-launch Priority
