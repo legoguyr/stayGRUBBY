@@ -30,6 +30,7 @@ struct ContentView: View {
         .modifier(AppLinkPresentation())
         .modifier(SocialActivityHost(coordinator: activity))
         .modifier(SocialPublicationHost())
+        .modifier(SocialOnboardingHost())
         #if DEBUG
         .modifier(SocialReviewModifier())
         #endif

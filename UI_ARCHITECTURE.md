@@ -127,6 +127,25 @@ An empty library shows no browse controls (and Grub Rank no search button). The 
 
 **The Pass.** Chronological, current Sous Chefs only. Card: person identity → title → 4:3 photo/fallback → description → Recipe availability → Hands 🙌 / Comments. Compact semantic score circle when unlocked. Stable post ages (calendar date after seven days). The Pass is Dish/cook activity only; Recipe-only activity is not shown (a cook post may offer View Recipe). Comments: detented sheet, keyboard-aware composer, overflow Delete/Report.
 
+**Onboarding (Public MVP, November 16, 2026).** `SocialOnboarding.swift` is three full-screen steps on the existing `social_identity` contract:
+1. **Name and @username.** Saved at once with `discoverable = false`, so uniqueness is checked immediately (`23505` → "That username is taken") and the account is private even if setup stops here.
+2. **Who can find you?** Two cards: *Private* (Recommended, preselected) or *Public*. Public means findable by name, username and photo in Find Sous Chefs; shared content still reaches only accepted Sous Chefs.
+3. **Profile photo** (optional).
+
+Rules:
+- **New accounts** (no cooks) must finish setup.
+- **Existing accounts** without a username are offered it once (*Not Now* is remembered per account).
+- **Configured accounts** never see it, and after completion no identity request is made at launch.
+- **Resume:** progress and entered values are kept per account on the device, so a closed app resumes.
+- **Offline:** setup never blocks the library; it is evaluated again next launch.
+- **Profile editor:** uses the same Private/Public wording (`Privacy` › *Public profile*).
+- **Bio:** waits for a backend field.
+
+**Reporting and blocking.**
+- **Reporting:** posts and comments (in-place menus) and profiles (person sheet) use one `SocialReportEditor`. Report Recipe is wired on `agent/codex` and ships with its moderation migration.
+- **Blocking:** from a post or a profile, with a confirmation. Blocking from a post then shows *Account blocked*, explaining the effect and that Settings › Blocked Accounts unblocks; closing it refreshes The Pass so their posts disappear.
+- **Moderation staff:** no moderator tools exist in the consumer app.
+
 **My Kitchen / Sous Chef Kitchen.** Centered identity, Sous Chefs control, Signature Dishes trio (three square photos, aligned scores), Recipes entry, authorized posts. Visitor Kitchens show only authorized content, never private rankings/notes. *Decided (Stage E):* stats row **Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs**, no redundant mini-previews; visitor Kitchen uses the same structure with only authorized values. The current compact Recipes sheet will be replaced by navigation to Food Bible for the owner. Own statistics: Dishes Ranked · **Total Makes** (this device's verified cooks). Both open Grub Rank (`\.selectTab`). A *Last cooked* date and **Recent Cooks** (the three newest ranked cooks, each opening its Dish page) follow (Connected UI, November 16, 2026). Public Makes/Saves totals wait for the aggregate backend.
 
 **Settings.** Grouped native rows; Profile editor, Sharing Preferences, Account & Sync (sign-out, Delete Account), safety, offline Privacy Policy reader, Support.

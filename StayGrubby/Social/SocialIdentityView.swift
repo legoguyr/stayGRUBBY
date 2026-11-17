@@ -63,9 +63,13 @@ struct SocialIdentityEditor: View {
                     Text("3–24 lowercase letters, numbers or single underscores. Display names can use nicknames.")
                         .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 }
-                Section("Discoverability") {
-                    Toggle("Appear in Find Sous Chefs", isOn: $discoverable).accessibilityIdentifier("social-discoverable")
-                    Text("Off by default. Turning this off does not remove existing friends or change your cooking library.")
+                Section("Privacy") {
+                    // Same Private / Public meaning as new-account setup (SocialOnboarding).
+                    Toggle("Public profile", isOn: $discoverable).accessibilityIdentifier("social-discoverable")
+                    Text(discoverable
+                         ? "Public: people can find your name, username and photo in Find Sous Chefs. What you share still goes only to your Sous Chefs."
+                         : "Private: people can’t find you in search. Only people you add as Sous Chefs see what you share.")
+                    Text("Changing this never removes Sous Chefs or changes your cooking library.")
                     Text("When you change your username, previous share links continue to identify your account. Published usernames cannot be taken by another account.")
                 }
                 if error { Text(profileSaved ? "Your identity was saved. The profile photo change couldn’t finish. Retry Save, choose another photo, or remove the selection." : "Couldn’t save. Check your connection or try a different username.").foregroundStyle(.secondary).accessibilityIdentifier("social-identity-error") }

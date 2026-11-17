@@ -25,6 +25,7 @@ struct SocialPostActions: View {
     @State private var reporting = false
     @State private var blocking = false
     @State private var failed = false
+    @State private var blocked = false
     var body: some View {
         Menu {
             if post.published && post.moderationState == "active" {
@@ -52,10 +53,15 @@ struct SocialPostActions: View {
                 Button("Block account", role: .destructive) { Task { await block() } }
             } message: { Text("Their posts will no longer be available to you. Your private cooking is unchanged.") }
             .alert("Couldn’t block account", isPresented: $failed) { Button("OK", role: .cancel) {} } message: { Text("Check your connection and try again.") }
+            .alert("Account blocked", isPresented: $blocked) {
+                Button("OK", role: .cancel) { NotificationCenter.default.post(name: .socialContentChanged, object: nil) }
+            } message: { Text("You won’t see \(post.author.displayName)’s posts, and they can’t see what you share. Unblock anytime in Settings › Blocked Accounts.") }
     }
     private func block() async {
         guard let request else { return }
-        do { _ = try await request("social_people", "block", .init(peerID: post.author.id)); NotificationCenter.default.post(name: .socialContentChanged, object: nil) }
+        // The refresh that hides their content runs when the confirmation closes, so the card isn't
+        // removed out from under the alert.
+        do { _ = try await request("social_people", "block", .init(peerID: post.author.id)); blocked = true }
         catch is CancellationError {} catch { failed = true }
     }
 }

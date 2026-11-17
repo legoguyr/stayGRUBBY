@@ -98,10 +98,18 @@ Completed initial ranks and re-ranks record a private dated reaction in the exis
 - **Food Bible "cooked" state:** a local cook of the entry's Dish marks it cooked even when the cached index predates the cook.
 - **Removed behavior:** tab switches, back navigation and returning from the background no longer clear Food Bible or The Pass.
 
-`RemoteMediaCache` holds immutable remote media:
+`RemoteMediaCache` holds immutable remote media. Its limits are hard: enforced before an insert completes, and never exceeded between writes. Hardened November 16 for the public MVP:
 - **What it caches:** post photos and avatars by Storage path; Recipe photos by asset ID, which also skips the descriptor RPC.
-- **Tiers:** decoded images and bytes in memory (48 MB each), and bytes on disk at `<account root>/RemoteMediaCache` (120 MB, least-recently-used trimming to 80%).
-- **Disk safety:** the directory is excluded from backup and uses file protection. It is removed with the account and never shared between accounts.
+- **Memory:** decoded images only, in a strict least-recently-used store capped at 48 MB. An item larger than the cap is never kept, and a memory warning empties it.
+- **Disk:** verified bytes in `Library/Caches/StayGrubbyRemoteMedia/<account>/`, which iOS may reclaim under storage pressure and is excluded from backup.
+  - Capped at 120 MB, or 24 MB when the device has less than 1 GB available.
+  - An in-memory index (rebuilt at launch) evicts least-recently-used entries before every write.
+  - At launch it removes entries unused for 30 days and any file it did not write.
+- **Account lifecycle:**
+  - Opening an account removes every other account's cache folder (account switch) and the folder used by the November 16 development build in the account root.
+  - Sign-out removes all account cache folders.
+  - Local account deletion removes that account's folder.
+  - Only UUID-named folders inside `StayGrubbyRemoteMedia` are ever deleted; original photos (`StayGrubbyMedia`), sync journals and outboxes are never touched.
 - **Coalescing:** concurrent loads of one key share one request.
 - **Freshness of bytes:** upload verification downloads (Recipe photos) always read Storage directly. Upload and remove calls evict the affected keys.
 - **Access:** cached bytes are only ever shown where a freshly authorized post, profile or Recipe card references them.

@@ -125,9 +125,13 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         XCTAssertEqual(count("recipes.library_index"), bible, log.label)
         shot("Read caching · request log after tab switches", app)
         // Pull to refresh is an explicit refresh: exactly one more cookbook read.
-        let start = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
-        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 420)), withVelocity: .slow, thenHoldForDuration: 0.6)
-        let refreshed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in count("recipes.library_index") == bible + 1 }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [refreshed], timeout: 10), .completed, log.label)
+        // (A synthesized pull is occasionally swallowed by the simulator; retry the gesture, not the assertion.)
+        for _ in 0..<3 where count("recipes.library_index") == bible {
+            let start = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2))
+            start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 420)), withVelocity: .slow, thenHoldForDuration: 0.6)
+            let refreshed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in count("recipes.library_index") > bible }, object: nil)
+            _ = XCTWaiter.wait(for: [refreshed], timeout: 5)
+        }
+        XCTAssertEqual(count("recipes.library_index"), bible + 1, log.label)
     }
 }

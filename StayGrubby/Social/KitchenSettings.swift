@@ -23,7 +23,7 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 Section {
                     NavigationLink("Blocked Accounts") { FriendsView(section: .blocked) }
                 } header: { Text("Privacy & Safety") } footer: {
-                    Text("Sharing is for mutual Sous Chefs. Discovery is optional and can be changed in Profile; it does not make your cooking library public.")
+                    Text("Sharing is for mutual Sous Chefs. Profiles are private unless you choose Public in Profile; your cooking library is never public. Blocked accounts can’t see your profile or what you share, and their content is hidden from you.")
                 }
             }
             #if DEBUG

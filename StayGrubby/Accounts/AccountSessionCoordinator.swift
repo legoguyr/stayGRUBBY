@@ -354,6 +354,8 @@ nonisolated enum AccountDeletionProgress: Equatable {
         authenticating?.cancel()
         invalidateAccount(); observer?.cancel(); observer = nil
         state = .guest; remoteSignOutFailed = false
+        // Regenerable Sous Chef media cached for this account never outlives the session on this device.
+        RemoteMediaCacheLocation.removeAll(except: nil)
         let current = generation
         // A cancelled HTTP exchange may still persist a session. Drain it before
         // removing SDK storage, and block new sign-in until local cleanup finishes.

@@ -75,6 +75,12 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
 
   See [Read caching](STAYGRUBBY_ARCHITECTURE.md#read-caching-mvp-stabilization-november-16-2026).
 
+- **Public MVP onboarding, moderation UI and cache lifecycle (Nov 16, Claude; automated acceptance passed, owner physical acceptance pending).**
+  - New-account setup: unique username, explicit Private (default) / Public choice, optional photo; resumable; an existing account is offered it once.
+  - Block confirmation and consistent privacy wording.
+  - Hard-bounded, account-isolated media cache with expiry, orphan cleanup and cleanup on account switch, sign-out and deletion ([detail](STAYGRUBBY_ARCHITECTURE.md#read-caching-mvp-stabilization-november-16-2026), [UI](UI_ARCHITECTURE.md)).
+  - **Codex dependencies:** an optional profile bio field; deploying the moderation migration (`agent/codex` `f235076`), which also activates Report Recipe in the app.
+
 ## VERY NEAR TERM — Social & Discovery
 
 *Classification (Nov 16): onboarding (username + privacy choice), reporting/blocking and moderation are **MVP Required**; discovery for all accounts, Find Sous Chefs, invitations, contact matching and threaded replies are **Post-launch Priority**.*

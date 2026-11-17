@@ -423,6 +423,7 @@ import SwiftData
         }
         if endpoint == "social_identity" {
             if action == "sharing" { identity.automaticallyShareNewDishes = payload.automaticallyShareNewDishes ?? false }
+            if action == "save", payload.username == "taken_name" { throw SocialUsernameUnavailable() } // Uniqueness review.
             if action == "save" { identity = SocialIdentity(displayName: payload.displayName ?? "", username: payload.username, discoverable: payload.discoverable ?? false, avatarPath: identity.avatarPath, automaticallyShareNewDishes: payload.automaticallyShareNewDishes ?? identity.automaticallyShareNewDishes) }
             return try JSONEncoder().encode(identity)
         }

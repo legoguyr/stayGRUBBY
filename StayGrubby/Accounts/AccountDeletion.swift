@@ -31,6 +31,9 @@ nonisolated enum LocalAccountDataDeletion {
         if FileManager.default.fileExists(atPath: directory.path) {
             try FileManager.default.removeItem(at: directory)
         }
+        // The account's regenerable remote-media cache (Library/Caches) goes with it. Scoped test roots
+        // keep their cache beside the test root, never the real Caches directory.
+        RemoteMediaCacheLocation.remove(accountID, base: root)
     }
 }
 
