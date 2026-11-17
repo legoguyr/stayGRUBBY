@@ -55,7 +55,7 @@ create or replace function staygrubby.social_report(action text,payload jsonb de
 language plpgsql volatile security definer set search_path='' as $$
 declare
  owner uuid := staygrubby.social_actor(); kind text := payload->>'targetType'; target uuid := (payload->>'targetID')::uuid;
- author uuid; post uuid; comment uuid; recipe_id uuid; recipe_revision integer; shared jsonb;
+ author uuid; post uuid; comment uuid; recipe_id uuid; recipe_revision integer; expected_revision integer; shared jsonb;
  note text; why text := payload->>'reason';
 begin
  if action is distinct from 'report' or target is null or octet_length(payload::text)>4096 or why is null
@@ -91,6 +91,13 @@ begin
  else raise exception 'Invalid report target' using errcode='22023'; end if;
  if author is null then raise exception 'Report target unavailable' using errcode='42501'; end if;
  if author=owner then raise exception 'Cannot report yourself' using errcode='22023'; end if;
+ if kind='recipe' and payload->>'sourceRevision' is not null then
+  expected_revision:=(payload->>'sourceRevision')::integer;
+  if expected_revision<1 then raise exception 'Invalid Recipe revision' using errcode='22023'; end if;
+  if expected_revision is distinct from recipe_revision then
+   raise exception 'Recipe revision changed' using errcode='PT409';
+  end if;
+ end if;
  if exists(select 1 from staygrubby.social_reports where reporter_id=owner and target_type=kind and target_id=target
   and target_recipe_revision is not distinct from recipe_revision)
  then return jsonb_build_object('reported',true); end if;

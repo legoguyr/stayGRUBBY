@@ -174,7 +174,7 @@ Optional display name, editable @username, discoverability off by default, priva
 
 **Tickets:** in-app only, no APNs. One account-mounted foreground coordinator polls every 30 s (60 s after failures); background/sign-out cancels it. Kinds: `request`, `accepted`, `invited`, `joined`, `recreated`, `like` (Hands), `comment`, `recipe_shared`, `post_shared`. `api.social_send` delivers an authorized Recipe/post pointer to current Sous Chefs with existing access (100/hour bound, idempotent); it grants nothing and is not chat.
 
-The local public MVP moderation candidate adds exact-revision Recipe reports, an authenticated staff queue and audited hide/dismiss decisions. Local tests cover existing visibility, report permissions and deletion. Hosting, staff rehearsal, UGC filtering and operator response remain V1 release-gate work. [Moderation and privacy](PUBLIC_MVP_MODERATION.md).
+The local public MVP moderation candidate adds exact-revision Recipe reports, an authenticated staff queue and audited hide/dismiss decisions. Clients can pass the visible Recipe revision and receive a refreshable conflict if it changed. The populated local upgrade preserved existing data, including ranking evidence, and verified report permissions, visibility, audit and erasure. Gateway and staff rehearsal, deployment, UGC filtering and operator response remain V1 release-gate work. [Moderation API contracts and runbook](PUBLIC_MVP_MODERATION.md).
 
 ## Recipe + Social Integration — current contract
 
