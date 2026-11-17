@@ -25,7 +25,7 @@ The authenticated foreground worker now complements the structured durable outbo
 
 # Phase 3D Part 1 — private structured cooking sync
 
-Production retains required native Apple authentication, permanent-account resolution and ready account-store gating. There is no production guest/demo mode. Current navigation is Rankings and Profile; Feed remains hidden. The historical foundation sections below are superseded by this current implementation.
+Production retains required native Apple authentication, permanent-account resolution and ready account-store gating. There is no production guest/demo mode. This phase originally exposed Rankings and Profile. The [current navigation](STAYGRUBBY_ARCHITECTURE.md#navigation) is maintained in the product architecture. The historical foundation sections below describe their earlier checkpoints.
 
 ## Responsibilities and operation lifecycle
 

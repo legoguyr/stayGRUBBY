@@ -1,6 +1,25 @@
 # Public MVP moderation and privacy
 
-The moderation candidate adds object-level Recipe reports and an authenticated staff queue to the deployed post, comment, profile and block infrastructure. The moderation and Dish-owned Recipe attachment migrations are prepared locally. Activate both on the migrated target through the release gate in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md). The frozen source remains outside this rollout.
+The moderation candidate adds object-level Recipe reports and an authenticated staff queue to the deployed post, comment, profile and block infrastructure. The moderation, Dish-owned Recipe attachment and post-description write reduction migrations are prepared locally. Activate them on the migrated target through the release gate in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md). The frozen source remains outside this rollout.
+
+## Technical safeguards and remaining filtering gate
+
+The candidate provides enforced reporting and blocking, withdrawal of hidden content and its shared media, and a bounded staff queue with case-scoped evidence and one audited decision per report. A profile hide currently also denies the author's private Recipe RPC because it shares the social actor resolver. Keep production moderation pending until private Food Bible authorization is separated and the related regression passes. [Verified boundary and fix plan](BACKEND_MVP_READINESS.md#boundaries-exercised)
+
+For the public-release filtering checkpoint, apply the owner-approved content policy at server-side publication boundaries so older supported clients receive the same enforcement. Reuse the existing authenticated write paths and expected audience checks.
+
+| Boundary | Outbound content to check | Acceptance |
+| --- | --- | --- |
+| Profile identity | Discoverable username and display name, before exposure | Reject high-confidence abuse according to the approved policy. Normal food terms, names and supported scripts remain usable. |
+| The Pass and comments | Newly shared Dish title, cook name, selected public metadata, description and new comment text | Test create, edit, retries, and both photo and no-photo publication. Preserve the underlying private cook on rejection. |
+| Shared Recipe | Visible Recipe fields and the actual pinned revision on a post, including an edit/restore that changes shared text | Check the material that will become visible or change. Keep private drafts, notes, revision archive and cooking history out of the filter input. |
+| Shared media | Newly eligible profile, Recipe and post images | Decide how to screen images before exposure, using a prepublication review or an approved equivalent. Keep bytes and private images out of any third party until its processing is approved and disclosed. |
+
+Keep filtering bounded to new or changed outbound content before side effects. Return a stable edit-and-retry response without quoting the match or logging user text. Treat incomplete media checks as unpublished. Leave existing reports, access checks and staff escalation in place for contextual abuse and false positives. Prove old-client behavior, multilingual/boundary cases, duplicate retries and an authorized benign-cooking corpus with synthetic fixtures. This milestone prepared these acceptance criteria. No text or image filter is active, and the public-release gate remains open.
+
+## Owner-operated moderation
+
+Before public rollout designate a primary reviewer and backup, approve response targets and escalation for urgent safety threats and repeated abuse, and test the advertised Support path. Review only the reported case and its authorized image evidence. Avoid exporting or copying private content into operational notes. Record decision, time and necessary escalation using the existing case audit and restricted operational access record. Review role grants regularly and revoke departed reviewers. Terms, Community Guidelines and privacy disclosures require owner approval. [Apple’s user-generated content guideline](https://developer.apple.com/app-store/review/guidelines/#user-generated-content)
 
 ## Staff workflow
 
@@ -83,6 +102,7 @@ cd Backend/tests
 npm ci --ignore-scripts
 node public-mvp-moderation.test.mjs
 node dish-owned-recipe-share-options.test.mjs
+node idempotent-post-descriptions.test.mjs
 ```
 
 The test applies the predecessor history, creates synthetic users, cooking history, ranking evidence, a legacy report, Recipe revisions and a photo catalog entry, then applies the real migration and compares the 20 affected and related table snapshots. It runs the real SQL roles, RLS, report and moderation procedures, block checks and the account-erasure RPC. The authenticated actor claims, Auth and Storage services are fixture substitutes. The rehearsal cannot prove signed Gateway transport, actual Storage bytes or staff use of an operations client. The November 16 rehearsal passed 70 moderation assertions, plus 98 schema/RLS, 25 social safety and 19 Recipe sharing/media assertions. The integrated follow-up passed 28 more assertions covering the existing lookup failure, owned post and cook lookup, private sharing consent, unchanged fixture rows, and blocked attachment of hidden Recipes. Use a dedicated non-production Supabase stack for the service checks when available. A disposable [Supabase CLI local stack](https://supabase.com/docs/guides/local-development/cli/getting-started) requires a Docker-compatible runtime. Start it in a fresh, unlinked checkout with an isolated local project ID and free ports. Use synthetic identities and local Storage objects. Verify REST and Storage responses, then stop that local project.
@@ -90,15 +110,16 @@ The test applies the predecessor history, creates synthetic users, cooking histo
 **Production sequence after explicit authorization.** The read-only preflight found 51 applied migrations through `20261115154948` and no deployed moderation review RPC.
 
 1. Rehearse the signed RPCs, private Storage, scoped image review and a report through resolution using authorized disposable staging actors. Check ordinary users cannot review, revoked staff lose access, blocks and hidden Recipe shares fail closed, and old client reporting still works.
-2. Confirm the linked project is the migrated production target. Compare local and hosted migration history and hashes through the predecessor. Run `supabase migration list --linked` and `supabase db push --linked --dry-run` from a release checkout with only the two reviewed migrations below pending. If the preview differs, stop and resolve the history first.
+2. Confirm the linked project is the migrated production target. Compare local and hosted migration history and hashes through the predecessor. Run `supabase migration list --linked` and `supabase db push --linked --dry-run` from a release checkout with the exact approved set pending. The three candidates below are locally verified. Complete the owner-private authorization correction and filtering rehearsal before the public moderation rollout. If the preview differs, stop and resolve the history first.
 3. Capture relevant counts and hashes for accounts, Dishes, cooks, ranks and comparisons, Recipes and revisions, social objects, reports and the Storage inventory. Run `DevelopmentTools/database_health.sql` and check the Dashboard disk view and capacity Cron. The transaction makes bounded schema changes to existing tables. Use a quiet window to minimize lock contention.
-4. Apply these two migrations in order through the approved migration path. With a verified CLI dry run, use `supabase db push --linked`.
+4. Apply these candidates in order through the approved migration path once the release gates are satisfied. With a verified CLI dry run, use `supabase db push --linked`.
    1. `20261116204043_public_mvp_moderation.sql` adds the moderation states and audited review.
    2. `20261117063020_dish_owned_recipe_share_options.sql` uses the moderation state when suggesting or attaching a Recipe. The existing lookup keeps its historical, cook-specific and legacy associations before the indexed `recipes.dish_id` fallback. The attachment still requires explicit consent.
+   3. `20261117140912_idempotent_post_descriptions.sql` reuses the same authenticated publication contract and avoids unchanged description writes. No backfill or new table.
 
-   Reconcile both migration hashes, verify grants/RLS, and compare the captured records and Storage inventory. The new reviewer and audit tables start empty. Verify that Gateway exposes Recipe reporting before distributing the new UI.
+   Reconcile the approved migration hashes, verify grants/RLS, and compare the captured records and Storage inventory. The new reviewer and audit tables start empty. Verify that Gateway exposes Recipe reporting before distributing the new UI.
 5. Confirm the Gateway exposes the expected authenticated RPC and rejects unauthenticated access. Verify lookup by cook and owned post ID, explicit private Recipe consent and rejection of hidden Recipe attachments. Verify the operator workflow and enroll only named production staff once it is ready. Keep staff sessions and credentials out of command arguments and logs.
-6. If review access must be withdrawn, remove reviewer memberships. If the API itself requires containment, use an authorized, forward-only change to revoke authenticated execution on both `api.moderation_review(text,jsonb)` and `staygrubby.moderation_review(text,jsonb)`. Preserve reports, audits and visibility decisions. Keep the hidden-Recipe attachment guard if reverting lookup behavior with a forward migration. Pause the client rollout and repair forward. Avoid truncating tables, dropping constraints, restoring the frozen project or reopening hidden content as a rollback.
+6. If review access must be withdrawn, remove reviewer memberships. If the API itself requires containment, use an authorized, forward-only change to revoke authenticated execution on both `api.moderation_review(text,jsonb)` and `staygrubby.moderation_review(text,jsonb)`. Preserve reports, audits and visibility decisions. Keep the hidden-Recipe attachment guard if reverting lookup behavior with a forward migration. The description write optimization can be reverted independently by restoring its predecessor body in a new migration. Pause the client rollout and repair forward. Avoid truncating tables, dropping constraints, restoring the frozen project or reopening hidden content as a rollback.
 
 ## Before public launch
 

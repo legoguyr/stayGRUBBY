@@ -220,6 +220,26 @@ On a warning, identify the growing component using the latest sample, [health SQ
 
 Claude's `f7b0c19` implements revision probes, coalesced triggers, photo reconciliation and bounded retries for Build 6 using the deployed Auth-derived sync RPCs and private cooking-photo Storage. The existing Storage policy permits the owner metadata HEAD and info operations. The backend keeps the accepted receipt and photo manifest contracts. Structured sync write throttling stays off while Build 5 is supported. See [the client cooldown contract](../SYNC_ARCHITECTURE.md#current--local-first-sync-efficiency-november-15-2026) and [Build 6 release gates](../V1_RELEASE_GATE.md#build-6-internal-candidate--november-15-2026).
 
+### External capacity alert delivery
+
+The collector is active and PostgreSQL log delivery stays enabled. The [external command](../DevelopmentTools/check_capacity_sample.py) reads one existing row, applies a 15-minute freshness check and redacts connection errors. It adds no database writes. No external destination or schedule is active yet.
+
+1. After approval, an operator creates a dedicated monitoring login and a non-login `staygrubby_capacity_reader` role with no elevated memberships, then grants that role to the login. Use secure password handling and a dedicated `PGSERVICE` with verified TLS on the monitoring runner.
+
+   ```sql
+   create role staygrubby_capacity_reader nologin;
+   grant usage on schema operations to staygrubby_capacity_reader;
+   grant select (singleton, sampled_at, signals) on operations.capacity_state to staygrubby_capacity_reader;
+   create policy capacity_external_reader on operations.capacity_state
+     for select to staygrubby_capacity_reader using (singleton);
+   ```
+
+   Verify that this login cannot run the sampler, access application or Auth tables, read object bytes or write anything. Keep credentials and service files out of the repository and scheduler logs.
+2. Configure the operator's independent scheduler to run `PGSERVICE=staygrubby-capacity python3 DevelopmentTools/check_capacity_sample.py` every five minutes. Send a warning on exit 1, page on exit 2 (incident/critical) or 3 (missing, stale, invalid or unreachable), and clear on exit 0. Deduplicate unchanged states in the external monitor and alert on a missed scheduler heartbeat. Connect the approved owner destination and verify receipt/recovery with synthetic warning, incident and stale samples before enabling the live route.
+3. In a capacity event check Postgres Logs, Dashboard full disk and System usage and [the health query](../DevelopmentTools/database_health.sql). A healthy sample covers only the monitored PostgreSQL and Storage metrics. Stop the external schedule and revoke the role grant if delivery must be rolled back. The in-database collector still works.
+
+See the [November 17 capacity snapshot](../BACKEND_MVP_READINESS.md#storage-audit-and-measurement) for current measurements and the distinction between database-visible bytes and full disk usage.
+
 ### Data classes and retention
 
 - **Canonical product evidence is never pruned for capacity:** accounts, Dishes, cooks, ranked items, comparisons, Recipes and revisions, used snapshots, links, media manifests/objects, posts, comments, Hands, Tickets, friendships and Personal Cooking Intelligence inputs.

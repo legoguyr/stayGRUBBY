@@ -44,6 +44,10 @@ The log lists any commits that have yet to be integrated. Keep pending work with
 
 If the owner has explicitly designated a clean, unpublished local `main` as the accepted baseline, verify its exact SHA and use `git merge --ff-only main` in the assigned checkout. Use that same ref when checking for unintegrated commits. If local and remote `main` have diverged, resolve that in the integration checkout first.
 
+## Milestone handoffs
+
+At kickoff, name the outcome, module owner and stable interface, such as an authenticated RPC, DTO or local store entry point. The implementing agent owns the details within that boundary. Give the other agent the contract, compatible old behavior, error states and any migration order before they depend on it. Exercise the real path with the smallest useful test and keep data, credentials, releases and shared Simulator lanes under their existing gates. At handoff, record the tested SHA, machine or fixture scope, deployment state and remaining decisions. Reconcile canonical docs only when the work is ready for integration.
+
 ## Integrate accepted work
 
 1. The agent commits only its task and reports the exact reviewed SHA, verification, and any dependency or conflict. Its branch stays in its own worktree. The owner approves the reviewed SHA and decides integration order.
