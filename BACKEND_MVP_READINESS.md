@@ -1,6 +1,30 @@
 # Backend MVP readiness rehearsal — November 17, 2026
 
-**LEGO architecture verdict: CONDITIONALLY READY.** The repositories and runtime interfaces support changes within most domain boundaries. This milestone extended the existing publication path without app source changes or new data. Public launch still depends on separating private Food Bible access from a profile moderation decision, enforcing objectionable-content policy, proving signed and Storage paths, and establishing an operated response process.
+**Earlier LEGO architecture verdict: CONDITIONALLY READY.** The repositories and runtime interfaces support changes within most domain boundaries. This milestone extended the existing publication path without app source changes or new data. Public launch still depends on separating private Food Bible access from a profile moderation decision, enforcing objectionable-content policy, proving signed and Storage paths, and establishing an operated response process.
+
+## Completion follow-up
+
+The successor candidate fixes the hidden-profile private Food Bible blocker. The current authenticated Recipe API retains the same payloads, projections, grants and ownership/revision checks. Personal actions reuse the media owner resolver. Social actions and audience expansion keep their separate gate. The regression exercises the old failure, private reads and a save/restore, legacy visibility omission, exact history and photo access, stable cooking/ranking/notes, unauthorized peers, block, session revocation, and deletion state.
+
+The second extension adds prospective shared text screening within the database write paths and case-scoped subject correlation for staff. It reuses the existing fields, pinned revisions, roles, case audit and post/media access policies. The release suite verifies that rejected writes preserve previous content and visibility, and that a blocked or hidden item remains unavailable. No new tables, indexes, routine cloud writes or duplicate images were added. Text rejection places automatic shares in their existing durable local review outbox so foreground refresh does not repeat rejected requests.
+
+**LEGO verdict remains CONDITIONALLY READY for the public release.** Private and social policy now evolve through a tested interface without changing unrelated app flows. Image screening, verified signed Gateway and Storage transport, staff acceptance and alert delivery still need a production-ready operating decision and rehearsal. [Moderation contract and release sequence](PUBLIC_MVP_MODERATION.md)
+
+**Current sample.** At 9:25 a.m. Eastern on November 17 the target reported no signals, 152,459,951 PostgreSQL-visible bytes including 117,440,879 WAL bytes, and 114 private Storage objects totaling 18,695,557 bytes. The monitor and read-only alert tooling stayed unchanged. Full platform System usage remains a Dashboard measurement. All 51 production migrations remain the predecessor of the five local candidates. The 14 affected Recipe authorization bodies matched the hosted predecessor byte for byte by digest. Production retains 43 RLS-enabled product tables, four private photo buckets, and both v5 Edge Functions with JWT verification. The candidate SQL and reference schema mirror were verified locally.
+
+**Focused evidence.** Passed 472 disposable PostgreSQL assertions across the release command and affected sync/social suites, 43 offline Edge Function handler tests, and five external capacity-check tests. Production signed request acceptance and real hosted Storage bytes were outside this fixture.
+
+| Priority | Remaining work |
+| --- | --- |
+| **P0** | Approve image screening and staffing. Run signed staged Gateway, actual byte-level Storage, and erasure acceptance. Confirm owner alert delivery and Dashboard headroom. Obtain authorization for production rollout and verify the preserved fingerprints before opening access. Finish the previously listed legal, support and App Review gates. |
+| **P1** | Integrate the `PT422` message into the ongoing Pass, profile and comment work. Rehearse rejection, keeping the cook private, and release copy. Tune detector coverage against approved synthetic samples and confirm a representative workload. |
+| **Post-launch** | Additional languages and abuse patterns as policy evidence warrants, expanded moderation tooling, Discover, and creator/commerce features. |
+
+**Next milestone.** Complete prepublication image handling and signed non-production acceptance, then prepare one owner review for rollout approvals. Estimate 2–4 engineering days after the image moderation path and signed rehearsal environment are available. Shipping decisions, provider approval if needed, staffing and App Review timing are separate.
+
+## Earlier audit
+
+The remainder of this document records the earlier `5500f78` findings. The private Food Bible and text guard findings below were addressed by the completion follow-up. Keep the measurement dates and scope when citing this evidence.
 
 ## Boundaries exercised
 

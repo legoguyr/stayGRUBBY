@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Supabase
 
 /// One editable value, shared by manual entry and future user-reviewed RecipeDrafts.
 struct RecipeEditor: View {
@@ -28,7 +29,7 @@ struct RecipeEditor: View {
     @State private var photoAssetID = UUID()
     @State private var photoLoading = false
     @State private var saving = false
-    @State private var failed = false
+    @State private var saveMessage: String?
     @State private var discard = false
     @State private var choosingCuisine = false
     @State private var deleteSection: UUID?
@@ -84,7 +85,7 @@ struct RecipeEditor: View {
                             DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.accessibilityIdentifier("recipe-original-paste")
                         }.accessibilityIdentifier("recipe-import-review")
                     }
-                    if failed { Label("Couldn’t save. Your draft is safe here. Check your connection and cooking sync, then try Save again. If it changed elsewhere, keep your draft while you review that change.", systemImage: "wifi.exclamationmark").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
+                    if let saveMessage { Label(saveMessage, systemImage: "exclamationmark.circle").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
                 }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
                 .navigationTitle(recipe == nil ? "Add Recipe" : "Edit Recipe").navigationBarTitleDisplayMode(.inline)
@@ -334,7 +335,10 @@ struct RecipeEditor: View {
     private func step(_ part: UUID, _ id: UUID) -> Binding<String> { Binding(get: { parts.first { $0.id == part }?.steps.first { $0.id == id }?.instruction ?? "" }, set: { value in update(part) { if let i = $0.steps.firstIndex(where: { $0.id == id }) { $0.steps[i].instruction = value } } }) }
     private func optional(_ path: WritableKeyPath<RecipeContent,String?>) -> Binding<String> { Binding(get: { content[keyPath:path] ?? "" }, set: { content[keyPath:path] = $0.isEmpty ? nil : $0 }) }
     private func save() async {
-        guard let request else { failed = true; return }; saving = true; failed = false; defer { saving = false }
+        let defaultFailure = "Couldn’t save. Your draft is safe here. Check your connection and cooking sync, then try Save again. If it changed elsewhere, keep your draft while you review that change."
+        guard let request else { saveMessage = defaultFailure; return }
+        saving = true; saveMessage = nil
+        defer { saving = false }
         do {
             var payload = SocialPayload(); payload.recipeID = recipeID; payload.recipeDishID = newDishIdentity; payload.attemptID = recipe == nil ? attemptID : nil; payload.expectedRevision = recipe?.revision
             var saved = ingredientEntry.prepared(content)
@@ -348,7 +352,12 @@ struct RecipeEditor: View {
             // only once the server confirms the identity (an older server leaves it Recipe-only).
             if createsDish, let id = newDishIdentity, next.dishID == id { try? DishIdentityStore.ensureDish(id: id, for: next.content, context: modelContext) }
             try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); onSave(next); dismiss()
-        } catch is CancellationError {} catch { failed = true }
+        } catch is CancellationError {
+        } catch let error as PostgrestError where error.code == "PT422" {
+            saveMessage = "This Recipe contains text that can’t be shared. Edit it, or turn off Share with Sous Chefs to save it privately."
+        } catch {
+            saveMessage = defaultFailure
+        }
     }
 }
 private enum RecipeField: Hashable { case title, section(UUID), step(UUID) }

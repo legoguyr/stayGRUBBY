@@ -46,7 +46,7 @@ If the owner has explicitly designated a clean, unpublished local `main` as the 
 
 ## Milestone handoffs
 
-At kickoff, name the outcome, module owner and stable interface, such as an authenticated RPC, DTO or local store entry point. The implementing agent owns the details within that boundary. Give the other agent the contract, compatible old behavior, error states and any migration order before they depend on it. Exercise the real path with the smallest useful test and keep data, credentials, releases and shared Simulator lanes under their existing gates. At handoff, record the tested SHA, machine or fixture scope, deployment state and remaining decisions. Reconcile canonical docs only when the work is ready for integration.
+At kickoff, name the outcome, module owner and stable interface, such as an authenticated RPC, DTO or local store entry point. The implementing agent owns the details within that boundary. Give the other agent the contract, compatible old behavior, error states and any migration order before they depend on it. Exercise the real path with the smallest useful test and keep data, credentials, releases and shared Simulator lanes under their existing gates. At handoff, record the tested SHA, machine or fixture scope, deployment state and remaining decisions. Use `cd Backend/tests && npm run test:public-mvp` for the shared moderation/Recipe boundary. Run it in both the isolated backend candidate and the integrated tree before owner acceptance when the interface changes. Give the owner one consolidated review of the completed milestone. Reconcile canonical docs only when the work is ready for integration.
 
 ## Integrate accepted work
 
