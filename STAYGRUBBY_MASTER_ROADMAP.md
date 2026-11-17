@@ -79,7 +79,7 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
   - New-account setup: unique username, explicit Private (default) / Public choice, optional photo; resumable; an existing account is offered it once.
   - Block confirmation and consistent privacy wording.
   - Hard-bounded, account-isolated media cache with expiry, orphan cleanup and cleanup on account switch, sign-out and deletion ([detail](STAYGRUBBY_ARCHITECTURE.md#read-caching-mvp-stabilization-november-16-2026), [UI](UI_ARCHITECTURE.md)).
-  - **Codex dependencies:** an optional profile bio field; deploying the moderation migration (`agent/codex` `f235076`), which also activates Report Recipe in the app.
+  - **Codex dependencies:** an optional profile bio field; deploying the integrated [moderation and sharing migrations](PUBLIC_MVP_MODERATION.md#rehearsal-and-deployment), which enable revision-specific Recipe reports and the staffed queue.
 
 - **Grub Rank navigation and connected Recipe sharing (Nov 16, Claude; automated acceptance passed, owner physical acceptance pending).**
   - My Kitchen statistics open Grub Rank in the counted view.
@@ -87,7 +87,7 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
   - Posts link the live Recipe and keep the posted revision.
   - A Recipe can join an existing post.
   - **Codex dependencies:**
-    - extend `owned_recipe_share_option` to fall back to `recipes.dish_id` (the app already does this itself), plus the owner-only `sourceAttemptID` on own post cards so Recipe Sharing from a post menu can find the Dish's Recipe
+    - deploy the verified `owned_recipe_share_option` fallback to `recipes.dish_id`. The existing owned-post lookup resolves the cook server-side, so post cards need no extra private identifier.
     - optionally, a post-card field for the latest accessible revision, so cards can label "updated since posted"
 
 ## VERY NEAR TERM — Social & Discovery

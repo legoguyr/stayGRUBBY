@@ -4,7 +4,7 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
     @MainActor func testSharedRecipeReaderHasNoOwnerControlsAndSavesAReference() {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-feed", "--recipes-review", "--recipes-review-feed", "--test-light"]
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--social-review-feed", "--recipes-review", "--recipes-review-feed", "--test-light", "--test-recipe-report-conflict"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         app.tabBars.buttons["The Pass"].tap()
@@ -23,8 +23,20 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["recipe-edit"].exists)
         XCTAssertFalse(app.buttons["recipe-history"].exists)
         XCTAssertFalse(app.buttons["recipe-link"].exists)
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.55)).tap()
-        XCTAssertTrue(app.buttons["recipe-send-friend"].waitForNonExistence(timeout:5))
+        let report = app.buttons["social-report-recipe"]
+        XCTAssertTrue(report.waitForExistence(timeout: 5)); report.tap()
+        let send = app.buttons["social-report-send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 5)); send.tap()
+        XCTAssertTrue(app.staticTexts["social-report-recipe-changed"].waitForExistence(timeout: 5))
+        XCTAssertFalse(send.exists, "A stale report cannot be resubmitted from the same sheet")
+        app.buttons["social-report-reload-recipe"].tap()
+        XCTAssertTrue(app.buttons["social-report-reload-recipe"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Shared revision 2.'")).firstMatch.waitForExistence(timeout: 5))
+        app.revealRecipeActions()
+        XCTAssertTrue(report.waitForExistence(timeout: 5)); report.tap()
+        XCTAssertTrue(send.waitForExistence(timeout: 5)); send.tap()
+        let receipt = app.alerts["Report sent"]
+        XCTAssertTrue(receipt.waitForExistence(timeout: 5)); receipt.buttons["Done"].tap()
         // Connected UI: no in-app copy. The current Recipe opens with Save (a reference), still not owned.
         let current = app.buttons["shared-recipe-open-current"]
         for _ in 0..<6 { if current.isHittable { break }; app.swipeUp() }

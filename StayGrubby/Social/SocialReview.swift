@@ -1,6 +1,7 @@
 #if DEBUG
 import SwiftUI
 import SwiftData
+import Supabase
 
 /// Explicit isolated UI review only. No Auth, Supabase client or normal-store writes.
 @MainActor @Observable final class SocialReview {
@@ -27,6 +28,7 @@ import SwiftData
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
     var recipeClaimSnapshots: [UUID: RecipeCookSnapshot] = [:]
     private var personaLoaded = false
+    private var simulatedReportConflict = false
 
     func loadPersona(context: ModelContext) throws {
         reviewContext = context
@@ -526,7 +528,20 @@ import SwiftData
             }
             return try JSONEncoder().encode(SocialPostsPage(posts: payload.postID == nil ? posts.filter(\.isAuthor) : posts.filter { $0.id == payload.postID }))
         }
-        if endpoint == "social_report" { return Data(#"{"reported":true}"#.utf8) }
+        if endpoint == "social_report" {
+            if payload.targetType == "recipe", let postID = payload.postID, var snapshot = sharedRecipeSnapshots[postID] {
+                guard payload.targetID == snapshot.recipeID, payload.sourceRevision == snapshot.revision else {
+                    throw URLError(.badServerResponse)
+                }
+                if ProcessInfo.processInfo.arguments.contains("--test-recipe-report-conflict"), !simulatedReportConflict {
+                    simulatedReportConflict = true
+                    snapshot.revision += 1
+                    sharedRecipeSnapshots[postID] = snapshot
+                    throw PostgrestError(code: "PT409", message: "Recipe revision changed")
+                }
+            }
+            return Data(#"{"reported":true}"#.utf8)
+        }
         guard endpoint == "social_people" else { throw URLError(.unsupportedURL) }
         if let id = payload.peerID, let index = people.firstIndex(where: { $0.id == id }) {
             switch action {
