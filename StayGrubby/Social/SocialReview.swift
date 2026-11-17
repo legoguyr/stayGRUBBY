@@ -102,6 +102,11 @@ import SwiftData
     private func persistRecipes() throws {
         if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars, cookLinks: cookRecipeLinks, dishLinks: dishRecipes)).write(to: url, options: .atomic) }
     }
+    /// `share_post_recipe`: attaching a private Recipe shares it with current Sous Chefs (new revision).
+    private func shareRecipeWithFriends(_ id: UUID) {
+        guard var recipe = recipes[id], recipe.visibility != "friends" else { return }
+        recipe.visibility = "friends"; recipe.revision += 1; recipes[id] = recipe
+    }
     private func linkedRecipe(_ id: UUID) -> Recipe? {
         guard var value = recipes[id] else { return nil }
         value.linkedAttemptID = cookRecipeLinks[id]
@@ -202,8 +207,15 @@ import SwiftData
                 recipeDishes[rid] = claim; return try JSONEncoder().encode(linkedRecipe(rid))
             }
             if action == "share_options" {
-                let candidate = recipes.values.first { $0.isOwner }
-                return try JSONEncoder().encode(RecipeShareOption(recipe: candidate, fromCookSnapshot: false))
+                // Mirrors the deployed server: the exact Recipe used or a cook link, never `recipes.dish_id`
+                // (the app adds the Dish's own Recipe itself).
+                let cook = payload.attemptID ?? payload.postID.flatMap { postCookIDs[$0] ?? nil }
+                let exact = cook.flatMap { chosen in cookRecipeLinks.first { $0.value == chosen }?.key }
+                let attempts = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>())) ?? []
+                let claimed = cook.flatMap { chosen in attempts.first { $0.id == chosen } }.flatMap { attempt in
+                    recipeClaims.values.first { $0.itemID == attempt.rankedItemID && $0.completed } }.flatMap { recipeClaimSnapshots[$0.id]?.recipeID }
+                let candidate = (exact ?? claimed).flatMap { recipes[$0] }.flatMap { $0.isOwner ? $0 : nil }
+                return try JSONEncoder().encode(RecipeShareOption(recipe: candidate, fromCookSnapshot: claimed != nil && exact == nil))
             }
             if action == "shared_post", let id = payload.postID, let value = sharedRecipeSnapshots[id],
                posts.contains(where: { post in post.id == id && (post.isAuthor || people.contains(where: { $0.id == post.author.id && $0.relationship == .friends })) }) {
@@ -211,9 +223,11 @@ import SwiftData
             }
             if action == "shared_post" { throw URLError(.resourceUnavailable) }
             if action == "unshare_post", let id = payload.postID { sharedRecipeSnapshots[id] = nil; if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = nil; posts[i].recipeRevision = nil }; return Data("{}".utf8) }
-            if action == "share_post", let id = payload.postID, let rid = payload.recipeID, let r = recipes[rid], let post = posts.first(where: { $0.id == id }) {
-                sharedRecipeSnapshots[id] = .init(postID: id, recipeID: rid, revision: r.revision, content: r.content, creator: post.author, cook: post.author, isAuthor: post.isAuthor)
-                if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = r.revision }
+            if action == "share_post", let id = payload.postID, let rid = payload.recipeID, let post = posts.first(where: { $0.id == id }) {
+                shareRecipeWithFriends(rid); guard let r = recipes[rid] else { throw URLError(.resourceUnavailable) }
+                let pinned = payload.sourceRevision ?? r.revision
+                sharedRecipeSnapshots[id] = .init(postID: id, recipeID: rid, revision: pinned, content: r.content, creator: post.author, cook: post.author, isAuthor: post.isAuthor)
+                if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = pinned }
                 return Data("{}".utf8)
             }
             if ["fork", "fork_post"].contains(action), let id = payload.targetID {
@@ -499,9 +513,10 @@ import SwiftData
                     let author = SocialPerson(id: UUID(uuidString: "10000000-0000-0000-0000-000000000099")!, displayName: identity.displayName, username: identity.username ?? "review_cook", relationship: .none)
                     posts.append(SocialPost(id: id, author: author, title: "Review cooking post", versionTitle: nil, scoreText: nil, achievement: nil, createdAt: Date().timeIntervalSince1970, photoPath: payload.includePhoto == true ? author.id.uuidString.lowercased() + "/" + id.uuidString.lowercased() + ".jpg" : nil, published: payload.includePhoto != true, isAuthor: true, moderationState: "active", postDescription: payload.postDescription))
                 }
-                if payload.includeRecipe == true, let rid = payload.recipeID, let r = recipes[rid], let post = posts.first(where: { $0.id == id }), sharedRecipeSnapshots[id] == nil {
+                if payload.includeRecipe == true, let rid = payload.recipeID, recipes[rid] != nil, let post = posts.first(where: { $0.id == id }), sharedRecipeSnapshots[id] == nil {
+                    shareRecipeWithFriends(rid); let r = recipes[rid]!
                     sharedRecipeSnapshots[id] = .init(postID: id, recipeID: rid, revision: payload.sourceRevision ?? r.revision, content: r.content, creator: post.author, cook: post.author, isAuthor: true)
-                    if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = r.revision }
+                    if let i = posts.firstIndex(where: { $0.id == id }) { posts[i].recipeID = rid; posts[i].recipeRevision = payload.sourceRevision ?? r.revision }
                 }
             } else if action == "editDescription", let index = posts.firstIndex(where: { $0.id == payload.postID && $0.isAuthor }) {
                 posts[index].postDescription = payload.postDescription?.trimmingCharacters(in: .whitespacesAndNewlines)

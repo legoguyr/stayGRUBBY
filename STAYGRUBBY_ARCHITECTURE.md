@@ -186,7 +186,17 @@ Comprehensive UGC filtering and an operated moderation process remain V1 release
 
 ## Recipe + Social Integration — current contract
 
-Recipes are private by default and optional for cooking or posting. A Dish link, AI creation or automatic post preference never opts into Recipe sharing. A composer's OFF-by-default **Include Recipe**, or the author's Recipe Sharing action on a post, deliberately makes the Recipe Sous-Chef-visible and pins one archived revision (`post_recipes` → `recipe_revisions`). The consent covers that revision's fields and Recipe photo, never Personal Notes or private cooking photos. The shared reader resolves by post UUID, reauthorizes, and returns only the pinned revision, attribution and authorized photo fallback. Recipes owned by someone else cannot be delegated through your post.
+Recipes are private by default and optional for cooking or posting. AI creation or an automatic post preference never opts into Recipe sharing. **Connected Recipe sharing (November 16, 2026):**
+- **Recognizing the Recipe:** the Post to The Pass composer finds the cook's Recipe. It uses the server's cook-specific option (`share_options`: the exact Recipe used, a cook link or a legacy Dish link). Otherwise it uses the Dish's own Recipe (`recipes dish`, `recipes.dish_id`). Only the poster's own Recipe is offered, and no section appears when there is none.
+- **Default selection:**
+  - A Recipe already visible to Sous Chefs starts included: *Include Recipe*, with the footer "This Recipe stays linked and may update when you edit it."
+  - A private Recipe starts excluded. Its control reads *Share Recipe with Sous Chefs* and explains the effect. Turning it on is the explicit consent with which `share_post_recipe` makes the Recipe Sous-Chef-visible.
+  - There is no extra popup, and the ranking result screen is unchanged.
+- **Reference, not copy:** the post references the creator's Recipe and pins the posted revision (`post_recipes` → `recipe_revisions`) for attribution and future Make This. The consent covers Recipe fields and the Recipe photo, never Personal Notes or private cooking photos.
+- **Reading from a post:** *View Recipe* opens the Recipe's latest version (`recipes get`, access rechecked by the server on every open). The post page also offers *Recipe as posted · revision N* (the pinned shared reader).
+- **Revocation:** a post's `recipeID` comes from `shared_recipe_card`, which rechecks the viewer's current access. Making the Recipe private, removing the attachment or blocking withdraws both readers.
+- **Adding a Recipe later:** after a Recipe is linked, *Add Recipe to This Post* (composer confirmation for an already-posted cook) attaches it to the same post (`share_post`); there is no duplicate post.
+- **Ownership:** Recipes owned by someone else cannot be delegated through your post.
 
 **Save a Private Copy** creates a new owned Recipe (revision 1) with `recipe_forks` provenance; foreign photo IDs are omitted. Making a Recipe private revokes further reads; removing an attachment revokes that post's reader; deleting the source removes live attachments and nulls fork source references; existing copies and recipient snapshots cannot be recalled. Detail: [RECIPE_SOCIAL_INTEGRATION_REVIEW.md](RECIPE_SOCIAL_INTEGRATION_REVIEW.md).
 

@@ -168,11 +168,17 @@ struct SocialFeedCard: View {
             if isDetail {
                 if let metadata = post.metadata { SocialPostMetadata(metadata: metadata) }
             }
-            if post.recipeID != nil && post.published && post.moderationState == "active" {
-                // Same inline Recipe action as the Dish page; opens the Recipe as it was when posted.
-                Button { navigate(.recipe(post.id)) } label: { Label("View Recipe", systemImage: "book.closed") }
-                    .buttonStyle(RecipeInlineAction()).accessibilityHint("Opens the Recipe used for this cook")
+            if let recipeID = post.recipeID, post.published && post.moderationState == "active" {
+                // The post links the creator's Recipe (never a copy): View Recipe opens its latest version,
+                // access-checked by the server on every open. The posted revision stays readable from the post.
+                Button { navigate(.currentRecipe(recipeID)) } label: { Label("View Recipe", systemImage: "book.closed") }
+                    .buttonStyle(RecipeInlineAction()).accessibilityHint("Opens the latest version of the linked Recipe")
                     .accessibilityIdentifier("post-recipe")
+                if isDetail, let revision = post.recipeRevision {
+                    Button { navigate(.recipe(post.id)) } label: { Text("Recipe as posted · revision \(revision)") }
+                        .font(.footnote).buttonStyle(.borderless).frame(minHeight: SGTheme.Size.minimumTap)
+                        .accessibilityIdentifier("post-recipe-as-posted")
+                }
             }
             if let provenance = post.provenance {
                 if provenance.kind == "recreated", let creator = provenance.creator {

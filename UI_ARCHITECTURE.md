@@ -141,12 +141,22 @@ Rules:
 - **Profile editor:** uses the same Private/Public wording (`Privacy` › *Public profile*).
 - **Bio:** waits for a backend field.
 
+**Post to The Pass — Recipe attachment.** When the cook or its Dish has the poster's own Recipe, the composer shows one compact *Recipe* section:
+- the title and a one-line preview (time, yield, ingredients), which opens a read-only preview
+- one control: *Include Recipe* (already shared, on by default) or *Share Recipe with Sous Chefs* (private, off, with a footer explaining it)
+
+Rules:
+- No Recipe means no section.
+- Publish waits until the attachment is resolved.
+- An already-posted cook offers *Add Recipe to This Post*.
+- On posts, *View Recipe* opens the latest version; the post page adds *Recipe as posted · revision N*.
+
 **Reporting and blocking.**
 - **Reporting:** posts and comments (in-place menus) and profiles (person sheet) use one `SocialReportEditor`. Report Recipe is wired on `agent/codex` and ships with its moderation migration.
 - **Blocking:** from a post or a profile, with a confirmation. Blocking from a post then shows *Account blocked*, explaining the effect and that Settings › Blocked Accounts unblocks; closing it refreshes The Pass so their posts disappear.
 - **Moderation staff:** no moderator tools exist in the consumer app.
 
-**My Kitchen / Sous Chef Kitchen.** Centered identity, Sous Chefs control, Signature Dishes trio (three square photos, aligned scores), Recipes entry, authorized posts. Visitor Kitchens show only authorized content, never private rankings/notes. *Decided (Stage E):* stats row **Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs**, no redundant mini-previews; visitor Kitchen uses the same structure with only authorized values. The current compact Recipes sheet will be replaced by navigation to Food Bible for the owner. Own statistics: Dishes Ranked · **Total Makes** (this device's verified cooks). Both open Grub Rank (`\.selectTab`). A *Last cooked* date and **Recent Cooks** (the three newest ranked cooks, each opening its Dish page) follow (Connected UI, November 16, 2026). Public Makes/Saves totals wait for the aggregate backend.
+**My Kitchen / Sous Chef Kitchen.** Centered identity, Sous Chefs control, Signature Dishes trio (three square photos, aligned scores), Recipes entry, authorized posts. Visitor Kitchens show only authorized content, never private rankings/notes. *Decided (Stage E):* stats row **Dishes Ranked → Grub Rank · Recipes → Food Bible · Sous Chefs → Sous Chefs**, no redundant mini-previews; visitor Kitchen uses the same structure with only authorized values. The current compact Recipes sheet will be replaced by navigation to Food Bible for the owner. Own statistics: Dishes Ranked · **Total Makes** (this device's verified cooks). *Dishes Ranked* opens Grub Rank with All Cooks off (one row per Dish) and *Total Makes* with All Cooks on (every ranked cook); search, filters and sort reset so the list matches the count (`\.openGrubRank`, `GrubRankRequest`). A *Last cooked* date and **Recent Cooks** (the three newest ranked cooks, each opening its Dish page) follow (Connected UI, November 16, 2026). Public Makes/Saves totals wait for the aggregate backend.
 
 **Settings.** Grouped native rows; Profile editor, Sharing Preferences, Account & Sync (sign-out, Delete Account), safety, offline Privacy Policy reader, Support.
 

@@ -17,8 +17,10 @@ struct CookingRankingView: View {
     @State private var filterGroup: CookingFilterGroup?
     @State private var searching = false
     @State private var creationExpanded = false
+    @State private var appliedRequest: UUID?
     @Environment(\.sgReduceMotion) private var reduceMotion
     @Environment(\.scoreUnlockState) private var scores
+    @Environment(\.grubRankRequest) private var grubRankRequest
     private var eligibleDishes: [Dish] { dishes.filter { dish in dish.attempts.contains { $0.rankedItem?.list?.id == list.id } } }
     private var hasSearch: Bool { !TagNormalization.display(searchText).isEmpty }
 
@@ -66,6 +68,14 @@ struct CookingRankingView: View {
         .accessibilityIdentifier("ranking-scroll")
         .background(SGTheme.ColorToken.background)
         .onChange(of: scores.isUnlocked) { _, unlocked in if !unlocked && sort.needsScores { sort = .grubRank } }
+        // My Kitchen statistics: show exactly what was counted (Dishes Ranked → one row per Dish,
+        // Total Makes → All Cooks). Applied once per request; the All Cooks toggle shows the result.
+        .task(id: grubRankRequest?.id) {
+            guard let request = grubRankRequest, appliedRequest != request.id else { return }
+            appliedRequest = request.id
+            filters = CookingFilters(); searchText = ""; searching = false; sort = .grubRank; creationExpanded = false
+            displayPreference = request.mode.rawValue
+        }
         .navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .top, spacing: 0) {

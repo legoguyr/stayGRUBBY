@@ -6,6 +6,12 @@ nonisolated enum RankingsDisplayMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     static let preferenceKey = "StayGrubby.rankingsDisplayMode.v1"
 }
+/// A request to show Grub Rank in a given view (My Kitchen statistics): the view is applied, visible in
+/// the All Cooks toggle, with search, filters and sort reset so the list matches the count tapped.
+struct GrubRankRequest: Equatable {
+    let id = UUID()
+    let mode: RankingsDisplayMode
+}
 @MainActor enum RankingsDisplayPreferences {
     static var defaults: UserDefaults {
         #if DEBUG

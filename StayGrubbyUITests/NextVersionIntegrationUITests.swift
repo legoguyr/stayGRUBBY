@@ -15,7 +15,7 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
     @MainActor func testDirectPostAndRecipeLinksAndUnavailableDestination() {
         let post = launch(["--review-profile-url", "https://staygrubby.com/p/20000000-0000-0000-0000-000000000001"])
         XCTAssertTrue(post.staticTexts["Harissa Chicken with Roasted Peppers"].waitForExistence(timeout: 12))
-        let recipe = post.buttons["post-recipe"]
+        let recipe = post.buttons["post-recipe-as-posted"]
         for _ in 0..<5 { if recipe.isHittable { break }; post.swipeUp() }
         XCTAssertTrue(recipe.isHittable); recipe.tap()
         XCTAssertTrue(post.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
@@ -43,9 +43,10 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
             let recipe = app.buttons["post-recipe"]
             for _ in 0..<5 { if recipe.isHittable { break }; app.swipeUp() }
             XCTAssertTrue(recipe.isHittable); capture("Feed Recipe entry \(appearance)", app); recipe.tap()
-            XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
-            XCTAssertTrue(app.buttons["shared-recipe-open-current"].isHittable)
-            capture("Shared Recipe primary actions \(appearance)", app)
+            // A post links the live Recipe: View Recipe opens its current version.
+            XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
+            XCTAssertTrue(app.buttons["recipe-make"].waitForExistence(timeout: 8))
+            capture("Linked Recipe from The Pass \(appearance)", app)
             app.tabBars.buttons["Food Bible"].tap()
             let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-'")).firstMatch
             XCTAssertTrue(entry.waitForExistence(timeout: 8)); entry.tap()
@@ -67,9 +68,9 @@ final class NextVersionIntegrationUITests: StayGrubbyUITestCase {
         let recipe = app.buttons["post-recipe"]
         for _ in 0..<8 { if recipe.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(recipe.isHittable); recipe.tap()
-        XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
-        let copy = app.buttons["shared-recipe-open-current"]
-        for _ in 0..<6 { if copy.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(copy.isHittable); capture("Shared Recipe accessibility", app)
+        XCTAssertTrue(app.waitForRecipeReader(timeout: 8))
+        let make = app.buttons["recipe-make"]
+        for _ in 0..<6 { if make.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(make.isHittable); capture("Linked Recipe accessibility", app)
     }
 }

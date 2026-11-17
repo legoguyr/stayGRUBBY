@@ -5,7 +5,7 @@ struct ProfileCookingContent: View {
     let snapshot: ProfileSnapshot
     let ranking: RankingList?
     @Environment(\.dynamicTypeSize) private var textSize
-    @Environment(\.selectTab) private var selectTab
+    @Environment(\.openGrubRank) private var openGrubRank
     @State private var titleHeight: CGFloat = 0
 
     var body: some View {
@@ -17,13 +17,14 @@ struct ProfileCookingContent: View {
     }
 
     /// Compact Kitchen statistics (Connected UI, November 16, 2026). Each opens the place it counts:
-    /// Dishes Ranked and Total Makes open Grub Rank. Counts are verified local data, never cloud estimates.
+    /// Dishes Ranked opens Grub Rank one row per Dish; Total Makes opens it with All Cooks on (each row is
+    /// one ranked cook). Counts are verified local data, never cloud estimates.
     private var cookingSnapshot: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-                statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count") { selectTab(.rankings) }
+                statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count", hint: "Opens Grub Rank, one row per Dish") { openGrubRank(.topVersion) }
                     .frame(maxWidth: .infinity)
-                statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count") { selectTab(.rankings) }
+                statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count", hint: "Opens Grub Rank showing All Cooks") { openGrubRank(.allVersions) }
                     .frame(maxWidth: .infinity)
             }
             if let last = snapshot.lastCookedAt {
@@ -33,7 +34,7 @@ struct ProfileCookingContent: View {
         }.padding(.vertical, SGTheme.Space.xSmall)
     }
 
-    private func statistic(_ count: Int, title: String, identifier: String, open: @escaping () -> Void) -> some View {
+    private func statistic(_ count: Int, title: String, identifier: String, hint: String, open: @escaping () -> Void) -> some View {
         Button(action: open) {
             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                 Text(count, format: .number).font(SGTheme.TypeRole.title).monospacedDigit()
@@ -43,7 +44,7 @@ struct ProfileCookingContent: View {
         .buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.primaryText)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(count) \(title.lowercased())")
-        .accessibilityHint("Opens Grub Rank").accessibilityAddTraits(.isButton)
+        .accessibilityHint(hint).accessibilityAddTraits(.isButton)
         .accessibilityIdentifier(identifier)
     }
 

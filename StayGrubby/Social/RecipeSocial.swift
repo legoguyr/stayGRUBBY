@@ -15,78 +15,144 @@ nonisolated struct SharedRecipe: Codable, Sendable {
     var isAuthor: Bool
 }
 
-/// Deliberate, OFF-by-default attachment. Neither a Dish link nor auto-posting opts in.
+/// Which Recipe a post can carry, and how it is chosen (Connected Recipe sharing, November 16, 2026).
+nonisolated enum RecipeAttachmentPolicy {
+    /// The server's cook-specific option (exact Recipe used, current cook link or legacy Dish link) wins;
+    /// otherwise the Dish's own Recipe (`recipes.dish_id`). Only the poster's own Recipe can be attached.
+    static func resolve(shareOption: Recipe?, dishRecipe: Recipe?) -> Recipe? {
+        if let shareOption { return shareOption }
+        guard let dishRecipe, dishRecipe.isOwner else { return nil }
+        return dishRecipe
+    }
+    /// A Recipe already visible to Sous Chefs is attached by default; a private one never is.
+    static func selectedByDefault(_ recipe: Recipe) -> Bool { recipe.isOwner && recipe.visibility == "friends" }
+    /// Attaching a private Recipe makes the server share it with current Sous Chefs (`share_post_recipe`),
+    /// so the choice must say so explicitly.
+    static func changesVisibility(_ recipe: Recipe) -> Bool { recipe.visibility != "friends" }
+}
+
+/// Resolves the Recipe a post can carry. Hosts start `resolve` from their own task (the attachment
+/// view renders nothing until a Recipe exists, so it cannot own the lookup).
+@MainActor @Observable final class RecipeAttachmentModel {
+    var recipe: Recipe?
+    /// The attached Recipe (nil = post without a Recipe).
+    var selection: Recipe?
+    var checking = true
+    var failed = false
+    @ObservationIgnored private var resolved = false
+
+    func resolve(attemptID: UUID?, postID: UUID?, dish: Dish?, request: SocialRequest?, cache: AccountContentCache?) async {
+        guard let request else { checking = false; return }
+        checking = true; failed = false
+        defer { checking = false }
+        do {
+            let option = try JSONDecoder().decode(RecipeShareOption.self, from: await request("recipes", "share_options", .init(postID: postID, attemptID: attemptID)))
+            var dishRecipe: Recipe?
+            if option.recipe == nil, let dish {
+                if let cached = cache?.dishRecipe(dish.id), cached.isFresh() { dishRecipe = cached.value ?? nil }
+                else {
+                    var payload = SocialPayload(); payload.dishID = dish.id
+                    dishRecipe = try JSONDecoder().decode(DishRecipeResponse.self, from: await request("recipes", "dish", payload)).recipe
+                    cache?.storeDishRecipe(dishRecipe, for: dish.id)
+                }
+            }
+            try Task.checkCancellation()
+            let next = RecipeAttachmentPolicy.resolve(shareOption: option.recipe, dishRecipe: dishRecipe)
+            recipe = next
+            if !resolved { selection = next.flatMap { RecipeAttachmentPolicy.selectedByDefault($0) ? $0 : nil }; resolved = true }
+        } catch is CancellationError {} catch { failed = true; recipe = nil; selection = nil }
+    }
+}
+
+/// The composer's Recipe attachment. Shown only when the cook or its Dish has the poster's own Recipe:
+/// title, a one-line preview and one explicit control. A Recipe already shared with Sous Chefs starts
+/// included; a private Recipe starts excluded and its control says it will be shared.
 struct RecipeShareChoice: View {
-    var attemptID: UUID? = nil
-    var postID: UUID? = nil
-    @Binding var selection: Recipe?
-    @Environment(\.socialRequest) private var request
-    @State private var option: RecipeShareOption?
-    @State private var failed = false
-    @State private var loading = true
-    @State private var retry = 0
+    @Bindable var model: RecipeAttachmentModel
+    var retry: () -> Void = {}
     var body: some View {
-        Section("Recipe · optional") {
-            if let recipe = option?.recipe {
-                Toggle("Include Recipe", isOn: Binding(get: { selection != nil }, set: { selection = $0 ? recipe : nil })).accessibilityIdentifier("post-include-recipe")
+        if let recipe = model.recipe {
+            Section {
                 NavigationLink {
                     ScrollView { VStack(alignment: .leading, spacing: SGTheme.Space.group) {
                         Text(recipe.content.title).font(SGTheme.TypeRole.title)
                         if let description = recipe.content.description { Text(description) }
                         RecipeReadingBody(content: recipe.content)
-                    }.padding(SGTheme.Space.readingMargin) }.navigationTitle("Recipe to Share")
-                } label: { Text("\(recipe.content.title) · revision \(recipe.revision)") }
-                Text(option?.fromCookSnapshot == true ? "This is the Recipe snapshot associated with this cook." : "This is the currently linked Recipe. The link does not establish which Recipe was used for this cook.").font(.footnote)
-                Text("Including it shares this revision and its Recipe photo with current Sous Chefs. The Recipe becomes friends-visible. Later edits won’t rewrite this attachment. Personal Notes and private cooking photos are never included.").font(.footnote).foregroundStyle(.secondary)
-            } else if loading { ProgressView("Checking Recipe availability") }
-            else if failed { Text("Recipe unavailable. You can still publish without it."); Button("Retry Recipe") { retry += 1 } }
-            else { Text("No owned Recipe is associated with this cook. You can share the post without one, or link your Recipe to this cook first.").font(.footnote) }
-        }.task(id: retry) {
-            guard let request else { loading = false; return }; loading = true
-            do {
-                let next = try JSONDecoder().decode(RecipeShareOption.self, from: await request("recipes", "share_options", .init(postID: postID, attemptID: attemptID)))
-                try Task.checkCancellation(); option = next; failed = false
-            } catch is CancellationError {} catch { failed = true; option = nil; selection = nil }
-            loading = false
+                    }.padding(SGTheme.Space.readingMargin) }.navigationTitle("Recipe")
+                } label: {
+                    VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                        Label(recipe.content.title, systemImage: "book.closed").font(SGTheme.TypeRole.headline)
+                        if let summary = DishRecipePreview.summary(recipe, dishName: nil) {
+                            Text(summary).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        }
+                    }
+                }.accessibilityIdentifier("post-recipe-preview")
+                Toggle(RecipeAttachmentPolicy.changesVisibility(recipe) ? "Share Recipe with Sous Chefs" : "Include Recipe",
+                       isOn: Binding(get: { model.selection != nil }, set: { model.selection = $0 ? recipe : nil }))
+                    .accessibilityIdentifier("post-include-recipe")
+            } header: { Text("Recipe") } footer: {
+                if RecipeAttachmentPolicy.changesVisibility(recipe) {
+                    Text("This Recipe is private. Including it shares it with your current Sous Chefs; you can turn Recipe sharing off later in Edit Recipe.")
+                        .accessibilityIdentifier("post-recipe-private-note")
+                } else if model.selection != nil {
+                    Text("This Recipe stays linked and may update when you edit it.").accessibilityIdentifier("post-recipe-linked-note")
+                }
+            }
+        } else if model.failed {
+            Section("Recipe") {
+                Button("Couldn’t check for a Recipe · Retry", action: retry).font(.footnote).accessibilityIdentifier("post-recipe-retry")
+            }
         }
+        // No Recipe: no section at all.
     }
 }
 
 struct RecipePostSharingEditor: View {
     let post: SocialPost
+    /// The cook's Dish when known (the composer), so the Dish's own Recipe can be attached later.
+    var dish: Dish? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
-    @State private var selection: Recipe?
+    @State private var attachment = RecipeAttachmentModel()
     @State private var busy = false
     @State private var failed = false
     @State private var confirmingRemoval = false
+    @Environment(\.accountContentCache) private var cache
     var body: some View {
         NavigationStack {
             Form {
                 if post.recipeAttachmentPresent == true || post.recipeID != nil {
                     Section {
-                        Text("This post has an intentionally shared Recipe revision. Editing the current Recipe does not change it.")
-                        if post.recipeID != nil { NavigationLink("Read Shared Recipe") { SharedRecipeView(postID: post.id) } }
+                        Text("This post links your Recipe. Sous Chefs see its latest version while it stays shared; the revision you posted is kept for attribution.")
+                        if let recipeID = post.recipeID { NavigationLink("View Recipe") { RecipeDetailView(id: recipeID) } }
                         else { Text("Recipe access is currently off. You can still remove this saved attachment.") }
                         Button("Remove Recipe from Post", role: .destructive) { confirmingRemoval = true }.accessibilityIdentifier("post-unshare-recipe")
                         Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke all friends’ Recipe access.").font(.footnote)
                     }
                 } else {
-                    RecipeShareChoice(postID: post.id, selection: $selection)
-                    Button("Share Selected Recipe") { Task { await change(remove: false) } }.disabled(selection == nil || busy).accessibilityIdentifier("post-share-recipe")
+                    RecipeShareChoice(model: attachment) { Task { await resolve() } }
+                    if attachment.checking { ProgressView("Checking for a Recipe") }
+                    else if attachment.recipe == nil && !attachment.failed { Text("This Dish has no Recipe of yours to add yet.").font(.footnote) }
+                    else if attachment.recipe != nil {
+                        Button("Add Recipe to Post") { Task { await change(remove: false) } }.disabled(attachment.selection == nil || busy).accessibilityIdentifier("post-share-recipe")
+                    }
                 }
                 if failed { Text("Couldn’t change Recipe sharing. Your access or the Recipe may have changed. Refresh and try again.") }
             }.navigationTitle("Recipe Sharing").disabled(busy)
+                .task { await resolve() }
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
                 .confirmationDialog("Remove this Recipe attachment?", isPresented: $confirmingRemoval, titleVisibility: .visible) {
                     Button("Remove Recipe from Post", role: .destructive) { Task { await change(remove: true) } }
                 }.interactiveDismissDisabled(busy)
         }
     }
+    private func resolve() async {
+        await attachment.resolve(attemptID: nil, postID: post.id, dish: dish, request: request, cache: cache)
+    }
     private func change(remove: Bool) async {
         guard let request else { return }; busy = true; failed = false; defer { busy = false }
         do {
-            _ = try await request("recipes", remove ? "unshare_post" : "share_post", .init(postID: post.id, confirmed: true, recipeID: selection?.id, sourceRevision: selection?.revision))
+            _ = try await request("recipes", remove ? "unshare_post" : "share_post", .init(postID: post.id, confirmed: true, recipeID: attachment.selection?.id, sourceRevision: attachment.selection?.revision))
             try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss()
         } catch is CancellationError {} catch { failed = true }
     }

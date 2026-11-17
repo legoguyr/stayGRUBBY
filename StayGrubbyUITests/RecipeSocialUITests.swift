@@ -10,7 +10,9 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         app.tabBars.buttons["The Pass"].tap()
         let open = app.buttons["post-open-20000000-0000-0000-0000-000000000001"]
         XCTAssertTrue(open.waitForExistence(timeout: 8)); open.tap()
-        let recipe = app.buttons["post-recipe"]
+        // The post page keeps the exact posted revision one tap away; View Recipe opens the latest version.
+        XCTAssertTrue(app.buttons["post-recipe"].waitForExistence(timeout: 8))
+        let recipe = app.buttons["post-recipe-as-posted"]
         for _ in 0..<4 { if recipe.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(recipe.waitForExistence(timeout: 8)); recipe.tap()
         XCTAssertTrue(app.staticTexts["shared-recipe-title"].waitForExistence(timeout: 8))
@@ -33,7 +35,8 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         // In this fixture the post's current Recipe is the viewer's own, so it offers no Save of itself.
         XCTAssertFalse(app.buttons["recipe-save"].exists)
     }
-    @MainActor func testComposerRecipeChoiceStartsOffAndCancelDoesNotPublish() {
+    /// A Dish without a Recipe shows no Recipe section at all, and Cancel publishes nothing.
+    @MainActor func testComposerWithoutRecipeHasNoAttachmentAndCancelDoesNotPublish() {
         continueAfterFailure = false
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--recipes-review", "--test-dark"]
@@ -42,13 +45,9 @@ final class RecipeSocialUITests: StayGrubbyUITestCase {
         let name = app.textFields["dish-name"]; XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Recipe sharing check")
         app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
         let share = app.cookAction("share-with-friends"); XCTAssertTrue(share.waitForExistence(timeout: 15)); share.tap()
-        let toggle = app.switches["post-include-recipe"]
-        for _ in 0..<4 { if toggle.isHittable { break }; app.swipeUp() }
-        XCTAssertTrue(toggle.waitForExistence(timeout: 8)); XCTAssertEqual(toggle.value as? String, "0")
-        let control = toggle.switches.firstMatch
-        XCTAssertTrue(control.exists); XCTAssertTrue(control.isHittable); control.tap()
-        let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: toggle)
-        XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 5), .completed, app.debugDescription)
+        XCTAssertTrue(app.buttons["social-share-publish"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.switches["post-include-recipe"].waitForExistence(timeout: 3), "No Recipe, no attachment section")
+        XCTAssertFalse(app.descendants(matching: .any)["post-recipe-preview"].exists)
         app.buttons["Cancel"].tap(); XCTAssertTrue(share.waitForExistence(timeout: 5))
         XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "social-share-success").firstMatch.exists)
     }

@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var error: String?
     @State private var cookingList: RankingList?
     @State private var path = NavigationPath()
+    @Environment(\.grubRankRequest) private var grubRankRequest
     @Query private var attempts: [CookingAttempt]
     @Query private var scoreTombstones: [SyncTombstone]
 
@@ -28,6 +29,7 @@ struct HomeView: View {
             .task { prepareCooking() }
         }
         .environment(\.returnToRankings, { path = NavigationPath() })
+        .onChange(of: grubRankRequest) { _, request in if request != nil { path = NavigationPath() } } // Show the list itself.
         .environment(\.scoreUnlockState, scoreState)
     }
 

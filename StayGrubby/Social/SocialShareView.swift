@@ -32,7 +32,10 @@ struct SocialPostComposer: View {
     @State private var includePhoto = false
     @State private var postDescription = ""
     @State private var descriptionInitialized = false
-    @State private var sharedRecipe: Recipe?
+    @State private var attachment = RecipeAttachmentModel()
+    @Environment(\.accountContentCache) private var cache
+    private var sharedRecipe: Recipe? { attachment.selection }
+    @State private var addingRecipe = false
     @State private var postID = UUID()
     @State private var originalPostID: UUID?
     @State private var savedPost: SocialPost?
@@ -73,6 +76,11 @@ struct SocialPostComposer: View {
                         if preservedExistingRecipe {
                             Text("This cook was already shared. Its Recipe attachment was kept. Use Recipe Sharing in the post’s menu to change it.").accessibilityIdentifier("social-existing-recipe-preserved")
                         }
+                        // A Recipe linked after posting can join the same post (no duplicate post).
+                        if let savedPost, savedPost.recipeAttachmentPresent != true, savedPost.recipeID == nil {
+                            Button("Add Recipe to This Post", systemImage: "book.closed") { addingRecipe = true }
+                                .accessibilityIdentifier("social-add-recipe-to-post")
+                        }
                         if let savedPost {
                             NavigationLink("View Post") { SocialPostDestination(route: .post(savedPost.id)) }
                             SocialLinkShareAction(url: AppRoute.postURL(savedPost.id), title: "Share Post Link")
@@ -90,7 +98,7 @@ struct SocialPostComposer: View {
                     Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, and comparison history are not shared. Unlocked rankings may include the position and total at sharing. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
-                RecipeShareChoice(attemptID: attempt.id, selection: $sharedRecipe)
+                RecipeShareChoice(model: attachment) { Task { await resolveRecipe() } }
                 Section("Post Description · optional") {
                     TextField("Tell your Sous Chefs about this cook", text: $postDescription, axis: .vertical)
                         .lineLimit(3...8).accessibilityIdentifier("post-description-input")
@@ -108,7 +116,7 @@ struct SocialPostComposer: View {
                             Button("Check again") { checkingPost = true; lookupGeneration += 1 }
                         }
                         Button(busy ? "Posting…" : "Post to The Pass") { Task { await publish() } }
-                            .disabled(busy || checkingPost || revision == nil || postDescription.unicodeScalars.count > 2000).accessibilityIdentifier("social-share-publish")
+                            .disabled(busy || checkingPost || attachment.checking || revision == nil || postDescription.unicodeScalars.count > 2000).accessibilityIdentifier("social-share-publish")
                     }
                 } else {
                     if failed { Button("Retry identity") { Task { await load() } } }
@@ -121,8 +129,12 @@ struct SocialPostComposer: View {
             .navigationTitle("Post to The Pass").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { if !didPublish { Button("Cancel") { Task { await cancel() } }.disabled(busy) } } }
             .interactiveDismissDisabled(busy).task { await load() }
+            .task { await resolveRecipe() }
             .task(id: lookup) { await reconcile() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in lookupGeneration += 1 }
+            .sheet(isPresented: $addingRecipe, onDismiss: { Task { await refreshSavedPost() } }) {
+                if let savedPost { RecipePostSharingEditor(post: savedPost, dish: attempt.dish) }
+            }
             .sheet(isPresented: $editingIdentity) {
                 if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0 } }
             }
@@ -139,6 +151,14 @@ struct SocialPostComposer: View {
         guard let request else { return }
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }
+    }
+    private func resolveRecipe() async {
+        await attachment.resolve(attemptID: attempt.id, postID: nil, dish: attempt.dish, request: request, cache: cache)
+    }
+    /// After Add Recipe to This Post: re-read the same post so the confirmation reflects its Recipe.
+    private func refreshSavedPost() async {
+        guard let request, let post = try? await SocialPostPublisher.existing(attemptID: attempt.id, request: request) else { return }
+        savedPost = post
     }
     private func reconcile() async {
         guard !didPublish, let request, cookAccepted else { return }
