@@ -131,6 +131,9 @@ struct SharedRecipeView: View {
                 if let value {
                     RecipeToolbarActions(url: AppRoute.sharedRecipeURL(postID: postID), sendContent: .recipe(value.recipeID), sendTitle: "Send Current Recipe to Sous Chefs", disabled: busy) {
                             NavigationLink { RecipeDetailView(id: value.recipeID) } label: { Label("Current Recipe", systemImage: "book.closed") }
+                            if !value.isAuthor {
+                                SocialReportButton(kind: "recipe", targetID: value.recipeID, postID: value.postID)
+                            }
                         }
 
                 }

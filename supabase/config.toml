@@ -432,8 +432,8 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/recipe-import/index.ts"
 
-# Administrative, proof-gated test identity; never an application login route.
+# Development only. Enable explicitly in a disposable local or staging config.
 [functions.development-test-session]
-enabled = true
+enabled = false
 verify_jwt = true
 entrypoint = "./functions/development-test-session/index.ts"

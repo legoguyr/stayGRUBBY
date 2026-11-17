@@ -10,15 +10,17 @@ nonisolated enum SocialReportReason: String, CaseIterable, Identifiable {
 struct SocialReportButton: View {
     let kind: String
     let targetID: UUID
+    var postID: UUID? = nil
     @State private var showing = false
     var body: some View {
         Button("Report \(kind)") { showing = true }.accessibilityIdentifier("social-report-\(kind)")
-            .sheet(isPresented: $showing) { SocialReportEditor(kind: kind, targetID: targetID, close: { showing = false }) }
+            .sheet(isPresented: $showing) { SocialReportEditor(kind: kind, targetID: targetID, postID: postID, close: { showing = false }) }
     }
 }
 struct SocialReportEditor: View {
     let kind: String
     let targetID: UUID
+    var postID: UUID? = nil
     @Environment(\.socialRequest) private var request
     let close: () -> Void
     @State private var reason = SocialReportReason.other
@@ -49,7 +51,7 @@ struct SocialReportEditor: View {
         defer { busy = false }
         do {
             struct Receipt: Decodable { let reported: Bool }
-            let data = try await request("social_report", "report", .init(targetType: kind, targetID: targetID, reason: reason.rawValue, context: context))
+            let data = try await request("social_report", "report", .init(targetType: kind, targetID: targetID, reason: reason.rawValue, context: context, postID: postID))
             guard try JSONDecoder().decode(Receipt.self, from: data).reported else { failed = true; return }; sent = true
         } catch is CancellationError { } catch { failed = true }
     }

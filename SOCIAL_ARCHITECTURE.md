@@ -34,6 +34,10 @@ Reuse the permanent account and existing profiles table. Display names collapse 
 
 Discoverability defaults false. Setup is optional; identity edits use an authenticated owner-derived RPC, with no direct client writes. Discoverability controls normal search, not existing friendship identity or private cooking. Optional profile photos are implemented below; bios are not implemented. Social responses are held in the account-mounted UI, never hydrated into private cooking stores. Account-generation checks discard stale replies after switching/sign-out.
 
+## Public MVP moderation candidate
+
+The local candidate extends the existing report receipt to Recipes and pins the reported revision. The private queue requires both a live account session and a database-controlled staff membership. Hide/dismiss and audit recording share one transaction. The hide path reuses the existing post/comment/profile states and extends the foreign Recipe visibility predicate used by links, attachments and Storage. The owner's access and past cooking records remain independent. [Staff operation, privacy and deployment checklist](PUBLIC_MVP_MODERATION.md).
+
 ## Verification policy
 
 Compile and focused feature tests at each checkpoint, one Simulator lane. SQL tests use disposable PGlite Auth/session stubs, not real Apple authorization. Hosted checks compare version/name/hash, grants, RLS and non-sensitive private-data fingerprints before/after each migration. Real Apple deletion, physical device tests, full historical ranking/photo/sharing/Cuisine suites and release builds are excluded unless a concrete dependency demands them.
