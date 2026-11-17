@@ -80,3 +80,40 @@ The owner-approved additive `ranking_assessment_client_guard` migration wraps th
 ## Functional beta publication and participant updates
 
 The two additive beta migrations add a safe exact-cook published-post lookup, draft-only cancellation, nullable rank-at-sharing snapshots and optimistic owner participant updates. Snapshot fields appear only on new requests from clients that support their disclosure and on posts already authorized for the viewer. Participant changes reuse the current social event and invitation deduplication. The original cooking writer and compatibility guard are untouched. Run `node Backend/tests/next-testflight-social.test.mjs` and the existing schema, post, Shared Cooking, Recipe attachment and ranking-client-compatibility checks. See the [cycle review](../NEXT_TESTFLIGHT_IMPROVEMENTS_REVIEW.md).
+
+## Disposable signed backend acceptance
+
+The [executable harness](tests/local-backend-acceptance.mjs) accepts only a fresh, unlinked loopback Supabase stack. It creates synthetic local Auth users, signs in through local Auth, tests JWT-protected Edge routes without Gemini or Apple revocation, uploads/downloads/removes a tiny fixture through actual Storage, and checks peer moderation and the erasure dependency order. It refuses hosted endpoints, preexisting accounts, unprotected configuration files and redirected requests. It does not reproduce native Apple authorization or actual image-provider quality.
+
+This milestone could not execute the full stack because no Docker-compatible runtime or staging branch was available. The harness safety guards passed. With an approved local container runtime installed, use a temporary release checkout, without linking a project.
+
+```sh
+umask 077
+sg_local="$(mktemp -d /private/tmp/staygrubby-acceptance.XXXXXXXX)"
+git archive HEAD | tar -x -C "$sg_local"
+cd "$sg_local"
+python3 - <<'PY'
+from pathlib import Path
+import re
+p=Path('supabase/config.toml')
+s=p.read_text().replace('project_id = "staygrubby"', 'project_id = "staygrubby-acceptance"')
+s=re.sub(r'(?m)^(\s*(?:port|shadow_port|inspector_port)\s*=\s*)(\d+)', lambda m: m[1]+str(int(m[2])+1000), s)
+p.write_text(s)
+PY
+supabase start
+supabase status -o json > "$sg_local/status.json"
+chmod 600 "$sg_local/status.json"
+touch "$sg_local/empty-functions.env"
+```
+
+Keep the default JWT verification enabled. Start `supabase functions serve --env-file "$sg_local/empty-functions.env"` in a second Terminal in the same temporary folder. Supply no production key or provider secret. Enable local password sign-in only if the local Auth defaults require it. In the first Terminal run the following.
+
+```sh
+cd "$sg_local/Backend/tests"
+npm ci --ignore-scripts
+SG_LOCAL_STATUS="$sg_local/status.json" node local-backend-acceptance.mjs
+```
+
+Record the redacted result before stopping the temporary project using `supabase stop` from its own folder. The harness leaves fixtures available for inspection. Never run this against a linked project, production, a real Apple account or a stack containing user data. Check the installed CLI's `--help` for flags before executing. The `moderate-images` function stays disabled; this acceptance injects an explicitly synthetic classifier verdict through the service RPC and never sends images externally.
+
+The focused offline gate is `npm run test:public-mvp`. Offline worker/provider tests are `deno test --no-config supabase/functions/moderate-images/handler.test.ts` from the repository root. These use injected responses and require no network permissions. [Image processing and activation](../IMAGE_MODERATION.md)
