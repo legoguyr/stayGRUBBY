@@ -10,6 +10,7 @@ import SwiftData
     var failed = false
     var busy = false
     var management: RecipeManagementSheet?
+    var reportTarget: RecipeReportTarget?
     var claim: SocialCookingClaim?
     var list: RankingList?
     var deleting = false
@@ -157,7 +158,9 @@ struct RecipeReaderToolbar: ToolbarContent {
                     Button("Save as New Recipe", systemImage: "document.on.document") { model.management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                     Button("86 Recipe (Delete)", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
                 } else {
-                    SocialReportButton(kind: "recipe", targetID: recipe.id)
+                    Button("Report Recipe", systemImage: "flag") {
+                        model.reportTarget = .init(id: recipe.id, revision: recipe.revision)
+                    }.accessibilityIdentifier("social-report-recipe")
                 }
             }
         }
@@ -173,6 +176,7 @@ private struct RecipeReaderPresentation: ViewModifier {
     @Environment(\.modelContext) private var context
     func body(content: Content) -> some View {
         content
+            .recipeReportSheet($model.reportTarget, reload: reload)
             .sheet(item: $model.management, onDismiss: { Task { await reload() } }) { sheet in
                 switch sheet {
                 case .edit(let r): RecipeEditor(recipe: r) { model.recipe = $0 }

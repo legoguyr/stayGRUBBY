@@ -44,7 +44,9 @@ final class ConnectedRecipeSharingUITests: StayGrubbyUITestCase {
         XCTAssertEqual(toggle.label, "Share Recipe with Sous Chefs")
         XCTAssertTrue(app.staticTexts["post-recipe-private-note"].exists)
         shot("Composer · private Recipe attachment", app)
-        reach(toggle, app); toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        reach(toggle, app)
+        let control = toggle.switches.firstMatch
+        XCTAssertTrue(control.waitForExistence(timeout: 5)); control.tap()
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1'"), object: toggle)], timeout: 5), .completed)
         XCTAssertFalse(app.staticTexts["post-recipe-linked-note"].exists, "A private Recipe keeps its sharing note until posted")
         let publish = app.buttons["social-share-publish"]; reach(publish, app); publish.tap()

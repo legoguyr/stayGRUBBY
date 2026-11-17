@@ -3,6 +3,7 @@ import SwiftUI
 nonisolated struct RecipeShareOption: Codable {
     var recipe: Recipe?
     var fromCookSnapshot: Bool?
+    var unavailable: Bool? = nil
 }
 nonisolated struct SharedRecipe: Codable, Sendable {
     var postID: UUID
@@ -17,8 +18,7 @@ nonisolated struct SharedRecipe: Codable, Sendable {
 
 /// Which Recipe a post can carry, and how it is chosen (Connected Recipe sharing, November 16, 2026).
 nonisolated enum RecipeAttachmentPolicy {
-    /// The server's cook-specific option (exact Recipe used, current cook link or legacy Dish link) wins;
-    /// otherwise the Dish's own Recipe (`recipes.dish_id`). Only the poster's own Recipe can be attached.
+    /// The server's owner-authorized option wins. Older servers can require the Dish's own Recipe as a fallback.
     static func resolve(shareOption: Recipe?, dishRecipe: Recipe?) -> Recipe? {
         if let shareOption { return shareOption }
         guard let dishRecipe, dishRecipe.isOwner else { return nil }
@@ -48,7 +48,7 @@ nonisolated enum RecipeAttachmentPolicy {
         do {
             let option = try JSONDecoder().decode(RecipeShareOption.self, from: await request("recipes", "share_options", .init(postID: postID, attemptID: attemptID)))
             var dishRecipe: Recipe?
-            if option.recipe == nil, let dish {
+            if option.recipe == nil, option.unavailable != true, let dish {
                 if let cached = cache?.dishRecipe(dish.id), cached.isFresh() { dishRecipe = cached.value ?? nil }
                 else {
                     var payload = SocialPayload(); payload.dishID = dish.id
@@ -164,6 +164,7 @@ struct SharedRecipeView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.scenePhase) private var phase
     @State private var value: SharedRecipe?
+    @State private var reportTarget: RecipeReportTarget?
     @State private var failed = false
     @State private var busy = false
     @State private var generation = UUID()
@@ -198,12 +199,15 @@ struct SharedRecipeView: View {
                     RecipeToolbarActions(url: AppRoute.sharedRecipeURL(postID: postID), sendContent: .recipe(value.recipeID), sendTitle: "Send Current Recipe to Sous Chefs", disabled: busy) {
                             NavigationLink { RecipeDetailView(id: value.recipeID) } label: { Label("Current Recipe", systemImage: "book.closed") }
                             if !value.isAuthor {
-                                SocialReportButton(kind: "recipe", targetID: value.recipeID, postID: value.postID)
+                                Button("Report Recipe", systemImage: "flag") {
+                                    reportTarget = .init(id: value.recipeID, postID: value.postID, revision: value.revision)
+                                }.accessibilityIdentifier("social-report-recipe")
                             }
                         }
 
                 }
             }
+            .recipeReportSheet($reportTarget, reload: load)
             .task(id: postID) { await load() }.refreshable { await load() }
             .onSocialRefresh { if !busy { await load() } }
             .onChange(of: phase) { _, next in generation = UUID(); value = nil; if next == .active { Task { await load() } } }
