@@ -11,6 +11,11 @@ const content={title:'Recipe photo soup',description:'A useful optional introduc
 await rpc('recipes','save',{recipeID:rid,recipe:content,visibility:'private'});
 await actor(1);await rejects(()=>rpc('recipes','photo',{assetID:photo}));
 const post=randomUUID();await actor(0);await rpc('social_content','prepare',{postID:post,attemptID:lib.attempts[0],expectedRevision:0,confirmed:true,includeRecipe:true,recipeID:rid,sourceRevision:1});
+// Explicit fixture classifier approval is now required in addition to Recipe consent.
+await db.exec('reset role;set role service_role');
+const screened=(await db.query('select api.claim_image_reviews() items')).rows[0].items.find(item=>item.path===path);
+check(Boolean(screened),'Shared Recipe image enters screening');
+await db.query("select api.finish_image_review($1,$2,$3,'approved',$4)",[screened.objectID,screened.generation,screened.leaseID,'a'.repeat(64)]);
 await actor(1);check((await rpc('recipes','photo',{assetID:photo})).id===photo,'explicit Recipe sharing permits its own image');
 const copy=await rpc('recipes','fork_post',{postID:post,targetID:randomUUID(),confirmed:true});check(!copy.content.photoID&&copy.content.description===content.description,'private fork preserves description but not foreign media');
 await db.exec('reset role');check((await db.query('select count(*)::int n from storage.objects')).rows[0].n===1,'fork never duplicates media uploads');
