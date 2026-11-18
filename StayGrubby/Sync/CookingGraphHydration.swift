@@ -65,6 +65,7 @@ import SwiftData
                 value.defaultCategoryCode = row.defaultCategoryCode
                 value.cuisine = row.cuisine
                 value.publicDescription = row.publicDescription; value.privateNotes = row.privateNotes
+                value.collections = DishCollectionPolicy.normalized(row.collections ?? [])
                 value.createdAt = row.createdAt
             }
             for row in graph.items {

@@ -4,13 +4,16 @@ import SwiftData
 struct CookingRankingView: View {
     let list: RankingList
     @Environment(\.modelContext) private var context
-    @AppStorage(RankingsDisplayMode.preferenceKey, store: RankingsDisplayPreferences.defaults) private var displayPreference = RankingsDisplayMode.topVersion.rawValue
     @Query private var attempts: [CookingAttempt]
     @Query(sort: \Dish.name) private var dishes: [Dish]
     @State private var newDish = false
     @State private var choosingDish = false
     @State private var selectedDish: Dish?
     @State private var pendingDish: Dish?
+    @State private var addingRecipe = false
+    /// Rank a Dish → "Add another cook": which Dish (nil = open the picker), applied once the sheet closes.
+    @State private var existingChoice: Dish??
+    @Environment(\.socialRequest) private var socialRequest
     @State private var searchText = ""
     @State private var sort = CookingBrowseSort.grubRank
     @State private var filters = CookingFilters()
@@ -28,7 +31,7 @@ struct CookingRankingView: View {
         let eligible = ScoreUnlockPolicy.entries(in: context, list: list)
         let matching = CookingDiscovery.entries(in: list, attempts: attempts, query: searchText, filters: filters)
         let entries = CookingBrowseOrder.entries(RankingsPresentation.entries(eligible, matching: matching,
-            mode: RankingsDisplayMode(rawValue: displayPreference) ?? .topVersion), order: sort, scores: scores)
+            mode: .allVersions), order: sort, scores: scores)
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if !scores.isUnlocked { ScoreUnlockProgressBanner(state: scores) }
@@ -74,7 +77,6 @@ struct CookingRankingView: View {
             guard let request = grubRankRequest, appliedRequest != request.id else { return }
             appliedRequest = request.id
             filters = CookingFilters(); searchText = ""; searching = false; sort = .grubRank; creationExpanded = false
-            displayPreference = request.mode.rawValue
         }
         .navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
@@ -84,10 +86,10 @@ struct CookingRankingView: View {
                     withAnimation(reduceMotion ? nil : SGTheme.Motion.quick) { creationExpanded.toggle() }
                 }, onSearch: list.items.isEmpty ? nil : { creationExpanded = false }, searchText: $searchText, searching: $searching)
                 if creationExpanded {
-                    SGCreationChoices(canCreateVersion: !eligibleDishes.isEmpty, newDish: {
+                    SGCreationChoices(rankDish: {
                         creationExpanded = false; newDish = true
-                    }, newVersion: {
-                        creationExpanded = false; choosingDish = true
+                    }, addRecipe: socialRequest == nil ? nil : {
+                        creationExpanded = false; addingRecipe = true
                     })
                     .transition(.opacity)
                 }
@@ -98,7 +100,15 @@ struct CookingRankingView: View {
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .scrollDismissesKeyboard(.interactively)
         .sheet(item: $filterGroup) { CookingFilterGroupSheet(filters: $filters, group: $0) }
-        .sheet(isPresented: $newDish) { AddCookingView(list: list) }
+        .sheet(isPresented: $newDish, onDismiss: {
+            // Rank a Dish → the owner chose an existing Dish: continue as another cook of it.
+            guard let choice = existingChoice else { return }
+            existingChoice = nil
+            if let dish = choice { selectedDish = dish } else { choosingDish = true }
+        }) {
+            AddCookingView(list: list, chooseExisting: { dish in existingChoice = .some(dish); newDish = false })
+        }
+        .sheet(isPresented: $addingRecipe) { AddRecipeFlow(context: .library) }
         .sheet(item: $selectedDish) { CookAgainFlow(list: list, dish: $0) }
         .sheet(isPresented: $choosingDish, onDismiss: {
             selectedDish = pendingDish; pendingDish = nil
@@ -114,21 +124,14 @@ struct CookingRankingView: View {
         return "Rank \(entry.globalRank), \(entry.attempt.displayName), \(detail)"
     }
 
-    private var displayMode: RankingsDisplayMode { RankingsDisplayMode(rawValue: displayPreference) ?? .topVersion }
-
-    /// Grub Rank browse controls: one even row of direct filter groups, then Sort, the
-    /// Show All Versions switch and a clear action shown only while filters are active.
+    /// Grub Rank browse controls: one even row of direct filter groups, then Sort and a clear action shown
+    /// only while filters are active. Grub Rank always lists every ranked cook (owner decision, Nov 18, 2026:
+    /// the Top / All Cooks toggle is gone; the stored preference is no longer read).
     /// Nothing moves when filters toggle. At large text sizes each row wraps instead of clipping.
     private var browseControls: some View {
         VStack(spacing: SGTheme.Space.xSmall) {
             HStack(spacing: SGTheme.Space.xSmall) { filterChips(CookingFilterGroup.grubRank) }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); versionsToggle; clearFilters }
-                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                    HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); clearFilters }
-                    versionsToggle
-                }
-            }
+            HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); clearFilters }
         }
         .padding(.horizontal, SGTheme.Space.medium)
         .accessibilityElement(children: .contain).accessibilityIdentifier("filter-strip")
@@ -143,14 +146,6 @@ struct CookingRankingView: View {
         SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
                          disabled: { $0.needsScores && !scores.isUnlocked },
                          active: sort != .grubRank, identifier: "ranking-sort", label: sort.rawValue)
-    }
-    /// Presentation only: Off = one row per Dish (its top cook), On = All Cooks. The stored raw
-    /// values ("Top Version" / "All Versions") are unchanged so existing preferences survive.
-    private var versionsToggle: some View {
-        SGBrowseToggle(title: "All Cooks", isOn: Binding(
-            get: { displayMode == .allVersions },
-            set: { displayPreference = ($0 ? RankingsDisplayMode.allVersions : .topVersion).rawValue }),
-                       identifier: "rankings-show-all-versions", spokenTitle: "Show All Cooks of Each Dish")
     }
     /// One X clears search and filters: shown while either is active, hidden otherwise. It keeps its
     /// slot while hidden so activating a filter or typing never moves Sort or All Cooks.

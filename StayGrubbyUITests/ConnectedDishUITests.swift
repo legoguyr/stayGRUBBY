@@ -135,28 +135,24 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         XCTAssertEqual(count("recipes.library_index"), bible + 1, log.label)
     }
 
-    /// My Kitchen statistics open Grub Rank showing exactly what they count: Dishes Ranked → one row per
-    /// Dish (All Cooks off), Total Makes → every ranked cook (All Cooks on). Search and filters are cleared.
+    /// My Kitchen statistics open Grub Rank, which always lists every ranked cook (Nov 18, 2026: no Top /
+    /// All toggle). Search and filters are cleared.
     @MainActor func testKitchenStatisticsOpenGrubRankInTheMatchingView() throws {
         let app = launch(["--discovery-fixture", "--test-light"])
         func count(_ id: String) -> Int { Int(app.descendants(matching: .any)[id].label.split(separator: " ").first ?? "") ?? -1 }
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'"))
-        // Start from the opposite view with a search active, so the request visibly changes both.
-        XCTAssertTrue(app.allVersionsSwitch.waitForExistence(timeout: 10))
-        if app.allVersionsSwitch.value as? String != "1" { app.allVersionsSwitch.switches.firstMatch.tap() }
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 10)); app.showAllVersions()
         app.tabBars.buttons["My Kitchen"].tap()
         let dishes = app.descendants(matching: .any)["profile-dish-count"]; XCTAssertTrue(dishes.waitForExistence(timeout: 10))
         let dishCount = count("profile-dish-count"), makes = count("profile-entry-count")
         XCTAssertGreaterThan(makes, dishCount, "The fixture has Dishes with several cooks")
         dishes.tap()
-        XCTAssertTrue(app.allVersionsSwitch.waitForExistence(timeout: 10))
-        XCTAssertEqual(app.allVersionsSwitch.value as? String, "0", "Dishes Ranked shows one row per Dish")
-        for _ in 0..<12 where rows.count < dishCount { app.swipeUp() }
-        shot("Grub Rank from Dishes Ranked", app)
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        for _ in 0..<16 where rows.count < makes { app.swipeUp() }
+        XCTAssertGreaterThan(rows.count, dishCount, "Every cook is listed, not one row per Dish")
         app.tabBars.buttons["My Kitchen"].tap()
         let total = app.descendants(matching: .any)["profile-entry-count"]; XCTAssertTrue(total.waitForExistence(timeout: 10)); total.tap()
-        XCTAssertTrue(app.allVersionsSwitch.waitForExistence(timeout: 10))
-        XCTAssertEqual(app.allVersionsSwitch.value as? String, "1", "Total Makes shows All Cooks")
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
         XCTAssertFalse(app.descendants(matching: .any)["discovery-result-count"].exists, "No search or filter narrows the list")
         shot("Grub Rank from Total Makes", app)
     }

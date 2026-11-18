@@ -51,8 +51,10 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Invitation declined. Nothing was added to your cooking history."].waitForExistence(timeout: 8))
         app.tabBars.buttons["Grub Rank"].tap(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Lemon Chicken Together"].exists)
-        app.revealCreation(); app.buttons["new-version"].tap()
-        XCTAssertFalse(app.buttons["choose-dish-Lemon Chicken Together"].exists)
+        // Nothing was ranked, so Rank a Dish offers no existing Dish to add a cook to.
+        app.revealCreation(); app.buttons["new-dish"].tap()
+        XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["cook-existing-dish"].exists)
     }
     @MainActor func testRunItBackEntryIsHiddenWithoutRemovingSharedCooking() throws {
         let app = launch(["--test-light"]); app.tabBars.buttons["The Pass"].tap()

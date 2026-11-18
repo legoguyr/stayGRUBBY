@@ -17,6 +17,8 @@ nonisolated struct DebugReviewConfiguration {
     let comparisonMode: String?
     let sharingMode: String?
     let scoreUnlockCount: Int?
+    /// Server feature flags simulated for an isolated review store (`--feature-flag <key>`, repeatable).
+    let featureFlags: Set<String>
 
     init(arguments: [String], environment: [String: String] = [:]) {
         var token = environment["GRUB_TEST_STORE"]
@@ -47,6 +49,7 @@ nonisolated struct DebugReviewConfiguration {
             ScoreUnlockPolicy.requiredRankedEntryCount + 2].contains(count) {
             scoreUnlockCount = count
         } else { scoreUnlockCount = nil }
+        featureFlags = isolated ? Set(arguments.indices.dropLast().filter { arguments[$0] == "--feature-flag" }.map { arguments[$0 + 1] }) : []
     }
 
     func storeURL(in temporaryDirectory: URL) -> URL? {

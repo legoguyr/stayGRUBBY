@@ -23,7 +23,11 @@ struct DishView: View {
     @Environment(\.scenePhase) private var phase
     @Environment(\.returnToRankings) private var returnToRankings
     @Environment(\.accountContentCache) private var cache
+    @Environment(\.featureFlags) private var flags
     @State private var recipe = RecipeReaderModel()
+    @State private var separating = false
+    @State private var separated = false
+    @State private var editingCollections = false
     @State private var sharingSocial = false
     @State private var editing = false
     @State private var editingDishText = false
@@ -54,6 +58,7 @@ struct DishView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 header
+                if flags.isOn(.dishCollections), let dish { DishCollectionChips(dish: dish) { editingCollections = true } }
                 Picker("Dish view", selection: $tab) {
                     ForEach(DishTab.allCases) { Text($0.title).tag($0) }
                 }.pickerStyle(.segmented).accessibilityIdentifier("dish-tabs")
@@ -77,7 +82,10 @@ struct DishView: View {
                     DishShareAction(model: .make(for: shownCook), toolbar: true, currentModel: { .make(for: shownCook) })
                     DishActions(editCook: { editing = true }, rerank: { reranking = true },
                                 shareWithSousChefs: request == nil ? nil : { sharingSocial = true },
-                                editDishText: { editingDishText = true }, delete: { deleting = true })
+                                editDishText: { editingDishText = true },
+                                separateCook: (dish?.attempts.count ?? 0) > 1 ? { separating = true } : nil,
+                                editCollections: flags.isOn(.dishCollections) && dish != nil ? { editingCollections = true } : nil,
+                                delete: { deleting = true })
                 }.sgIndependentToolbarBackground()
             }
         }
@@ -94,6 +102,11 @@ struct DishView: View {
         .sheet(isPresented: $addingRecipe, onDismiss: { Task { await loadRecipe() } }) { if let dish { AddRecipeFlow(context: .dish(dish)) } }
         .sheet(isPresented: $sharingSocial) { if let shownCook { SocialPostComposer(attempt: shownCook, close: { sharingSocial = false }) } }
         .sheet(isPresented: $editingDishText) { if let dish { DishTextEditor(dish: dish) } }
+        .sheet(isPresented: $editingCollections) { if let dish { DishCollectionsEditor(dish: dish) } }
+        // The cook now belongs to another Dish, so this page (of the original Dish) closes.
+        .sheet(isPresented: $separating, onDismiss: { if separated { dismiss() } }) {
+            if let shownCook { MoveCookSheet(cook: shownCook) { _ in separated = true } }
+        }
         .sheet(isPresented: $editing) { if let shownCook { EditCookingView(attempt: shownCook) } }
         .sheet(isPresented: $reranking) { if let shownCook { ReRankView(attempt: shownCook) } }
         .sheet(isPresented: $addingVersion, onDismiss: {

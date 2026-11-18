@@ -6,6 +6,7 @@ struct AccountView: View {
     @Environment(\.cookingSyncCoordinator) private var sync
     @Environment(\.modelContext) private var context
     @Environment(\.dynamicTypeSize) private var typeSize
+    @Environment(\.featureFlags) private var flags
     @Query private var sharingCooks: [CookingAttempt]
     @Query private var sharingTombstones: [SyncTombstone]
     @State private var socialRoute: SocialPostRoute?
@@ -31,7 +32,7 @@ struct AccountView: View {
 
     @ViewBuilder private var profile: some View {
         let ranking = sharingRanking
-        let snapshot = ProfileSnapshot(context: context, list: ranking)
+        let snapshot = ProfileSnapshot(context: context, list: ranking, includesCollections: flags.isOn(.dishCollections))
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                 VStack(spacing: 0) { KitchenIdentityHeader(); SocialFriendsLink() }

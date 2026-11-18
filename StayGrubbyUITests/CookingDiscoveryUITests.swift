@@ -112,7 +112,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
 
         // Chip geometry and row positions must not move when a filter becomes active.
         let chipFrames = ["course", "cuisine"].map { app.buttons["ranking-filter-\($0)"].frame }
-        let sortFrame = app.buttons["ranking-sort"].frame, toggleFrame = app.allVersionsSwitch.frame
+        let sortFrame = app.buttons["ranking-sort"].frame
         filters("course", in: app)
         // Multi-select: choosing keeps the sheet open until Done.
         select(app.buttons["filter-course-main"], in: app)
@@ -124,7 +124,6 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         doneFilters(in: app)
         XCTAssertEqual(["course", "cuisine"].map { app.buttons["ranking-filter-\($0)"].frame }, chipFrames)
         XCTAssertEqual(app.buttons["ranking-sort"].frame, sortFrame)
-        XCTAssertEqual(app.allVersionsSwitch.frame, toggleFrame)
         XCTAssertEqual(app.buttons["ranking-filter-course"].label, "Course, 1 active")
         let golden = row("Golden sear", in: app)
         XCTAssertTrue(golden.waitForExistence(timeout: 10)); XCTAssertTrue(golden.label.hasPrefix("Rank 2,"))
@@ -213,8 +212,7 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         capture("New Dish with existing filtered ranking", app: app)
         transition(app.buttons["Cancel"], to: row("Apple Cake", in: app), in: app)
         XCTAssertTrue(app.rankingFilterLabel("course").contains("1 active"))
-        app.revealCreation()
-        transition(app.buttons["new-version"], to: app.buttons["choose-dish-Harissa Chicken"], in: app)
+        app.openExistingDishPicker()
         transition(app.buttons["choose-dish-Harissa Chicken"], to: app.staticTexts["inherited-dish-name"], in: app)
         XCTAssertEqual(app.staticTexts["inherited-dish-name"].label, "Harissa Chicken")
         capture("New Version from filtered ranking", app: app)

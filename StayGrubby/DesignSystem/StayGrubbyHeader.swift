@@ -72,16 +72,21 @@ struct SGIconButton: View {
     }
 }
 
+/// The + menu (November 18, 2026): two clear starts. Rank a Dish makes a new Dish and its first cook, or —
+/// chosen explicitly inside it — another cook of a Dish already ranked. Add a Recipe saves a Recipe to the
+/// Food Bible, optionally for a Dish. The separate Cook Again choice is gone: a repeat is just another cook.
 struct SGCreationChoices: View {
-    let canCreateVersion: Bool
-    let newDish: () -> Void
-    let newVersion: () -> Void
+    let rankDish: () -> Void
+    /// Nil without a connection to the Recipe service (guest/local-only libraries).
+    var addRecipe: (() -> Void)? = nil
     var body: some View {
         VStack(spacing: SGTheme.Space.xSmall) {
-            choice("New Dish", subtitle: "Something new for your ranking", symbol: "fork.knife", action: newDish)
+            choice("Rank a Dish", subtitle: "Something you cooked, new or again", symbol: "fork.knife", action: rankDish)
                 .accessibilityIdentifier("new-dish")
-            choice("Cook Again", subtitle: "Make a saved Dish again", symbol: "arrow.triangle.branch", action: newVersion)
-                .disabled(!canCreateVersion).accessibilityIdentifier("new-version")
+            if let addRecipe {
+                choice("Add a Recipe", subtitle: "Save how to make it to your Food Bible", symbol: "book", action: addRecipe)
+                    .accessibilityIdentifier("new-recipe")
+            }
         }.sgCard().padding(.horizontal, SGTheme.Space.medium)
     }
     private func choice(_ title: String, subtitle: String, symbol: String, action: @escaping () -> Void) -> some View {

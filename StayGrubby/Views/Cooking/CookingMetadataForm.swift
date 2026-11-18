@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// Value-only state: dismissing the enclosing editor never writes to saved objects.
 struct CookingMetadataForm: View {
@@ -11,7 +12,10 @@ struct CookingMetadataForm: View {
     var selectedPeople: [SocialPerson] = []
     /// The cook's "Version N" fallback, or nil when an unnamed cook shows no name.
     var fallbackCookName: String? = nil
+    /// Rank a Dish only: lets the owner explicitly pick an existing Dish instead (nil opens the picker).
+    var chooseExisting: ((Dish?) -> Void)? = nil
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.featureFlags) private var flags
     @State private var details = false
     @FocusState private var focusedField: EntryField?
     private enum EntryField: Hashable { case name, description, dishNotes, version }
@@ -30,6 +34,7 @@ struct CookingMetadataForm: View {
                             TextField("Dish name (required)", text: $draft.dishName).font(SGTheme.TypeRole.title)
                                 .focused($focusedField, equals: .name).submitLabel(.done).onSubmit { focusedField = nil }
                                 .accessibilityIdentifier("dish-name").sgField()
+                            if let chooseExisting { ExistingDishPrompt(name: draft.dishName, choose: chooseExisting) }
                         }
                         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                             Text("Public Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
@@ -40,6 +45,9 @@ struct CookingMetadataForm: View {
                             Label("Private Notes", systemImage: "lock").font(SGTheme.TypeRole.secondary.weight(.semibold))
                             TextField("For your kitchen only", text: $draft.privateNotes, axis: .vertical)
                                 .focused($focusedField, equals: .dishNotes).lineLimit(1...4).accessibilityIdentifier("cook-dish-private-notes").sgField()
+                        }
+                        if flags.isOn(.dishCollections) {
+                            DishCollectionsField(labels: Binding(get: { draft.collections ?? [] }, set: { draft.collections = $0 }))
                         }
                         if existingDish || editing {
                             Text(editing ? "These apply to every cook of this Dish, including Cuisine and Source in Details." : "Description and Private Notes apply to every cook of this Dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
@@ -122,11 +130,38 @@ struct CookingFormScroll: View {
     var editingParticipants = false
     var selectedPeople: [SocialPerson] = []
     var fallbackCookName: String? = nil
+    var chooseExisting: ((Dish?) -> Void)? = nil
     var body: some View {
         ScrollView {
-            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople, fallbackCookName: fallbackCookName)
+            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople, fallbackCookName: fallbackCookName, chooseExisting: chooseExisting)
                 .frame(maxWidth: SGTheme.Size.contentMaximum)
                 .padding(SGTheme.Space.medium).frame(maxWidth: .infinity)
         }.accessibilityIdentifier("cooking-form").scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
+    }
+}
+
+/// Rank a Dish: a new name creates a new Dish. When the typed name matches a Dish already ranked, the owner
+/// chooses explicitly whether this is another cook of it; similar names never merge on their own.
+struct ExistingDishPrompt: View {
+    let name: String
+    let choose: (Dish?) -> Void
+    @Query(sort: \Dish.name) private var dishes: [Dish]
+    private var ranked: [Dish] { dishes.filter { !$0.attempts.isEmpty } }
+    private var match: Dish? {
+        let key = DishCollectionPolicy.key(name)
+        return key.isEmpty ? nil : ranked.first { DishCollectionPolicy.key($0.name) == key }
+    }
+    var body: some View {
+        if let match {
+            VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                Text("You’ve ranked “\(match.name)” before.").font(SGTheme.TypeRole.secondary.weight(.semibold))
+                Button { choose(match) } label: { Label("Add Another Cook of \(match.name)", systemImage: "plus").frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading) }
+                    .buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("cook-existing-match")
+                Text("Or continue to save it as a separate Dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            }.accessibilityElement(children: .contain).accessibilityIdentifier("existing-dish-prompt")
+        } else if !ranked.isEmpty {
+            Button { choose(nil) } label: { Label("Made one of your Dishes again? Choose it", systemImage: "arrow.triangle.branch").font(SGTheme.TypeRole.secondary.weight(.medium)).frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle()) }
+                .buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("cook-existing-dish")
+        }
     }
 }

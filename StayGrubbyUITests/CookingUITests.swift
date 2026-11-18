@@ -100,8 +100,7 @@ final class CookingUITests: StayGrubbyUITestCase {
         // An empty library shows no browse controls, so choose All Versions once a cook exists.
         app.showAllVersions()
 
-        app.revealCreation()
-        tap(app.buttons["new-version"])
+        app.openExistingDishPicker()
         let parentSearch = app.textFields["parent-dish-search"]
         XCTAssertTrue(parentSearch.waitForExistence(timeout: 10))
         fill(parentSearch, "salmon")

@@ -18,6 +18,8 @@ struct AddCookingView: View {
     var offersRecipe: Bool? = nil
     let origin: SocialCookingClaim?
     let onResultClose: () -> Void
+    /// Rank a Dish: the owner chose an existing Dish instead of creating one (nil = open the picker).
+    var chooseExisting: ((Dish?) -> Void)? = nil
     @State private var draft: CookingDraft
     @State private var sharing = CookingSharingSelection()
     @State private var sharingChoice: Bool?
@@ -34,8 +36,9 @@ struct AddCookingView: View {
     @State private var addingRecipe = false
     private var promptsForRecipe: Bool { (offersRecipe ?? (origin == nil && dish == nil)) && socialRequest != nil && !recipePromptClosed }
 
-    init(list: RankingList, dish: Dish? = nil, newDishID: UUID? = nil, offersRecipe: Bool? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}) {
+    init(list: RankingList, dish: Dish? = nil, newDishID: UUID? = nil, offersRecipe: Bool? = nil, origin: SocialCookingClaim? = nil, onResultClose: @escaping () -> Void = {}, chooseExisting: ((Dish?) -> Void)? = nil) {
         self.list = list; self.dish = dish; self.newDishID = newDishID; self.offersRecipe = offersRecipe; self.origin = origin; self.onResultClose = onResultClose
+        self.chooseExisting = dish == nil && origin == nil ? chooseExisting : nil
         var initial = origin?.draft() ?? dish.map { CookingDraft(dish: $0) } ?? CookingDraft()
         // A Recipe claim can prefill this cook, but it does not replace the linked Dish's own text.
         if let dish {
@@ -96,10 +99,11 @@ struct AddCookingView: View {
                     }
                 } else {
                     CookingFormScroll(draft: $draft, existingDish: dish != nil, sharingSelection: socialRequest == nil ? nil : $sharing, cookedWith: socialRequest != nil && sharing.configured == true ? $cookedWith : nil,
-                                      fallbackCookName: dish?.attempts.isEmpty ?? true ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1))
+                                      fallbackCookName: dish?.attempts.isEmpty ?? true ? nil : CookName.fallback(sequence: (dish?.attempts.map(\.sequenceNumber).max() ?? 0) + 1),
+                                      chooseExisting: chooseExisting)
                 }
             }
-            .navigationTitle(savedAttempt != nil ? "Ranking Result" : session == nil ? (origin?.kind == "recipe" || origin?.recipeSnapshot != nil ? "Rank My Version" : dish == nil ? "New Dish" : "Cook Again") : "Rank this cook")
+            .navigationTitle(savedAttempt != nil ? "Ranking Result" : session == nil ? (origin?.kind == "recipe" || origin?.recipeSnapshot != nil ? "Rank My Version" : dish == nil ? "Rank a Dish" : "Cook Again") : "Rank this cook")
             .navigationBarTitleDisplayMode(.inline)
             .background(SGTheme.ColorToken.background)
             .toolbar {

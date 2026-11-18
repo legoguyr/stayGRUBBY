@@ -42,24 +42,20 @@ extension XCUIApplication {
         }
         XCTFail("Creation choices did not appear")
     }
+    /// Rank a Dish → "Made one of your Dishes again? Choose it" → the Dish picker (replaces the old
+    /// separate Cook Again choice, November 18, 2026).
+    @MainActor func openExistingDishPicker() {
+        revealCreation(); buttons["new-dish"].tap()
+        let choose = buttons["cook-existing-dish"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 10)); choose.tap()
+        XCTAssertTrue(textFields["parent-dish-search"].waitForExistence(timeout: 10))
+    }
     /// Older version-specific regressions exercise the complete ranking view.
     /// D1: the All Cooks switch (stored raw values still "Top Version" / "All Versions").
-    @MainActor func showAllVersions() { setRankingDisplay(allVersions: true) }
-    @MainActor var allVersionsSwitch: XCUIElement { switches["rankings-show-all-versions"] }
-    @MainActor func setRankingDisplay(allVersions: Bool) {
-        let toggle = allVersionsSwitch
-        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
-        let wanted = allVersions ? "1" : "0"
-        for _ in 0..<3 {
-            if toggle.value as? String == wanted { break }
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-            let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", wanted), object: toggle)
-            if XCTWaiter.wait(for: [changed], timeout: 3) == .completed { break }
-            activate()
-        }
-        XCTAssertEqual(toggle.value as? String, wanted, "Ranking view must actually change")
-    }
-    @MainActor var showsAllVersions: Bool { allVersionsSwitch.value as? String == "1" }
+    /// Grub Rank always lists every ranked cook (Nov 18, 2026: the Top / All Cooks toggle was removed).
+    /// Kept so older tests read the same; there is nothing to switch.
+    @MainActor func showAllVersions() { XCTAssertFalse(switches["rankings-show-all-versions"].exists, "No view toggle") }
+    @MainActor var showsAllVersions: Bool { true }
     /// Grub Rank: each filter group has its own chip that opens that group directly.
     @MainActor func openRankingFilterGroup(_ group: String) {
         let chip = buttons["ranking-filter-\(group)"]

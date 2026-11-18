@@ -25,6 +25,7 @@ Every feature carries one status. These are separate states; reaching one never 
 | --- | --- | --- |
 | `dish_aggregate_scores` | Planned (reserved) | Aggregate score/make-count backend (FOOD_ARCHITECTURE §10) |
 | `account_privacy_follows` | Foundation (`SGLockedKitchenNotice`) | Follow model backend contract, RLS and client follow flow (§4) |
+| `dish_collections` | Implemented + Verified (client and PGlite backend), hidden | Deploy `20261118160100_dish_collections`; without the column the server drops labels and graphs would disagree. Debug review: `--feature-flag dish_collections` |
 
 ## 2. Reusable components (LEGO inventory)
 
@@ -41,6 +42,10 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `PublicDescriptionSync` | Social/PublicDescriptionSync.swift | One Public Description across Dish and its posts |
 | `DishCooksSection` + `CookMarks` / `CookTags` | Views/Cooking/DishParts.swift | Cook history (Latest / Top cook); ready for My Kitchen journal views |
 | `SGLockedKitchenNotice` | Social/KitchenPrivacy.swift | Non–Sous Chef Kitchens now; private accounts later |
+| `DishCollectionPolicy` / `DishCollectionStore` / `DishCollectionSummary` | Cooking/DishCollections.swift | Smart Collections: labels on Dishes, derived membership and best-cook ranking |
+| `DishCollectionsField`, `KitchenCollectionsSection`, `DishCollectionView`, `MoveCookSheet` | Views/Cooking/DishOrganization.swift | Add to Collection in every Dish editor; My Kitchen; cook separation |
+| `DishIdentityStore.move` | Cooking/DishIdentityStore.swift | Lossless cook separation (companion of `combine`) |
+| `AuthorizedRemoteImage` + `ImageAccessCheck` | Social/AuthorizedRemoteImage.swift | One image pipeline; degrades safely without `api.image_access` |
 | `RecipeShareChoice` / `RecipeAttachmentModel` | Social/RecipeSocial.swift | Composer Recipe consent with status line |
 | `SGContentState`, `SGLoadingState`, `SGSectionHeader`, `SGBrowseSortMenu` | DesignSystem | Every empty/loading/error state and sort |
 
@@ -59,6 +64,11 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Saved Recipes / My Recipes | Enabled (Connected UI Phase 1) | Bookmarks only; no copy, no cook |
 | Make This (cook another Sous Chef's Recipe) | Enabled as **Rank My Version** | Creates the user's own Dish/cook; creator attribution preserved |
 | Public / private follow model | Foundation, gated | Backend contract (§4) |
+| P0 The Pass / avatar photos on hosted | Verified (unit), iPhone pending | Client-only; works before and after `api.image_access` is deployed |
+| Dish/Recipe integrity — separate a cook | Verified (unit + UI) | Client; server hardening migration `20261118160000` pending (PGlite-verified) |
+| Rank a Dish / Add a Recipe + menu | Verified (UI) | Replaces New Dish / Cook Again choices |
+| Smart Collections | Verified, hidden (`dish_collections`) | Migration `20261118160100` (PGlite-verified) must deploy first |
+| App-wide UI consistency (search, filter rail + Sort icon, cards, states) | Planned (P2) | UI_ARCHITECTURE §10.1; after this milestone is stable |
 | Multiple-photo galleries | Planned | Reuse photo infrastructure; no new Storage writes until designed |
 | Shop This Dish | Planned (post-V1) | `DishDetailsSection.shop` + engagement accessory slot; needs privacy/legal review |
 | Discover | Planned (post-V1) | — |
@@ -70,6 +80,9 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Caption derived from `dishes.public_description` (or an `editDishDescription` action that updates the Dish row and all its posts in one transaction) | One canonical Public Description across devices, atomic | `PublicDescriptionSync` updates posts after explicit saves; reports failures |
 | Follow model: `account_visibility` (`public`/`private`), `follows` with `pending/accepted`, searchable private accounts with a minimal locked card, RLS so only accepted followers read audience-scoped content | Public/private accounts (owner decision, Nov 18) | Current model stays: mutual Sous Chefs + discoverable flag; `account_privacy_follows` off |
 | Cooked-at snapshot on posts | Dish Details cooking date | Shows the shared date |
+| `20261118160000_dish_recipe_integrity` (written by Claude, PGlite-tested, not deployed) | `recipes dish` returns only a Recipe whose `dish_id` is that Dish; `share_options` drops the legacy family-link step; new legacy links that disagree with identity are skipped; provable legacy-only Recipes get their Dish | Client unchanged; Codex review requested before deployment |
+| `20261118160100_dish_collections` (written by Claude, PGlite-tested, not deployed) | `dishes.collections text[]` (≤20 labels, ≤40 chars), accepted by the cooking outbox only when sent, restored as `collections` (null when empty) | Client always sends the key; older servers ignore it; gate stays off until deployed |
+| `api.image_access` (Codex, pending) | Permission read before reusing cached photos | Client falls back to fresh Storage downloads while it is missing |
 | Optional comment Hands | Hands on comments | Not shown |
 
 Contract rules: authenticated RPC/Edge action, DTO documented in the owning domain doc, PT409 for conflicts (never 40001/40P01), RLS on every read, backward compatible with the shipped client, migration header with growth/retention.
@@ -77,6 +90,9 @@ Contract rules: authenticated RPC/Edge action, DTO documented in the owning doma
 ## 5. Sequencing and parallel work
 
 1. ~~Integrate the November 18 UI milestone with Codex's instant image publishing (`d475257`)~~ — done locally on `main` November 18 (one UI_ARCHITECTURE conflict, both sides kept).
+1a. Integrate the P0 photo fix + Dish integrity milestone (`agent/claude`); owner iPhone check of Pass photos first.
+1b. Deploy (owner-authorized) Codex's migrations, then `20261118160000`; `20261118160100` and the `dish_collections` flag when Smart Collections are accepted.
+1c. P2 app-wide UI consistency pass (UI_ARCHITECTURE §10.1).
 2. Physical iPhone acceptance of the UI milestone → next TestFlight candidate (owner authorizes upload).
 3. Codex: Public Description server contract, then follow model; Claude builds the gated client flows against the documented DTOs in parallel.
 4. Enable gates one at a time after hosted acceptance.
@@ -104,3 +120,5 @@ Ownership: Claude owns SwiftUI presentation, design system and client flows; Cod
 | Three stale UI tests (Edit Cook in the actions menu, `hero-photo`) | Noise in regression runs | Update with the next Dish page cycle (UI_ARCHITECTURE §10) |
 | Add Manually nested navigation (`RecipeEditor` owns a `NavigationStack`) | Back + Cancel | Embedded editor mode, coordinated with the Recipe editor owner |
 | Per-post caption copies | Cross-device drift possible | Server contract (§4) |
+| Client features that silently depend on pending migrations | The Pass photo P0 (Nov 18) | Every client call to a pending function must degrade (missing-function → fallback) and be listed in §4 until deployed |
+| Two search entry patterns, fixed filter rows, text Sort menus | Inconsistent library chrome | P2 pass (UI_ARCHITECTURE §10.1) |

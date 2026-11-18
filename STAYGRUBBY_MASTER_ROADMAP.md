@@ -57,6 +57,12 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
 
 ## Recent cycles
 
+- **Dish & Recipe integrity, Smart Collections, P0 Pass photos (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).**
+  - **P0 The Pass photos:** feed photos and avatars showed the logo placeholder on the hosted project because the integrated image code required `api.image_access`, which only exists in a pending migration. Fixed in the client: uncached photos download straight from Storage (which authorizes them); cached photos still need the check and fall back to a fresh Storage download when it is missing. No data, Storage or server change.
+  - **Dish/Recipe integrity:** the owner's "one Recipe on several risottos" was three different risottos logged as cooks of one "Risotto" Dish (hosted data is otherwise consistent). New explicit **Make This Cook a Separate Dish** (Dish page ⋯): lossless, ranking-neutral, never automatic. Server hardening migration (pending): a Dish only shows a Recipe whose identity is that Dish; legacy family links no longer decide sharing or the Dish's Recipe.
+  - **Grub Rank shows every cook** (owner, Nov 18): the Top / All Cooks toggle is removed.
+  - **+ menu:** **Rank a Dish** and **Add a Recipe** replace New Dish / Cook Again. Inside Rank a Dish, a known Dish name offers *Add Another Cook of …*; nothing merges by name.
+  - **Smart Collections** (built, gated `dish_collections` until its migration is deployed): Dish-level labels; My Kitchen collection cards; a collection page ranking its Dishes by each Dish's best cook; Add to Collection in Rank a Dish, Add a Recipe, Edit Cook and the Dish page.
 - **Master UI milestone — The Pass, Dish/Cook/Recipe, icons, two roadmaps (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or migration.
   - The Pass card: creator → Dish name with compact score → cook line → photo → caption → Hands · Comments · Recipe on one row; no repeated comment line or large Recipe card.
   - **One Public Description:** the Dish's Public Description is the post caption, edited from Dish details, Edit Cook, the composer or Edit Description, kept in step by explicit saves (server-side derivation is a Codex dependency).
@@ -143,15 +149,19 @@ Candidate scope (only accepted, enabled functionality):
 - locked Kitchen notice
 - new tab icons
 - the November 17 stabilization fixes
+- **P0:** The Pass and profile photos load on the hosted project (client fix)
+- Rank a Dish / Add a Recipe + menu; Make This Cook a Separate Dish
 
-Not in scope (built but hidden, or not built): the follow model, multiple-photo galleries, Shop This Dish and Discover.
+Not in scope (built but hidden, or not built): Smart Collections (gated until `20261118160100_dish_collections` is deployed), the follow model, multiple-photo galleries, Shop This Dish and Discover.
+
+**Next UI cycle (P2, owner steering Nov 18 — after this milestone is stable):** app-wide consistency. One search bar for Grub Rank, Food Bible and pickers; restore the horizontally scrolling filter chips with a separate compact Sort icon per screen; unify cards, photo placeholders, empty/loading/error states, sheets and creation flows through shared components while keeping each tab's identity. Specific inconsistencies and proposed components: [UI_ARCHITECTURE §10.1](UI_ARCHITECTURE.md#101-app-wide-consistency-audit-p2-november-18-2026).
 
 | Readiness | State |
 | --- | --- |
-| Code implemented | Done |
+| Code implemented | Done (UI milestone `bc8c3e2`; P0 photos + Dish integrity on `agent/claude`) |
 | Integrated on `main` | Done locally November 18 with Codex's instant image publishing (`d475257`); not pushed |
 | Locally verified | Focused tests, Debug + Release builds, Simulator light/dark |
-| Backend deployed | No new backend needed for this UI; Codex's pending production migrations follow their own approval |
+| Backend deployed | Not required for the P0 photo fix. Pending approval: Codex's nine migrations, `20261118160000_dish_recipe_integrity` (recommended before release) and `20261118160100_dish_collections` (only to enable Smart Collections) |
 | Physical iPhone accepted | Pending (owner checklist) |
 | TestFlight-ready | After push + iPhone acceptance (image-publishing migrations need production approval) |
 | Distributed | Not authorized |

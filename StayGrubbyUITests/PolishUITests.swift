@@ -134,7 +134,7 @@ final class PolishUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.descendants(matching: .any)["hero-placeholder"].waitForExistence(timeout: 10))
             capture("Hero placeholder \(options)", app: app)
             tap(app.navigationBars.buttons.firstMatch, app: app)
-            app.revealCreation(); tap(app.buttons["new-version"], app: app)
+            app.openExistingDishPicker()
             let search = app.textFields["parent-dish-search"]
             XCTAssertTrue(search.waitForExistence(timeout: 10)); tap(search, app: app); search.typeText("nonexistent")
             XCTAssertFalse(app.buttons["choose-dish-Harissa Chicken"].exists)

@@ -21,12 +21,15 @@ import Foundation
     var existingPhoto: CookingMedia?
     var pendingPhoto: PreparedCookingPhoto?
     var removeExistingPhoto = false
+    /// The Dish's Smart Collections; nil leaves them unchanged (new Dish without a choice, or gate off).
+    var collections: [String]? = nil
 
     init() {}
     init(dish: Dish) {
         dishName = dish.name; category = dish.defaultCategory; cuisine = dish.cuisine
         publicDescription = dish.publicDescription ?? ""; privateNotes = dish.privateNotes ?? ""
         source = dish.source.map(DishSourceDraft.init(source:))
+        collections = dish.collections
     }
     init(attempt: CookingAttempt) {
         dishName = attempt.dish?.name ?? attempt.rankedItem?.name ?? ""
@@ -37,6 +40,7 @@ import Foundation
         source = attempt.dish?.source.map(DishSourceDraft.init(source:))
         publicDescription = attempt.dish?.publicDescription ?? ""; privateNotes = attempt.dish?.privateNotes ?? ""
         existingPhoto = attempt.primaryImage; existingPhotoCount = attempt.orderedImages.count
+        collections = attempt.dish?.collections
     }
     var validForRanking: Bool { !cleanDishName.isEmpty && cookedAt != nil && validDishText }
     var hasPhoto: Bool { pendingPhoto != nil || (existingPhoto != nil && !removeExistingPhoto) }

@@ -19,6 +19,8 @@ final class Dish {
         set { cuisineID = newValue?.id; cuisineLabel = newValue?.label }
     }
     var createdAt: Date
+    /// Smart Collection labels (organization only; see `DishCollectionPolicy`). Synced with the Dish.
+    var collections: [String] = []
     @Relationship(deleteRule: .cascade, inverse: \CookingAttempt.dish) var attempts: [CookingAttempt] = []
     @Relationship(deleteRule: .cascade, inverse: \DishSource.dish) var source: DishSource?
     var defaultCategory: DishCategory {

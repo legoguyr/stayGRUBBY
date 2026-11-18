@@ -69,6 +69,45 @@ import SwiftData
         } catch { context.rollback(); throw error }
     }
 
+    /// Separates one cook into its own Dish (Dish/Recipe integrity, November 18, 2026): for a cook that
+    /// was logged under a Dish it isn't — "Mushroom" saved as a cook of "Risotto" — so that Dish's Recipe
+    /// no longer reads as this cook's. Explicit owner action only; lossless and ranking-neutral:
+    /// - the cook keeps its ID, ranked item, comparisons, photos, tags, notes, cooked date and exact
+    ///   Recipe-used provenance (all keyed on the cook / ranked item, never the Dish);
+    /// - a new Dish takes the cook's course and the old Dish's Cuisine; Dish text (Public Description,
+    ///   Private Notes, Source), the Recipe and existing posts stay with the original Dish;
+    /// - `destination` nil creates a new Dish named `name`; otherwise the cook joins that existing Dish.
+    /// Ranking order and scores never change; only Dish grouping and fallback labels do.
+    @discardableResult
+    static func move(_ cook: CookingAttempt, toNewDishNamed name: String? = nil, destination: Dish? = nil,
+                     collections: [String] = [], context: ModelContext) throws -> Dish {
+        guard let source = cook.dish else { throw CookingStore.StoreError.missingItem }
+        let cleanName = String((name ?? "").trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
+        guard destination != nil || !cleanName.isEmpty else { throw CookingStore.StoreError.invalidDraft }
+        // The original Dish keeps at least one cook; an only cook is renamed (Edit Cook) rather than moved.
+        guard source.attempts.count > 1, destination?.id != source.id else { throw CookingStore.StoreError.invalidDraft }
+        let baseline = try SyncJournal.begin(context)
+        do {
+            let target: Dish
+            if let destination { target = destination }
+            else {
+                target = Dish(name: cleanName, category: cook.category)
+                target.cuisine = source.cuisine
+                target.collections = DishCollectionPolicy.normalized(collections)
+                context.insert(target)
+            }
+            source.attempts.removeAll { $0.id == cook.id }
+            cook.dish = target; target.attempts.append(cook)
+            cook.sequenceNumber = (target.attempts.filter { $0.id != cook.id }.map(\.sequenceNumber).max() ?? 0) + 1
+            cook.updatedAt = .now
+            for sibling in source.attempts + target.attempts { sibling.rankedItem?.name = sibling.displayName }
+            try SyncJournal.stage(baseline, kind: "moveCook", context: context)
+            try context.save()
+            SyncJournal.didCommit(context)
+            return target
+        } catch { context.rollback(); throw error }
+    }
+
     /// Target notes first; the combined Dish's notes and (when both had one) its Source follow.
     nonisolated static func mergedNotes(_ target: String?, _ source: String?, sourceLabel: String?, keepsSource: Bool) -> String? {
         var parts = [target, source].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }

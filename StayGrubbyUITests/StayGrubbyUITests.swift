@@ -15,7 +15,7 @@ final class StayGrubbyUITests: StayGrubbyUITestCase {
         XCTAssertFalse(app.buttons["new-dish"].exists)
         app.revealCreation()
         XCTAssertTrue(app.buttons["new-dish"].exists)
-        XCTAssertTrue(app.buttons["new-version"].exists)
+        XCTAssertFalse(app.buttons["new-version"].exists, "Cook Again lives inside Rank a Dish")
         XCTAssertFalse(app.buttons["my-cooking"].exists)
         XCTAssertFalse(app.buttons["New Ranking"].exists)
         XCTAssertFalse(app.staticTexts["My Rankings"].exists)

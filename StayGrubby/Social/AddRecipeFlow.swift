@@ -26,6 +26,8 @@ struct AddRecipeFlow: View {
     @State private var list: RankingList?
     @State private var busy = false
     @State private var failed = false
+    @State private var collections: [String] = []
+    @Environment(\.featureFlags) private var flags
 
     private var dish: Dish? { if case .dish(let value) = context { return value }; return target }
     private var isLibrary: Bool { if case .library = context { return true }; return false }
@@ -119,6 +121,8 @@ struct AddRecipeFlow: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             SGEyebrow(text: "Saved to Food Bible")
             Text(localDish(recipe)?.name ?? recipe.content.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
+            // Collections belong to the Dish; the Recipe's Dish exists once it's saved (never created just for this).
+            if flags.isOn(.dishCollections), localDish(recipe) != nil { DishCollectionsField(labels: $collections) }
             Text("Cooked it already? Rank it now to place it in your Grub Rank.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
             Button { Task { await rankNow(recipe) } } label: { Label("Rank Now", systemImage: "fork.knife").frame(maxWidth: .infinity) }
                 .buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("rank-prompt-rank")
@@ -142,10 +146,16 @@ struct AddRecipeFlow: View {
         do {
             let next = try await RecipeService.begin(id: recipe.id, reservation: UUID(), request: request)
             try Task.checkCancellation()
+            saveCollections(); collections = []
             list = try CookingStore.globalRanking(context: modelContext); failed = false; claim = next
         } catch is CancellationError {} catch { failed = true }
     }
-    private func finish() { onFinish(); dismiss() }
+    private func finish() { saveCollections(); onFinish(); dismiss() }
+    /// Applies the optional collections to the saved Recipe's Dish (no write when none were chosen).
+    private func saveCollections() {
+        guard flags.isOn(.dishCollections), !collections.isEmpty, let dish = localDish(saved) else { return }
+        try? DishCollectionStore.set(dish.collections + collections, on: dish, context: modelContext)
+    }
 }
 
 /// Dish Detail → Use a Food Bible Recipe (FOOD_ARCHITECTURE §3.4): the Recipe's Dish and this Dish are

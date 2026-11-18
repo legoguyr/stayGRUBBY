@@ -101,6 +101,18 @@ Food Bible has **My Recipes** (owned, including any copies made before November 
 - **Not combined automatically:** similar names, or two Dishes the user never said are the same. Combining is always an explicit user act.
 - **Evidence for Personal Cooking Intelligence:** after combining, remake counts (cooks per Dish ID), taste/flavor preferences (ranked items + dated reactions), Course/Cuisine/ingredient preferences (Dish + cook snapshots + Recipe content), Recipe effectiveness (`recipe_cooks` revision → cook outcome), cooking improvement over time (cook dates per Dish), Discover recommendations and estimated cooking ability all read one consistent Dish identity. No merge alias table is stored: nothing outside the account graph referenced the removed identity, and the cooks themselves carry the history.
 
+### 3.5 Integrity rules and repair (November 18, 2026)
+
+**Root cause of "one Recipe on several risottos" (owner report).** Read-only audit of the hosted project: every owned Recipe has a Dish identity, the one legacy family link agrees with it, and no cook link or completed Recipe cook points at another Dish's Recipe. The owner's live "Risotto" Dish holds three cooks — *Butternut Squash*, *Mushroom*, *Pea and mahi mahi* — and one Recipe, *Butternut Squash Risotto*. Different dishes were logged as cooks (Cook Again) of one Dish, so that Dish's Recipe correctly appeared for all of them. Separately, three transitional server paths could attach a Recipe to the wrong Dish (`recipes dish` legacy fallback, `share_options` legacy step, legacy-link writes on `complete`/`attach`); none had affected hosted data.
+
+**Rules (enforced).**
+- A Dish shows only the owned Recipe whose `dish_id` is that Dish. Titles, tags, cuisine, source, ingredients and legacy family links never create or display an association.
+- A Recipe moves to another Dish only through an explicit act (Add Recipe → Use a Food Bible Recipe, which combines the two Dishes, §3.4); `set_dish` on a Dish that already has a Recipe is refused (`PT409`).
+- Composer Recipe for a cook: the cook's exact snapshot (`recipe_cooks`), its exact link, then its Dish's own Recipe.
+- **Make This Cook a Separate Dish** (`DishIdentityStore.move`, Dish page ⋯): the explicit repair when a cook belongs to a different Dish. The cook keeps its ID, ranked item, comparisons, photos, tags, notes, cooked date and Recipe-used provenance; the new Dish takes its course and the original Dish's Cuisine; Dish text, the Recipe and earlier posts stay with the original Dish. It can also join an existing Dish. Ranking order and scores never change. The original Dish always keeps at least one cook (an only cook is renamed in Edit Cook instead).
+- Rank a Dish never merges by name: when the typed name matches a ranked Dish, the form offers *Add Another Cook of …*; otherwise a new Dish is created.
+- Server migration `20261118160000_dish_recipe_integrity` (pending deployment; PGlite-tested): removes the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
+
 ## 4. Cooking Attempts: final terminology and naming
 
 ### 4.1 Words
@@ -132,6 +144,9 @@ Food Bible has **My Recipes** (owned, including any copies made before November 
 - **Suggested names:** none. The field is labelled "Cook Name (optional)"; when the cook would show a fallback, a hint below reads "Leave blank to show Version 3."  No date- or Recipe-derived automatic names, because they would read as the user's choice.
 
 ### 4.3 All Cooks — validation and placement
+
+**Superseded November 18, 2026 (owner decision):** Grub Rank always lists every ranked cook at its true global rank; the Top / All Cooks toggle is removed and the stored `RankingsDisplayMode` preference is no longer read (raw values kept harmlessly). Dish Detail's Cooks section is unchanged. The text below is historical.
+
 
 - **Placement:** keep the Stage B slot (Grub Rank row 3, `SGBrowseToggle`, after Sort). Off = one row per Dish showing its top cook. On = every cook at its true global rank. Dish Detail shows a **Cooks** section listing all of the Dish's cooks with rank, gated score, date and name, so the toggle mainly serves cross-Dish browsing.
 - **Validation:** "All Cooks" matches "Cooks" on Dish Detail, the "3 cooks" counts and "Cook Again", which together make a single vocabulary. **Risk:** "cooks" can be read as people. In context (a Dish ranking whose people are "Sous Chefs") it reads as attempts, but the spoken label must remove the ambiguity: **"Show All Cooks of Each Dish"**. If owner acceptance still finds it ambiguous, the fallback is "Every Cook". No other alternative is kept open.
@@ -170,7 +185,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 | | Grub Rank | Food Bible |
 | --- | --- | --- |
 | Question | What have I cooked, and how did it rank? | How do I make things? |
-| Rows | Ranked **cooks**: by default one per Dish (top cook), or every cook with All Cooks | **Dishes with Recipe content**: one card per Dish (its name, the Recipe title when different) |
+| Rows | Every ranked **cook** at its global rank (Nov 18: no Top / All Cooks toggle) | **Dishes with Recipe content**: one card per Dish (its name, the Recipe title when different) |
 | Includes | Dishes with ≥1 ranked cook | Owned Dishes with a Recipe (cooked or not cooked yet) and authorized Sous Chef Recipes; post-V1 Saved Recipes and Want to Cook |
 | Excludes | Recipe-only Dishes | Cooked Dishes without a Recipe (owner decision 3) |
 | Order | Global Bradley–Terry order (frozen) plus read-only Sort | Recently Updated / Newest / Oldest / A–Z / Z–A |
@@ -271,12 +286,22 @@ Each part owns one record and is built by generalizing existing components (AGEN
 | --- | --- |
 | **Saved Recipes** | An owner-private, revocable bookmark to a Sous Chef's Recipe, shown in a Food Bible "Saved" segment. Rank My Version on it creates an owned cook with creator credit, never a copy or an owned link. Save a Private Copy stays a separate explicit action |
 | **Want to Cook** | An intention targeting a Dish ID (cooked or Recipe-only), resolved by a later cook. No separate Food identity is needed: the Dish UUID covers both. The dormant `recipe_tickets` covers Recipes only |
-| **Collections** | Collection ↔ Dish ID many-to-many; members may be Recipe-only Dishes |
+| **Collections** | **Built as Smart Collections (§10.1), gated** |
 | **Contextual rank boards** | A filtered projection of the **one** global ranking (Collection, Cuisine, shared cooking). Never a separate fit, evidence set or manual order. Whether a board shows board-relative positions is an owner decision for that feature |
 | **Scan Recipe / Share Sheet** | Extra Import Recipe sources (on-device text recognition; an authenticated app-group handoff). Same Gemini → review → Save path; disclosure covers photo-derived text |
 | **Discover / statistics / remake counts** | Count explicit cooks per Dish ID and used snapshots per the audit's definitions |
 | **Dish sharing** | Shares one Dish ID: its cooks (per existing post rules) and, when shared, its Recipe |
 | **Aggregate score and "made by N people"** (owner idea, not built) | A shared Recipe/Dish page may later show an aggregate score and how many people have made it. Dish IDs are private per account, so cross-person aggregation keys on the **shared Recipe UUID** and exact-use provenance (`recipe_cooks`), counting each person once, and only from cooks whose owners' sharing/consent allows it, with a minimum-count threshold. The score input is each person's displayed (gated) score for their best cook of that Recipe, never raw strengths or comparisons across people (rankings are personal and not comparable). Gated behind the `dish_aggregate_scores` feature flag (off); needs privacy/disclosure review before any UI |
+
+### 10.1 Smart Collections (built November 18, 2026; gated `dish_collections`)
+
+**Dishes are identities. Collections are organization. Cooks are attempts. Recipes are instructions.**
+- A collection is a label in `Dish.collections` (`dishes.collections text[]`, ≤20 labels of ≤40 characters, case/diacritic-insensitive uniqueness). No folder table: membership, counts, photos and the ranked comparison are derived from Dishes and the one global ranking.
+- A Dish may be in several collections; Recipe-only Dishes may be members. Collections never create, merge or copy a Dish, cook, Recipe, photo or ranking row, and never infer Recipe links. Course and Cuisine stay separate metadata.
+- Membership belongs to the Dish. Add a Recipe offers it only once the Recipe's Dish exists (Food Bible Recipes always have one, §3.2), so no Dish is created just to hold a label.
+- Rename/Delete Collection rewrite only labels, as one synced edit. Unchanged saves write nothing; browsing writes nothing.
+- The collection page orders Dishes by their best Grub Rank cook, names that cook when the Dish has several, shows locked scores as locked and unranked Dishes last. It is a filtered presentation, not a new ranking; personal scores are never compared across people.
+- Sync: the Dish row always sends `collections`; servers without the column ignore it, and an empty list equals an absent key in graph comparisons. The gate stays off until `20261118160100_dish_collections` is deployed, because an older server would drop labels and its restored graphs would disagree with the device.
 
 ## 11. Per-cycle architecture check (one-Dish identity)
 
@@ -292,5 +317,5 @@ Each part owns one record and is built by generalizing existing components (AGEN
 
 - Board-relative positions on future contextual rank boards (post-V1 feature).
 - ~~Whether to also show the Recipe on Grub Rank rows~~ — **decided: no.** Grub Rank rows stay cook-focused; View Recipe lives on Dish Detail.
-- When to retire the transitional association tables (§3.3) — a later authorized cleanup.
+- When to retire the transitional association tables (§3.3) — a later authorized cleanup (after `20261118160000` they no longer influence what a Dish shows).
 - Recipe reservation expiry and snapshot retention after explicit cook deletion (privacy decision, carried from the audit; V1 release gate).

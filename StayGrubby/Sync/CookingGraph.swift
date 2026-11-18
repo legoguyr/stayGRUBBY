@@ -33,6 +33,9 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
     var cuisine: Cuisine?
     var publicDescription: String? = nil
     var privateNotes: String? = nil
+    /// Smart Collection labels; nil means none. An empty list and an absent key (older server or client)
+    /// are the same state, so graphs from servers without the column still compare equal.
+    var collections: [String]? = nil
     @MainActor init(_ value: Dish) {
         self.id = value.id
         self.name = value.name
@@ -41,8 +44,20 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
         self.sourceID = value.source?.id
         self.cuisine = value.cuisine
         publicDescription = value.publicDescription; privateNotes = value.privateNotes
+        collections = value.collections.isEmpty ? nil : value.collections
     }
-    private enum CodingKeys: String, CodingKey { case id, name, defaultCategoryCode, createdAt, sourceID, cuisine, publicDescription, privateNotes }
+    private enum CodingKeys: String, CodingKey { case id, name, defaultCategoryCode, createdAt, sourceID, cuisine, publicDescription, privateNotes, collections }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id); name = try c.decode(String.self, forKey: .name)
+        defaultCategoryCode = try c.decode(String.self, forKey: .defaultCategoryCode)
+        createdAt = try c.decode(Date.self, forKey: .createdAt); sourceID = try c.decodeIfPresent(UUID.self, forKey: .sourceID)
+        cuisine = try c.decodeIfPresent(Cuisine.self, forKey: .cuisine)
+        publicDescription = try c.decodeIfPresent(String.self, forKey: .publicDescription)
+        privateNotes = try c.decodeIfPresent(String.self, forKey: .privateNotes)
+        let labels = try c.decodeIfPresent([String].self, forKey: .collections)
+        collections = labels?.isEmpty == false ? labels : nil
+    }
     // Missing means an old client; explicit null means the user removed Cuisine.
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -52,6 +67,8 @@ nonisolated struct DishTransfer: Codable, Equatable, Sendable {
         try c.encode(cuisine, forKey: .cuisine)
         try c.encode(publicDescription, forKey: .publicDescription)
         try c.encode(privateNotes, forKey: .privateNotes)
+        // Always sent (an empty list clears the last collection); servers without the column ignore it.
+        try c.encode(collections ?? [], forKey: .collections)
     }
 
 }

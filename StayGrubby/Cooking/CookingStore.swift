@@ -91,6 +91,7 @@ enum CookingStore {
             }
             dish.publicDescription = CookingDraft.optional(draft.publicDescription)
             dish.privateNotes = CookingDraft.optional(draft.privateNotes)
+            if let labels = draft.collections { dish.collections = DishCollectionPolicy.normalized(labels) }
             let number = (dish.attempts.map(\.sequenceNumber).max() ?? 0) + 1
             let label = [dish.name, CookName.label(custom: draft.cleanTitle, sequence: number, siblingCount: dish.attempts.count + 1)]
                 .compactMap { $0 }.joined(separator: " — ")
@@ -134,6 +135,7 @@ enum CookingStore {
             dish.cuisine = draft.cuisine
             dish.publicDescription = CookingDraft.optional(draft.publicDescription)
             dish.privateNotes = CookingDraft.optional(draft.privateNotes)
+            if let labels = draft.collections { dish.collections = DishCollectionPolicy.normalized(labels) }
             DishSourceStore.apply(draft.source, to: dish, context: context)
             apply(draft, to: attempt)
             attempt.tags = try tags(for: draft, context: context)

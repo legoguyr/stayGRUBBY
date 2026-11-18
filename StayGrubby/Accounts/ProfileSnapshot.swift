@@ -23,8 +23,10 @@ import SwiftData
     let topFoods: [Food]
     /// The most recent ranked cooks (cooking history), newest first.
     let recentCooks: [Food]
+    /// Smart Collections, derived from Dishes (nil while the `dish_collections` gate is off).
+    let collections: [DishCollectionSummary]?
 
-    init(context: ModelContext, list: RankingList?) {
+    init(context: ModelContext, list: RankingList?, includesCollections: Bool = false) {
         let entries = ScoreUnlockPolicy.entries(in: context, list: list)
         let state = ScoreUnlockPolicy.state(in: context, list: list)
         scores = state
@@ -35,6 +37,8 @@ import SwiftData
             Food(attempt: entry.attempt, rank: entry.globalRank,
                  scoreText: entry.attempt.rankedItem.flatMap { state.scoreText($0.score) })
         }
+        collections = includesCollections
+            ? DishCollectionSummary.all(dishes: (try? context.fetch(FetchDescriptor<Dish>())) ?? [], entries: entries, scores: state) : nil
         recentCooks = entries.sorted {
             ($0.attempt.cookedAt ?? $0.attempt.createdAt, $0.attempt.createdAt) > ($1.attempt.cookedAt ?? $1.attempt.createdAt, $1.attempt.createdAt)
         }.prefix(3).map { entry in

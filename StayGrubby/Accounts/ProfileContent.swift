@@ -12,19 +12,19 @@ struct ProfileCookingContent: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.large) {
             topFoods
             cookingSnapshot
+            if let collections = snapshot.collections { KitchenCollectionsSection(summaries: collections, scores: snapshot.scores) }
             recentCooks
         }
     }
 
-    /// Compact Kitchen statistics (Connected UI, November 16, 2026). Each opens the place it counts:
-    /// Dishes Ranked opens Grub Rank one row per Dish; Total Makes opens it with All Cooks on (each row is
-    /// one ranked cook). Counts are verified local data, never cloud estimates.
+    /// Compact Kitchen statistics (Connected UI, November 16, 2026). Both open Grub Rank, which always lists
+    /// every ranked cook (Nov 18, 2026). Counts are verified local data, never cloud estimates.
     private var cookingSnapshot: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-                statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count", hint: "Opens Grub Rank, one row per Dish") { openGrubRank(.topVersion) }
+                statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count", hint: "Opens Grub Rank") { openGrubRank(.allVersions) }
                     .frame(maxWidth: .infinity)
-                statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count", hint: "Opens Grub Rank showing All Cooks") { openGrubRank(.allVersions) }
+                statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count", hint: "Opens Grub Rank") { openGrubRank(.allVersions) }
                     .frame(maxWidth: .infinity)
             }
             if let last = snapshot.lastCookedAt {

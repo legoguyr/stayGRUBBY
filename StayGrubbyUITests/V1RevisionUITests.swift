@@ -52,22 +52,19 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             app.terminate()
         }
     }
-    @MainActor func testDisplayModesKeepGlobalRanksAndPersistWithoutChangingUnlockProgress() {
+    /// Grub Rank always lists every ranked cook at its true global rank (Nov 18, 2026: no Top / All toggle).
+    @MainActor func testGrubRankListsEveryCookAtGlobalRanksWithoutChangingUnlockProgress() {
         let app = launch(9)
-        XCTAssertFalse(app.showsAllVersions)
-        let hidden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
-        XCTAssertFalse(hidden.exists)
+        app.showAllVersions() // asserts there is no view toggle
+        let second = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 15))
+        XCTAssertTrue(second.label.contains("Version 1") && second.label.contains("score locked"))
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 3,'")).firstMatch.exists)
         let banner = app.descendants(matching: .any)["score-unlock-banner"]
-        XCTAssertTrue(banner.label.contains("9 / 10")); capture("Top Version red locked dark", app)
-        app.setRankingDisplay(allVersions: true); XCTAssertTrue(hidden.waitForExistence(timeout: 15))
-        XCTAssertTrue(hidden.label.contains("Version 1") && hidden.label.contains("score locked"))
-        XCTAssertTrue(banner.label.contains("9 / 10")); capture("All Versions true global ranks", app)
+        XCTAssertTrue(banner.label.contains("9 / 10")); capture("Every cook, true global ranks", app)
         app.terminate(); app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.showsAllVersions && hidden.exists)
-        app.setRankingDisplay(allVersions: false)
-        XCTAssertFalse(hidden.exists)
+        XCTAssertTrue(second.waitForExistence(timeout: 15))
     }
     @MainActor func testFreshRerankReactionControlsAutomaticResultAndProfileTopThree() {
         let app = launch(12)
@@ -134,7 +131,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         XCTAssertTrue(dishCount.exists)
         let dishCountBefore = dishCount.label
         tap(app.tabBars.buttons["Grub Rank"], app)
-        app.revealCreation(); tap(app.buttons["new-version"], app)
+        app.openExistingDishPicker()
         let dish = app.buttons["choose-dish-Matzo Ball Soup"]
         transition(dish, to: app.buttons["Continue"], app)
         transition(app.buttons["Continue"], to: app.buttons["Liked it"], app)

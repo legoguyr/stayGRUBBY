@@ -98,7 +98,7 @@ final class SocialUXUITests: StayGrubbyUITestCase {
         for _ in 0..<10 { if empty.exists { break }; app.swipeUp() }
         XCTAssertTrue(empty.waitForExistence(timeout: 8))
         app.tabBars.buttons["Grub Rank"].tap(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 5))
-        app.revealCreation(); app.buttons["new-version"].tap()
+        app.openExistingDishPicker()
         let dish = app.buttons["choose-dish-Version Soup"]
         XCTAssertTrue(dish.waitForExistence(timeout: 5)); dish.tap()
         let nextToggle = revealSharing(app); waitToggle(nextToggle, value: "1")

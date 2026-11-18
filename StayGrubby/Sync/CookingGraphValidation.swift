@@ -37,6 +37,7 @@ extension CookingGraph {
         }
         for dish in dishes {
             try require(DishTextPolicy.valid(description: dish.publicDescription, notes: dish.privateNotes))
+            try require(DishCollectionPolicy.valid(dish.collections ?? []))
             if let cuisine = dish.cuisine {
                 try require(!cuisine.id.isEmpty && cuisine.id.unicodeScalars.count <= 160
                     && !cuisine.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty

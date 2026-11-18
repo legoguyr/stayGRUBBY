@@ -99,7 +99,7 @@ Flexible roles size a clear aspect box first, so loading never shifts layout. **
 
 **Library screens keep browse chrome compact and even; common filters are one tap away.**
 
-- **Grub Rank** (three short rows): (1) wordmark · search · + (search swaps the row for `SGSearchField` + Done); (2) one even row of `SGFilterChip`s — **Course · Cuisine** (Nov 9: Dietary and Avoid moved to Food Bible); (3) Sort · All Cooks · one clear X (shown while search or a filter is active; clears both).
+- **Grub Rank** (three short rows): (1) wordmark · search · + (search swaps the row for `SGSearchField` + Done); (2) one even row of `SGFilterChip`s — **Course · Cuisine** (Nov 9: Dietary and Avoid moved to Food Bible); (3) Sort · All Cooks · one clear X (shown while search or a filter is active; clears both). *(Nov 18, 2026: the All Cooks toggle is removed; Grub Rank always lists every ranked cook. Row 3 is Sort · clear X.)*
 - **Food Bible** (search-led): always-visible `SGSearchField`, then the same direct `SGFilterChip`s as Grub Rank in two even rows — Course · Cuisine · Diet · Cooked / Contains · Avoid · Source — each opening its group in `SGFilterGroupSheet`; then Sort and the same clear X.
 - **Rule (Nov 9):** every library lens uses direct chips → one group sheet (`SGFilterGroupSheet` + `SGFilterGroupPage`: options, group Clear, Done), `SGBrowseSortMenu`, and one `SGIconButton` X for search + filters. Lenses differ only in which groups they offer. The old Filters root sheet (`SGFilterSheet` / `SGFilterButton`) is no longer used by library screens.
 
@@ -238,6 +238,30 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 Test debt (confirmed failing identically on `b40de7b`, November 17; tests only, no app defect found): `Phase2CReviewUITests.testDetailVersionSelectionLongNamesAndLargeTypeForms` and `PolishUITests.testContainsEditPersistenceAndAvoidAnySelectionWithIndependentClear` tap an "Edit Cook" button that now lives in the Dish actions menu; `PolishUITests.testParentDishSearchEmptyClearAndHeroAppearances` waits for a `hero-photo` identifier on Dish Details. `Stage2ProductUITests.testCookEntryDishTextMetadataTaggingAndPersistence` can't find `dish-cuisine` in the cooking Details sheet (also failing on `d26b56c`, November 18). Update them to the current Dish page, as Stage F did for the earlier obsolete tests.
 
 Separately tracked (not UI, protected system, needs evidence first): the ingredient parser split "toasted and crushed" into reversed lines and singularized "1½ cups".
+
+### 10.1 App-wide consistency audit (P2, November 18, 2026)
+
+Owner steering: unify equivalent elements through shared components without making the tabs identical. Recorded now; implemented after the current milestone is stable (P0 photos and P1 Dish integrity first). Observed inconsistencies:
+
+| Area | Today | Proposed shared component |
+| --- | --- | --- |
+| Search | Grub Rank hides search behind a header icon and swaps the header for `SGSearchField` + *Done*; Food Bible shows `SGSearchField` permanently under its segments; Sous Chef pickers (Send, Cooked With) use system `.searchable`; in-sheet lists use `SGSearchField` with a different inset | `SGSearchBar`: one height, inset, icon and clear/cancel behaviour; screen decides only always-visible vs revealed |
+| Filters | Grub Rank: one fixed row of `SGFilterChip`s; Food Bible: two fixed wrapping rows. The owner preferred the earlier horizontally scrolling chips | `SGFilterRail`: horizontally scrolling chips (count badges, one clear X at the end) |
+| Sort | Full-width text `SGBrowseSortMenu` sitting among filters (Grub Rank, Food Bible, Previous Cooks) | `SGSortButton`: compact icon menu beside the rail, the screen's own options, kept out of the rail |
+| ~~All Cooks / view toggles~~ | Removed Nov 18 (owner): Grub Rank always lists every cook | — |
+| Dish cards and rows | Signature trio tiles, Recent Cooks rows, Food Bible cards, collection cards/rows, picker rows each lay out photo, name and score separately | `SGDishCard` (tile) and `SGDishRow` (list) with photo, name, secondary line, rank and `SGScore` roles |
+| Photo placeholders | Logo placeholder on cards, blank tile on cook rows, `SGHeroMedia` empty state | One placeholder per `SGPhotoRole` |
+| Empty / loading / error | Mostly `SGContentState` / `SGLoadingState`; My Kitchen empty uses a plain card; some lists show bare text | Always the shared states, with a compact variant for inline sections |
+| Action menus | ⋯ menus differ in order and grouping (Dish page vs post vs Recipe) | One ordering rule: edit → share → organize → destructive |
+| Creation flows and sheets | Rank a Dish form, Add Recipe and Separate Dish use different section headers and bottom actions | Shared form section + bottom action bar |
+
+Keep: The Pass stays a feed, Grub Rank a ranking, Food Bible a Recipe library, My Kitchen a profile. Bright, modern, fluid; no backend change needed.
+
+### 10.2 Dish organization UI (November 18, 2026)
+
+- **+ menu:** *Rank a Dish* (`new-dish`) and *Add a Recipe* (`new-recipe`, hidden without the Recipe service). In Rank a Dish, *Made one of your Dishes again? Choose it* opens the Dish picker; a typed name equal to a ranked Dish shows *Add Another Cook of …* (`cook-existing-match`). Never an automatic merge.
+- **Dish page ⋯:** *Make This Cook a Separate Dish* (`cook-separate`, only with 2+ cooks) opens `MoveCookSheet` (name suggested from Cook Name + Dish name; the old Dish name suggested as a collection) and *Collections* when the gate is on.
+- **Smart Collections (gated):** `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
 
 ## 11. Preserve
 
