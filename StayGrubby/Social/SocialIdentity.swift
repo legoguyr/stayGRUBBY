@@ -47,6 +47,8 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var includePhoto: Bool?
     var beforeTime: Double?
     var beforeID: UUID?
+    var order: String?
+    var beforeScore: Double?
     var commentID: UUID?
     var body: String?
     var assetID: UUID?

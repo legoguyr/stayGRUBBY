@@ -194,3 +194,26 @@ extension XCUIApplication {
         return own.exists ? own.label : staticTexts["dish-title"].label
     }
 }
+
+extension XCUIElement {
+    /// Waits until the element stops moving (a list still coasting after a swipe turns the next tap into
+    /// "stop scrolling" instead of activating the control). Returns whether it settled within `timeout`.
+    @discardableResult
+    func waitUntilSettled(timeout: TimeInterval = 3) -> Bool {
+        var last = frame
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.25)
+            let next = frame
+            if next == last { return true }
+            last = next
+        }
+        return false
+    }
+    /// Taps a Form Toggle's switch itself. The accessibility tree sometimes exposes only the row (no inner
+    /// switch), and tapping the row's centre lands on the label, which never flips a Toggle; a person taps
+    /// the switch at the trailing edge.
+    func tapSwitchControl() {
+        coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
+}

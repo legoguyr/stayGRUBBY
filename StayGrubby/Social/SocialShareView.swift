@@ -69,7 +69,7 @@ struct SocialPostComposer: View {
                 if didPublish {
                     Section {
                         Label(alreadyShared ? "Already on The Pass" : "Posted to The Pass", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-share-success")
-                        Text("Your separate cooking post is available to eligible friends. Your private cooking and ranking are unchanged.")
+                        Text("Your Sous Chefs can see this post. Your private cook and ranking are unchanged.")
                         if preservedExistingDescription {
                             Text("This cook was already shared. Its description was kept. To change it, use Edit Post in the post’s menu in My Kitchen.").accessibilityIdentifier("social-existing-description-preserved")
                         }
@@ -89,13 +89,13 @@ struct SocialPostComposer: View {
                     }
                 } else {
                 Section("Post to The Pass") {
-                    Text("Your cooking stays private unless you publish here. This creates a separate post for your current eligible friends.")
+                    Text("Your cooks stay private until you post one. This creates a separate post for your current Sous Chefs.")
                     Text(model.title).font(SGTheme.TypeRole.headline)
                     if let version = model.versionSubtitle { Text(version).foregroundStyle(.secondary) }
                     if let score = model.scoreText { SGScore(text: score, role: .outOfTen) }
                     else { Text("Your score is locked and will not be shared.").accessibilityIdentifier("social-share-score-locked") }
                     if attempt.primaryImage != nil { Toggle("Include this food photo", isOn: $includePhoto).accessibilityIdentifier("social-share-photo") }
-                    Text("Includes Course, Cuisine and public cookbook/restaurant/online attribution. Private notes, tags, allergens, Friend/Family details, and comparison history are not shared. Unlocked rankings may include the position and total at sharing. Cooking-derived snapshot details stay fixed. Post Descriptions can be edited from the post’s menu.")
+                    Text("Shares Course, Cuisine and the public source. Private notes, tags, allergens and comparison history stay private. An unlocked score may show its rank at sharing. You can edit the description later from the post’s menu.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 RecipeShareChoice(model: attachment) { Task { await resolveRecipe() } }
@@ -108,7 +108,7 @@ struct SocialPostComposer: View {
                     if !identity.isConfigured {
                         Button("Set up Profile") { editingIdentity = true }.accessibilityIdentifier("social-share-setup")
                     } else {
-                        Text("Posting as \(identity.handle). If you have no friends yet, only you can see the post until you connect.")
+                        Text("Posting as \(identity.handle). Until you have Sous Chefs, only you can see the post.")
                         if revision == nil { Text("Waiting for this cook to sync.").accessibilityIdentifier("social-share-waiting-for-cook") }
                         else if checkingPost { ProgressView("Checking for an existing post") }
                         if let publicationError {

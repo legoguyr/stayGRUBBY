@@ -5,7 +5,7 @@ import SwiftUI
 /// the full description, source and cooking context, the linked Recipe (live and as posted) and the
 /// creator's other shared cooks of the same Dish.
 ///
-/// Reads only server-authorized post snapshots (`social_feed post` / `profile`); opening it never writes.
+/// Reads only server-authorized post snapshots (`social_feed post` / `dish`); opening it never writes.
 /// The page is an ordered list of independent sections (`DishDetailsSection`), so a later section such as
 /// Shop This Dish (equipment, specialty ingredients, creator recommendations) is one more case, not a redesign.
 struct SocialPostDetailView: View {
@@ -14,7 +14,9 @@ struct SocialPostDetailView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.accountContentCache) private var cache
     @Environment(\.scenePhase) private var phase
+    @Environment(\.dismiss) private var dismiss
     @State private var post: SocialPost?
+    @State private var loadedAt: Date?
     @State private var failed = false
     @State private var showingComments = false
     @State private var person: SocialPerson?
@@ -35,9 +37,10 @@ struct SocialPostDetailView: View {
                 .padding(.horizontal, SGTheme.Space.margin).padding(.bottom, SGTheme.Space.xLarge)
                 .frame(maxWidth: .infinity)
             } else if failed {
-                ContentUnavailableView("Post unavailable", systemImage: "lock", description: Text("The post or your access may have changed."))
-                Button("Retry post") { Task { await load() } }
-            } else { ProgressView("Loading post").padding(.top, SGTheme.Space.xLarge) }
+                SGContentState(title: "Post unavailable", symbol: "lock", message: "The post or your access may have changed.") {
+                    Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("dish-details-retry")
+                }.padding(.top, SGTheme.Space.xLarge)
+            } else { SGLoadingState(label: "Opening Dish Details") }
         }
         .background(SGTheme.ColorToken.background)
         .navigationTitle("Dish Details").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
@@ -52,7 +55,11 @@ struct SocialPostDetailView: View {
         }
         .refreshable { await load() }
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
-        .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load() } } }
+        // Returning to the app refreshes only a copy older than the shared read-cache window.
+        .onChange(of: phase) { _, next in
+            generation = UUID()
+            if next == .active, loadedAt.map({ Date().timeIntervalSince($0) > AccountContentCache.maximumAge }) ?? true { Task { await load() } }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
         .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in Task { await load() } }
         .onDisappear { generation = UUID() }
@@ -72,13 +79,16 @@ struct SocialPostDetailView: View {
         do {
             let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "post", .init(postID: postID)))
             guard !Task.isCancelled, generation == token else { return }
-            post = next.posts.first; failed = post == nil
+            post = next.posts.first; failed = post == nil; loadedAt = Date()
         } catch is CancellationError { } catch { if generation == token { post = nil; failed = true } }
     }
     private func remove() async {
         guard let request else { return }
-        do { _ = try await request("social_content", "delete", .init(postID: postID)); await load(); NotificationCenter.default.post(name: .socialContentChanged, object: nil) }
-        catch { post = nil; failed = true }
+        do {
+            _ = try await request("social_content", "delete", .init(postID: postID))
+            // The post is gone: return to where it was opened rather than showing an unavailable page.
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss()
+        } catch { post = nil; failed = true }
     }
 }
 
@@ -151,8 +161,8 @@ private struct DishDetailsSectionView: View {
 private struct DishPostFacts: View {
     let post: SocialPost
     private var facts: [(label: String, value: String)] {
+        // The creator line already carries the shared date; cooked-at needs a server snapshot (roadmap).
         var rows: [(String, String)] = []
-        rows.append(("Shared", SocialPostPresentation.timestamp(post.date)))
         if let source = post.metadata?.source {
             let text = [source.recipe, source.name, source.author, source.page.map { "Page \($0)" }]
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
@@ -166,6 +176,8 @@ private struct DishPostFacts: View {
         return rows
     }
     var body: some View {
+        let facts = facts
+        if !facts.isEmpty {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             ForEach(facts, id: \.label) { fact in
                 ViewThatFits(in: .horizontal) {
@@ -185,6 +197,7 @@ private struct DishPostFacts: View {
         }
         .padding(SGTheme.Space.medium)
         .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous))
+        }
     }
 }
 
@@ -194,23 +207,22 @@ struct DishSharedCooks: View {
     var navigate: (SocialPostRoute) -> Void
     @Environment(\.socialRequest) private var request
     @Environment(\.accountContentCache) private var cache
-    @State private var posts: [SocialPost]?
-    @State private var failed = false
+    @State private var model = SharedCooksModel()
     @State private var order: SharedCookOrder = .recent
-    private var cooks: [SocialPost] { posts.map { SharedCookOrder.otherCooks(of: post, among: $0, order: order) } ?? [] }
+    private var cooks: [SocialPost] { SharedCookOrder.otherCooks(of: post, among: model.posts ?? [], order: order) }
     var body: some View {
         // A container that always exists, so the load task runs even before there is anything to show.
         VStack(alignment: .leading, spacing: 0) {
-            if failed {
+            if model.failed {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     SGSectionHeader(title: "More Cooks of This Dish")
                     Text("Couldn’t load other cooks.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     Button("Retry") { Task { await load(force: true) } }.accessibilityIdentifier("dish-cooks-retry")
                 }
-            } else if !cooks.isEmpty {
+            } else if !cooks.isEmpty || model.hasMore {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                     SGSectionHeader(title: "More Cooks of This Dish") {
-                        if cooks.count > 1 {
+                        if cooks.count > 1 || model.hasMore {
                             SGBrowseSortMenu(options: SharedCookOrder.allCases, selection: $order, title: \.title,
                                              identifier: "dish-cooks-sort", label: order.title)
                         }
@@ -219,29 +231,19 @@ struct DishSharedCooks: View {
                         Button { navigate(.post(cook.id)) } label: { SharedCookRow(post: cook) }
                             .buttonStyle(SGRowButtonStyle()).accessibilityIdentifier("dish-cook-\(cook.id)")
                     }
+                    if model.hasMore {
+                        Button("Load more cooks") { Task { await load(more: true) } }
+                            .disabled(model.loading).accessibilityIdentifier("dish-cooks-more")
+                    }
                 }.accessibilityElement(children: .contain).accessibilityIdentifier("dish-other-cooks")
             } else { Color.clear.frame(height: 0).accessibilityHidden(true) }
         }
-        .task(id: post.id) { await load(force: false) }
+        .task(id: "\(post.id)/\(post.dishKey ?? "legacy")/\(order.rawValue)") { await load() }
+        .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load(force: true) } }
     }
-    private func load(force: Bool) async {
+    private func load(more: Bool = false, force: Bool = false) async {
         guard let request else { return }
-        let author = post.author.id
-        if !force, let cached = cache?.authorPosts(author), cached.hasValue {
-            posts = cached.value
-            if cached.isFresh() { return }
-        }
-        do {
-            // One bounded page of the creator's own authorized posts (own posts: the server resolves "me").
-            let peer = post.isAuthor ? nil : author
-            let fetch: @MainActor () async throws -> Data = { try await request("social_feed", "profile", .init(peerID: peer)) }
-            let data: Data
-            if let cache { data = try await cache.coalesced("author-posts/\(author)", fetch) } else { data = try await fetch() }
-            let page = try JSONDecoder().decode(SocialPostsPage.self, from: data)
-            guard !Task.isCancelled else { return }
-            cache?.storeAuthorPosts(page.posts, for: author)
-            posts = page.posts; failed = false
-        } catch is CancellationError { } catch { if posts == nil { failed = true } }
+        await model.load(for: post, order: order, more: more, force: force, request: request, cache: cache)
     }
 }
 
@@ -274,16 +276,10 @@ nonisolated enum SharedCookOrder: String, CaseIterable, Identifiable, Sendable {
     static func score(_ post: SocialPost) -> Double? {
         post.scoreText.flatMap { Double($0.replacingOccurrences(of: ",", with: ".")) }
     }
-    /// Grouping key: posts snapshot the Dish title when shared. Exact Dish identity needs a server field
-    /// (roadmap: post-card Dish key), so a renamed Dish's older posts are simply not grouped here.
-    static func dishKey(_ title: String) -> String {
-        title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
-            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-    }
+    /// Visible, active posts of the same Dish (`SharedCookLookup.sameDish`), excluding the one shown.
     static func otherCooks(of post: SocialPost, among posts: [SocialPost], order: SharedCookOrder) -> [SocialPost] {
-        let key = dishKey(post.title)
         let matches = posts.filter {
-            $0.id != post.id && $0.author.id == post.author.id && $0.published && $0.moderationState == "active" && dishKey($0.title) == key
+            $0.id != post.id && $0.published && $0.moderationState == "active" && SharedCookLookup.sameDish($0, as: post)
         }
         let recent: (SocialPost, SocialPost) -> Bool = { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
         switch order {

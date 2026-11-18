@@ -151,7 +151,7 @@ struct SharedCookingEntryView: View {
                 } else if completed { Text("Already added to your cooking. Let your account finish restoring to see it here.") }
                 else if event?.isOwner != true && (event != nil || post != nil) {
                     Text("Review the details and rank this cook in your own library. Scores, comparisons, private notes and photos are never copied.")
-                    if event != nil { Text("Joining confirms you cooked together. Participation may appear to mutual friends when either cook is shared.").font(.footnote).foregroundStyle(.secondary) }
+                    if event != nil { Text("Joining confirms you cooked together. Participation may appear to mutual Sous Chefs when either cook is shared.").font(.footnote).foregroundStyle(.secondary) }
                     Button(event != nil ? "Add to My Cooking" : "Run It Back") { Task { await begin() } }
                         .accessibilityIdentifier("shared-begin").disabled(busy)
                     if event != nil { Button("Decline invitation", role: .destructive) { Task { await decline() } }.accessibilityIdentifier("shared-decline").disabled(busy) }

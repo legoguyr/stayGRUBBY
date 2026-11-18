@@ -127,7 +127,7 @@ struct RecipePostSharingEditor: View {
                         if let recipeID = post.recipeID { NavigationLink("View Recipe") { RecipeDetailView(id: recipeID) } }
                         else { Text("Recipe access is currently off. You can still remove this saved attachment.") }
                         Button("Remove Recipe from Post", role: .destructive) { confirmingRemoval = true }.accessibilityIdentifier("post-unshare-recipe")
-                        Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke all friends’ Recipe access.").font(.footnote)
+                        Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke every Sous Chef’s Recipe access.").font(.footnote)
                     }
                 } else {
                     RecipeShareChoice(model: attachment) { Task { await resolve() } }

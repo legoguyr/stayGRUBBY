@@ -23,7 +23,7 @@ struct SocialFeedView: View {
     var body: some View {
         SGEditorialList {
             if request == nil {
-                ContentUnavailableView("The Pass", systemImage: "person.2", description: Text("Sign in to connect with friends. Your development cooking library remains private."))
+                ContentUnavailableView("The Pass", systemImage: "person.2", description: Text("Sign in to connect with your Sous Chefs. Your cooking library stays private."))
             } else if let identity, !identity.isConfigured {
                 Section {
                     Text("Choose your profile name and username to connect. Your cooking stays private until you share it.")

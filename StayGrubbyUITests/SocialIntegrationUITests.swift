@@ -30,9 +30,9 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         for _ in 0..<3 { if deletion.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(deletion.waitForExistence(timeout: 5)); deletion.tap()
         app.sheets["86 this Post?"].buttons["86 Post"].tap()
-        XCTAssertTrue(app.staticTexts["Post unavailable"].waitForExistence(timeout: 8), app.debugDescription)
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.staticTexts["profile-posts-empty"].waitForExistence(timeout: 8))
+        // 86 returns to My Kitchen (no dead "Post unavailable" page), where the post is gone.
+        XCTAssertTrue(app.staticTexts["profile-posts-empty"].waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertFalse(app.navigationBars["Dish Details"].exists)
         app.tabBars.buttons["Grub Rank"].tap()
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Integrated Private Soup'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5)); XCTAssertTrue(row.label.contains("score locked"))

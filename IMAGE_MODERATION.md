@@ -15,6 +15,10 @@ Applying the access migration withholds **all unapproved shared image bytes**, i
 
 Google says synchronous image requests are processed in memory and customer content is excluded from training its Vision models. Its contractual processing, region and retention terms still require owner review. SafeSearch labels do not establish identity, age, legality or complete policy compliance. Unknown outcomes and flagged material require staff handling. [Data usage](https://docs.cloud.google.com/vision/docs/data-usage)
 
+**Owner activation steps.** Google documents billing enablement as a prerequisite, including projects using the monthly free units. Approve that billing prerequisite and the processing terms first. In a dedicated Vision project, the owner enables Cloud Vision API, creates a server key restricted to that API, sets an approved request quota and budget alerts, and reviews the Cloud Data Processing Addendum. Budget alerts are notifications, not a spending stop. At the published standard rate, 10,000 SafeSearch-only images in one month cost approximately $13.50 after the first 1,000 free units, before tax or other services. Retries consume additional requests. [Setup](https://docs.cloud.google.com/vision/docs/setup), [pricing](https://cloud.google.com/vision/pricing).
+
+After approval, the owner enters the key directly into the target's Edge Function Secrets as `STAYGRUBBY_IMAGE_VISION_KEY`. Keep `STAYGRUBBY_IMAGE_SCREENING_ENABLED` disabled until synthetic staging, staff coverage and the scheduler are accepted. Enabling it permits processing of the existing shared-image backlog as well as new share-eligible uploads. Google temporarily logs request metadata, including time and size, while synchronous image bytes are processed in memory. Update the privacy disclosures and App Store data inventory before transmitting real user photos. Never send the key through chat or reuse the protected Gemini credential.
+
 The replaceable `ImageScreener.screen(bytes)` interface returns `approved`, `review`, `rejected` or `unavailable`. The initial policy sends POSSIBLE/racy and unknown labels to review and LIKELY adult/violence to the rejected review queue. Staff may correct the outcome for the inspected generation. The adapter requests only SafeSearch and logs neither images, raw classifier payloads nor credentials.
 
 ## Data and private media boundary
@@ -27,7 +31,7 @@ The replaceable `ImageScreener.screen(bytes)` interface returns `approved`, `rev
 
 ## Worker contract
 
-`POST /functions/v1/moderate-images` accepts an **empty body**, with JWT gateway verification and the configured service credential. An ordinary authenticated account is denied. There is no caller-controlled owner, path or provider setting.
+`POST /functions/v1/moderate-images` accepts an **empty body**, with JWT gateway verification and the platform service-role JWT matching the worker's protected server environment. A modern `sb_secret` value is not a replacement bearer JWT for this gateway. An ordinary authenticated account is denied. There is no caller-controlled owner, path or provider setting.
 
 Only after owner-approved activation set `STAYGRUBBY_IMAGE_SCREENING_ENABLED=true` and `STAYGRUBBY_IMAGE_VISION_KEY` securely in the target Function secrets. Keep the existing platform service credential server-only. The function stays unavailable before keys and enablement are present, and claims no work in that state.
 
