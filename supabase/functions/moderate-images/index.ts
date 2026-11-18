@@ -1,10 +1,8 @@
 import { handler, type Claim } from "./handler.ts";
-import { visionScreener } from "./provider.ts";
+import { manualScreener } from "./provider.ts";
 
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const key = Deno.env.get("STAYGRUBBY_IMAGE_VISION_KEY") ?? "";
-const enabled = Deno.env.get("STAYGRUBBY_IMAGE_SCREENING_ENABLED") === "true";
 
 async function rpc(name: string, body: Record<string, unknown>) {
   const response = await fetch(url + "/rest/v1/rpc/" + name, {
@@ -17,7 +15,7 @@ async function rpc(name: string, body: Record<string, unknown>) {
 }
 
 Deno.serve(handler({
-  configured: enabled && Boolean(key && service && url),
+  configured: Boolean(service && url),
   authorize: async token => {
     // JWT gateway verification remains required. Only the configured server
     // credential is accepted after it, never an ordinary signed user session.
@@ -53,5 +51,5 @@ Deno.serve(handler({
   finish: async (item, outcome, hash) => await rpc("finish_image_review", {
     object_id: item.objectID, generation: item.generation, lease_id: item.leaseID, outcome, sha256: hash,
   }) === true,
-  screener: visionScreener(key),
+  screener: manualScreener(),
 }));

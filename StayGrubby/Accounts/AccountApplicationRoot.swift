@@ -61,10 +61,11 @@ struct AccountApplicationRoot: View {
                     let cacheable: Bool = switch action { case .download, .avatarDownload: true; default: false }
                     guard cacheable, let path = action.paths.first else {
                         let result = try await session.performSocialMedia(action)
-                        for path in action.paths { cache.media.remove("\(action.bucket)/\(path)") } // Removed bytes never linger.
+                        if !action.isDownload { for path in action.paths { cache.media.remove("\(action.bucket)/\(path)") } } // Removed bytes never linger.
                         return result
                     }
-                    return try await cache.media.load("\(action.bucket)/\(path)") { try await session.performSocialMedia(action) }
+                    return try await AuthorizedRemoteImage.bytes(key: "\(action.bucket)/\(path)", action: action, cache: cache,
+                                                                 media: { try await session.performSocialMedia($0) })
                 })
                 .environment(\.accountContentCache, cache)
                 .environment(\.socialRequest, { endpoint, action, payload in

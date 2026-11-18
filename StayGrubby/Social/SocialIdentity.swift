@@ -77,4 +77,10 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var expectedMainID: UUID?
     /// The Dish identity a Recipe belongs to (`recipes.dish_id`).
     var recipeDishID: UUID?
+    var objectID: UUID?
+    var generation: UUID?
+    var expectedState: String?
+    var decision: String?
+    var reviewState: String?
+    var afterID: UUID?
 }

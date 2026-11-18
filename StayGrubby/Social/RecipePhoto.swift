@@ -21,9 +21,13 @@ nonisolated struct RecipePhotoDescriptor: Codable, Sendable {
         _ = try await request("recipes", "complete_photo", payload)
         return id
     }
-    static func download(_ id: UUID, request: SocialRequest, media: SocialMediaRequest) async throws -> Data {
+    static func descriptor(_ id: UUID, request: SocialRequest) async throws -> RecipePhotoDescriptor {
         let descriptor = try JSONDecoder().decode(RecipePhotoDescriptor.self, from: await request("recipes", "photo", .init(assetID: id)))
         guard descriptor.id == id, descriptor.ready, SocialMediaRules.validPath(descriptor.path) else { throw AccountFoundationError.invalidResolution }
+        return descriptor
+    }
+    static func download(_ id: UUID, request: SocialRequest, media: SocialMediaRequest) async throws -> Data {
+        let descriptor = try await descriptor(id, request: request)
         let bytes = try await media(.recipeDownload(path: descriptor.path))
         guard SocialMediaRules.validJPEG(bytes), digest(bytes) == descriptor.sha256 else { throw AccountFoundationError.invalidResolution }
         return bytes
@@ -53,6 +57,7 @@ struct RecipePhoto: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @Environment(\.accountContentCache) private var cache
+    @State private var refresh = UUID()
     @State private var loaded: UIImage?
     @State private var loadedID: UUID?
     @State private var unavailable = false
@@ -62,7 +67,7 @@ struct RecipePhoto: View {
         if let preview { return UIImage(data: preview) }
         guard let id else { return nil }
         if loadedID == id, let loaded { return loaded }
-        return cache?.media.image(Self.cacheKey(id))
+        return nil
     }
     var body: some View {
         Group {
@@ -71,26 +76,21 @@ struct RecipePhoto: View {
             else { CookbookPhoto(dish: dish, name: name, cook: fallbackCook) }
         }.clipped().accessibilityElement(children: .ignore).accessibilityLabel("Photo for \(name)")
             .accessibilityValue(image != nil ? "Recipe photo" : fallbackCook?.primaryImage != nil ? (exactCookLink || cook != nil ? "Linked cook photo" : "Dish family photo") : id != nil && !unavailable ? "Recipe photo loading" : "StayGrubby placeholder")
-            .task(id: id) {
-                unavailable = false
-                guard let id else { loaded = nil; loadedID = nil; return }
-                if loadedID == id, loaded != nil { return }
-                let key = Self.cacheKey(id)
-                if let hit = cache?.media.image(key) { loaded = hit; loadedID = id; return }
+            .modifier(RemoteImageRefresh { loaded = nil; loadedID = nil; unavailable = false; refresh = UUID() })
+            .task(id: "\(id?.uuidString ?? "")/\(refresh)") {
+                unavailable = false; loaded = nil; loadedID = nil
+                guard let id else { return }
                 guard let request, let media else { unavailable = true; return }
                 do {
-                    let bytes: Data
-                    if let cache { bytes = try await cache.media.load(key) { try await RecipePhotoService.download(id, request: request, media: media) } }
-                    else { bytes = try await RecipePhotoService.download(id, request: request, media: media) }
-                    guard let decoded = RemoteMediaCache.decode(bytes) else { throw AccountFoundationError.invalidResolution }
-                    // Cache before the cancellation check: a view that moved on still leaves the image ready.
-                    cache?.media.storeImage(decoded, key: key)
-                    try Task.checkCancellation(); loaded = decoded; loadedID = id
-                }
-                catch is CancellationError {} catch { unavailable = true }
+                    let descriptor = try await RecipePhotoService.descriptor(id, request: request)
+                    let image = try await AuthorizedRemoteImage.load(key: Self.cacheKey(id), action: .recipeDownload(path: descriptor.path),
+                                                                     expectedHash: descriptor.sha256, cache: cache, media: media)
+                    try Task.checkCancellation(); loaded = image; loadedID = id
+                } catch is CancellationError {} catch { unavailable = true }
             }
     }
 }
+
 struct RecipePhotoEditor: View {
     let id: UUID?
     var dish: Dish?

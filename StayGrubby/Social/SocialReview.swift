@@ -10,6 +10,7 @@ import Supabase
         UIGraphicsImageRenderer(size: CGSize(width: 24, height: 24)).image { c in UIColor.systemOrange.setFill(); c.fill(CGRect(x: 0, y: 0, width: 24, height: 24)) }.jpegData(compressionQuality: 0.8)!
     }
     var avatars: [String: Data] = [:]
+    private var imageReviewState = "pending"
     private var avatarDraft: String?
     var posts: [SocialPost] = []
     var postCookIDs: [UUID: UUID] = [:]
@@ -170,6 +171,25 @@ import Supabase
         requestCounts["\(endpoint).\(action)", default: 0] += 1
         // Opt-in diagnostics for isolated fixtures only; never log payloads/identities.
         if ProcessInfo.processInfo.arguments.contains("--social-review-trace") { NSLog("SOCIAL_REVIEW %@ %@", endpoint, action) }
+        if endpoint == "image_moderation" {
+            guard ProcessInfo.processInfo.arguments.contains("--image-review-fixture") else { throw URLError(.userAuthenticationRequired) }
+            let id = "90000000-0000-0000-0000-000000000001", generation = "90000000-0000-0000-0000-000000000002"
+            let path = "10000000-0000-0000-0000-000000000001/90000000-0000-0000-0000-000000000001.jpg"
+            avatars[path] = Self.avatarFixture
+            if action == "capabilities" { return Data(#"{"reviewer":true}"#.utf8) }
+            if action == "queue" {
+                let rows: [[String: Any]] = (payload.reviewState ?? "pending") == imageReviewState
+                    ? [["objectID":id,"generation":generation,"state":imageReviewState,"createdAt":1000,"bucket":"social-photos"]] : []
+                return try JSONSerialization.data(withJSONObject: ["images":rows])
+            }
+            if action == "inspect" { return try JSONSerialization.data(withJSONObject: ["objectID":id,"generation":generation,"state":imageReviewState,"bucket":"social-photos","path":path]) }
+            if action == "resolve" {
+                guard payload.expectedState == imageReviewState, let decision = payload.decision else { throw URLError(.badServerResponse) }
+                imageReviewState = decision
+                return try JSONSerialization.data(withJSONObject: ["state":decision])
+            }
+            throw URLError(.unsupportedURL)
+        }
         if endpoint == "profile_link" {
             guard !ProcessInfo.processInfo.arguments.contains("--profile-link-private") else { throw URLError(.resourceUnavailable) }
             if payload.username == identity.username, identity.discoverable {

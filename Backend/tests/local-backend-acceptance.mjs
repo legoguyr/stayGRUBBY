@@ -52,7 +52,7 @@ try {
  const blank = (await db.query("select (select count(*) from auth.users)+(select count(*) from staygrubby.accounts)+(select count(*) from storage.objects) n")).rows[0].n;
  check(Number(blank)===0,'A fresh disposable stack is required');
  check(Boolean((await db.query("select to_regclass('staygrubby.image_reviews') object")).rows[0].object),'Reviewed migrations must already be replayed');
- for(let i=0;i<3;i++){
+ for(let i=0;i<4;i++){
   const email='fixture-'+randomUUID()+'@example.invalid', password=randomBytes(24).toString('hex');
   const created=await call('/auth/v1/admin/users',config.SERVICE_ROLE_KEY,'POST',JSON.stringify({
    email,password,email_confirm:true
@@ -100,21 +100,15 @@ try {
  const read=token=>call('/storage/v1/object/authenticated/recipe-photos/'+path,token,'GET');
  check((await read(users[0].token)).ok,'Owner reads pending bytes');
  check(!(await read(users[1].token)).ok,'Peer denied until screened');
- const claims=await rpc('claim_image_reviews',config.SERVICE_ROLE_KEY,{});
- const claim=claims.find(c=>c.path===path);
- assert(claim,'Local upload must have pending screening work');
- const approved=await rpc('finish_image_review',config.SERVICE_ROLE_KEY,{
-  object_id:claim.objectID,generation:claim.generation,lease_id:claim.leaseID,outcome:'review',
-  sha256:createHash('sha256').update(bytes).digest('hex')
- });
- check(approved,'Synthetic provider verdict accepted on the exact lease');
- const pending = await action('image_moderation',2,'inspect',{objectID:claim.objectID});
+ const queueImages = await action('image_moderation',2,'queue');
+ check(queueImages.images.length === 1, 'Shared original awaits staff without a worker');
+ const pending = await action('image_moderation',2,'inspect',{objectID:queueImages.images[0].objectID});
  const inspected = await read(users[2].token);
  check(inspected.ok && Buffer.from(await inspected.arrayBuffer()).equals(bytes), 'Named staff can inspect exact flagged original bytes');
- await action('image_moderation',2,'resolve',{objectID:claim.objectID,generation:pending.generation,decision:'approved'});
+ await action('image_moderation',2,'resolve',{objectID:pending.objectID,generation:pending.generation,expectedState:pending.state,decision:'approved',photoHash:createHash('sha256').update(bytes).digest('hex')});
  const approvedBytes=await read(users[1].token);
  check(approvedBytes.ok&&Buffer.from(await approvedBytes.arrayBuffer()).equals(bytes),'Actual authorized byte round trip');
- check(!(await read(users[2].token)).ok,'Outsider denied approved photo');
+ check(!(await read(users[3].token)).ok,'Outsider denied approved photo');
  const peerPhoto = randomUUID(), peerPath = users[1].id+'/'+peerPhoto+'.jpg';
  await action('recipes',1,'prepare_photo',{assetID:peerPhoto,photoHash:createHash('sha256').update(bytes).digest('hex'),photoBytes:bytes.length});
  check((await call('/storage/v1/object/recipe-photos/'+peerPath,users[1].token,'POST',bytes,{'Content-Type':'image/jpeg'})).ok, 'Peer private fixture uploaded');

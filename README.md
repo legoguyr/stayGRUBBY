@@ -6,7 +6,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 
 **November 13–14 infrastructure checkpoint:** [Phase 2B](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled 1,077 rows and 109 photos. The owner accepted iPhone staging. Target-configured StayGrubby 1.0 (5) is available to the four-member internal **Alpha Testers** group only. The owner waived both live signed Edge Function probes for this rollout. The owner updated their existing iPhone installation in place and verified the original account, library, photos and sync. Build 4 and earlier still use the frozen source. November 15: the migrated target now runs the [automatic capacity monitor](supabase/README.md#automatic-target-monitoring). The owner-approved [acknowledgment write reduction](supabase/README.md#automatic-target-monitoring) is also live.
 
-**November 17 integration candidate:** completed Claude stabilization and the backend foundation are integrated locally. Exact social Dish identity/pagination is wired into iOS. Production moderation, image processing and signed staging acceptance remain gated in [Backend MVP readiness](BACKEND_MVP_READINESS.md).
+**November 17 integration candidate:** completed Claude stabilization and the backend foundation are integrated locally. Exact social Dish identity/pagination is wired into iOS. Zero-billing manual image review is implemented locally; production moderation and signed staging acceptance remain gated in [Backend MVP readiness](BACKEND_MVP_READINESS.md).
 
 ## Read first
 
