@@ -14,7 +14,9 @@ struct SocialPostDetailView: View {
     @Environment(\.socialRequest) private var request
     @Environment(\.accountContentCache) private var cache
     @Environment(\.scenePhase) private var phase
+    @Environment(\.dismiss) private var dismiss
     @State private var post: SocialPost?
+    @State private var loadedAt: Date?
     @State private var failed = false
     @State private var showingComments = false
     @State private var person: SocialPerson?
@@ -35,9 +37,10 @@ struct SocialPostDetailView: View {
                 .padding(.horizontal, SGTheme.Space.margin).padding(.bottom, SGTheme.Space.xLarge)
                 .frame(maxWidth: .infinity)
             } else if failed {
-                ContentUnavailableView("Post unavailable", systemImage: "lock", description: Text("The post or your access may have changed."))
-                Button("Retry post") { Task { await load() } }
-            } else { ProgressView("Loading post").padding(.top, SGTheme.Space.xLarge) }
+                SGContentState(title: "Post unavailable", symbol: "lock", message: "The post or your access may have changed.") {
+                    Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle()).accessibilityIdentifier("dish-details-retry")
+                }.padding(.top, SGTheme.Space.xLarge)
+            } else { SGLoadingState(label: "Opening Dish Details") }
         }
         .background(SGTheme.ColorToken.background)
         .navigationTitle("Dish Details").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
@@ -52,7 +55,11 @@ struct SocialPostDetailView: View {
         }
         .refreshable { await load() }
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
-        .onChange(of: phase) { _, next in generation = UUID(); if next == .active { Task { await load() } } }
+        // Returning to the app refreshes only a copy older than the shared read-cache window.
+        .onChange(of: phase) { _, next in
+            generation = UUID()
+            if next == .active, loadedAt.map({ Date().timeIntervalSince($0) > AccountContentCache.maximumAge }) ?? true { Task { await load() } }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load() } }
         .onReceive(NotificationCenter.default.publisher(for: .socialEngagementChanged)) { _ in Task { await load() } }
         .onDisappear { generation = UUID() }
@@ -72,13 +79,16 @@ struct SocialPostDetailView: View {
         do {
             let next = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_feed", "post", .init(postID: postID)))
             guard !Task.isCancelled, generation == token else { return }
-            post = next.posts.first; failed = post == nil
+            post = next.posts.first; failed = post == nil; loadedAt = Date()
         } catch is CancellationError { } catch { if generation == token { post = nil; failed = true } }
     }
     private func remove() async {
         guard let request else { return }
-        do { _ = try await request("social_content", "delete", .init(postID: postID)); await load(); NotificationCenter.default.post(name: .socialContentChanged, object: nil) }
-        catch { post = nil; failed = true }
+        do {
+            _ = try await request("social_content", "delete", .init(postID: postID))
+            // The post is gone: return to where it was opened rather than showing an unavailable page.
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss()
+        } catch { post = nil; failed = true }
     }
 }
 
@@ -151,8 +161,8 @@ private struct DishDetailsSectionView: View {
 private struct DishPostFacts: View {
     let post: SocialPost
     private var facts: [(label: String, value: String)] {
+        // The creator line already carries the shared date; cooked-at needs a server snapshot (roadmap).
         var rows: [(String, String)] = []
-        rows.append(("Shared", SocialPostPresentation.timestamp(post.date)))
         if let source = post.metadata?.source {
             let text = [source.recipe, source.name, source.author, source.page.map { "Page \($0)" }]
                 .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
@@ -166,6 +176,8 @@ private struct DishPostFacts: View {
         return rows
     }
     var body: some View {
+        let facts = facts
+        if !facts.isEmpty {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             ForEach(facts, id: \.label) { fact in
                 ViewThatFits(in: .horizontal) {
@@ -185,6 +197,7 @@ private struct DishPostFacts: View {
         }
         .padding(SGTheme.Space.medium)
         .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous))
+        }
     }
 }
 
@@ -226,22 +239,48 @@ struct DishSharedCooks: View {
     }
     private func load(force: Bool) async {
         guard let request else { return }
-        let author = post.author.id
-        if !force, let cached = cache?.authorPosts(author), cached.hasValue {
-            posts = cached.value
-            if cached.isFresh() { return }
+        if !force, let cached = SharedCookLookup.cached(for: post, cache: cache) {
+            posts = cached.posts
+            if cached.fresh { return }
         }
         do {
-            // One bounded page of the creator's own authorized posts (own posts: the server resolves "me").
-            let peer = post.isAuthor ? nil : author
-            let fetch: @MainActor () async throws -> Data = { try await request("social_feed", "profile", .init(peerID: peer)) }
-            let data: Data
-            if let cache { data = try await cache.coalesced("author-posts/\(author)", fetch) } else { data = try await fetch() }
-            let page = try JSONDecoder().decode(SocialPostsPage.self, from: data)
+            let next = try await SharedCookLookup.candidates(for: post, request: request, cache: cache)
             guard !Task.isCancelled else { return }
-            cache?.storeAuthorPosts(page.posts, for: author)
-            posts = page.posts; failed = false
+            posts = next; failed = false
         } catch is CancellationError { } catch { if posts == nil { failed = true } }
+    }
+}
+
+/// **Dish identity integration point** (UI_ARCHITECTURE "The Pass — feed, comments and Dish Details").
+/// Everything More Cooks of This Dish knows about "the same Dish" lives here: which posts are candidates and
+/// which of them match. Today that is one cached page of the creator's authorized posts matched by the
+/// Dish title snapshot. When the backend's social Dish identity contract ships (a viewer-safe Dish key on
+/// post cards, or a Dish-posts read), only `candidates`, `cached` and `sameDish` change; Dish Details,
+/// the rows and `SharedCookOrder` stay as they are.
+@MainActor enum SharedCookLookup {
+    static func cached(for post: SocialPost, cache: AccountContentCache?) -> (posts: [SocialPost], fresh: Bool)? {
+        guard let cached = cache?.authorPosts(post.author.id), cached.hasValue, let value = cached.value else { return nil }
+        return (value, cached.isFresh())
+    }
+    /// One bounded page of the creator's own authorized posts (own posts: the server resolves "me"),
+    /// coalesced and cached per creator. Read-only.
+    static func candidates(for post: SocialPost, request: @escaping SocialRequest, cache: AccountContentCache?) async throws -> [SocialPost] {
+        let author = post.author.id, peer = post.isAuthor ? nil : author
+        let fetch: @MainActor () async throws -> Data = { try await request("social_feed", "profile", .init(peerID: peer)) }
+        let data: Data
+        if let cache { data = try await cache.coalesced("author-posts/\(author)", fetch) } else { data = try await fetch() }
+        let posts = try JSONDecoder().decode(SocialPostsPage.self, from: data).posts
+        cache?.storeAuthorPosts(posts, for: author)
+        return posts
+    }
+    /// Same creator and same Dish. Posts snapshot the Dish title when shared, so a renamed Dish's older posts
+    /// are simply not grouped until the server supplies Dish identity.
+    nonisolated static func sameDish(_ candidate: SocialPost, as post: SocialPost) -> Bool {
+        candidate.author.id == post.author.id && dishKey(candidate.title) == dishKey(post.title)
+    }
+    nonisolated static func dishKey(_ title: String) -> String {
+        title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
+            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
     }
 }
 
@@ -274,16 +313,10 @@ nonisolated enum SharedCookOrder: String, CaseIterable, Identifiable, Sendable {
     static func score(_ post: SocialPost) -> Double? {
         post.scoreText.flatMap { Double($0.replacingOccurrences(of: ",", with: ".")) }
     }
-    /// Grouping key: posts snapshot the Dish title when shared. Exact Dish identity needs a server field
-    /// (roadmap: post-card Dish key), so a renamed Dish's older posts are simply not grouped here.
-    static func dishKey(_ title: String) -> String {
-        title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
-            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
-    }
+    /// Visible, active posts of the same Dish (`SharedCookLookup.sameDish`), excluding the one shown.
     static func otherCooks(of post: SocialPost, among posts: [SocialPost], order: SharedCookOrder) -> [SocialPost] {
-        let key = dishKey(post.title)
         let matches = posts.filter {
-            $0.id != post.id && $0.author.id == post.author.id && $0.published && $0.moderationState == "active" && dishKey($0.title) == key
+            $0.id != post.id && $0.published && $0.moderationState == "active" && SharedCookLookup.sameDish($0, as: post)
         }
         let recent: (SocialPost, SocialPost) -> Bool = { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
         switch order {

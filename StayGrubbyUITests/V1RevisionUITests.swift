@@ -90,7 +90,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             if app.buttons["ranking-result-close"].waitForExistence(timeout: 1) { break }
             tap(app.buttons["comparison-choice-new"], app)
         }
-        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Re-ranked"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["result-score"].exists && app.buttons["result-share-dish"].exists)
         XCTAssertFalse(app.buttons["Save Answers"].exists || app.buttons["Save Score"].exists)
         capture("Automatic Re-rank result", app)
@@ -117,12 +117,13 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         let rerank = app.cookAction("detail-rerank")
         transition(rerank, to: app.buttons["Liked it"], app)
         tap(app.buttons["Cancel"], app)
-        XCTAssertTrue(rerank.waitForExistence(timeout: 15))
+        // Cancel returns to Dish Details; Re-rank lives in the Dish actions menu (closed again).
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 15))
         capture("Accessible locked action stack", app)
-        transition(rerank, to: app.buttons["Liked it"], app)
+        transition(app.cookAction("detail-rerank"), to: app.buttons["Liked it"], app)
         transition(app.buttons["Liked it"], to: app.buttons["Skip"], app)
         tap(app.buttons["Cancel"], app)
-        XCTAssertTrue(rerank.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["cook-more-actions"].waitForExistence(timeout: 15))
         tap(app.navigationBars.buttons.firstMatch, app)
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["score-unlock-banner"].label.contains("9 / 10"))
@@ -142,6 +143,10 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             if app.buttons["ranking-result-close"].waitForExistence(timeout: 1) { break }
             tap(app.buttons["comparison-choice-new"], app)
         }
+        // The crossing cook's own result first; Continue opens the unlock milestone.
+        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 15))
+        XCTAssertEqual(app.buttons["ranking-result-close"].label, "Continue")
+        tap(app.buttons["ranking-result-close"], app)
         XCTAssertTrue(app.staticTexts["Your scores are unlocked!"].waitForExistence(timeout: 15))
         capture("Second version crosses entry threshold large text", app)
         tap(app.buttons["ranking-result-close"], app)
@@ -190,7 +195,7 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
         let app = XCUIApplication()
         app.launchArguments = ["--ui-test-store", UUID().uuidString, "--sharing-fixture", "new-leader", "--test-light"]
         app.launchWithReviewOptions()
-        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["Re-ranked"].waitForExistence(timeout: 20))
         let preview = app.images["ranking-share-preview"]
         XCTAssertTrue(preview.waitForExistence(timeout: 15))
         XCTAssertTrue(preview.label.contains("NEW #1 DISH"))

@@ -111,6 +111,7 @@ final class Stage3SocialUITests: StayGrubbyUITestCase {
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "A friendly cooking comment")).firstMatch.exists)
             XCTAssertLessThanOrEqual(input.frame.maxY, app.keyboards.firstMatch.frame.minY)
             XCTAssertTrue(app.buttons["comment-send"].isHittable)
+            XCTAssertFalse(app.buttons["comment-keyboard-done"].exists, "No keyboard-accessory pill over Send")
             let a = XCTAttachment(screenshot: app.screenshot()); a.name = "Stage 3 Comments keyboard \(appearance)"; a.lifetime = .keepAlways; add(a)
             app.terminate()
         }

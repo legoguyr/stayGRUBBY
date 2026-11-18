@@ -58,8 +58,8 @@ struct EditCookingView: View {
                         if savedDraft && selectionFailed {
                             Button("Reload Sous Chef tags") { reloadSelection += 1 }
                         }
-                        Button(savedDraft ? "Retry tag changes" : "Save") { Task { await save() } }
-                            .frame(maxWidth: .infinity)
+                        // Full width like New Dish's Continue (the frame belongs to the label, inside the style).
+                        Button { Task { await save() } } label: { Text(savedDraft ? "Retry tag changes" : "Save").frame(maxWidth: .infinity) }
                             .buttonStyle(SGButtonStyle(prominent: true))
                             .disabled(saving || draft.cleanDishName.isEmpty || !draft.validDishText)
                             .accessibilityIdentifier("save-cook-metadata")

@@ -20,6 +20,7 @@ struct CookingRankingResultView: View {
     @State private var appeared = false
     @State private var fileRevision = 0
     @State private var milestone = false
+    @State private var showingMilestone = false
     private struct PreviewRequest: Equatable {
         let model: ShareCardModel
         let fileRevision: Int
@@ -30,14 +31,18 @@ struct CookingRankingResultView: View {
     private var rank: Int? {
         attempt.rankedItem?.list?.orderedItems.firstIndex { $0.id == attempt.rankedItemID }.map { $0 + 1 }
     }
+    private var isRerank: Bool { event?.position(of: attempt.rankedItemID) != nil }
     private var movement: Int? {
         guard let previous = event?.position(of: attempt.rankedItemID), let rank,
               previous != rank else { return nil }
         return previous - rank
     }
 
+    /// The first score unlock follows this cook's own result (UI defect queue G): the result shows the
+    /// newly unlocked score and rank first, and Continue opens the milestone. Claiming is unchanged.
+    private var milestonePending: Bool { milestone && scores.isUnlocked && attempt.rankedItem?.list != nil }
     var body: some View {
-        if milestone, scores.isUnlocked, let list = attempt.rankedItem?.list {
+        if showingMilestone, milestonePending, let list = attempt.rankedItem?.list {
             ScoreUnlockMilestoneView(list: list, onClose: onClose)
                 .safeAreaInset(edge: .top) { SocialPublicationStatus(itemID: attempt.rankedItemID) }
         } else {
@@ -47,7 +52,9 @@ struct CookingRankingResultView: View {
                     Image(systemName: "checkmark.circle").font(.title2).foregroundStyle(SGTheme.ColorToken.accent)
                         .accessibilityHidden(true)
                     SGEyebrow(text: rank == 1 ? "Signature Dish" : "Saved in your Grub Rank")
-                    Text("Your dish is ranked!").font(SGTheme.TypeRole.hero)
+                    // A re-rank (the cook was already in this Grub Rank) reports an update, not a new ranking.
+                    Text(isRerank ? "Re-ranked" : "Your dish is ranked!").font(SGTheme.TypeRole.hero)
+                        .accessibilityIdentifier("result-headline")
                     Text(scores.isUnlocked ? "Here’s how it did." : scores.completionText)
                         .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                 }.multilineTextAlignment(.center)
@@ -110,8 +117,11 @@ struct CookingRankingResultView: View {
                 if scores.isUnlocked, model.achievement == .newNumberOne {
                     TopThreeShareAction(list: attempt.rankedItem?.list, title: "Share Updated Top 3", identifier: "result-share-updated-top-three")
                 }
-                Button("Done", action: onClose).buttonStyle(SGButtonStyle())
-                    .frame(maxWidth: .infinity).accessibilityIdentifier("ranking-result-close")
+                Button {
+                    if milestonePending { withAnimation(reduceMotion ? nil : SGTheme.Motion.standard) { showingMilestone = true } }
+                    else { onClose() }
+                } label: { Text(milestonePending ? "Continue" : "Done").frame(maxWidth: .infinity) }
+                    .buttonStyle(SGButtonStyle()).accessibilityIdentifier("ranking-result-close")
             }
             .frame(maxWidth: SGTheme.Size.sharingContentMaximum).padding(SGTheme.Space.medium).frame(maxWidth: .infinity)
             .background(SGTheme.ColorToken.background)
@@ -124,8 +134,9 @@ struct CookingRankingResultView: View {
                 catch { previewError = error.localizedDescription }
             }
             if let list = attempt.rankedItem?.list, TopThreeShareCardModel.make(in: list) != nil {
-                milestone = ScoreUnlockMilestones.claim(scope: milestoneScope,
-                    previous: event?.eligibleRankedEntryCount, current: scores)
+                // Claimed once: a later preview refresh must not withdraw a pending milestone.
+                if !milestone { milestone = ScoreUnlockMilestones.claim(scope: milestoneScope,
+                    previous: event?.eligibleRankedEntryCount, current: scores) }
             }
             withAnimation(reduceMotion ? nil : SGTheme.Motion.standard) { appeared = true }
         }

@@ -99,6 +99,13 @@ final class ScoreUnlockUITests: StayGrubbyUITestCase {
         app.launchArguments = ["--ui-test-store", store, "--score-unlock-fixture", "9", "--test-light"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
         add("Unlock tenth dish", app)
+        // The tenth cook's own result comes first, with its newly unlocked score and rank; Continue opens the milestone.
+        XCTAssertTrue(app.staticTexts["Your dish is ranked!"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["result-score"].exists && app.staticTexts["result-rank"].exists)
+        XCTAssertFalse(app.staticTexts["Your scores are unlocked!"].exists)
+        capture("Tenth cook result before milestone", app)
+        XCTAssertEqual(app.buttons["ranking-result-close"].label, "Continue")
+        tap(app.buttons["ranking-result-close"], app)
         XCTAssertTrue(app.staticTexts["Your scores are unlocked!"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.images["top-three-preview"].waitForExistence(timeout: 15))
         capture("First score unlock milestone", app)
@@ -134,6 +141,7 @@ final class ScoreUnlockUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.staticTexts["Your dish is ranked!"].exists)
         XCTAssertTrue(app.staticTexts["result-score"].exists)
         XCTAssertTrue(app.buttons["result-share-dish"].exists)
+        XCTAssertEqual(app.buttons["ranking-result-close"].label, "Done", "No repeated milestone")
         capture("Scores reveal again without repeating milestone", app)
     }
 
@@ -143,6 +151,8 @@ final class ScoreUnlockUITests: StayGrubbyUITestCase {
                                "--test-dark", "--test-large-type", "--test-reduce-motion"]
         app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
         add("Large text tenth dish", app)
+        let next = app.buttons["ranking-result-close"]
+        XCTAssertTrue(next.waitForExistence(timeout: 15)); XCTAssertTrue(next.isHittable); tap(next, app)
         XCTAssertTrue(app.staticTexts["Your scores are unlocked!"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.images["top-three-preview"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["share-top-three"].isHittable)
