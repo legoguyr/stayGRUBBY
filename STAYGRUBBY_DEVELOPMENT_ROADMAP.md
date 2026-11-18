@@ -117,7 +117,7 @@ Ownership: Claude owns SwiftUI presentation, design system and client flows; Cod
 
 | Debt | Impact | Plan |
 | --- | --- | --- |
-| Three stale UI tests (Edit Cook in the actions menu, `hero-photo`) | Noise in regression runs | Update with the next Dish page cycle (UI_ARCHITECTURE §10) |
+| Stale UI tests (Edit Cook in the actions menu, `hero-photo`/`hero-placeholder`, SocialUX share-default switch tap) | Noise in regression runs | Update with the next Dish page cycle (UI_ARCHITECTURE §10) |
 | Add Manually nested navigation (`RecipeEditor` owns a `NavigationStack`) | Back + Cancel | Embedded editor mode, coordinated with the Recipe editor owner |
 | Per-post caption copies | Cross-device drift possible | Server contract (§4) |
 | Client features that silently depend on pending migrations | The Pass photo P0 (Nov 18) | Every client call to a pending function must degrade (missing-function → fallback) and be listed in §4 until deployed |

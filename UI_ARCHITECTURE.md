@@ -237,6 +237,8 @@ Observed during the November 7 Simulator immersion and source audit (Build 4). N
 
 Test debt (confirmed failing identically on `b40de7b`, November 17; tests only, no app defect found): `Phase2CReviewUITests.testDetailVersionSelectionLongNamesAndLargeTypeForms` and `PolishUITests.testContainsEditPersistenceAndAvoidAnySelectionWithIndependentClear` tap an "Edit Cook" button that now lives in the Dish actions menu; `PolishUITests.testParentDishSearchEmptyClearAndHeroAppearances` waits for a `hero-photo` identifier on Dish Details. `Stage2ProductUITests.testCookEntryDishTextMetadataTaggingAndPersistence` can't find `dish-cuisine` in the cooking Details sheet (also failing on `d26b56c`, November 18). Update them to the current Dish page, as Stage F did for the earlier obsolete tests.
 
+Also failing identically on `bc8c3e2` (November 18, tests only): `SocialUXUITests.testDefaultOnOverrideOffAndNewVersionUsesCurrentDefault` (the test's tap does not flip the Post to The Pass switch on the first form).
+
 Separately tracked (not UI, protected system, needs evidence first): the ingredient parser split "toasted and crushed" into reversed lines and singularized "1½ cups".
 
 ### 10.1 App-wide consistency audit (P2, November 18, 2026)
