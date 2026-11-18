@@ -437,10 +437,3 @@ entrypoint = "./functions/recipe-import/index.ts"
 enabled = false
 verify_jwt = true
 entrypoint = "./functions/development-test-session/index.ts"
-
-# Owner must approve provider processing, configure credentials, and deploy explicitly.
-# Omitted from normal production batch deploy/serve until activation is authorized.
-[functions.moderate-images]
-enabled = false
-verify_jwt = true
-entrypoint = "./functions/moderate-images/index.ts"

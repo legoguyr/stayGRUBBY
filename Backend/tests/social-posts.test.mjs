@@ -28,10 +28,6 @@ try{
  await db.query("select set_config('storage.operation','object.upload',false)");
  await db.query("insert into storage.objects(bucket_id,name,metadata) values('social-photos',$1,'{\"mimetype\":\"image/jpeg\",\"size\":1024}')",[photo.photoPath]);
  await rpc('social_content','publish',{postID:photoID});
- await db.exec('reset role;set role service_role');
- const screened=(await db.query('select api.claim_image_reviews() items')).rows[0].items.find(item=>item.path===photo.photoPath);
- check(Boolean(screened),'Posted image enters screening');
- await db.query("select api.finish_image_review($1,$2,$3,'approved',$4)",[screened.objectID,screened.generation,screened.leaseID,'a'.repeat(64)]);
  await actor(1);await db.query("select set_config('storage.operation','object.get_authenticated',false)");
  check((await db.query("select count(*)::int n from storage.objects where bucket_id='social-photos'")).rows[0].n===1,'Friend can read explicitly shared photo only');
  await db.query("select set_config('storage.operation','object.upload',false)");

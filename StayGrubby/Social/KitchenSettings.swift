@@ -26,6 +26,7 @@ struct KitchenSettings<AccountUtilities: View>: View {
                     Text("Sharing is for mutual Sous Chefs. Profiles are private unless you choose Public in Profile; your cooking library is never public. Blocked accounts can’t see your profile or what you share, and their content is hidden from you.")
                 }
             }
+
             #if DEBUG
             Section("Developer") { NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() } }
             #endif

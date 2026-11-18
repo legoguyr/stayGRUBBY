@@ -6,10 +6,11 @@ nonisolated enum SocialMediaAction: Sendable {
     case upload(path: String, bytes: Data), download(path: String), remove(paths: [String])
     case avatarUpload(path: String, bytes: Data), avatarDownload(path: String), avatarRemove(paths: [String])
     case recipeUpload(path: String, bytes: Data), recipeDownload(path: String), recipeRemove(paths: [String])
-    var isDownload: Bool { switch self { case .download, .avatarDownload, .recipeDownload: true; default: false } }
-    var bucket: String { switch self { case .recipeUpload, .recipeDownload, .recipeRemove: "recipe-photos"; case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
+    case authorize(bucket: String, path: String)
+    var isDownload: Bool { switch self { case .download, .avatarDownload, .recipeDownload, .authorize: true; default: false } }
+    var bucket: String { switch self { case .authorize(let bucket, _): bucket; case .recipeUpload, .recipeDownload, .recipeRemove: "recipe-photos"; case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
     var paths: [String] {
-        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path), .recipeUpload(let path, _), .recipeDownload(let path): [path]; case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): paths }
+        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path), .recipeUpload(let path, _), .recipeDownload(let path): [path]; case .authorize(_, let path): [path]; case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): paths }
     }
 }
 nonisolated enum SocialMediaRules {
@@ -35,10 +36,16 @@ nonisolated enum SocialMediaRules {
 extension SupabaseAccountBackend: SocialMediaBackend {
     func socialMedia(_ action: SocialMediaAction) async throws -> Data {
         guard let user = client.auth.currentSession?.user.id, action.paths.count <= 25,
-              action.paths.allSatisfy(SocialMediaRules.validPath) else { throw AccountFoundationError.invalidResolution }
+              action.paths.allSatisfy(SocialMediaRules.validPath),
+              ["social-photos", "profile-photos", "recipe-photos"].contains(action.bucket) else { throw AccountFoundationError.invalidResolution }
         let bucket = client.storage.from(action.bucket)
         let result: Data
         switch action {
+        case .authorize(let name, let path):
+            struct Parameters: Encodable { let bucket: String; let path: String }
+            let response = try await client.schema("api").rpc("image_access", params: Parameters(bucket: name, path: path)).execute()
+            guard try JSONDecoder().decode(Bool.self, from: response.data) else { throw AccountFoundationError.invalidResolution }
+            result = Data()
         case .upload(let path, let bytes), .avatarUpload(let path, let bytes):
             guard SocialMediaRules.validJPEG(bytes) else { throw AccountFoundationError.invalidResolution }
             _ = try await bucket.upload(path, data: bytes, options: FileOptions(cacheControl: "0", contentType: "image/jpeg", upsert: true)); result = Data()
@@ -68,24 +75,22 @@ struct SocialPhoto: View {
     let path: String?
     @Environment(\.socialMedia) private var media
     @Environment(\.accountContentCache) private var cache
+    @State private var refresh = UUID()
     @State private var image: UIImage?
     @State private var imagePath: String?
     private var cacheKey: String? { path.map { "post-image/\($0)" } }
     var body: some View {
         Group {
-            if let shown = (imagePath == path ? image : nil) ?? cacheKey.flatMap({ cache?.media.image($0) }) { Image(uiImage: shown).resizable().scaledToFill() }
+            if let shown = (imagePath == path ? image : nil) { Image(uiImage: shown).resizable().scaledToFill() }
             else { SGPhotoPlaceholder() }
         }.clipped().accessibilityHidden(true)
-            .task(id: path) {
-                guard imagePath != path || image == nil else { return }
+            .modifier(RemoteImageRefresh { image = nil; imagePath = nil; refresh = UUID() })
+            .task(id: "\(path ?? "")/\(refresh)") {
                 image = nil; imagePath = nil
-                guard let path, let media else { return }
-                if let key = cacheKey, let hit = cache?.media.image(key) { image = hit; imagePath = path; return }
+                guard let path, let media, let key = cacheKey else { return }
                 do {
-                    let bytes = try await media(.download(path: path))
-                    guard !Task.isCancelled, SocialMediaRules.validJPEG(bytes),
-                          let decoded = RemoteMediaCache.decode(bytes, maximumPixels: SocialPhoto.maximumPixels) else { return }
-                    if let key = cacheKey { cache?.media.storeImage(decoded, key: key) }
+                    let decoded = try await AuthorizedRemoteImage.load(key: key, action: .download(path: path), cache: cache, media: media)
+                    try Task.checkCancellation()
                     image = decoded; imagePath = path
                 } catch { if !Task.isCancelled { image = nil } }
             }

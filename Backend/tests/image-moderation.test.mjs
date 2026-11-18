@@ -1,3 +1,5 @@
+// Historical migration-only regression for the superseded foundation.
+// Current product behavior is covered by instant-image-publishing.test.mjs.
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';

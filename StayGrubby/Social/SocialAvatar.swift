@@ -23,13 +23,14 @@ struct SocialAvatar: View {
     var preview: Data? = nil
     @Environment(\.socialMedia) private var media
     @Environment(\.accountContentCache) private var cache
+    @State private var refresh = UUID()
     @State private var loaded: UIImage?
     @State private var loadedPath: String?
     private var cacheKey: String? { path.map { "avatar-image/\($0)" } }
     var body: some View {
         ZStack {
             SGTheme.ColorToken.accent.opacity(0.12)
-            if let image = preview.flatMap(UIImage.init(data:)) ?? (loadedPath == path ? loaded : nil) ?? cacheKey.flatMap({ cache?.media.image($0) }) {
+            if let image = preview.flatMap(UIImage.init(data:)) ?? (loadedPath == path ? loaded : nil) {
                 Image(uiImage: image).resizable().scaledToFill()
             } else {
                 let initials = SocialAvatarRules.initials(name)
@@ -39,16 +40,13 @@ struct SocialAvatar: View {
         }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(width: size, height: size).clipShape(Circle())
             .overlay(Circle().strokeBorder(SGTheme.ColorToken.border))
             .accessibilityHidden(true)
-            .task(id: path) {
-                guard loadedPath != path || loaded == nil else { return }
+            .modifier(RemoteImageRefresh { loaded = nil; loadedPath = nil; refresh = UUID() })
+            .task(id: "\(path ?? "")/\(refresh)") {
                 loaded = nil; loadedPath = nil
-                guard let path, let media else { return }
-                if let key = cacheKey, let hit = cache?.media.image(key) { loaded = hit; loadedPath = path; return }
+                guard let path, let media, let key = cacheKey else { return }
                 do {
-                    let bytes = try await media(.avatarDownload(path: path))
-                    guard !Task.isCancelled, let thumbnail = SocialAvatarRules.thumbnail(bytes) else { return }
-                    let image = UIImage(cgImage: thumbnail)
-                    if let key = cacheKey { cache?.media.storeImage(image, key: key) }
+                    let image = try await AuthorizedRemoteImage.load(key: key, action: .avatarDownload(path: path), cache: cache, media: media)
+                    try Task.checkCancellation()
                     loaded = image; loadedPath = path
                 } catch { }
             }

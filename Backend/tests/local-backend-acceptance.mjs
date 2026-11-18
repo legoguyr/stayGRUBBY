@@ -52,7 +52,7 @@ try {
  const blank = (await db.query("select (select count(*) from auth.users)+(select count(*) from staygrubby.accounts)+(select count(*) from storage.objects) n")).rows[0].n;
  check(Number(blank)===0,'A fresh disposable stack is required');
  check(Boolean((await db.query("select to_regclass('staygrubby.image_reviews') object")).rows[0].object),'Reviewed migrations must already be replayed');
- for(let i=0;i<3;i++){
+ for(let i=0;i<4;i++){
   const email='fixture-'+randomUUID()+'@example.invalid', password=randomBytes(24).toString('hex');
   const created=await call('/auth/v1/admin/users',config.SERVICE_ROLE_KEY,'POST',JSON.stringify({
    email,password,email_confirm:true
@@ -98,23 +98,18 @@ try {
  await action('recipes',0,'complete_photo',{assetID:photo});
  await action('recipes',0,'save',{recipeID:rid,recipe:{title:'Local fixture',ingredients:['water'],steps:['Heat.'],photoID:photo},visibility:'friends'});
  const read=token=>call('/storage/v1/object/authenticated/recipe-photos/'+path,token,'GET');
- check((await read(users[0].token)).ok,'Owner reads pending bytes');
- check(!(await read(users[1].token)).ok,'Peer denied until screened');
- const claims=await rpc('claim_image_reviews',config.SERVICE_ROLE_KEY,{});
- const claim=claims.find(c=>c.path===path);
- assert(claim,'Local upload must have pending screening work');
- const approved=await rpc('finish_image_review',config.SERVICE_ROLE_KEY,{
-  object_id:claim.objectID,generation:claim.generation,lease_id:claim.leaseID,outcome:'review',
-  sha256:createHash('sha256').update(bytes).digest('hex')
- });
- check(approved,'Synthetic provider verdict accepted on the exact lease');
- const pending = await action('image_moderation',2,'inspect',{objectID:claim.objectID});
- const inspected = await read(users[2].token);
- check(inspected.ok && Buffer.from(await inspected.arrayBuffer()).equals(bytes), 'Named staff can inspect exact flagged original bytes');
- await action('image_moderation',2,'resolve',{objectID:claim.objectID,generation:pending.generation,decision:'approved'});
- const approvedBytes=await read(users[1].token);
- check(approvedBytes.ok&&Buffer.from(await approvedBytes.arrayBuffer()).equals(bytes),'Actual authorized byte round trip');
- check(!(await read(users[2].token)).ok,'Outsider denied approved photo');
+ check((await read(users[0].token)).ok,'Owner reads original bytes');
+ const sharedBytes=await read(users[1].token);
+ check(sharedBytes.ok&&Buffer.from(await sharedBytes.arrayBuffer()).equals(bytes),'Peer reads shared original immediately without approval');
+ check(!(await read(users[2].token)).ok,'Staff cannot browse unreported shared originals');
+ check(!(await read(users[3].token)).ok,'Outsider denied shared photo');
+ await action('social_report',1,'report',{targetType:'recipe',targetID:rid,sourceRevision:1,reason:'inappropriate'});
+ const imageReport=(await action('moderation_review',2,'queue')).reports.find(r=>r.kind==='recipe');
+ check(Boolean(imageReport),'Reported image-bearing Recipe enters existing staff queue');
+ const inspected=await read(users[2].token);
+ check(inspected.ok&&Buffer.from(await inspected.arrayBuffer()).equals(bytes),'Staff can inspect only an actually reported original');
+ await action('moderation_review',2,'resolve',{reportID:imageReport.id,decision:'hide'});
+ check(!(await read(users[1].token)).ok,'Moderator hide revokes shared bytes');
  const peerPhoto = randomUUID(), peerPath = users[1].id+'/'+peerPhoto+'.jpg';
  await action('recipes',1,'prepare_photo',{assetID:peerPhoto,photoHash:createHash('sha256').update(bytes).digest('hex'),photoBytes:bytes.length});
  check((await call('/storage/v1/object/recipe-photos/'+peerPath,users[1].token,'POST',bytes,{'Content-Type':'image/jpeg'})).ok, 'Peer private fixture uploaded');
@@ -123,7 +118,7 @@ try {
  const report=await action('social_report',1,'report',{targetType:'profile',targetID:users[0].id,reason:'other'});
  check(report.reported,'Signed report accepted');
  const queue=await action('moderation_review',2,'queue');
- await action('moderation_review',2,'resolve',{reportID:queue.reports[0].id,decision:'hide'});
+ await action('moderation_review',2,'resolve',{reportID:queue.reports.find(r=>r.kind==='profile').id,decision:'hide'});
  check((await action('recipes',0,'get',{recipeID:rid})).id===rid,'Hidden-profile owner retains signed personal Recipe read');
  check(!(await read(users[1].token)).ok,'Profile hide revokes actual shared bytes');
  const denied=await call('/rest/v1/rpc/moderation_review',users[1].token,'POST',JSON.stringify({action:'queue',payload:{}}),{

@@ -50,7 +50,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 
 | Feature | Status | Notes / dependency |
 | --- | --- | --- |
-| The Pass card, comments sheet, Dish Details, Previous Cooks | Verified (pending integration and iPhone) | Exact `dishKey` integrated by Codex (d26b56c) |
+| The Pass card, comments sheet, Dish Details, Previous Cooks | Integrated (pending iPhone) | Exact `dishKey` integrated by Codex (d26b56c) |
 | One Public Description (Dish ↔ caption) | Verified client sync | Backend: derive caption server-side from the Dish row (§4) |
 | Standard Delete wording | Verified | Replaces "86" in actions and confirmations |
 | Tab icon system | Verified (Simulator) | iPhone visual acceptance pending |
@@ -76,7 +76,7 @@ Contract rules: authenticated RPC/Edge action, DTO documented in the owning doma
 
 ## 5. Sequencing and parallel work
 
-1. Integrate the November 18 UI milestone (`agent/claude`) with Codex's instant image publishing (`d475257`, not yet on `main`). Expected overlap: canonical docs only.
+1. ~~Integrate the November 18 UI milestone with Codex's instant image publishing (`d475257`)~~ — done locally on `main` November 18 (one UI_ARCHITECTURE conflict, both sides kept).
 2. Physical iPhone acceptance of the UI milestone → next TestFlight candidate (owner authorizes upload).
 3. Codex: Public Description server contract, then follow model; Claude builds the gated client flows against the documented DTOs in parallel.
 4. Enable gates one at a time after hosted acceptance.

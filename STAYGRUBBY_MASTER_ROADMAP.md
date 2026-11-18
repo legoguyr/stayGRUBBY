@@ -19,7 +19,7 @@
 | Phase | Window | Scope | Status |
 | --- | --- | --- | --- |
 | S1 — MVP stabilization | Nov 16 – Nov 30, 2026 | Connected UI Phase 1 plus stabilization: one Dish page, consistent Dish/Recipe photos, read caching for Food Bible and The Pass, Dish cook count. Connected UI cohesion: Recipe preview on the Dish page, Food Bible cook status, My Kitchen statistics that open Grub Rank, Last cooked and Recent Cooks. Fix reproducible defects from the one consolidated owner Xcode review. | **Implemented Nov 16 (Claude); automated acceptance passed; one consolidated owner physical review pending.** |
-| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Owner-private authorization and text screening passed local verification. Image screening and exact social Dish identity, including iOS pagination/cache integration, are locally implemented. Provider activation, signed/staff rehearsal and deployment are pending. |
+| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Owner-private authorization and text screening passed local verification. Image screening and exact social Dish identity, including iOS pagination/cache integration, are locally implemented. Immediate image posting with report-based moderation is implemented locally; mandatory approval is removed. Signed/staff rehearsal and deployment are pending. |
 | S3 — Release candidate and submission | Stretch: Dec 21 – 31, 2026; target: Jan 2027 | Release build, one proportionate regression and Release verification, owner physical acceptance through Xcode, App Store metadata and submission (each step needs explicit owner approval). Optional external TestFlight. | Not started |
 
 ### MVP Required (public-release blockers)
@@ -27,7 +27,7 @@
 Full checklist and evidence: [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
 
 - **Stability and performance:** owner physical acceptance of Connected UI Phase 1 and the November 16 stabilization. This includes Saved Recipes once a Sous Chef shares a Recipe. Close any defect it finds.
-- **Moderation and safety:** deploy and exercise the locally implemented report → review → resolution workflow across posts, comments, Recipes and profiles with the verified owner-private Recipe fix and prospective text screening. The image-screening candidate and exact per-Dish social lookup are implemented locally. Complete provider/processing approval and signed staged acceptance, then staff the response process. [Moderation runbook](PUBLIC_MVP_MODERATION.md).
+- **Moderation and safety:** deploy and exercise the locally implemented report → review → resolution workflow across posts, comments, Recipes and profiles with the verified owner-private Recipe fix and prospective text screening. The image-screening candidate and exact per-Dish social lookup are implemented locally. Use immediate photo posting, reporting/blocking and audited staff removal; complete signed staged acceptance and staff the response process. Optional automated image moderation is future-only, not an MVP blocker. No paid provider or heavy model is authorized. [Moderation runbook](PUBLIC_MVP_MODERATION.md).
 - **Social onboarding:** a unique username and an explicit privacy choice for new accounts; a resumable completion flow for legacy accounts (from Very Near Term below). People discovery stays opt-in until this ships.
 - **Privacy and security:** focused review of audience rules, RLS, private Storage, account isolation, revocation, shared links and counts; App Store privacy disclosures matching actual processing (including external AI); disposition of security advisories and a signed Edge Function gateway smoke test. The migrated target excludes the development session function.
 - **Account deletion:** account deletion with UGC/media cleanup reviewed on isolated test identities.
@@ -148,12 +148,12 @@ Not in scope (built but hidden, or not built): the follow model, multiple-photo 
 
 | Readiness | State |
 | --- | --- |
-| Code implemented | Done (`agent/claude`) |
-| Integrated on `main` | Pending; Codex `d475257` (instant image publishing) also awaits integration |
+| Code implemented | Done |
+| Integrated on `main` | Done locally November 18 with Codex's instant image publishing (`d475257`); not pushed |
 | Locally verified | Focused tests, Debug + Release builds, Simulator light/dark |
 | Backend deployed | No new backend needed for this UI; Codex's pending production migrations follow their own approval |
 | Physical iPhone accepted | Pending (owner checklist) |
-| TestFlight-ready | After integration + iPhone acceptance |
+| TestFlight-ready | After push + iPhone acceptance (image-publishing migrations need production approval) |
 | Distributed | Not authorized |
 
 ## VERY NEAR TERM — Social & Discovery
