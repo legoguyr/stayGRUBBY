@@ -11,7 +11,7 @@ final class SocialFeedUITests: StayGrubbyUITestCase {
     }
     @MainActor func testFeedErrorRetryAndBlockRevokesVisiblePosts() throws {
         let app = launch(["--test-dark", "--social-review-feed", "--social-review-feed-error"])
-        XCTAssertTrue(app.staticTexts["feed-error"].waitForExistence(timeout: 8), app.debugDescription); app.buttons["feed-retry"].tap()
+        XCTAssertTrue(app.descendants(matching: .any)["feed-error"].waitForExistence(timeout: 8), app.debugDescription); app.buttons["feed-retry"].tap()
         XCTAssertTrue(app.staticTexts["Harissa Chicken with Roasted Peppers"].waitForExistence(timeout: 8))
         app.buttons["View Friendly Cook’s profile"].tap()
         app.buttons["friend-profile-actions"].tap()

@@ -29,10 +29,19 @@ struct DishIdentityHeader: View {
     }
     @ViewBuilder private var scoreAndRank: some View {
         if let item = attempt.rankedItem { ScoreBadge(score: item.score) }
-        if let globalRank { Text("#\(globalRank) overall").font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize() }
+        if let dishPosition { Text("#\(dishPosition) in Grub Rank").font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize()
+            .accessibilityIdentifier("dish-position") }
     }
     @ViewBuilder private var cookCount: some View {
         if showsCookCount, let dish = attempt.dish { DishCookCount(count: dish.attempts.count) }
+    }
+    /// The Dish's place in All Dishes (by its best cook), the same number Grub Rank shows (Nov 18, 2026).
+    private var dishPosition: Int? {
+        guard let dish = attempt.dish, let ordered = attempt.rankedItem?.list?.orderedItems else { return nil }
+        let rank = Dictionary(uniqueKeysWithValues: ordered.enumerated().map { ($1.id, $0) })
+        func best(_ dish: Dish) -> Int? { dish.attempts.compactMap { rank[$0.rankedItemID] }.min() }
+        guard let mine = best(dish), let all = attempt.modelContext.flatMap({ try? $0.fetch(FetchDescriptor<Dish>()) }) else { return nil }
+        return all.filter { other in other.id != dish.id && (best(other).map { $0 < mine } ?? false) }.count + 1
     }
     private var globalRank: Int? {
         guard let item = attempt.rankedItem, let ordered = item.list?.orderedItems,

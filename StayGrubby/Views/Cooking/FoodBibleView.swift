@@ -84,11 +84,12 @@ struct FoodBibleView: View {
     private var searchHeader: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             SGLibraryHeader(page: "Food Bible", create: { choosing = true }, createTitle: "Add Recipe", createIdentifier: "bible-add")
+            // Same order as Grub Rank: header → search → views → filters.
+            SGSearchField(placeholder: library == .saved ? "Search saved Recipes" : "Dish, ingredient, cuisine…", text: $query, identifier: "bible-search",
+                          clearIdentifier: "bible-search-clear", accessibilityLabel: "Search your cookbook")
             Picker("Recipes", selection: $library) {
                 ForEach(FoodBibleLibrary.allCases) { Text($0.title).tag($0) }
             }.pickerStyle(.segmented).accessibilityIdentifier("bible-library")
-            SGSearchField(placeholder: library == .saved ? "Search saved Recipes" : "Dish, ingredient, cuisine…", text: $query, identifier: "bible-search",
-                          clearIdentifier: "bible-search-clear", accessibilityLabel: "Search your cookbook")
             if library == .mine {
                 // The shared filter rail (Nov 18, 2026): one scrolling row, circular Sort beside it.
                 SGFilterRail(clearActive: clearActive, clearTitle: filters.isActive ? "Clear Search and Filters" : "Clear Search",

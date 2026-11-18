@@ -31,7 +31,9 @@ struct SGFilterRail<Chips: View, Sort: View>: View {
                         SGIconButton(title: clearTitle, symbol: "xmark", action: clear).accessibilityIdentifier(clearIdentifier)
                     }
                 }.padding(.vertical, 1)
-            }.scrollClipDisabled()
+            }
+            // Chips clip at the rail's edge (a soft fade) so they never run under Sort.
+            .mask(HStack(spacing: 0) { Color.black; LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing).frame(width: SGTheme.Space.medium) })
             sort
         }
     }

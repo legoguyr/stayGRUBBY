@@ -32,6 +32,9 @@ struct CookingRankingView: View {
         // All Dishes: one row per Dish, placed by its best-ranked cook (owner decision, Nov 18, 2026).
         let entries = CookingBrowseOrder.entries(RankingsPresentation.entries(eligible, matching: matching,
             mode: .topVersion), order: sort, scores: scores)
+        // Dish positions (1, 2, 3…) from the unfiltered All Dishes order, so a Dish keeps its number while
+        // filtering and a hidden second cook never leaves a gap. Ranking evidence is untouched.
+        let dishRank = RankingsPresentation.dishPositions(eligible)
         ScrollView {
             if showsFolders {
                 FolderGrid(summaries: DishCollectionSummary.all(dishes: dishes, entries: eligible, scores: scores))
@@ -57,14 +60,14 @@ struct CookingRankingView: View {
                 } else if entries.isEmpty { noResults }
                 ForEach(entries) { entry in
                     NavigationLink(value: entry.attempt.id) {
-                        if entry.globalRank == 1 && sort == .grubRank && !hasSearch && !filters.isActive {
+                        if dishRank[entry.attempt.id] == 1 && sort == .grubRank && !hasSearch && !filters.isActive {
                             SignatureRankHero(attempt: entry.attempt)
-                        } else { RankedDishRow(attempt: entry.attempt, rank: entry.globalRank) }
+                        } else { RankedDishRow(attempt: entry.attempt, rank: dishRank[entry.attempt.id] ?? entry.globalRank) }
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("cook-row-\(entry.attempt.rankedItemID)")
-                    .accessibilityLabel(rowLabel(entry))
-                    .accessibilityHint("Course \(entry.attempt.category.label). Global rank. Opens dish details.")
+                    .accessibilityLabel(rowLabel(entry, rank: dishRank[entry.attempt.id] ?? entry.globalRank))
+                    .accessibilityHint("Course \(entry.attempt.category.label). Ranked by its best cook. Opens dish details.")
                     Divider().overlay(SGTheme.ColorToken.border).accessibilityHidden(true)
                 }
             }
@@ -126,9 +129,9 @@ struct CookingRankingView: View {
         }
     }
 
-    private func rowLabel(_ entry: CookingDiscovery.Entry) -> String {
+    private func rowLabel(_ entry: CookingDiscovery.Entry, rank: Int) -> String {
         let detail = entry.attempt.rankedItem.flatMap { scores.scoreText($0.score) }.map { "score \($0)" } ?? "score locked"
-        return "Rank \(entry.globalRank), \(entry.attempt.displayName), \(detail)"
+        return "Rank \(rank), \(entry.attempt.displayName), \(detail)"
     }
 
     private var showsFolders: Bool { section == .folders && flags.isOn(.dishCollections) }

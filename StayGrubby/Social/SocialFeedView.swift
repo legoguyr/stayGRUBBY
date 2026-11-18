@@ -31,13 +31,19 @@ struct SocialFeedView: View {
                 }
             } else {
                 if loading && posts.isEmpty { SGLoadingState(label: "Loading posts") }
+                // Shared empty/error states with one clear action (UI overhaul): no list chrome around them.
                 if failed {
-                    Text("Couldn’t load posts. Check your connection and retry.").accessibilityIdentifier("feed-error")
-                    Button("Retry") { refresh() }.accessibilityIdentifier("feed-retry")
+                    SGContentState(title: "Couldn’t load The Pass", symbol: "wifi.exclamationmark", message: "Check your connection and try again.") {
+                        Button("Retry") { refresh() }.buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("feed-retry")
+                    }.accessibilityElement(children: .contain).accessibilityIdentifier("feed-error")
+                    .listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 } else if !loading && posts.isEmpty {
-                    ContentUnavailableView("Nothing shared yet", systemImage: "fork.knife",
-                        description: Text(friendCount == 0 ? "Find a Sous Chef to see what they cook." : "Cooks from your Sous Chefs will appear here."))
-                    NavigationLink("Find Sous Chefs") { FriendsView() }.accessibilityIdentifier("feed-find-friends")
+                    SGContentState(title: "Nothing shared yet", symbol: "fork.knife",
+                                   message: friendCount == 0 ? "Find a Sous Chef to see what they cook." : "Cooks from your Sous Chefs will appear here.") {
+                        NavigationLink { FriendsView() } label: { Text("Find Sous Chefs") }
+                            .buttonStyle(SGButtonStyle(prominent: friendCount == 0)).accessibilityIdentifier("feed-find-friends")
+                    }
+                    .listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 }
                 ForEach(posts) { post in
                     SocialFeedCard(post: post, profile: { person = post.author }, delete: { deleting = post; confirmingDelete = true }, navigate: { route = $0 })

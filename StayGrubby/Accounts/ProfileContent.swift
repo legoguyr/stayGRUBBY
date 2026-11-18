@@ -21,7 +21,7 @@ struct ProfileCookingContent: View {
     /// every ranked cook (Nov 18, 2026). Counts are verified local data, never cloud estimates.
     private var cookingSnapshot: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            HStack(alignment: .top, spacing: SGTheme.Space.medium) {
+            HStack(alignment: .top, spacing: SGTheme.Space.small) {
                 statistic(snapshot.dishCount, title: "Dishes Ranked", identifier: "profile-dish-count", hint: "Opens Grub Rank") { openGrubRank(.allVersions) }
                     .frame(maxWidth: .infinity)
                 statistic(snapshot.rankedEntryCount, title: "Total Makes", identifier: "profile-entry-count", hint: "Opens Grub Rank") { openGrubRank(.allVersions) }
@@ -39,7 +39,10 @@ struct ProfileCookingContent: View {
             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                 Text(count, format: .number).font(SGTheme.TypeRole.title).monospacedDigit()
                 Text(title).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-            }.frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
+            }.frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading)
+                .padding(SGTheme.Space.small)
+                .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.field, style: .continuous))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.primaryText)
         .accessibilityElement(children: .ignore)

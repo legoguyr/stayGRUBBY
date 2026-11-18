@@ -265,6 +265,67 @@ Keep: The Pass stays a feed, Grub Rank a ranking, Food Bible a Recipe library, M
 - **Dish page ⋯:** *Make This Cook a Separate Dish* (`cook-separate`, only with 2+ cooks) opens `MoveCookSheet` (name suggested from Cook Name + Dish name; the old Dish name suggested as a collection) and *Collections* when the gate is on.
 - **Smart Collections (gated):** `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
 
+## 13. Design system v2 and screen inventory (UI overhaul, November 18, 2026)
+
+Owner direction: one recognizable visual language and interaction convention across the whole app, bright and food-led, without making every screen identical. Implemented in `agent/claude`; physical iPhone acceptance pending.
+
+### 13.1 Foundation (tokens)
+
+| Token | Rule |
+| --- | --- |
+| Color | Light pages are white (`background` `#FFFFFF`); warm cream lives in `surface` `#FBF7F2` (cards, chips) and `elevatedSurface` `#F4EDE5` (fields, circular controls). Red (`accent`/`buttonAccent`) only for the one primary action, selection, brand and destructive. Dark mode keeps the warm charcoal set. One soft `shadow` for cards |
+| Type | Only `SGTheme.TypeRole` roles: `hero`, `title`, `section` (new, page section titles), `dish`, `headline`, `body`, `reading`, `secondary`, `footnote` (new), `eyebrow`, `score`, `rank`. Raw `.headline/.subheadline/.footnote/.caption/.body` were mapped to roles (131 sites); 53 remaining raw sizes are deliberate special cases (emoji, icons, comparison) |
+| Space, radius, size | Unchanged scales (`Space`, `Radius`, `Size.minimumTap` 44) |
+
+### 13.2 Shared components (LEGO)
+
+| Component | Replaces | Used by |
+| --- | --- | --- |
+| `SGLibraryHeader` + `sgTabHeader` + `sgHeaderAction` | Four different tab headers (custom Grub Rank row, nav-bar principal brand on The Pass / Food Bible / My Kitchen) | All four tabs: wordmark + page name left, circular actions right |
+| `SGCreateButton` | Grub Rank + menu, Food Bible toolbar + | Grub Rank (Rank a Dish), Food Bible (New Recipe) |
+| `SGSearchField` (always visible, below the header) | Grub Rank search behind a header button with *Done* | Grub Rank, Food Bible (and in-sheet lists) |
+| `SGFilterRail` + `SGBrowseSortMenu(circular:)` | Fixed chip rows, full-width text Sort, All Cooks switch | Grub Rank, Food Bible |
+| Segmented views under search | — | Grub Rank *All Dishes / Folders*, Food Bible *My Recipes / Saved Recipes* |
+| `SGContentState` / `SGLoadingState` | 7 bespoke empty views and 15 page spinners | Social screens, The Pass, Food Bible, folders |
+| `SGPhotoViewer` (`sgOpensPhotoViewer`) | — | Dish page hero, post Dish Details hero |
+| `FolderGrid` / `FolderCard` / `DishFolderCallout` | — | Grub Rank Folders, Dish page *Explore Risotto* |
+| `SGLaunchView` | Sign-up story shown to returning accounts while restoring | Session restore / library open |
+| `ScoreUnlockProgressBanner` (compact) | Tall unlock card | Grub Rank, My Kitchen |
+
+### 13.3 Interaction conventions
+
+- **Tabs** open the same way: header → search → views (segmented) → filters → content.
+- **+** is always the red circle at the header's end and goes straight to that screen's creation (Grub Rank → Rank a Dish; Food Bible → Create Manually / Create with AI). No universal menu.
+- **Filters** scroll horizontally; one clear X at the end of the chips; **Sort** is the circular button pinned beside them with that screen's options.
+- **Rows and cards** open their exact destination (Dish by ID, folder, post); photos inside a row never steal the row's tap. Photo viewing happens on detail pages.
+- **Utilities** (notifications, people, settings, share, ⋯) are neutral circles; only the create action is red.
+- **Empty / loading / error** always use `SGContentState` / `SGLoadingState`, with at most one prominent action.
+
+### 13.4 Screen inventory and status
+
+| Area | Screen | Status |
+| --- | --- | --- |
+| Shell | Tab bar, tab headers | Unified (§13.2) |
+| Launch | Opening story, sign-in, restore | Opening story rewritten (Grub Rank, Food Bible, The Pass, unlock at 10); restore shows `SGLaunchView`; Sign in with Apple untouched |
+| Grub Rank | List, filters, Folders, folder page | Unified; All Dishes numbers Dishes 1, 2, 3… by best cook |
+| Grub Rank | Rank a Dish form, comparison, result | Form gained existing-Dish prompt and folders; comparison/result preserved (frozen) |
+| Dish | Dish page, Cooks, Separate Cooks, Folders | Unified header position (#N in Grub Rank), Explore folder, Separate Cooks, photo viewer |
+| Food Bible | Library, Saved, filters, + | Unified; Recipe tab links to Dish details by ID |
+| Food Bible | Recipe reader/editor/import | Reviewed: already on shared sections/buttons; type roles centralized. No layout change (Recipe editor is protected) |
+| The Pass | Feed, cards, comments, Dish Details | Header and states unified; card layout from the master milestone kept; Dish Details hero opens the viewer |
+| My Kitchen | Profile, statistics, Signature Dishes, folders | Header unified; statistics as tiles; compact unlock banner |
+| Social | Sous Chefs, profiles, Tickets, settings, privacy | Loading/empty states unified; navigation-bar screens (pushed) keep system back buttons |
+| Sheets | Editors, pickers, confirmations | Cancel left / primary right; destructive confirmations use `Delete …` wording (§7) |
+
+### 13.5 Remaining inconsistencies and intentional exceptions
+
+- **Signature Dishes lists cooks** (two Harissa Chicken cooks can both be #1 and #2) while All Dishes lists Dishes. The trio feeds the protected share card renderer; changing it to Dishes is an owner decision (recommended).
+- Recipe photos, avatars and The Pass card photos don't open the viewer yet: the card's tap opens Dish Details by design, and Recipe/avatar photos load inside components that own their cache. Next pass.
+- Pushed detail screens keep the system navigation bar (back, title, ⋯); tab roots use the inline header. Intentional.
+- Comparison, ranking result and share cards are frozen designs (Preserve §11).
+- Thumbnail placeholders at 44 pt show no wordmark (too small to read); larger placeholders do.
+- 53 raw font sizes remain for emoji/icon/score special cases.
+
 ## 11. Preserve
 
 Comparison screen; Initial Reaction; re-rank reuse of the ranking flow; #1 hero; editorial rank presentation; Signature Dishes trio; `ScoreColor` semantics; score lock; exported share cards (1080 × 1350 photo, 1080 × 1080 no-photo, Top 3 1080 × 1350); Send to Sous Chefs; Tag avatar interaction and eight-person limit; Comments mechanics; Recipe reader typography; serving scaling; Rank My Version; ingredient editing, paste/import, parser/reorder architecture; creator/source disclosure; canonical wordmark; cream/charcoal/red identity; accessibility targets; four-tab structure; chronological The Pass; Hands 🙌; standard Delete wording; Delete Account; Privacy Policy reader; "Your taste decides".

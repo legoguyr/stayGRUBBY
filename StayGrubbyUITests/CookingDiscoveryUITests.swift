@@ -200,9 +200,14 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
     @MainActor
     func testIndividualFilterGroupsAndCreationNavigation() throws {
         let app = launch()
+        // All Dishes numbers Dishes by their best cook; a filter never renumbers them.
+        for _ in 0..<6 where !row("Apple Cake", in: app).exists { app.swipeUp() }
+        let unfiltered = String(row("Apple Cake", in: app).label.split(separator: ",").first ?? "")
+        XCTAssertTrue(unfiltered.hasPrefix("Rank "))
+        for _ in 0..<6 { app.swipeDown() }
         filters("course", in: app)
         select(app.buttons["filter-course-dessert"], in: app); doneFilters(in: app)
-        XCTAssertTrue(row("Apple Cake", in: app).label.hasPrefix("Rank 5,"))
+        XCTAssertTrue(row("Apple Cake", in: app).label.hasPrefix(unfiltered + ","))
         XCTAssertFalse(row("Golden sear", in: app).exists)
         capture("Course only", app: app)
 
@@ -219,15 +224,16 @@ final class CookingDiscoveryUITests: StayGrubbyUITestCase {
         transition(app.buttons["Cancel"], to: row("Apple Cake", in: app), in: app)
 
         transition(app.buttons["clear-filters"], to: row("Smoky Sunday", in: app), in: app)
+        // All Dishes shows each Dish's best cook (Harissa Chicken → Smoky Sunday), never its lower cooks.
         // Grub Rank offers Course and Cuisine only.
         XCTAssertFalse(app.buttons["ranking-filter-dietary"].exists); XCTAssertFalse(app.buttons["ranking-filter-avoid"].exists)
         filters("course", in: app)
         select(app.buttons["filter-course-main"], in: app); doneFilters(in: app)
-        XCTAssertTrue(row("Golden sear", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(row("Smoky Sunday", in: app).waitForExistence(timeout: 10))
         XCTAssertFalse(row("Apple Cake", in: app).exists)
         capture("Main course only", app: app)
         search("chicken", in: app)
-        XCTAssertTrue(row("Golden sear", in: app).waitForExistence(timeout: 10))
+        XCTAssertTrue(row("Smoky Sunday", in: app).waitForExistence(timeout: 10))
         XCTAssertFalse(row("Lemon Pasta", in: app).exists)
         search("ramen", in: app)
         XCTAssertTrue(app.staticTexts["No filter matches"].waitForExistence(timeout: 10))

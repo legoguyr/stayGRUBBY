@@ -24,6 +24,15 @@ struct GrubRankRequest: Equatable {
 @MainActor enum RankingsPresentation {
     /// Filter/search first, then retain the highest globally ranked matching
     /// version of each Dish. Original global rank numbers are never renumbered.
+    /// All Dishes numbering: each Dish's best cook → its position among Dishes (1-based), in global order.
+    static func dishPositions(_ eligible: [CookingDiscovery.Entry]) -> [UUID: Int] {
+        var seen = Set<UUID>(), positions: [UUID: Int] = [:]
+        for entry in eligible.sorted(by: { $0.globalRank < $1.globalRank }) {
+            guard let dish = entry.attempt.dish?.id, seen.insert(dish).inserted else { continue }
+            positions[entry.attempt.id] = seen.count
+        }
+        return positions
+    }
     static func entries(_ eligible: [CookingDiscovery.Entry], matching: [CookingDiscovery.Entry],
                         mode: RankingsDisplayMode) -> [CookingDiscovery.Entry] {
         let matches = Set(matching.map(\.id))

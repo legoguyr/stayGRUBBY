@@ -95,16 +95,21 @@ extension EnvironmentValues {
 struct ScoreUnlockProgressBanner: View {
     let state: ScoreUnlockState
     var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            Label("Unlock your scores", systemImage: "lock.fill").font(SGTheme.TypeRole.headline)
+        // Compact (UI overhaul, Nov 18, 2026): one line of progress and one short note, so the list stays
+        // the focus. Same facts and identifiers as before.
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            HStack(spacing: SGTheme.Space.xSmall) {
+                Image(systemName: "lock.fill").font(SGTheme.TypeRole.secondary).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
+                Text(state.progressText).font(SGTheme.TypeRole.body.weight(.semibold))
+                    .accessibilityIdentifier("score-unlock-progress")
+                Spacer(minLength: 0)
+            }
             ProgressView(value: state.progress).progressViewStyle(StayGrubbyUnlockProgressStyle()).accessibilityHidden(true)
-            Text(state.progressText).font(SGTheme.TypeRole.body.weight(.semibold))
-                .accessibilityIdentifier("score-unlock-progress")
-            Text(state.remainingText).font(SGTheme.TypeRole.secondary)
+            Text(state.remainingText).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }
         // Adaptive surface/text: a fixed cream card glared in dark mode.
         .foregroundStyle(SGTheme.ColorToken.primaryText)
-        .padding(SGTheme.Space.medium)
+        .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.small)
         .background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: SGTheme.Radius.card))
         .overlay { RoundedRectangle(cornerRadius: SGTheme.Radius.card).stroke(SGTheme.ColorToken.border, lineWidth: SGTheme.Size.border) }
         .padding(.vertical, SGTheme.Space.small)

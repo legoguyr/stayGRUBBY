@@ -52,15 +52,16 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             app.terminate()
         }
     }
-    /// All Dishes: one row per Dish at its best cook's true global rank; no view toggle (Nov 18, 2026).
-    @MainActor func testAllDishesShowsOneRowPerDishAtGlobalRanksWithoutChangingUnlockProgress() {
+    /// All Dishes: one row per Dish, numbered 1, 2, 3… by its best cook; no view toggle (Nov 18, 2026).
+    @MainActor func testAllDishesShowsOneRowPerDishWithoutChangingUnlockProgress() {
         let app = launch(9)
         app.showAllVersions() // asserts there is no view toggle
-        let hidden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 3,'")).firstMatch.waitForExistence(timeout: 15))
-        XCTAssertFalse(hidden.exists, "A Dish's second cook doesn't get its own row")
+        let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'"))
+        XCTAssertTrue(rows.matching(NSPredicate(format: "label BEGINSWITH 'Rank 1,'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(rows.matching(NSPredicate(format: "label BEGINSWITH 'Rank 2,'")).firstMatch.exists, "Dish numbers have no gaps")
+        XCTAssertFalse(rows.matching(NSPredicate(format: "label CONTAINS 'Version 1'")).firstMatch.exists, "A Dish's lower cook doesn't get its own row")
         let banner = app.descendants(matching: .any)["score-unlock-banner"]
-        XCTAssertTrue(banner.label.contains("9 / 10")); capture("All Dishes, true global ranks", app)
+        XCTAssertTrue(banner.label.contains("9 / 10")); capture("All Dishes", app)
     }
     @MainActor func testFreshRerankReactionControlsAutomaticResultAndProfileTopThree() {
         let app = launch(12)

@@ -2,6 +2,8 @@
 
 **Roadmap B — how we build it.** This document tracks foundations, contracts, gates, sequencing and delivery risk. **Roadmap A**, [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md), tracks *what* we build, why, and when users receive it. The two are kept in sync (see [AGENTS.md — Two roadmaps](AGENTS.md#two-roadmaps)); specialized documents (architecture, UI, food, sync, moderation, release gate) stay the detailed references. Established November 18, 2026.
 
+**V1 feature freeze (owner, November 18, 2026):** until the first App Store release only corrections, data organization, launch polish and release work are built; new feature ideas are recorded as Post-launch in Roadmap A.
+
 ## 1. Lifecycle (LEGO: build ahead, activate later)
 
 Every feature carries one status. These are separate states; reaching one never implies the next.
@@ -46,6 +48,9 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `DishCollectionsField`, `KitchenCollectionsSection`, `DishCollectionView`, `MoveCookSheet` | Views/Cooking/DishOrganization.swift | Add to Collection in every Dish editor; My Kitchen; cook separation |
 | `DishIdentityStore.move` | Cooking/DishIdentityStore.swift | Lossless cook separation (companion of `combine`) |
 | `AuthorizedRemoteImage` + `ImageAccessCheck` | Social/AuthorizedRemoteImage.swift | One image pipeline; degrades safely without `api.image_access` |
+| `SGLibraryHeader`, `SGCreateButton`, `SGFilterRail`, `sgTabHeader`, `sgHeaderAction` | DesignSystem/SGBrowseBar.swift | Every tab root (UI_ARCHITECTURE §13) |
+| `SGPhotoViewer`, `SGLaunchView` | DesignSystem/SGPhotoViewer.swift | Full-screen photos; account restore |
+| `SeparateCooksSheet`, `FolderGrid`, `DishFolderCallout` | Views/Cooking/DishOrganization.swift | Dish separation and folders |
 | `RecipeShareChoice` / `RecipeAttachmentModel` | Social/RecipeSocial.swift | Composer Recipe consent with status line |
 | `SGContentState`, `SGLoadingState`, `SGSectionHeader`, `SGBrowseSortMenu` | DesignSystem | Every empty/loading/error state and sort |
 
@@ -68,7 +73,9 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Dish/Recipe integrity — separate a cook | Verified (unit + UI) | Client; server hardening migration `20261118160000` pending (PGlite-verified) |
 | Rank a Dish / Add a Recipe + menu | Verified (UI) | Replaces New Dish / Cook Again choices |
 | Smart Collections | Verified, hidden (`dish_collections`) | Migration `20261118160100` (PGlite-verified) must deploy first |
-| App-wide UI consistency (search, filter rail + Sort icon, cards, states) | Planned (P2) | UI_ARCHITECTURE §10.1; after this milestone is stable |
+| App-wide UI consistency / design system v2 | Implemented, Verified (focused UI), iPhone pending | UI_ARCHITECTURE §13; remaining exceptions §13.5 |
+| Separate Cooks; Recipe → Dish details; All Dishes / Folders tabs; contextual + | Implemented, Verified (UI) | Folders tab behind `dish_collections` |
+| Full-screen photo viewer | Implemented (Dish and post heroes) | Recipe photos and avatars next |
 | Multiple-photo galleries | Planned | Reuse photo infrastructure; no new Storage writes until designed |
 | Shop This Dish | Planned (post-V1) | `DishDetailsSection.shop` + engagement accessory slot; needs privacy/legal review |
 | Discover | Planned (post-V1) | — |
