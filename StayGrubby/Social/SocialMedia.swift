@@ -43,7 +43,13 @@ extension SupabaseAccountBackend: SocialMediaBackend {
         switch action {
         case .authorize(let name, let path):
             struct Parameters: Encodable { let bucket: String; let path: String }
-            let response = try await client.schema("api").rpc("image_access", params: Parameters(bucket: name, path: path)).execute()
+            let response: PostgrestResponse<Void>
+            do { response = try await client.schema("api").rpc("image_access", params: Parameters(bucket: name, path: path)).execute() }
+            catch let error as PostgrestError where ImageAccessCheck.isMissingFunction(code: error.code) {
+                // A hosted project without the image-access migration: callers fall back to a fresh,
+                // Storage-authorized download instead of failing (The Pass P0, November 18, 2026).
+                throw ImageAccessCheck.Unavailable()
+            }
             guard try JSONDecoder().decode(Bool.self, from: response.data) else { throw AccountFoundationError.invalidResolution }
             result = Data()
         case .upload(let path, let bytes), .avatarUpload(let path, let bytes):
