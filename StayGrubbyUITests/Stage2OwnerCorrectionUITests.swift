@@ -99,8 +99,9 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
             XCTAssertTrue(exit.isHittable); XCTAssertLessThanOrEqual(exit.frame.maxY, app.tabBars.firstMatch.frame.minY)
             shot("Owner corrections Kitchen bottom clearance \(appearance)", app)
             tab("The Pass", app)
-            let metadata = app.staticTexts.matching(identifier: "post-course-cuisine").matching(NSPredicate(format: "label == %@", "Main • Italian")).firstMatch
-            XCTAssertTrue(metadata.waitForExistence(timeout: 8)); XCTAssertEqual(metadata.label,"Main • Italian")
+            // The card's one secondary line is Cook Name · course • cuisine (November 18 card).
+            let metadata = app.staticTexts.matching(identifier: "post-course-cuisine").matching(NSPredicate(format: "label ENDSWITH %@", "Main • Italian")).firstMatch
+            XCTAssertTrue(metadata.waitForExistence(timeout: 8)); XCTAssertTrue(metadata.label.hasSuffix("Main • Italian"), metadata.label)
             XCTAssertTrue(app.staticTexts["Just now"].exists)
             XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "social-score").firstMatch.exists)
             shot("Owner corrections stable feed metadata \(appearance)", app)

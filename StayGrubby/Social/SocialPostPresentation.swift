@@ -17,6 +17,15 @@ nonisolated enum SocialPostPresentation {
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         return parts.isEmpty ? nil : parts.joined(separator: " • ")
     }
+    /// One secondary line under the Dish name: Cook Name, then course • cuisine. A Cook Name that only
+    /// repeats the Dish name is left out (no repeated metadata).
+    static func cookLine(_ post: SocialPost) -> String? {
+        let cook = post.versionTitle?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fold: (String) -> String = { $0.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil).trimmingCharacters(in: .whitespacesAndNewlines) }
+        let distinct = cook.flatMap { $0.isEmpty || fold($0) == fold(post.title) ? nil : $0 }
+        let parts = [distinct, metadata(post.metadata)].compactMap { $0 }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
     /// "Cooked with …" or "Inspired by …" for a post's Shared Cooking provenance.
     static func provenance(_ value: SocialProvenance?) -> String? {
         guard let value else { return nil }

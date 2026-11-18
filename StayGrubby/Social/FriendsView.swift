@@ -134,12 +134,15 @@ struct FriendProfileView: View {
                     case .blocked: action("Unblock", "unblock")
                     }
                 }.disabled(busy)
-                if person.relationship != .blocked {
+                if person.relationship == .friends {
                     KitchenSharedContent(personID: person.id, open: { socialRoute = .post($0) }) { EmptyView() }
                         .padding(.vertical, SGTheme.Space.small).listRowSeparator(.hidden)
                         .listRowBackground(SGTheme.ColorToken.background)
-                    SocialReportButton(kind: "profile", targetID: person.id)
+                } else if person.relationship != .blocked {
+                    // Only Sous Chefs receive shared content: a clear locked Kitchen, no empty fetch.
+                    SGLockedKitchenNotice(person: person).listRowSeparator(.hidden).listRowBackground(SGTheme.ColorToken.background)
                 }
+                if person.relationship != .blocked { SocialReportButton(kind: "profile", targetID: person.id) }
             }
             if error { Text("This action couldn’t complete. Refresh to check the latest relationship.").accessibilityIdentifier("friend-action-error"); Button("Refresh profile") { Task { await refresh() } } }
         }

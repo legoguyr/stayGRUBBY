@@ -81,7 +81,8 @@ struct SourceSummary: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             Label(source.summary, systemImage: "text.book.closed")
                 .font(.headline)
-            ForEach(source.detailRows, id: \.label) { row in
+            // The headline already names the source ("Cookbook · Zahav"); don't repeat that value as a row.
+            ForEach(source.detailRows.filter { !source.summary.hasSuffix(" · \($0.value)") }, id: \.label) { row in
                 LabeledContent(row.label, value: row.value)
                     .font(.subheadline)
             }

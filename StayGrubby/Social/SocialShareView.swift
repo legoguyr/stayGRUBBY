@@ -34,6 +34,7 @@ struct SocialPostComposer: View {
     @State private var descriptionInitialized = false
     @State private var attachment = RecipeAttachmentModel()
     @Environment(\.accountContentCache) private var cache
+    @Environment(\.modelContext) private var context
     private var sharedRecipe: Recipe? { attachment.selection }
     @State private var addingRecipe = false
     @State private var postID = UUID()
@@ -99,10 +100,10 @@ struct SocialPostComposer: View {
                         .font(.footnote).foregroundStyle(.secondary)
                 }
                 RecipeShareChoice(model: attachment) { Task { await resolveRecipe() } }
-                Section("Post Description · optional") {
-                    TextField("Tell your Sous Chefs about this cook", text: $postDescription, axis: .vertical)
+                Section("Public Description · optional") {
+                    TextField("Tell your Sous Chefs about this Dish", text: $postDescription, axis: .vertical)
                         .lineLimit(3...8).accessibilityIdentifier("post-description-input")
-                    Text("Shared with this post’s authorized audience. Personal Notes stay private and are never copied here. Up to 2,000 characters.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Your Dish’s Public Description, shown as the caption. Changing it here updates the Dish too. Private Notes are never shared.").font(.footnote).foregroundStyle(.secondary)
                 }
                 if let identity {
                     if !identity.isConfigured {
@@ -151,6 +152,15 @@ struct SocialPostComposer: View {
         guard let request else { return }
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }
+    }
+    /// The composer's description is the Dish's Public Description: an explicit publish that changed it
+    /// saves it to the Dish (synced as usual) and brings the Dish's other shared posts in line.
+    private func adoptPublicDescription() {
+        guard let dish = attempt.dish, PublicDescriptionSync.trimmed(dish.publicDescription) != PublicDescriptionSync.trimmed(postDescription),
+              DishTextPolicy.valid(description: postDescription, notes: dish.privateNotes) else { return }
+        do { try CookingStore.editDishText(dish, publicDescription: postDescription, privateNotes: dish.privateNotes ?? "", context: context) }
+        catch { return }
+        if let request { Task { await PublicDescriptionSync.pushToPosts(of: dish, request: request) } }
     }
     private func resolveRecipe() async {
         await attachment.resolve(attemptID: attempt.id, postID: nil, dish: attempt.dish, request: request, cache: cache)
@@ -204,6 +214,7 @@ struct SocialPostComposer: View {
             alreadyShared = post.id != originalPostID
             didPublish = true
             publication?.sharedManually(attempt.rankedItemID)
+            adoptPublicDescription()
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
         } catch is CancellationError {} catch {
             await reconcile()

@@ -1,6 +1,6 @@
 # StayGrubby development instructions
 
-Before substantial work, read this file, [current architecture](STAYGRUBBY_ARCHITECTURE.md), [Master Roadmap](STAYGRUBBY_MASTER_ROADMAP.md), and only the domain documents relevant to the task. [README](README.md) is the document index. Do not load every historical review by default.
+Before substantial work, read this file, [current architecture](STAYGRUBBY_ARCHITECTURE.md), both roadmaps ([product](STAYGRUBBY_MASTER_ROADMAP.md) and [development](STAYGRUBBY_DEVELOPMENT_ROADMAP.md)), and only the domain documents relevant to the task. [README](README.md) is the document index. Do not load every historical review by default.
 
 ## Authority and scope
 
@@ -38,12 +38,12 @@ Use established vocabulary where appropriate:
 | Cook from a Recipe | Rank My Version |
 | Cooking Attempt / its name / unnamed fallback | cook ("3 cooks") / Cook Name / Version N |
 | Make the Dish again / show every cook / Recipe revisions | Cook Again / All Cooks / Recipe History |
-| Delete (restrained) | 86 (Delete), 86 Dish/Recipe/Cook/Comment/Post; Delete Account stays conventional |
+| Delete | **Delete** for every basic action — Delete Cook/Recipe/Comment/Post, "Delete this Cook?" (owner decision, November 18, 2026; replaces "86") |
 | Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
 
 **The Pass** (owner decision, November 11, 2026; formerly "Grub List") is intentionally shared Cook activity from Sous Chefs; Recipes never appear there merely because they were created, imported or edited. Internal API/table/identifier names (`social_feed`, `activity_page`, `feed-*`, `StayGrubbyTab.feed`) stay stable.
 
-Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Block, Report, Share, New Dish, Cook Again, View Recipe, Re-rank. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
+Keep utility wording clear: Comments, Search, Settings, Edit, Delete, Save, Cancel, Block, Report, Share, New Dish, Cook Again, View Recipe, Re-rank. Brand names belong to product concepts (The Pass, My Kitchen, Grub Rank, Food Bible, Sous Chefs), never to familiar controls. Dish is the user-facing name for the combined food identity; "version" is not a user-facing noun for cooks or Recipe revisions (see [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md#4-cooking-attempts-final-terminology-and-naming)). Vocabulary does not authorize future features.
 
 ## Protected ranking and reuse
 
@@ -52,6 +52,19 @@ Ranking is frozen unless explicitly reopened: Liked/Fine/Didn't Like initial rea
 ### Reuse Before Reinvention
 
 Before creating a selector, picker, sheet, popover, menu, confirmation, search/filter/sort control, metadata editor, identity/Dish/Recipe row, action family, card, toolbar or empty/loading/error state, inspect accepted StayGrubby equivalents first. Prefer **direct reuse → generalize an existing component → shared reusable component → unique implementation only for genuinely different behavior**. Apply the same language, spacing, navigation and interaction conventions across screens; location alone does not justify a different control. Avoid abstraction for its own sake. Accepted equivalents include allergen checklists, photo infrastructure, RecipeDraft/exact quantity math, design tokens, account/session boundaries, RLS and share/post renderers; justify parallel implementations.
+
+### Two roadmaps
+
+**Roadmap A — [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md)** answers *what we build, why and when users get it*; **Roadmap B — [STAYGRUBBY_DEVELOPMENT_ROADMAP.md](STAYGRUBBY_DEVELOPMENT_ROADMAP.md)** answers *how we build it*: foundations, reusable components, contracts, gates, sequencing, tests and release gates. There is no third master roadmap; specialized documents stay supporting references. Every agent, every substantial cycle:
+
+1. Read both roadmaps before starting.
+2. Update feature and implementation status in both when work lands, using the lifecycle in Roadmap B §1 (planned → foundation → implemented → verified → integrated → deployed → enabled → released).
+3. Record new dependencies, contracts and blockers (Roadmap B §4, §8).
+4. Update release readiness (Roadmap A and [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md)).
+5. Edit the existing entry rather than duplicating plans; preserve prior product decisions and rejections.
+6. Never describe implemented or hidden work as released.
+
+**Build ahead, activate later.** Foundations may land before their feature is visible. Hidden work uses the central `FeatureFlag` gate, stays unreachable in normal navigation (including the owner's TestFlight unless enabled), makes no writes or background requests, and relies on server authorization, never on hidden UI, for privacy.
 
 ### Living Documentation
 

@@ -51,7 +51,7 @@ struct SocialFeedView: View {
         .toolbar {
             ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "The Pass") }
             ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { SGToolbarIcon(symbol: "person.2") }.sgUtilityTint().accessibilityLabel("Sous Chefs") }.sgIndependentToolbarBackground()
+            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { SGToolbarIcon(asset: "SousChefs") }.sgUtilityTint().accessibilityLabel("Sous Chefs") }.sgIndependentToolbarBackground()
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
@@ -82,8 +82,8 @@ struct SocialFeedView: View {
         .sheet(isPresented: $editingIdentity, onDismiss: { refresh() }) {
             if let identity { SocialIdentityEditor(identity: identity) { self.identity = $0; refresh() } }
         }
-        .confirmationDialog("86 this Post?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { post in
-            Button("86 Post", role: .destructive) { Task { await delete(post) } }
+        .confirmationDialog("Delete this Post?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { post in
+            Button("Delete Post", role: .destructive) { Task { await delete(post) } }
         } message: { _ in Text("This removes the shared post and can’t be undone. Your private cook, photo and ranking stay intact.") }
     }
     /// `poll`: the 30 s foreground refresh. It re-reads only the first feed page; identity and Sous Chefs
@@ -138,6 +138,9 @@ struct SocialFeedView: View {
 
 /// One cook on The Pass (November 17, 2026 redesign): who cooked, the Dish and its photo, the score they
 /// shared, and their description as a caption — readable without another tap. Dish Details holds the rest.
+/// The Pass card (master UI milestone, November 18, 2026). Hierarchy: creator → Dish identity (name, cook
+/// and course, compact score) → photo → caption → Hands · Comments · Recipe on one row. Tapping the Dish
+/// or photo opens Dish Details; nothing on the card writes until the viewer acts.
 struct SocialFeedCard: View {
     let post: SocialPost
     var profile: () -> Void
@@ -160,40 +163,84 @@ struct SocialFeedCard: View {
                 SocialPostCaption(post: post, description: description)
             }
             if let line = SocialPostPresentation.provenance(post.provenance) {
-                Text(line).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Label(line, systemImage: "person.2").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            if let achievement = post.achievement { Text(achievement).font(SGTheme.TypeRole.secondary) }
-            if let recipeID = post.recipeID, active { SocialPostRecipeLink(recipeID: recipeID, navigate: navigate) }
+            if let achievement = post.achievement {
+                Label(achievement, systemImage: "trophy").font(SGTheme.TypeRole.secondary.weight(.medium)).foregroundStyle(SGTheme.ColorToken.accent)
+            }
             if !post.published { Text("Unpublished photo draft").foregroundStyle(.secondary) }
             if post.moderationState != "active" { Text("Hidden by moderation").foregroundStyle(.secondary) }
-            if active { SocialEngagementView(post: post) }
+            if active {
+                SocialEngagementView(post: post) {
+                    if let recipeID = post.recipeID { SocialRecipeChip(recipeID: recipeID, navigate: navigate) }
+                }
+            }
         }
-        .padding(.vertical, SGTheme.Space.medium)
+        .padding(.top, SGTheme.Space.medium).padding(.bottom, SGTheme.Space.xSmall)
         .overlay(alignment: .bottom) { SGTheme.ColorToken.border.frame(height: SGTheme.Size.border) }
         .buttonStyle(.borderless)
         .accessibilityElement(children: .contain).accessibilityIdentifier("feed-post-\(post.id)")
     }
     private var foodIdentity: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: SGTheme.Space.small) {
+                    Text(post.title).font(.title3.weight(.bold)).fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SocialCompactScore(post: post)
+                }
+                if let line = SocialPostPresentation.cookLine(post) {
+                    Text(line).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("post-course-cuisine")
+                }
+            }
             // No placeholder for a post without a photo: the Dish name leads instead of an empty frame.
             if post.photoPath != nil { SocialPhoto(path: post.photoPath).sgPhotoFrame(.card).accessibilityHidden(true) }
-            HStack(alignment: .top, spacing: SGTheme.Space.small) {
-                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                    Text(post.title).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true)
-                    if let version = post.versionTitle { Text(version).font(SGTheme.TypeRole.secondary.weight(.medium)).foregroundStyle(.secondary) }
-                    if let metadata = SocialPostPresentation.metadata(post.metadata) {
-                        Text(metadata).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("post-course-cuisine")
-                    }
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                SocialPostScore(post: post)
-            }
         }.foregroundStyle(SGTheme.ColorToken.primaryText).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
     }
 }
 
-/// Instagram-style caption: the creator's name, then their description, trimmed to two lines with an
-/// in-place **more**. Expanding is local presentation only (no request, nothing stored).
+/// The card's score: a compact pill with rank at sharing, or a quiet lock. Same authorized snapshot rules
+/// as `SocialPostScore`; no score policy here.
+struct SocialCompactScore: View {
+    let post: SocialPost
+    var body: some View {
+        if let score = post.scoreText {
+            HStack(spacing: SGTheme.Space.xSmall) {
+                if let rank = post.sharedRankText {
+                    Text(rank).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).monospacedDigit()
+                        .accessibilityLabel("Rank at sharing: \(rank)")
+                }
+                SGScore(text: score, role: .pill, identifier: "social-score")
+            }
+        } else {
+            Image(systemName: "lock").font(.subheadline).foregroundStyle(.secondary)
+                .accessibilityLabel("Score locked").accessibilityIdentifier("post-score-locked")
+        }
+    }
+}
+
+/// Compact Recipe entry for a card's engagement row. Opens the creator's live Recipe (access-checked on
+/// every open); never a copy.
+struct SocialRecipeChip: View {
+    let recipeID: UUID
+    var navigate: (SocialPostRoute) -> Void
+    var body: some View {
+        Button { navigate(.currentRecipe(recipeID)) } label: {
+            Label("Recipe", systemImage: "book.closed").font(SGTheme.TypeRole.secondary.weight(.semibold))
+                .padding(.horizontal, SGTheme.Space.small).frame(minHeight: 32)
+                .background(SGTheme.ColorToken.surface, in: Capsule())
+                .frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent)
+        .accessibilityLabel("View Recipe").accessibilityHint("Opens the latest version of the linked Recipe")
+        .accessibilityIdentifier("post-recipe")
+    }
+}
+
+/// Instagram-style caption: the creator's name, then the Dish's Public Description, trimmed to two lines
+/// with an in-place **more**. Expanding is local presentation only (no request, nothing stored).
 struct SocialPostCaption: View {
     let post: SocialPost
     let description: String
@@ -204,7 +251,7 @@ struct SocialPostCaption: View {
         Text(post.isAuthor ? "You" : post.author.displayName).fontWeight(.semibold) + Text(" ") + Text(description)
     }
     var body: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+        VStack(alignment: .leading, spacing: 0) {
             text.font(SGTheme.TypeRole.body).lineLimit(expanded ? nil : collapsedLines)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -218,9 +265,11 @@ struct SocialPostCaption: View {
                 }
                 .accessibilityIdentifier("post-description-\(post.id)")
             if truncated && !expanded {
+                // A 44-point target that sits visually tight under the caption.
                 Button("more") { expanded = true }
                     .font(SGTheme.TypeRole.secondary.weight(.semibold)).foregroundStyle(.secondary)
-                    .frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading)
+                    .frame(minWidth: SGTheme.Size.minimumTap, minHeight: SGTheme.Size.minimumTap, alignment: .leading)
+                    .contentShape(Rectangle()).padding(.vertical, -10)
                     .accessibilityLabel("Show full description").accessibilityIdentifier("post-caption-more-\(post.id)")
             }
         }

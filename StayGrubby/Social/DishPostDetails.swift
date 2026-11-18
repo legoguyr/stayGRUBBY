@@ -70,8 +70,8 @@ struct SocialPostDetailView: View {
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } }
             }
         }
-        .confirmationDialog("86 this Post?", isPresented: $deleting, titleVisibility: .visible) {
-            Button("86 Post", role: .destructive) { Task { await remove() } }
+        .confirmationDialog("Delete this Post?", isPresented: $deleting, titleVisibility: .visible) {
+            Button("Delete Post", role: .destructive) { Task { await remove() } }
         } message: { Text("This removes the shared post and can’t be undone. Your private cook, photo and ranking stay intact.") }
     }
     private func load() async {
@@ -201,7 +201,8 @@ private struct DishPostFacts: View {
     }
 }
 
-/// The creator's other shared cooks of this Dish, from posts the viewer can already see.
+/// Previous Cooks: the creator's other shared cooks of this exact Dish (`dishKey`), from posts the viewer
+/// can already see. Newest first.
 struct DishSharedCooks: View {
     let post: SocialPost
     var navigate: (SocialPostRoute) -> Void
@@ -215,14 +216,16 @@ struct DishSharedCooks: View {
         VStack(alignment: .leading, spacing: 0) {
             if model.failed {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                    SGSectionHeader(title: "More Cooks of This Dish")
+                    SGSectionHeader(title: "Previous Cooks")
                     Text("Couldn’t load other cooks.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     Button("Retry") { Task { await load(force: true) } }.accessibilityIdentifier("dish-cooks-retry")
                 }
             } else if !cooks.isEmpty || model.hasMore {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                    SGSectionHeader(title: "More Cooks of This Dish") {
-                        if cooks.count > 1 || model.hasMore {
+                    SGSectionHeader(title: "Previous Cooks") {
+                        // Sorting only helps with several cooks and at least one unlocked score to rank by;
+                        // newest first is the default.
+                        if (cooks.count > 1 || model.hasMore), cooks.contains(where: { $0.scoreText != nil }) {
                             SGBrowseSortMenu(options: SharedCookOrder.allCases, selection: $order, title: \.title,
                                              identifier: "dish-cooks-sort", label: order.title)
                         }

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// One explicit action per button, avoiding competing NavigationLinks in a List row.
 enum SocialPostRoute: Hashable { case post(UUID), recreate(UUID), recipe(UUID), currentRecipe(UUID) }
@@ -34,10 +35,10 @@ struct SocialPostActions: View {
             }
             if post.isAuthor {
                 if post.published && post.moderationState == "active" {
-                    Button("Edit Post", systemImage: "pencil") { editing = true }.accessibilityIdentifier("post-edit-\(post.id)")
+                    Button("Edit Description", systemImage: "pencil") { editing = true }.accessibilityIdentifier("post-edit-\(post.id)")
                     Button("Recipe Sharing", systemImage: "book") { sharingRecipe = true }.accessibilityIdentifier("post-recipe-sharing")
                 }
-                Button("86 Post (Delete)", systemImage: "trash", role: .destructive, action: delete).accessibilityIdentifier("feed-delete-\(post.id)")
+                Button("Delete Post", systemImage: "trash", role: .destructive, action: delete).accessibilityIdentifier("feed-delete-\(post.id)")
             } else {
                 Button("Report post", systemImage: "flag") { reporting = true }.accessibilityIdentifier("social-report-post")
                 Button("Block account", systemImage: "person.crop.circle.badge.xmark", role: .destructive) { blocking = true }
@@ -66,9 +67,12 @@ struct SocialPostActions: View {
     }
 }
 
+/// Edits a post's caption. For the author it is the Dish's Public Description: the local Dish (confirmed
+/// exactly by the server) and its other shared posts follow the same text.
 struct SocialPostDescriptionEditor: View {
     let post: SocialPost
     @Environment(\.socialRequest) private var request
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var description: String
     @State private var busy = false
@@ -77,14 +81,14 @@ struct SocialPostDescriptionEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Post Description · optional") {
+                Section("Public Description · optional") {
                     Text(post.title).font(SGTheme.TypeRole.headline)
                     TextField("Tell your Sous Chefs about this cook", text: $description, axis: .vertical).lineLimit(3...10)
                         .accessibilityIdentifier("post-description-input")
-                    Text("Up to 2,000 characters. Shared with this post’s authorized audience. Personal Notes are private and never copied here.").font(.footnote)
+                    Text("Your Dish’s Public Description, shown as this caption. Saving updates the Dish and its other posts. Private Notes are never shared.").font(.footnote)
                 }
                 if failed { Text("Couldn’t save. The post or your access may have changed. Check your connection and retry.").accessibilityIdentifier("post-edit-error") }
-            }.navigationTitle("Edit Post").navigationBarTitleDisplayMode(.inline).disabled(busy)
+            }.navigationTitle("Edit Description").navigationBarTitleDisplayMode(.inline).disabled(busy)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(busy) }
                     ToolbarItem(placement: .confirmationAction) { Button("Save") { Task { await save() } }.disabled(busy || description.unicodeScalars.count > 2000).accessibilityIdentifier("post-edit-save") }
@@ -95,7 +99,14 @@ struct SocialPostDescriptionEditor: View {
         guard let request else { failed = true; return }; busy = true; failed = false; defer { busy = false }
         do {
             _ = try JSONDecoder().decode(SocialPostsPage.self, from: await request("social_content", "editDescription", .init(postID: post.id, postDescription: description)))
-            try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil); dismiss()
+            try Task.checkCancellation(); NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+            if post.isAuthor, let dish = await PublicDescriptionSync.dish(owning: post, in: context, request: request),
+               PublicDescriptionSync.trimmed(dish.publicDescription) != PublicDescriptionSync.trimmed(description),
+               DishTextPolicy.valid(description: description, notes: dish.privateNotes) {
+                try CookingStore.editDishText(dish, publicDescription: description, privateNotes: dish.privateNotes ?? "", context: context)
+                await PublicDescriptionSync.pushToPosts(of: dish, request: request)
+            }
+            dismiss()
         } catch is CancellationError {} catch { failed = true }
     }
 }

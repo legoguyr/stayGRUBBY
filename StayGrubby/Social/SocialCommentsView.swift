@@ -11,8 +11,11 @@ nonisolated struct SocialComment: Codable, Identifiable, Sendable {
 }
 nonisolated struct SocialCommentsPage: Codable, Sendable { let comments: [SocialComment] }
 
-struct SocialEngagementView: View {
+/// Hands, comments and an optional trailing accessory (the card's compact Recipe entry) on one row.
+/// Reused by The Pass card and Dish Details.
+struct SocialEngagementView<Accessory: View>: View {
     let post: SocialPost
+    @ViewBuilder var accessory: Accessory
     @Environment(\.socialRequest) private var request
     @State private var latest: SocialPost?
     @State private var busy = false
@@ -22,8 +25,8 @@ struct SocialEngagementView: View {
     @State private var reactionFeedback = 0
     private var current: SocialPost { latest ?? post }
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: SGTheme.Space.large) {
                 Button { Task { await update(current.liked == true ? "unlike" : "like") } } label: {
                     HStack(spacing: 6) {
                         Text("🙌").scaleEffect(current.liked == true && !reduceMotion ? 1.12 : 1)
@@ -32,15 +35,12 @@ struct SocialEngagementView: View {
                 }.accessibilityLabel(current.liked == true ? "Remove Hands, unlike post" : "Give Hands, like this cook")
                     .accessibilityValue("\(current.likeCount ?? 0) Hands").accessibilityIdentifier("social-like-\(post.id)")
                 Button { showingComments = true } label: { Label("\(current.commentCount ?? 0)", systemImage: "bubble").frame(minHeight: 44) }
-                    .accessibilityLabel("Comments").accessibilityValue("\(current.commentCount ?? 0) comments").accessibilityIdentifier("social-comments-\(post.id)")
+                    .accessibilityLabel("Comments").accessibilityValue((current.commentCount ?? 0) == 1 ? "1 comment" : "\(current.commentCount ?? 0) comments").accessibilityIdentifier("social-comments-\(post.id)")
+                Spacer(minLength: 0)
+                accessory
             }.disabled(busy || failed).frame(minHeight: 44)
             if failed { Text("Post unavailable or connection interrupted.").font(.footnote); Button("Refresh post") { Task { await update(nil) } } }
-            if let count = current.commentCount, count > 0, !failed {
-                Button { showingComments = true } label: {
-                    Text(count == 1 ? "View 1 comment" : "View all \(count) comments").font(SGTheme.TypeRole.secondary)
-                        .foregroundStyle(.secondary).frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading)
-                }.accessibilityIdentifier("social-view-comments-\(post.id)")
-            }
+            // The 💬 count opens the comments sheet; no second "View all N comments" line (no repeated metadata).
         }
         .onChange(of: post.commentCount) { _, _ in latest = nil }
         .onChange(of: post.likeCount) { _, _ in latest = nil }
@@ -60,6 +60,10 @@ struct SocialEngagementView: View {
             if action != nil { NotificationCenter.default.post(name: .socialEngagementChanged, object: nil) }
         } catch is CancellationError { } catch { failed = true }
     }
+}
+
+extension SocialEngagementView where Accessory == EmptyView {
+    init(post: SocialPost) { self.init(post: post) { EmptyView() } }
 }
 
 struct SocialCommentsView: View {
@@ -130,8 +134,8 @@ struct SocialCommentsView: View {
                             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { self.person = nil } } }
                     }
                 }
-                .confirmationDialog("86 this Comment?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { comment in
-                    Button("86 Comment", role: .destructive) {
+                .confirmationDialog("Delete this Comment?", isPresented: $confirmingDelete, titleVisibility: .visible, presenting: deleting) { comment in
+                    Button("Delete Comment", role: .destructive) {
                         deletionRequest = comment
                     }
                 } message: { _ in Text("This removes your comment and can’t be undone.") }
@@ -180,8 +184,8 @@ struct SocialCommentsView: View {
                 HStack(spacing: SGTheme.Space.medium) {
                     Text(SocialPostPresentation.timestamp(comment.date)).foregroundStyle(.secondary)
                     if comment.canDelete {
-                        Button("86") { deleting = comment; confirmingDelete = true }
-                            .accessibilityLabel("86 Comment (Delete)").accessibilityIdentifier("comment-delete-\(comment.id)")
+                        Button("Delete") { deleting = comment; confirmingDelete = true }
+                            .accessibilityLabel("Delete Comment").accessibilityIdentifier("comment-delete-\(comment.id)")
                     }
                     if !comment.isAuthor {
                         Button("Report") { reporting = comment }

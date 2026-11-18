@@ -17,7 +17,7 @@ struct SocialProfilePosts: View {
     var body: some View {
         if request != nil {
             VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                Text("Shared from this kitchen").font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
+                Text("Posted to The Pass").font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
                 if loading && posts.isEmpty { ProgressView("Loading posts") }
                 if failed {
                     Text("Posts unavailable. Check your connection or refresh.")

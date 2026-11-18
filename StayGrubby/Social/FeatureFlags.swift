@@ -7,6 +7,10 @@ nonisolated enum FeatureFlag: String, CaseIterable, Sendable {
     /// Future (not built): shared Recipe/Dish pages show an aggregate score and how many people
     /// have made it (FOOD_ARCHITECTURE §10). Reserved so the key is never reused for something else.
     case dishAggregateScores = "dish_aggregate_scores"
+    /// Future (backend dependency): public accounts are followed immediately; private accounts are searchable
+    /// but show `SGLockedKitchenNotice` until a follow request is approved. Off until the server contract,
+    /// RLS and the client follow flow are complete (STAYGRUBBY_DEVELOPMENT_ROADMAP.md).
+    case accountPrivacyFollows = "account_privacy_follows"
 }
 
 nonisolated struct FeatureFlags: Equatable, Sendable {

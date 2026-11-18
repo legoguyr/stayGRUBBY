@@ -9,8 +9,10 @@ enum SGScoreRole {
     case standard
     /// Result/composer summary: the same numerals followed by "/ 10".
     case outOfTen
-    /// The Pass card: numerals inside a quiet ring, scaled with Dynamic Type.
+    /// Dish Details: numerals inside a quiet ring, scaled with Dynamic Type.
     case medallion
+    /// The Pass card: compact numerals in a tinted capsule beside the Dish name.
+    case pill
 }
 
 struct SGScore: View {
@@ -34,6 +36,10 @@ struct SGScore: View {
                         .frame(width: medallionDiameter, height: medallionDiameter)
                         .background(SGTheme.ColorToken.surface, in: Circle())
                         .overlay { Circle().stroke(color.opacity(0.6), lineWidth: 1.5) }
+                case .pill:
+                    Text(text).font(.subheadline.weight(.bold)).monospacedDigit()
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(color.opacity(0.12), in: Capsule())
                 }
             }
             .foregroundStyle(color).fixedSize()

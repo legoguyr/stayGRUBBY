@@ -237,7 +237,8 @@ struct SocialOnboardingView: View {
                    detail: "People can’t find you in search. Only people you add as Sous Chefs see what you share.")
             choice(public: true, title: "Public", badge: nil, symbol: "magnifyingglass",
                    detail: "People can find your name, username and photo in Find Sous Chefs. What you share still goes only to your Sous Chefs.")
-            Text("Your Grub Rank, notes and unshared cooks are always private.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            Text("This only decides who can find you. You still choose what to share each time you post, and your Grub Rank, notes and unshared cooks are always private.")
+                .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
     }
     private func choice(public value: Bool, title: String, badge: String?, symbol: String, detail: String) -> some View {

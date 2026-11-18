@@ -73,14 +73,16 @@ struct DishCooksSection: View {
             } else if let cookAgain {
                 SGSectionHeader(title: title) { cookAgainButton(cookAgain) }
             }
+            let marks = CookMarks(entries: entries)
             ForEach(entries, id: \.attempt.id) { entry in
+                let tags = marks.tags(for: entry.attempt)
                 if entry.attempt.id == current?.id {
-                    row(entry.attempt, rank: entry.rank, current: true)
+                    row(entry.attempt, rank: entry.rank, current: true, tags: tags)
                 } else if linksByDestination {
-                    NavigationLink { AttemptDetailView(attempt: entry.attempt) } label: { row(entry.attempt, rank: entry.rank, current: false) }
+                    NavigationLink { AttemptDetailView(attempt: entry.attempt) } label: { row(entry.attempt, rank: entry.rank, current: false, tags: tags) }
                         .buttonStyle(.plain)
                 } else {
-                    NavigationLink(value: entry.attempt.id) { row(entry.attempt, rank: entry.rank, current: false) }
+                    NavigationLink(value: entry.attempt.id) { row(entry.attempt, rank: entry.rank, current: false, tags: tags) }
                         .buttonStyle(.plain)
                 }
             }
@@ -101,27 +103,62 @@ struct DishCooksSection: View {
         return dish.attempts.compactMap { cook in ranks[cook.rankedItemID].map { ($0, cook) } }.sorted { $0.rank < $1.rank }
     }
 
-    private func row(_ cook: CookingAttempt, rank: Int, current: Bool) -> some View {
+    private func row(_ cook: CookingAttempt, rank: Int, current: Bool, tags: [String]) -> some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             HStack(spacing: SGTheme.Space.small) {
-                if cook.primaryImage != nil {
-                    DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.meaningfulVersionLabel ?? cook.dish?.name ?? "Dish")
-                        .sgPhotoFrame(.compactThumbnail)
+                // Every row keeps the thumbnail column (placeholder without a photo) so the journal aligns.
+                DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.meaningfulVersionLabel ?? cook.dish?.name ?? "Dish")
+                    .sgPhotoFrame(.compactThumbnail)
+                if !textSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 2) {
+                        CookVersionIdentity(cook: cook)
+                        CookTags(tags: tags)
+                    }
                 }
-                if !textSize.isAccessibilitySize { CookVersionIdentity(cook: cook) }
                 Spacer(minLength: 0)
                 Text("#\(rank)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 if let item = cook.rankedItem { ScoreBadge(score: item.score) }
                 Image(systemName: current ? "checkmark.circle.fill" : "chevron.right")
                     .foregroundStyle(current ? SGTheme.ColorToken.accent : .secondary)
             }
-            if textSize.isAccessibilitySize { CookVersionIdentity(cook: cook) }
+            if textSize.isAccessibilitySize { CookVersionIdentity(cook: cook); CookTags(tags: tags) }
         }
         .padding(.vertical, SGTheme.Space.small).contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel([cook.meaningfulVersionLabel.map { "\($0), cook of \(dish.name)" } ?? dish.name, "rank \(rank)"].joined(separator: ", "))
+        .accessibilityLabel(([cook.meaningfulVersionLabel.map { "\($0), cook of \(dish.name)" } ?? dish.name, "rank \(rank)"] + tags).joined(separator: ", "))
         .accessibilityIdentifier("version-row-\(cook.id)")
         .accessibilityHint(current ? "Current cook" : "Opens this cook")
+    }
+}
+
+/// Which cooks of a Dish are the most recent and the best ranked. Presentation only: rank order comes
+/// from the existing global Grub Rank (never a new score), dates from the cooks themselves.
+struct CookMarks {
+    let latestID: UUID?
+    let topID: UUID?
+    init(entries: [(rank: Int, attempt: CookingAttempt)]) {
+        guard entries.count > 1 else { latestID = nil; topID = nil; return }
+        topID = entries.min { $0.rank < $1.rank }?.attempt.id
+        latestID = entries.max { ($0.attempt.cookedAt ?? $0.attempt.createdAt) < ($1.attempt.cookedAt ?? $1.attempt.createdAt) }?.attempt.id
+    }
+    func tags(for cook: CookingAttempt) -> [String] {
+        [cook.id == latestID ? "Latest" : nil, cook.id == topID ? "Top cook" : nil].compactMap { $0 }
+    }
+}
+
+/// Quiet capsule tags under a cook's name ("Latest", "Top cook").
+struct CookTags: View {
+    let tags: [String]
+    var body: some View {
+        if !tags.isEmpty {
+            HStack(spacing: SGTheme.Space.xSmall) {
+                ForEach(tags, id: \.self) { tag in
+                    Text(tag).font(.caption.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(SGTheme.ColorToken.accent.opacity(0.1), in: Capsule())
+                }
+            }.accessibilityHidden(true)
+        }
     }
 }
 
@@ -138,7 +175,7 @@ struct DishActions: View {
             Button("Re-rank", systemImage: "arrow.triangle.2.circlepath", action: rerank).accessibilityIdentifier("detail-rerank")
             if let shareWithSousChefs { Button("Post to The Pass", systemImage: "person.2", action: shareWithSousChefs).accessibilityIdentifier("share-with-friends") }
             Button("Edit Dish Description & Notes", systemImage: "text.alignleft", action: editDishText).accessibilityIdentifier("dish-text-edit")
-            Button("86 Cook (Delete)", systemImage: "trash", role: .destructive, action: delete)
+            Button("Delete Cook", systemImage: "trash", role: .destructive, action: delete)
         } label: { SGToolbarIcon(symbol: "ellipsis") }
             .sgUtilityTint()
             .accessibilityLabel("More cook actions").accessibilityIdentifier("cook-more-actions")

@@ -29,8 +29,8 @@ final class SocialIntegrationUITests: StayGrubbyUITestCase {
         let deletion = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'feed-delete-'")).firstMatch
         for _ in 0..<3 { if deletion.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(deletion.waitForExistence(timeout: 5)); deletion.tap()
-        app.sheets["86 this Post?"].buttons["86 Post"].tap()
-        // 86 returns to My Kitchen (no dead "Post unavailable" page), where the post is gone.
+        app.sheets["Delete this Post?"].buttons["Delete Post"].tap()
+        // Delete returns to My Kitchen (no dead "Post unavailable" page), where the post is gone.
         XCTAssertTrue(app.staticTexts["profile-posts-empty"].waitForExistence(timeout: 8), app.debugDescription)
         XCTAssertFalse(app.navigationBars["Dish Details"].exists)
         app.tabBars.buttons["Grub Rank"].tap()

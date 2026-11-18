@@ -103,8 +103,8 @@ struct DishView: View {
                 CookAgainFlow(list: list, dish: dish, knownRecipe: recipe.recipe, recipeKnown: recipe.loaded, onResultClose: { versionFinalized = true })
             }
         }
-        .alert("86 this Cook?", isPresented: $deleting) {
-            Button("86 Cook", role: .destructive) {
+        .alert("Delete this Cook?", isPresented: $deleting) {
+            Button("Delete Cook", role: .destructive) {
                 guard let shownCook else { return }
                 do { try CookingStore.delete(shownCook, keepsEmptyDish: recipe.recipe != nil, context: context, mediaDirectory: mediaRoot); dismiss() }
                 catch { self.error = error.localizedDescription }

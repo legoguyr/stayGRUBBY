@@ -11,19 +11,19 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selection) {
             NavigationStack { SocialFeedView(isSelected: selection == .feed).modifier(SGPrimaryTabChrome()) }
-                .tabItem { Label("The Pass", systemImage: "house") }.tag(StayGrubbyTab.feed)
+                .tabItem { SGTabLabel(tab: .feed, selected: selection == .feed) }.tag(StayGrubbyTab.feed)
 
             HomeView().modifier(SGPrimaryTabChrome())
-                .tabItem { Label("Grub Rank", systemImage: "chart.bar.fill") }
+                .tabItem { SGTabLabel(tab: .rankings, selected: selection == .rankings) }
                 .tag(StayGrubbyTab.rankings)
 
             NavigationStack { FoodBibleView().modifier(SGPrimaryTabChrome()) }
-                .tabItem { Label("Food Bible", systemImage: "book.closed") }.tag(StayGrubbyTab.bible)
+                .tabItem { SGTabLabel(tab: .bible, selected: selection == .bible) }.tag(StayGrubbyTab.bible)
 
             NavigationStack {
                 AccountView().modifier(SGPrimaryTabChrome())
             }
-            .tabItem { Label("My Kitchen", systemImage: "person") }.badge(activity.unread).tag(StayGrubbyTab.profile)
+            .tabItem { SGTabLabel(tab: .profile, selected: selection == .profile) }.badge(activity.unread).tag(StayGrubbyTab.profile)
         }
         .tint(SGTheme.ColorToken.accent)
         .environment(\.selectTab, { selection = $0 })

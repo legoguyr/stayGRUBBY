@@ -1,6 +1,6 @@
 # StayGrubby Master Roadmap
 
-**Canonical roadmap — updated November 16, 2026 for the accelerated public MVP.** This is the only future-sequencing document. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization.
+**Canonical roadmap — updated November 16, 2026 for the accelerated public MVP.** This is **Roadmap A (product)**: what we build, why and when users get it. **Roadmap B**, [STAYGRUBBY_DEVELOPMENT_ROADMAP.md](STAYGRUBBY_DEVELOPMENT_ROADMAP.md), covers how it is built (lifecycle states, gates, reusable components, backend contracts, release gates); the two stay in sync and no third master roadmap exists. [AGENTS.md](AGENTS.md) governs how work proceeds; [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) describes what is implemented; [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) holds the long-term intelligence direction and data inventory. Planned items are not implementation, deployment or distribution authorization.
 
 **DISCOVER → SAVE → COOK → RANK → REMEMBER → SHARE → INSPIRE.** Personal cooking and comparison ranking stay central. Recipes, engagement, recommendations, sponsorship and commerce never change personal ranking evidence or scores.
 
@@ -56,6 +56,19 @@ Full checklist and evidence: [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
 Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unchanged: Want to Cook, Recipe Social History, privacy-tier evolution, Collections, Scan/Share Sheet import, insights and Stars, unit conversion, photography, rich previews, Community Discover, personalization, referrals, Run It Back redesign, moderation growth, source taxonomy, Personal Cooking Intelligence and the rest.
 
 ## Recent cycles
+
+- **Master UI milestone — The Pass, Dish/Cook/Recipe, icons, two roadmaps (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or migration.
+  - The Pass card: creator → Dish name with compact score → cook line → photo → caption → Hands · Comments · Recipe on one row; no repeated comment line or large Recipe card.
+  - **One Public Description:** the Dish's Public Description is the post caption, edited from Dish details, Edit Cook, the composer or Edit Description, kept in step by explicit saves (server-side derivation is a Codex dependency).
+  - Standard **Delete** replaces "86" everywhere.
+  - Previous Cooks (exact `dishKey`), sort only when useful.
+  - Dish page cook tags (Latest / Top cook) and aligned thumbnails.
+  - Composer Recipe status line.
+  - Locked Kitchen for non–Sous Chefs.
+  - New tab icons: ticket rail, podium, chef-hat Kitchen, plus the Sous Chefs toolbar icon.
+  - Roadmap B created; AGENTS.md requires both roadmaps.
+  - Public/private follow accounts stay gated (`account_privacy_follows`) pending the backend contract.
+
 
 - **Build 6 preparation (Nov 15).** Build 5 is the owner-accepted internal baseline on the migrated Supabase target. The Build 6 candidate combines the local-first sync work (`f7b0c19`) with the deployed capacity monitor and acknowledgment write reductions (`5391519`, `7cffc50`) ([gates](V1_RELEASE_GATE.md#build-6-internal-candidate--november-15-2026)). Under the accelerated plan, external TestFlight distribution is optional. Build 5 remains supported, and server-side sync write throttling stays disabled.
 - **Connected UI Phase 1 (Nov 15, `5862747`; integrated and pushed).** One Dish page with Dish & Ranking and Recipe tabs; Food Bible My Recipes / Saved Recipes (saves are access-rechecked references; copying retired from the new UI); My Kitchen Total Makes. The owner's Xcode test (Nov 16) confirmed tab switching, Link a Recipe, "Not cooked yet" and general navigation and sync. It reported:
@@ -118,6 +131,30 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
     - a cooked-at snapshot on posts, so Dish Details can show the cooking date instead of the shared date
     - an optional comment Hands field (comment likes do not exist)
   - **Future (post-V1, not designed):** a *Shop This Dish* section (equipment, specialty ingredients, creator recommendations, affiliate links) fits as another Dish Details section. It needs its own privacy, disclosure and legal review before any product data exists.
+
+## NEXT — TestFlight candidate after the November 18 UI milestone
+
+Candidate scope (only accepted, enabled functionality):
+- modernized The Pass and Dish Details with Previous Cooks
+- one Public Description / caption
+- Delete wording
+- Dish page cook history marks
+- composer Recipe status
+- locked Kitchen notice
+- new tab icons
+- the November 17 stabilization fixes
+
+Not in scope (built but hidden, or not built): the follow model, multiple-photo galleries, Shop This Dish and Discover.
+
+| Readiness | State |
+| --- | --- |
+| Code implemented | Done (`agent/claude`) |
+| Integrated on `main` | Pending; Codex `d475257` (instant image publishing) also awaits integration |
+| Locally verified | Focused tests, Debug + Release builds, Simulator light/dark |
+| Backend deployed | No new backend needed for this UI; Codex's pending production migrations follow their own approval |
+| Physical iPhone accepted | Pending (owner checklist) |
+| TestFlight-ready | After integration + iPhone acceptance |
+| Distributed | Not authorized |
 
 ## VERY NEAR TERM — Social & Discovery
 

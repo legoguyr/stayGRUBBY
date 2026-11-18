@@ -36,8 +36,9 @@ final class PassRedesignUITests: StayGrubbyUITestCase {
         XCTAssertGreaterThan(caption.frame.height, collapsed, "The full caption shows in place")
         XCTAssertTrue(app.buttons["post-recipe"].exists, "The linked Recipe is on the card")
 
-        let viewComments = app.buttons["social-view-comments-\(postID)"]
-        reach(viewComments, app); XCTAssertEqual(viewComments.label, "View 1 comment")
+        let viewComments = app.buttons["social-comments-\(postID)"]
+        reach(viewComments, app); XCTAssertEqual(viewComments.value as? String, "1 comment")
+        XCTAssertFalse(app.buttons["social-view-comments-\(postID)"].exists, "One comment entry point, no repeated count line")
         viewComments.tap()
         XCTAssertTrue(app.navigationBars["Comments"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts["Harissa Chicken with Roasted Peppers"].exists, "The sheet names the Dish")
@@ -53,7 +54,7 @@ final class PassRedesignUITests: StayGrubbyUITestCase {
         let delete = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'comment-delete-'")).firstMatch
         XCTAssertTrue(delete.exists, "Your own comment can be 86'd")
         app.navigationBars["Comments"].buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["social-view-comments-\(postID)"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["social-comments-\(postID)"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.navigationBars["Dish Details"].exists, "Comments never pushed a duplicate post screen")
     }
 

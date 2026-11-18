@@ -15,7 +15,8 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 | [AGENTS.md](AGENTS.md) | How to work: rules, vocabulary, protected systems, verification, Git/deployment |
 | [PARALLEL_DEVELOPMENT.md](PARALLEL_DEVELOPMENT.md) | Where to open Claude and Codex, refresh branches, and integrate accepted work |
 | [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md) | What exists now: product, Build 4 state, system map, ranking, Recipes, sync/photos, Supabase, social, links/website, privacy, fixtures |
-| [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md) | What comes next: NOW / NEXT / THEN / post-V1 / long term / rejected |
+| [STAYGRUBBY_MASTER_ROADMAP.md](STAYGRUBBY_MASTER_ROADMAP.md) | Roadmap A — product: what comes next, NOW / NEXT / THEN / post-V1 / long term / rejected |
+| [STAYGRUBBY_DEVELOPMENT_ROADMAP.md](STAYGRUBBY_DEVELOPMENT_ROADMAP.md) | Roadmap B — development: lifecycle, feature gates, reusable components, backend contracts, sequencing, release gates |
 
 ## Then, by task
 

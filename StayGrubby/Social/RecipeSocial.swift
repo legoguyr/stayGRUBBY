@@ -82,6 +82,13 @@ struct RecipeShareChoice: View {
                 } label: {
                     VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
                         Label(recipe.content.title, systemImage: "book.closed").font(SGTheme.TypeRole.headline)
+                        // Where this Recipe stands before posting: private Recipes start excluded.
+                        Text(RecipeAttachmentPolicy.changesVisibility(recipe)
+                             ? (model.selection == nil ? "Private Recipe · not included" : "Private Recipe · will be shared with your Sous Chefs")
+                             : (model.selection == nil ? "Shared Recipe · not included" : "Shared Recipe · included"))
+                            .font(SGTheme.TypeRole.secondary.weight(.medium))
+                            .foregroundStyle(model.selection == nil ? Color.secondary : SGTheme.ColorToken.accent)
+                            .accessibilityIdentifier("post-recipe-status")
                         if let summary = DishRecipePreview.summary(recipe, dishName: nil) {
                             Text(summary).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         }

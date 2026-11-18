@@ -12,8 +12,15 @@ import SwiftUI
 /// One size/weight and a 44 pt target for every toolbar utility symbol.
 struct SGToolbarIcon: View {
     let symbol: String
+    /// A #stayGRUBBY template icon from the asset catalog (e.g. `SousChefs`) instead of an SF Symbol.
+    var asset: String? = nil
+    init(symbol: String) { self.symbol = symbol }
+    init(asset: String) { symbol = ""; self.asset = asset }
     var body: some View {
-        Image(systemName: symbol)
+        Group {
+            if let asset { Image(asset).renderingMode(.template).resizable().scaledToFit().frame(width: SGTheme.Size.toolbarSymbol + 6, height: SGTheme.Size.toolbarSymbol + 6) }
+            else { Image(systemName: symbol) }
+        }
             .font(.system(size: SGTheme.Size.toolbarSymbol, weight: .medium))
             .frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
             .contentShape(Rectangle())

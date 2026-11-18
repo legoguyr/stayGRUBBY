@@ -44,6 +44,10 @@ final class FriendsUITests: StayGrubbyUITestCase {
         section("Requests", in: app)
         let incoming = app.buttons["friend-person-incoming_cook"]
         XCTAssertTrue(incoming.waitForExistence(timeout: 5),app.debugDescription); incoming.tap()
+        // Not yet a Sous Chef: a locked Kitchen explains what accepting unlocks (no empty posts block).
+        let locked = app.descendants(matching: .any)["kitchen-locked"]
+        XCTAssertTrue(locked.waitForExistence(timeout: 5)); XCTAssertTrue(locked.label.contains("Accept their request"), locked.label)
+        XCTAssertFalse(app.staticTexts["profile-posts-empty"].exists)
         app.buttons["friend-action-accept"].tap()
         XCTAssertTrue(app.staticTexts["Sous Chef"].waitForExistence(timeout: 5))
         app.buttons["friend-profile-actions"].tap()

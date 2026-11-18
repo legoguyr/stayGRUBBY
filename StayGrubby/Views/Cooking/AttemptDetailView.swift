@@ -89,8 +89,12 @@ struct EditCookingView: View {
         defer { saving = false }
         do {
             if !savedDraft {
+                let before = PublicDescriptionSync.trimmed(attempt.dish?.publicDescription)
                 try CookingStore.edit(attempt, draft: draft, context: context, mediaDirectory: mediaRoot)
                 savedDraft = true
+                if let dish = attempt.dish, let request, PublicDescriptionSync.trimmed(dish.publicDescription) != before {
+                    Task { await PublicDescriptionSync.pushToPosts(of: dish, request: request) }
+                }
             }
             if let request, let selection, participants != selection.selectedIDs {
                 var payload = SocialPayload(attemptID: attempt.id, confirmed: true)

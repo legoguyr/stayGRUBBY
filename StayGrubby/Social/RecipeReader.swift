@@ -156,7 +156,7 @@ struct RecipeReaderToolbar: ToolbarContent {
                     Button("Edit Recipe", systemImage: "pencil") { model.management = .edit(recipe) }.accessibilityIdentifier("recipe-edit")
                     Button("Recipe History", systemImage: "clock") { model.management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                     Button("Save as New Recipe", systemImage: "document.on.document") { model.management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
-                    Button("86 Recipe (Delete)", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
+                    Button("Delete Recipe", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
                 } else {
                     Button("Report Recipe", systemImage: "flag") {
                         model.reportTarget = .init(id: recipe.id, revision: recipe.revision)
@@ -192,8 +192,8 @@ private struct RecipeReaderPresentation: ViewModifier {
                                    newDishID: relatedDish == nil && model.recipe?.isOwner == true ? model.recipe?.dishID : nil, origin: claim)
                 }
             }
-            .confirmationDialog("86 this Recipe?", isPresented: $model.deleting, titleVisibility: .visible) {
-                Button("86 Recipe", role: .destructive) { Task { await model.delete(context: context, relatedDish: relatedDish, request: request) } }
+            .confirmationDialog("Delete this Recipe?", isPresented: $model.deleting, titleVisibility: .visible) {
+                Button("Delete Recipe", role: .destructive) { Task { await model.delete(context: context, relatedDish: relatedDish, request: request) } }
             } message: { Text("This removes the Recipe and can’t be undone. Your cooks, rankings and saved cook snapshots stay intact.") }
     }
 }
