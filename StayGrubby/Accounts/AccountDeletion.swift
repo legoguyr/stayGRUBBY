@@ -49,7 +49,7 @@ struct AccountDeletionAuthorizationView: View {
             Text("Permanently delete account")
                 .font(.system(.title2, design: .rounded, weight: .bold)).accessibilityAddTraits(.isHeader)
             Text("This permanently removes your StayGrubby account, cooking records, rankings, comparison history, and backed-up photos. This cannot be undone.")
-                .font(.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                .font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if session.deletionProgress == .deleting {
                 HStack { ProgressView(); Text("Deleting your account…") }
                     .accessibilityElement(children: .combine)
@@ -57,7 +57,7 @@ struct AccountDeletionAuthorizationView: View {
                 Text(session.deletionProgress == .failed
                      ? "Deletion did not complete. Your account has not been reported deleted. Verify with Apple and try again."
                      : "Verify with the Apple account linked to StayGrubby to continue.")
-                    .font(.footnote).foregroundStyle(session.deletionProgress == .failed ? SGTheme.ColorToken.destructive : .secondary)
+                    .font(SGTheme.TypeRole.footnote).foregroundStyle(session.deletionProgress == .failed ? SGTheme.ColorToken.destructive : .secondary)
                 SignInWithAppleButton(.continue) { request in
                     guard let attempt = session.beginAccountDeletionAuthorization() else { return }
                     requestID = attempt.id; attempt.configure(request)

@@ -135,8 +135,8 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         XCTAssertEqual(count("recipes.library_index"), bible + 1, log.label)
     }
 
-    /// My Kitchen statistics open Grub Rank, which always lists every ranked cook (Nov 18, 2026: no Top /
-    /// All toggle). Search and filters are cleared.
+    /// My Kitchen statistics open Grub Rank's All Dishes: one row per Dish (Nov 18, 2026: no Top / All
+    /// toggle). Search and filters are cleared.
     @MainActor func testKitchenStatisticsOpenGrubRankInTheMatchingView() throws {
         let app = launch(["--discovery-fixture", "--test-light"])
         func count(_ id: String) -> Int { Int(app.descendants(matching: .any)[id].label.split(separator: " ").first ?? "") ?? -1 }
@@ -148,8 +148,8 @@ final class ConnectedDishUITests: StayGrubbyUITestCase {
         XCTAssertGreaterThan(makes, dishCount, "The fixture has Dishes with several cooks")
         dishes.tap()
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
-        for _ in 0..<16 where rows.count < makes { app.swipeUp() }
-        XCTAssertGreaterThan(rows.count, dishCount, "Every cook is listed, not one row per Dish")
+        for _ in 0..<16 where rows.count < dishCount { app.swipeUp() }
+        XCTAssertLessThanOrEqual(rows.count, dishCount, "All Dishes lists one row per Dish")
         app.tabBars.buttons["My Kitchen"].tap()
         let total = app.descendants(matching: .any)["profile-entry-count"]; XCTAssertTrue(total.waitForExistence(timeout: 10)); total.tap()
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))

@@ -60,16 +60,15 @@ struct AccountView: View {
         }
         .accessibilityIdentifier("kitchen-scroll")
         .background(SGTheme.ColorToken.background)
-        .navigationTitle("My Kitchen").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "My Kitchen") }
-            ToolbarItem(placement: .topBarLeading) { ShareMyKitchen(compact: true) }.sgIndependentToolbarBackground()
-            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
-            ToolbarItem(placement: .topBarTrailing) {
+        .navigationTitle("My Kitchen")
+        .sgTabHeader {
+            SGLibraryHeader(page: "My Kitchen") {
+                ShareMyKitchen(compact: true).sgHeaderAction()
+                NotificationsLink().labelStyle(.iconOnly).sgHeaderAction()
                 NavigationLink { KitchenSettings { accountUtilities } } label: {
                     SGToolbarIcon(symbol: "gearshape")
-                }.sgUtilityTint().accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
-            }.sgIndependentToolbarBackground()
+                }.sgHeaderAction().accessibilityLabel("Settings").accessibilityIdentifier("settings-open")
+            }
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $socialRoute) { SocialPostDestination(route: $0) }
@@ -83,7 +82,7 @@ struct AccountView: View {
             Section("Account") { Text("No connected account. This local development library does not synchronize with an account.").foregroundStyle(.secondary) }
         }
         #if DEBUG
-        if let profileReviewStatus { Text(profileReviewStatus()).font(.caption).accessibilityIdentifier("profile-review-status") }
+        if let profileReviewStatus { Text(profileReviewStatus()).font(SGTheme.TypeRole.secondary).accessibilityIdentifier("profile-review-status") }
         #endif
     }
     private var sharingRanking: RankingList? {
@@ -96,10 +95,10 @@ struct AccountView: View {
             Label("Account connected",systemImage:"checkmark.circle.fill").foregroundStyle(SGTheme.ColorToken.accent)
             #if DEBUG
             // Development diagnostics only; Release never shows the internal account UUID.
-            Text("Account ID: \(account.accountID.uuidString.lowercased())").font(.footnote).foregroundStyle(.secondary).textSelection(.enabled)
+            Text("Account ID: \(account.accountID.uuidString.lowercased())").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).textSelection(.enabled)
             #endif
             if let sync, sync.status != .idle {
-                Text(sync.status.label).font(.footnote).foregroundStyle(.secondary)
+                Text(sync.status.label).font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 if [.savedLocally, .conflict, .needsReview].contains(sync.status) {
                     Button("Retry sync") { sync.request(forceRetry: true) }
                         .buttonStyle(SGButtonStyle(compact: true))
@@ -125,7 +124,7 @@ struct AccountView: View {
                 }
             }.buttonStyle(SGButtonStyle(compact: true)).disabled(checkingRestore)
                 .accessibilityIdentifier("development-verify-fresh-restore")
-            if let restoreCheck { Text(restoreCheck).font(.footnote).foregroundStyle(.secondary) }
+            if let restoreCheck { Text(restoreCheck).font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary) }
             #endif
             }
             Section("Account Actions") {

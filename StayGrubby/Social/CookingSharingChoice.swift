@@ -20,11 +20,11 @@ struct CookingSharingChoice: View {
             Toggle("Post to The Pass", isOn: Binding(get: { selection.selected }, set: { selection.override = $0 }))
                 .foregroundStyle(SGTheme.ColorToken.primaryText)
                 .disabled(selection.loading || selection.configured == false).accessibilityIdentifier("cook-share-with-friends")
-            if selection.loading { ProgressView("Loading sharing default").font(.footnote) }
+            if selection.loading { ProgressView("Loading sharing default").font(SGTheme.TypeRole.footnote) }
             else if selection.configured == false {
-                Text("Set up Profile in Settings to share.").font(.footnote).foregroundStyle(.secondary)
+                Text("Set up Profile in Settings to share.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
             } else if selection.loadFailed {
-                Text("Sharing default unavailable; this starts private.").font(.footnote).foregroundStyle(.secondary)
+                Text("Sharing default unavailable; this starts private.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
             }
         }.font(SGTheme.TypeRole.body)
             .frame(minHeight: SGTheme.Size.minimumTap)

@@ -9,7 +9,7 @@ struct SocialPersonLabel: View {
         HStack(alignment: .top, spacing: SGTheme.Space.small) {
             SocialAvatar(name: person.displayName, path: person.avatarPath, size: size)
             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                Text(person.displayName).font(.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                Text(person.displayName).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
                 Text(person.handle).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 if let detail { Text(detail).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
             }.fixedSize(horizontal: false, vertical: true)

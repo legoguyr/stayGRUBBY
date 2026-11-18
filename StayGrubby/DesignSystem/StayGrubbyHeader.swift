@@ -1,62 +1,5 @@
 import SwiftUI
 
-/// Page-aware identity and controls. Search state remains owned by the feature.
-struct StayGrubbyHeader: View {
-    let page: String
-    var onCreate: (() -> Void)?
-    var onSearch: (() -> Void)?
-    @Binding var searchText: String
-    @Binding var searching: Bool
-    @Environment(\.dynamicTypeSize) private var typeSize
-    @Environment(\.sgReduceMotion) private var reduceMotion
-
-    var body: some View {
-        Group {
-            if searching {
-                HStack(spacing: SGTheme.Space.xSmall) {
-                    SGSearchField(placeholder: "Search dishes and cooks", text: $searchText,
-                                  identifier: "ranking-search-field", clearIdentifier: "header-clear-search", autoFocus: true)
-                    Button("Done") { animate { searching = false } }
-                        .font(SGTheme.TypeRole.body.weight(.semibold))
-                        .frame(minHeight: SGTheme.Size.minimumTap)
-                        .accessibilityIdentifier("search-done")
-                }
-                .transition(.opacity)
-            } else {
-                HStack(alignment: .center, spacing: SGTheme.Space.small) {
-                    Group {
-                        if typeSize.isAccessibilitySize {
-                            VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) { brandIdentity }
-                        } else { HStack(spacing: SGTheme.Space.small) { brandIdentity } }
-                    }.accessibilityElement(children: .ignore)
-                        .accessibilityLabel("#stayGRUBBY, Grub Rank").accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("staygrubby-header-\(page.lowercased())")
-                    Spacer(minLength: 0)
-                    if let onSearch {
-                        SGIconButton(title: "Search Grub Rank", symbol: searchText.isEmpty ? "magnifyingglass" : "magnifyingglass.circle.fill") {
-                            onSearch(); animate { searching = true }
-                        }.accessibilityIdentifier("ranking-search")
-                    }
-                    if let onCreate {
-                        SGIconButton(title: "Create a cook", symbol: "plus", emphasized: true, action: onCreate)
-                            .accessibilityIdentifier("creation-toggle")
-                    }
-                }.frame(minHeight: SGTheme.Size.minimumTap)
-                .transition(.opacity)
-            }
-        }
-        .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.xSmall)
-        .background(SGTheme.ColorToken.background)
-    }
-    @ViewBuilder private var brandIdentity: some View {
-        SGPrimaryBrandTitle(page: "Grub Rank")
-        Text("Grub Rank").font(SGTheme.TypeRole.headline).fixedSize(horizontal: false, vertical: true)
-    }
-    private func animate(_ action: () -> Void) {
-        withAnimation(reduceMotion ? nil : SGTheme.Motion.quick, action)
-    }
-}
-
 struct SGIconButton: View {
     let title: String
     let symbol: String
@@ -69,38 +12,6 @@ struct SGIconButton: View {
                 .foregroundStyle(emphasized ? SGTheme.ColorToken.onAccent : SGTheme.ColorToken.primaryText)
                 .background(emphasized ? SGTheme.ColorToken.buttonAccent : SGTheme.ColorToken.elevatedSurface, in: Circle())
         }.buttonStyle(.plain).accessibilityLabel(title)
-    }
-}
-
-/// The + menu (November 18, 2026): two clear starts. Rank a Dish makes a new Dish and its first cook, or —
-/// chosen explicitly inside it — another cook of a Dish already ranked. Add a Recipe saves a Recipe to the
-/// Food Bible, optionally for a Dish. The separate Cook Again choice is gone: a repeat is just another cook.
-struct SGCreationChoices: View {
-    let rankDish: () -> Void
-    /// Nil without a connection to the Recipe service (guest/local-only libraries).
-    var addRecipe: (() -> Void)? = nil
-    var body: some View {
-        VStack(spacing: SGTheme.Space.xSmall) {
-            choice("Rank a Dish", subtitle: "Something you cooked, new or again", symbol: "fork.knife", action: rankDish)
-                .accessibilityIdentifier("new-dish")
-            if let addRecipe {
-                choice("Add a Recipe", subtitle: "Save how to make it to your Food Bible", symbol: "book", action: addRecipe)
-                    .accessibilityIdentifier("new-recipe")
-            }
-        }.sgCard().padding(.horizontal, SGTheme.Space.medium)
-    }
-    private func choice(_ title: String, subtitle: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: SGTheme.Space.small) {
-                Image(systemName: symbol).foregroundStyle(SGTheme.ColorToken.accent)
-                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                    Text(title).font(SGTheme.TypeRole.headline)
-                    Text(subtitle).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Image(systemName: "arrow.up.right").foregroundStyle(.secondary)
-            }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-        }.buttonStyle(.plain)
     }
 }
 

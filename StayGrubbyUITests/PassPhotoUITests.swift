@@ -25,7 +25,7 @@ final class PassPhotoUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "social-share-success").firstMatch.waitForExistence(timeout: 10), app.debugDescription)
         app.buttons["social-share-done"].tap()
         app.tabBars.buttons["The Pass"].tap()
-        XCTAssertTrue(app.navigationBars["The Pass"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "primary-brand-title", "The Pass")).firstMatch.waitForExistence(timeout: 8))
         // The review mock titles every post generically; the newest post is this share.
         let post = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'post-open-'")).firstMatch
         XCTAssertTrue(post.waitForExistence(timeout: 10), app.debugDescription)

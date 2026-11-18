@@ -45,7 +45,7 @@ struct AddRecipeFlow: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: SGTheme.Space.large) {
                         if let saved { rankPrompt(saved) } else if let dish { dishSources(dish) } else { librarySources }
-                        if failed { Text("Couldn’t start ranking. Try again from the Recipe.").font(.footnote).accessibilityIdentifier("add-recipe-error") }
+                        if failed { Text("Couldn’t start ranking. Try again from the Recipe.").font(SGTheme.TypeRole.footnote).accessibilityIdentifier("add-recipe-error") }
                     }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .background(SGTheme.ColorToken.background)
@@ -65,16 +65,22 @@ struct AddRecipeFlow: View {
     // MARK: Steps
 
     @ViewBuilder private var librarySources: some View {
+        // Food Bible + (Nov 18, 2026): two clear starts. Linking to a ranked Dish is optional and explicit.
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SGSectionHeader(title: "New Dish + Recipe")
+            Text("New Recipe").font(SGTheme.TypeRole.title).accessibilityAddTraits(.isHeader)
             Text("Keep a recipe, whether you’ve cooked it yet or not.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-            sourceButtons(importID: "bible-import", manualID: "bible-manual")
+            Button { mode = .manual } label: {
+                SGDestinationLabel(title: "Create Manually", subtitle: "Type the ingredients and steps yourself", symbol: "square.and.pencil")
+            }.buttonStyle(.plain).accessibilityIdentifier("bible-manual")
+            Button { mode = .imported } label: {
+                SGDestinationLabel(title: "Create with AI", subtitle: "Paste a recipe; it’s organized for you to review", symbol: "sparkles")
+            }.buttonStyle(.plain).accessibilityIdentifier("bible-import")
         }
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SGSectionHeader(title: "Add to a Ranked Dish")
+        if !rankedWithoutRecipe.isEmpty {
             Button { choosingDish = true } label: {
-                SGDestinationLabel(title: "Choose a Ranked Dish", subtitle: rankedWithoutRecipe.isEmpty ? "Every ranked Dish already has a Recipe" : "Give a Dish you’ve cooked its Recipe", symbol: "fork.knife")
-            }.buttonStyle(.plain).disabled(rankedWithoutRecipe.isEmpty).accessibilityIdentifier("bible-ranked-dish")
+                Label("For a Dish you’ve ranked…", systemImage: "fork.knife").font(SGTheme.TypeRole.secondary.weight(.medium))
+                    .frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("bible-ranked-dish")
         }
     }
 
@@ -83,7 +89,7 @@ struct AddRecipeFlow: View {
             SGEyebrow(text: "Recipe for")
             Text(dish.name).font(SGTheme.TypeRole.title).fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("add-recipe-dish")
             if isLibrary {
-                Button("Choose Another Dish") { target = nil; choosingDish = true }.font(.subheadline).frame(minHeight: SGTheme.Size.minimumTap)
+                Button("Choose Another Dish") { target = nil; choosingDish = true }.font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap)
             }
         }
         sourceButtons(importID: "dish-recipe-import", manualID: "dish-recipe-manual")
@@ -98,8 +104,8 @@ struct AddRecipeFlow: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             Button { mode = .imported } label: {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                    Label("Paste Recipe", systemImage: "doc.text").font(.headline)
-                    Text("Paste a full recipe and organize it for review.").font(.subheadline)
+                    Label("Paste Recipe", systemImage: "doc.text").font(SGTheme.TypeRole.headline)
+                    Text("Paste a full recipe and organize it for review.").font(SGTheme.TypeRole.body)
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(SGTheme.Space.medium)
             }.buttonStyle(SGButtonStyle()).accessibilityIdentifier(importID)
             Button { mode = .manual } label: {
@@ -197,7 +203,7 @@ struct ExistingRecipePicker: View {
                         SGDestinationLabel(title: entry.recipeTitle, subtitle: subtitle(entry), symbol: "book")
                     }.buttonStyle(.plain).disabled(busy).accessibilityIdentifier("existing-recipe-\(entry.recipeID)")
                 }
-                if let failure { Text(failure).font(.footnote).accessibilityIdentifier("existing-recipe-error") }
+                if let failure { Text(failure).font(SGTheme.TypeRole.footnote).accessibilityIdentifier("existing-recipe-error") }
             }.padding(SGTheme.Space.medium)
         }
         .safeAreaInset(edge: .top) {

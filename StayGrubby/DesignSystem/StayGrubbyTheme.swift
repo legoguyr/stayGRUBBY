@@ -18,10 +18,12 @@ enum SGTheme {
         // Accessible red variants for product controls; exports keep Brand.red.
         static let accent = adaptive(light: 0xCB1015, dark: 0xFF6B63)
         static let buttonAccent = Color(red: 203 / 255, green: 16 / 255, blue: 21 / 255)
-        static let background = adaptive(light: 0xFAF3EC, dark: 0x171615)
+        // UI overhaul (Nov 18, 2026): bright white pages so food photography leads; warm cream stays in
+        // surfaces and the brand. Dark mode keeps its warm charcoal.
+        static let background = adaptive(light: 0xFFFFFF, dark: 0x171615)
         static let groupedBackground = background
-        static let surface = adaptive(light: 0xFFFCF8, dark: 0x22201E)
-        static let elevatedSurface = adaptive(light: 0xEFE5DA, dark: 0x302C28)
+        static let surface = adaptive(light: 0xFBF7F2, dark: 0x22201E)
+        static let elevatedSurface = adaptive(light: 0xF4EDE5, dark: 0x302C28)
         static let primaryText = Color.primary
         static let subdued = Color.secondary
         static let destructive = adaptive(light: 0xB72420, dark: 0xFF8C80)
@@ -37,7 +39,9 @@ enum SGTheme {
         static let placeholderEnd = Color.secondary.opacity(0.05)
         static let onAccent = Color.white
         static let selected = accent.opacity(0.13)
-        static let focusBackground = adaptive(light: 0xF1E7DC, dark: 0x100F0E)
+        static let focusBackground = adaptive(light: 0xF7F1EA, dark: 0x100F0E)
+        /// Soft elevation for cards and floating controls (one shadow in the whole app).
+        static let shadow = Color.black.opacity(0.06)
         fileprivate static func adaptive(light: UInt32, dark: UInt32) -> Color {
             Color(UIColor { traits in
                 let hex = traits.userInterfaceStyle == .dark ? dark : light
@@ -136,6 +140,10 @@ enum SGTheme {
         static let rank = Font.system(.title2, design: .serif, weight: .semibold).monospacedDigit()
         static let body = Font.subheadline
         static let secondary = Font.caption
+        /// Supporting notes under fields and sections (was raw `.footnote`).
+        static let footnote = Font.footnote
+        /// Section titles inside pages ("Cooks", "Folders", "Signature Dishes").
+        static let section = Font.title3.weight(.bold)
         static let score = Font.system(.title3, design: .rounded, weight: .bold).monospacedDigit()
     }
     enum Motion {
@@ -175,6 +183,7 @@ extension View {
                 RoundedRectangle(cornerRadius: SGTheme.Radius.card, style: .continuous)
                     .stroke(SGTheme.ColorToken.border, lineWidth: SGTheme.Size.border)
             }
+            .shadow(color: SGTheme.ColorToken.shadow, radius: 10, x: 0, y: 3)
     }
     func sgField() -> some View {
         padding(SGTheme.Space.small)

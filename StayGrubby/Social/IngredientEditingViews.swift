@@ -19,9 +19,9 @@ struct RecipeIngredientLabel: View {
     }
     private var name: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(row.name).font(.body).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
-            if !row.preparation.isEmpty { Text(row.preparation).font(.subheadline).foregroundStyle(.secondary) }
-            if !row.note.isEmpty { Text(row.note).font(.subheadline).foregroundStyle(.secondary) }
+            Text(row.name).font(SGTheme.TypeRole.reading).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
+            if !row.preparation.isEmpty { Text(row.preparation).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
+            if !row.note.isEmpty { Text(row.note).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
         }
     }
 }

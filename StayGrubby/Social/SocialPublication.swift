@@ -290,7 +290,7 @@ struct SocialPublicationStatus: View {
                     Button("Retry sharing") { coordinator.retry() }.accessibilityIdentifier("automatic-share-retry")
                     Button("Keep this cook private") { Task { await coordinator.keepPrivate(itemID) } }
                 }
-            }.font(.subheadline).frame(maxWidth: .infinity, alignment: .leading).sgCard()
+            }.font(SGTheme.TypeRole.body).frame(maxWidth: .infinity, alignment: .leading).sgCard()
                 .task { coordinator.retry() }
         }
     }

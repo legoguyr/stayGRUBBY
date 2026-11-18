@@ -40,7 +40,7 @@ struct RecipeIntelligenceDiagnosticsView: View {
                 if let status = diagnostics.providerStatus { LabeledContent("Provider HTTP status", value: String(status)) }
                 if let timestamp = diagnostics.timestamp { LabeledContent("Last update", value: timestamp.formatted()) }
             }
-            Text("No keys, tokens or recipe text are collected here. Configuration/session status reflects the last request, not a new provider call.").font(.footnote)
+            Text("No keys, tokens or recipe text are collected here. Configuration/session status reflects the last request, not a new provider call.").font(SGTheme.TypeRole.footnote)
         }.navigationTitle("Recipe Intelligence")
     }
 }

@@ -80,11 +80,11 @@ struct SourceSummary: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             Label(source.summary, systemImage: "text.book.closed")
-                .font(.headline)
+                .font(SGTheme.TypeRole.headline)
             // The headline already names the source ("Cookbook · Zahav"); don't repeat that value as a row.
             ForEach(source.detailRows.filter { !source.summary.hasSuffix(" · \($0.value)") }, id: \.label) { row in
                 LabeledContent(row.label, value: row.value)
-                    .font(.subheadline)
+                    .font(SGTheme.TypeRole.body)
             }
         }
     }
@@ -133,7 +133,7 @@ struct SGSectionHeader<Trailing: View>: View {
     @ViewBuilder var trailing: Trailing
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: SGTheme.Space.small) {
-            Text(title).font(SGTheme.TypeRole.headline).accessibilityAddTraits(.isHeader)
+            Text(title).font(SGTheme.TypeRole.section).accessibilityAddTraits(.isHeader)
                 .frame(maxWidth: .infinity, alignment: .leading)
             trailing
         }
@@ -158,7 +158,15 @@ struct SGCenteredActionLabelStyle: LabelStyle {
 struct SGHeroMedia: View {
     let media: CookingMedia?
     let name: String
+    /// Dish page only: tap opens the full-screen viewer. Off inside rows and links, which own their tap.
+    var opensViewer = false
     var body: some View {
+        if opensViewer, let media {
+            hero.sgOpensPhotoViewer({ (media.attempt?.orderedImages ?? [media]).map { SGPhotoViewerItem.local($0, label: name) } },
+                                    start: media.id.uuidString)
+        } else { hero }
+    }
+    private var hero: some View {
         DishPhoto(media: media, name: name)
             .frame(maxWidth: .infinity)
             .frame(height: media == nil ? SGTheme.Size.placeholderHeight : SGTheme.Size.heroHeight)

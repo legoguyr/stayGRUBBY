@@ -83,7 +83,7 @@ struct AppLinkDestination: View {
         case .post(let id): SocialPostDetailView(postID: id)
         case .recipe(let id): RecipeDetailView(id: id)
         case .sharedRecipe(let id): SharedRecipeView(postID: id)
-        case .invalid: ContentUnavailableView("Link unavailable", systemImage: "link", description: Text("This StayGrubby link is invalid or no longer supported."))
+        case .invalid: SGContentState(title: "Link unavailable", symbol: "link", message: "This StayGrubby link is invalid or no longer supported.")
         }
     }
 }
@@ -103,8 +103,8 @@ struct ProfileLinkDestination: View {
                     List { Text(person.displayName).font(.title.bold()); Text(person.handle); Text("Your Kitchen"); ShareMyKitchen() }
                 } else { FriendProfileView(person: person) {} }
             }
-            else if failed { ContentUnavailableView("Kitchen unavailable", systemImage: "person.crop.circle.badge.xmark", description: Text("This link is invalid, private, blocked, removed or currently unavailable.")).accessibilityIdentifier("profile-link-unavailable") }
-            else { ProgressView("Opening Kitchen") }
+            else if failed { SGContentState(title: "Kitchen unavailable", symbol: "person.crop.circle.badge.xmark", message: "This link is invalid, private, blocked, removed or currently unavailable.").accessibilityIdentifier("profile-link-unavailable") }
+            else { SGLoadingState(label: "Opening Kitchen") }
         }.navigationTitle("My Kitchen").task(id: route.id) { await resolve() }
             .onChange(of: phase) { _, next in generation = UUID(); person = nil; if next == .active { Task { await resolve() } } }
             .onDisappear { generation = UUID() }
@@ -138,7 +138,7 @@ struct ShareMyKitchen: View {
                 } else if compact && !failed {
                     SGToolbarIcon(symbol: "square.and.arrow.up").foregroundStyle(SGTheme.ColorToken.unavailable)
                         .accessibilityLabel("Kitchen sharing unavailable").accessibilityHint("Enable discovery in Settings, Profile to share your Kitchen")
-                } else if identity != nil { Text("To share your Kitchen, enable discovery in Settings → Profile.").font(.footnote).foregroundStyle(.secondary) }
+                } else if identity != nil { Text("To share your Kitchen, enable discovery in Settings → Profile.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary) }
                 if failed {
                     Button { Task { await load() } } label: {
                         if compact { SGToolbarIcon(symbol: "arrow.clockwise") }

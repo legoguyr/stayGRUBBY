@@ -32,7 +32,7 @@ struct SocialSendSheet: View {
                     Label("Sent", systemImage: "checkmark.circle.fill").accessibilityIdentifier("social-send-success")
                     Text("Your Sous Chefs can open it from their New Ticket.").foregroundStyle(.secondary)
                 } else {
-                    if loading && people.isEmpty { ProgressView("Loading Sous Chefs") }
+                    if loading && people.isEmpty { SGLoadingState(label: "Loading Sous Chefs") }
                     if loadFailed {
                         Text("Sharing unavailable. Check your connection or sharing access.")
                         Button("Retry Sous Chefs") { Task { await load() } }
@@ -54,9 +54,9 @@ struct SocialSendSheet: View {
             .safeAreaInset(edge: .bottom) {
                 if !batch.complete {
                     VStack(spacing: SGTheme.Space.small) {
-                        if !batch.selected.isEmpty { Text("\(batch.selected.count) selected").font(.footnote) }
+                        if !batch.selected.isEmpty { Text("\(batch.selected.count) selected").font(SGTheme.TypeRole.footnote) }
                         if !batch.failed.isEmpty {
-                            Text("Couldn’t send to \(batch.failed.count). Retry or refresh Sous Chefs.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("social-send-error")
+                            Text("Couldn’t send to \(batch.failed.count). Retry or refresh Sous Chefs.").font(SGTheme.TypeRole.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("social-send-error")
                             Button("Refresh Sous Chefs") { Task { batch.suspend(); await load() } }
                         }
                         Button(batch.busy ? "Sending…" : batch.failed.isEmpty ? "Send" : "Retry Unsent") { Task { await send() } }

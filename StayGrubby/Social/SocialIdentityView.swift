@@ -12,7 +12,7 @@ struct SocialIdentitySection: View {
             } else {
                 Form {
                     if error { Text("Couldn’t load your profile. Your cooking library is still available."); Button("Retry profile") { Task { await load() } } }
-                    else { ProgressView("Loading profile") }
+                    else { SGLoadingState(label: "Loading profile") }
                 }.navigationTitle("Profile").task { await load() }
             }
         }

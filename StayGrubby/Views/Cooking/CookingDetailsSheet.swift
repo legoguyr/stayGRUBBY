@@ -38,13 +38,13 @@ struct CookingDetailsSheet: View {
                     Section("Existing notes for this cook") {
                         TextField("Cook-specific notes", text: $draft.notes, axis: .vertical)
                             .lineLimit(1...6).focused($notesFocused).accessibilityIdentifier("cook-notes")
-                        Text("Only this cook. Separate from Dish Private Notes.").font(.footnote).foregroundStyle(.secondary)
+                        Text("Only this cook. Separate from Dish Private Notes.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                     }
                 }
                 if !draft.allergy.isEmpty {
                     Section("Legacy free-of labels") {
                         Text(draft.allergy.map(\.label).sorted().joined(separator: ", "))
-                        Text("User-entered claims; separate from Contains.").font(.footnote).foregroundStyle(.secondary)
+                        Text("User-entered claims; separate from Contains.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                         Button("Remove legacy free-of labels", role: .destructive) { draft.allergy = [] }.accessibilityIdentifier("clear-legacy-free-labels")
                     }
                 }

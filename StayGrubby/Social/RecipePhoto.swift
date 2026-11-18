@@ -114,8 +114,8 @@ struct RecipePhotoEditor: View {
             PhotosPicker(selection: $selection, matching: .images) { Label(bytes != nil || (!removed && id != nil) ? "Replace Recipe Photo" : "Add Recipe Photo", systemImage: "photo") }.disabled(loading).accessibilityIdentifier("recipe-photo-choose")
             if bytes != nil || (!removed && id != nil) { Button("Remove Recipe Photo", role: .destructive) { bytes = nil; removed = true; selection = nil }.accessibilityIdentifier("recipe-photo-remove") }
             if loading { ProgressView("Preparing photo") }
-            if failed { Text("Couldn’t prepare this photo. Try another image.").font(.footnote) }
-            Text("Recipe photos stay separate from your cook’s photos.").font(.footnote).foregroundStyle(.secondary)
+            if failed { Text("Couldn’t prepare this photo. Try another image.").font(SGTheme.TypeRole.footnote) }
+            Text("Recipe photos stay separate from your cook’s photos.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
         }.task(id: selection) {
             guard let selection else { return }
             loading = true; failed = false; defer { loading = false }

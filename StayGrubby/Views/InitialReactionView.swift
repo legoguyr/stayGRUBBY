@@ -11,11 +11,11 @@ struct InitialReactionView: View {
                 Text("How was it?").font(SGTheme.TypeRole.hero)
                 ForEach(InitialReaction.allCases) { reaction in
                     Button { choose(reaction) } label: {
-                        Text(reaction.rawValue).font(.headline).frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap)
+                        Text(reaction.rawValue).font(SGTheme.TypeRole.headline).frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap)
                     }.buttonStyle(SGButtonStyle())
                 }
                 Text("Just a starting point. Your comparisons decide the score.")
-                    .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                    .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
             }.padding(SGTheme.Space.large)
         }
     }

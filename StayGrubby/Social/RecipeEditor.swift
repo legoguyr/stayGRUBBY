@@ -80,12 +80,12 @@ struct RecipeEditor: View {
                     if let importReview {
                         VStack(alignment: .leading, spacing: SGTheme.Space.stack) {
                             DisclosureGroup("Draft review") {
-                                ForEach(importReview.warnings, id: \.self) { Text($0).font(.subheadline).foregroundStyle(.secondary) }
+                                ForEach(importReview.warnings, id: \.self) { Text($0).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
                             }.accessibilityIdentifier("recipe-draft-review")
-                            DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.accessibilityIdentifier("recipe-original-paste")
+                            DisclosureGroup("Original pasted recipe") { Text(importReview.raw).font(SGTheme.TypeRole.reading).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.accessibilityIdentifier("recipe-original-paste")
                         }.accessibilityIdentifier("recipe-import-review")
                     }
-                    if let saveMessage { Label(saveMessage, systemImage: "exclamationmark.circle").font(.subheadline).accessibilityIdentifier("recipe-save-error") }
+                    if let saveMessage { Label(saveMessage, systemImage: "exclamationmark.circle").font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-save-error") }
                 }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }.background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively).accessibilityIdentifier("recipe-editor-scroll")
                 .navigationTitle(recipe == nil ? "Add Recipe" : "Edit Recipe").navigationBarTitleDisplayMode(.inline)
@@ -148,7 +148,7 @@ struct RecipeEditor: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             RecipePhotoEditor(id: content.photoID, dish: dish, cook: cook, exactCookLink: (attemptID ?? recipe?.linkedAttemptID) != nil, name: content.title, bytes: $photoBytes, removed: $photoRemoved, assetID: $photoAssetID, loading: $photoLoading)
             TextField("Recipe title", text: $content.title, axis: .vertical).font(SGTheme.TypeRole.hero).focused($focus, equals: .title).accessibilityIdentifier("recipe-edit-title")
-            TextField("Describe the recipe in 1–3 useful sentences…", text: optional(\.description), axis: .vertical).font(.body).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
+            TextField("Describe the recipe in 1–3 useful sentences…", text: optional(\.description), axis: .vertical).font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).accessibilityLabel("Recipe introduction, optional")
         }
     }
     @ViewBuilder private var details: some View {
@@ -175,7 +175,7 @@ struct RecipeEditor: View {
                 HStack { Text("Possible · check labels"); Spacer(); Text("\(content.allergens?.possible.count ?? 0) selected").foregroundStyle(.secondary); Image(systemName: "chevron.right") }
                     .frame(minHeight: 44).contentShape(Rectangle())
             }.accessibilityIdentifier("recipe-allergen-possible")
-            if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(.footnote).foregroundStyle(.secondary) }
+            if let review = content.allergens?.reviewIngredients, !review.isEmpty { Text("Check labels and alternatives: " + review.joined(separator: "; ")).font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary) }
         }.accessibilityElement(children: .contain)
     }
     private func allergenBinding(_ selection: RecipeAllergenSelection) -> Binding<Set<Allergen>> {
@@ -263,7 +263,7 @@ struct RecipeEditor: View {
             ForEach(Array(part.steps.enumerated()), id: \.element.id) { i,row in
                 HStack(alignment: .top, spacing: SGTheme.Space.small) {
                     Text("\(stepOffset(part.id)+i+1)").font(.title3.bold()).foregroundStyle(.secondary).frame(minWidth: 24).padding(.top, 10).accessibilityLabel("Step \(stepOffset(part.id)+i+1)")
-                    TextField("What happens next?", text: step(part.id,row.id), axis: .vertical).lineLimit(3...20).font(.body).lineSpacing(6).focused($focus, equals: .step(row.id)).padding(.vertical, SGTheme.Space.small).accessibilityIdentifier("recipe-step-text")
+                    TextField("What happens next?", text: step(part.id,row.id), axis: .vertical).lineLimit(3...20).font(SGTheme.TypeRole.reading).lineSpacing(6).focused($focus, equals: .step(row.id)).padding(.vertical, SGTheme.Space.small).accessibilityIdentifier("recipe-step-text")
                     rowActions(part, rowID: row.id, ingredient: false)
                 }
             }

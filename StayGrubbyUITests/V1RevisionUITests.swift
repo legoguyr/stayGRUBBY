@@ -52,19 +52,15 @@ final class V1RevisionUITests: StayGrubbyUITestCase {
             app.terminate()
         }
     }
-    /// Grub Rank always lists every ranked cook at its true global rank (Nov 18, 2026: no Top / All toggle).
-    @MainActor func testGrubRankListsEveryCookAtGlobalRanksWithoutChangingUnlockProgress() {
+    /// All Dishes: one row per Dish at its best cook's true global rank; no view toggle (Nov 18, 2026).
+    @MainActor func testAllDishesShowsOneRowPerDishAtGlobalRanksWithoutChangingUnlockProgress() {
         let app = launch(9)
         app.showAllVersions() // asserts there is no view toggle
-        let second = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
-        XCTAssertTrue(second.waitForExistence(timeout: 15))
-        XCTAssertTrue(second.label.contains("Version 1") && second.label.contains("score locked"))
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 3,'")).firstMatch.exists)
+        let hidden = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 2,'")).firstMatch
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label BEGINSWITH 'Rank 3,'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertFalse(hidden.exists, "A Dish's second cook doesn't get its own row")
         let banner = app.descendants(matching: .any)["score-unlock-banner"]
-        XCTAssertTrue(banner.label.contains("9 / 10")); capture("Every cook, true global ranks", app)
-        app.terminate(); app.launchWithReviewOptions()
-        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 20))
-        XCTAssertTrue(second.waitForExistence(timeout: 15))
+        XCTAssertTrue(banner.label.contains("9 / 10")); capture("All Dishes, true global ranks", app)
     }
     @MainActor func testFreshRerankReactionControlsAutomaticResultAndProfileTopThree() {
         let app = launch(12)

@@ -52,7 +52,7 @@ struct CookAgainFlow: View {
                     Button { choice = .without } label: {
                         SGDestinationLabel(title: "Without the Recipe", subtitle: "Cook it your way this time", symbol: "fork.knife")
                     }.buttonStyle(.plain).disabled(busy).accessibilityIdentifier("cook-again-without")
-                    if failed { Text("Couldn’t start from the Recipe. Try again or cook without it.").font(.footnote).accessibilityIdentifier("cook-again-error") }
+                    if failed { Text("Couldn’t start from the Recipe. Try again or cook without it.").font(SGTheme.TypeRole.footnote).accessibilityIdentifier("cook-again-error") }
                 }.padding(SGTheme.Space.readingMargin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity, alignment: .leading)
             }
             .background(SGTheme.ColorToken.background)

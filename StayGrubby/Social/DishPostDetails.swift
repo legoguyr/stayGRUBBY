@@ -109,7 +109,11 @@ private struct DishDetailsSectionView: View {
     var body: some View {
         switch section {
         case .photo:
-            if post.photoPath != nil { SocialPhoto(path: post.photoPath).sgPhotoFrame(.hero).padding(.top, SGTheme.Space.small) }
+            if let path = post.photoPath {
+                SocialPhoto(path: path).sgPhotoFrame(.hero)
+                    .sgOpensPhotoViewer { [.post(path, label: post.title)] }
+                    .accessibilityIdentifier("post-hero-photo").padding(.top, SGTheme.Space.small)
+            }
         case .identity:
             HStack(alignment: .top, spacing: SGTheme.Space.small) {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
@@ -142,7 +146,7 @@ private struct DishDetailsSectionView: View {
                     SocialPostRecipeLink(recipeID: recipeID, navigate: navigate)
                     if let revision = post.recipeRevision {
                         Button { navigate(.recipe(post.id)) } label: { Text("Recipe as posted · revision \(revision)") }
-                            .font(.footnote).buttonStyle(.borderless).frame(minHeight: SGTheme.Size.minimumTap)
+                            .font(SGTheme.TypeRole.footnote).buttonStyle(.borderless).frame(minHeight: SGTheme.Size.minimumTap)
                             .accessibilityIdentifier("post-recipe-as-posted")
                     }
                 }
@@ -351,7 +355,7 @@ struct SocialPostRecipeLink: View {
                     .frame(width: 28).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("View Recipe").font(SGTheme.TypeRole.body.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent)
-                    Text("Linked Recipe · always the latest version").font(.caption).foregroundStyle(.secondary)
+                    Text("Linked Recipe · always the latest version").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary).accessibilityHidden(true)

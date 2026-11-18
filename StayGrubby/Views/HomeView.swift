@@ -50,7 +50,7 @@ struct HomeView: View {
                 Button("Try Again", action: prepareCooking)
             }
         } else {
-            ProgressView("Opening Rankings")
+            SGLoadingState(label: "Opening Rankings")
         }
     }
 

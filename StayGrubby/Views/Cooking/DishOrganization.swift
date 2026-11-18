@@ -27,7 +27,7 @@ struct DishCollectionsField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            Label("Collections · optional", systemImage: "square.stack").font(SGTheme.TypeRole.secondary.weight(.semibold))
+            Label("Folders · optional", systemImage: "folder").font(SGTheme.TypeRole.secondary.weight(.semibold))
             if !labels.isEmpty {
                 ForEach(labels, id: \.self) { label in
                     HStack(spacing: SGTheme.Space.small) {
@@ -40,7 +40,7 @@ struct DishCollectionsField: View {
                 }
             }
             if labels.count < DishCollectionPolicy.maximumPerDish {
-                TextField("Add to a collection, like Risotto", text: $entry)
+                TextField("Add to a folder, like Risotto", text: $entry)
                     .focused($focused).submitLabel(.done).onSubmit { if let newLabel { add(newLabel) } }
                     .autocorrectionDisabled().accessibilityIdentifier("collection-entry").sgField()
                 if focused || !entry.isEmpty {
@@ -54,7 +54,7 @@ struct DishCollectionsField: View {
                     }
                 }
             }
-            Text("Collections group related Dishes. Each Dish keeps its own cooks, Recipe and ranking.")
+            Text("Folders group related Dishes. Each Dish keeps its own cooks, Recipe and ranking.")
                 .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }
     }
@@ -73,7 +73,7 @@ struct DishCollectionsEditor: View {
         NavigationStack {
             ScrollView { DishCollectionsField(labels: $labels).padding(SGTheme.Space.medium) }
                 .background(SGTheme.ColorToken.background)
-                .navigationTitle("Collections").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle("Folders").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
@@ -88,100 +88,199 @@ struct DishCollectionsEditor: View {
     }
 }
 
-/// The Dish's collections as quiet chips on its page; tapping opens the editor.
-struct DishCollectionChips: View {
+/// Dish page: the folders this Dish is in, as "Explore Risotto" links, plus one quiet edit action.
+/// A folder is organization only; the page's own cook history stays below.
+struct DishFolderCallout: View {
     let dish: Dish
     var edit: () -> Void
     var body: some View {
-        Button(action: edit) {
-            HStack(spacing: SGTheme.Space.xSmall) {
-                Image(systemName: "square.stack").foregroundStyle(.secondary).accessibilityHidden(true)
-                if dish.collections.isEmpty { Text("Add to Collection").foregroundStyle(SGTheme.ColorToken.accent) }
-                else { Text(dish.collections.joined(separator: " · ")).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(2) }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            }.font(SGTheme.TypeRole.secondary.weight(.medium)).frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-        }.buttonStyle(.plain)
-            .accessibilityLabel(dish.collections.isEmpty ? "Add to Collection" : "Collections: \(dish.collections.joined(separator: ", "))")
-            .accessibilityHint("Edits this Dish’s collections").accessibilityIdentifier("dish-collections")
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            ForEach(dish.collections, id: \.self) { label in
+                NavigationLink { DishCollectionView(label: label) } label: {
+                    HStack(spacing: SGTheme.Space.small) {
+                        Image(systemName: "folder").foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
+                        Text("Explore \(label)").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityIdentifier("dish-explore-\(label)")
+            }
+            Button(action: edit) {
+                Label(dish.collections.isEmpty ? "Add to Folder" : "Edit Folders", systemImage: dish.collections.isEmpty ? "folder.badge.plus" : "folder")
+                    .font(SGTheme.TypeRole.secondary.weight(.medium)).frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
+            }.buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent)
+                .accessibilityLabel(dish.collections.isEmpty ? "Add to Folder" : "Edit Folders: \(dish.collections.joined(separator: ", "))")
+                .accessibilityIdentifier("dish-collections")
+        }
     }
 }
 
-// MARK: - Move a cook to its own Dish
+// MARK: - Separate cooks into their own Dishes
 
-/// Explicit repair for a cook logged under the wrong Dish ("Mushroom" saved as a cook of "Risotto").
-/// Creates a new Dish or joins an existing one; nothing is merged or copied automatically.
-struct MoveCookSheet: View {
-    let cook: CookingAttempt
-    var onMoved: (Dish) -> Void = { _ in }
+/// The explicit repair for cooks logged under one Dish that are really different Dishes (owner's risottos,
+/// November 18, 2026). Lists every cook of the Dish; the owner turns on the ones that are separate Dishes and
+/// names them. Nothing is inferred: no cook moves, no Recipe moves and no folder is set unless chosen here.
+/// Each moved cook keeps its rank, score, photos, notes and Recipe-used record (`DishIdentityStore.move`).
+/// The Dish's Recipe, description and earlier posts stay with this Dish.
+struct SeparateCooksSheet: View {
+    struct Row: Identifiable { let cook: CookingAttempt; var separate = false; var name: String; var id: UUID { cook.id } }
+    let dish: Dish
+    /// The cook made from this Dish's Recipe, if known (shown so the Recipe visibly stays with it).
+    var recipeCookID: UUID? = nil
+    var recipeTitle: String? = nil
+    var onSaved: (_ movedCookIDs: Set<UUID>) -> Void = { _ in }
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.featureFlags) private var flags
-    @Query(sort: \Dish.name) private var dishes: [Dish]
-    @State private var name: String
-    @State private var labels: [String]
-    @State private var choosing = false
+    @State private var dishName: String
+    @State private var rows: [Row]
+    @State private var groups = false
+    @State private var folder: String
     @State private var error: String?
 
-    init(cook: CookingAttempt, onMoved: @escaping (Dish) -> Void = { _ in }) {
-        self.cook = cook; self.onMoved = onMoved
-        let dishName = cook.dish?.name ?? ""
-        // "Mushroom" + "Risotto" → "Mushroom Risotto": a starting point the owner edits.
-        let suggested = cook.versionTitle.flatMap(CookName.normalized).map { title in
-            title.localizedCaseInsensitiveContains(dishName) ? title : "\(title) \(dishName)"
-        } ?? ""
-        _name = State(initialValue: suggested)
-        // The old Dish name is a natural collection for the separated Dishes ("Risotto").
-        _labels = State(initialValue: DishCollectionPolicy.normalized((cook.dish?.collections ?? []) + (dishName.isEmpty ? [] : [dishName])))
+    init(dish: Dish, recipeCookID: UUID? = nil, recipeTitle: String? = nil, onSaved: @escaping (Set<UUID>) -> Void = { _ in }) {
+        self.dish = dish; self.recipeCookID = recipeCookID; self.recipeTitle = recipeTitle; self.onSaved = onSaved
+        _dishName = State(initialValue: dish.name)
+        let ordered = dish.attempts.sorted { ($0.sequenceNumber, $0.createdAt) < ($1.sequenceNumber, $1.createdAt) }
+        _rows = State(initialValue: ordered.map { Row(cook: $0, name: Self.suggestedName(for: $0, dishName: dish.name)) })
+        _folder = State(initialValue: Self.lastWord(dish.name))
     }
-    private var source: Dish? { cook.dish }
-    private var others: [Dish] { dishes.filter { $0.id != source?.id && !$0.attempts.isEmpty } }
+    /// "Mushroom" in "Mahi Mahi Risotto" → "Mushroom Risotto". Only a starting point; always editable.
+    static func suggestedName(for cook: CookingAttempt, dishName: String) -> String {
+        guard let title = CookName.normalized(cook.versionTitle) else { return "" }
+        let last = lastWord(dishName)
+        return last.isEmpty || title.localizedCaseInsensitiveContains(last) ? title : "\(title) \(last)"
+    }
+    static func lastWord(_ name: String) -> String { name.split(whereSeparator: \.isWhitespace).last.map(String.init) ?? "" }
+
+    private var separating: [Row] { rows.filter(\.separate) }
+    private var valid: Bool {
+        !dishName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && separating.count < rows.count
+            && separating.allSatisfy { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-                    Text("Make **\(cook.displayName)** its own Dish when it’s a different dish, not another cook of **\(source?.name ?? "this Dish")**.")
+                    Text("These cooks are all saved as **\(dish.name)**. Turn on any cook that is really a different Dish. Its rank, score, photos and notes move with it.")
                         .fixedSize(horizontal: false, vertical: true)
-                    SGFormSection(title: "New Dish") {
+                    SGFormSection(title: "This Dish keeps") {
+                        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                            TextField("Dish name", text: $dishName).font(SGTheme.TypeRole.title).accessibilityIdentifier("separate-dish-name").sgField()
+                            if let recipeTitle {
+                                Label("Recipe: \(recipeTitle)", systemImage: "book.closed").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    SGFormSection(title: "Cooks") {
                         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                            TextField("Dish name (required)", text: $name).font(SGTheme.TypeRole.title)
-                                .accessibilityIdentifier("move-cook-name").sgField()
-                            if flags.isOn(.dishCollections) { DishCollectionsField(labels: $labels) }
-                            Button { move(to: nil) } label: { Text("Make It a Separate Dish").frame(maxWidth: .infinity) }
-                                .buttonStyle(SGButtonStyle(prominent: true))
-                                .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).accessibilityIdentifier("move-cook-confirm")
+                            ForEach($rows) { $row in cookRow($row) }
                         }
                     }
-                    if !others.isEmpty {
-                        SGFormSection(title: "Or an existing Dish") {
-                            Button { choosing = true } label: { Label("Move to a Dish You’ve Made…", systemImage: "arrow.right").frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading) }
-                                .buttonStyle(SGButtonStyle(compact: true)).accessibilityIdentifier("move-cook-existing")
+                    if flags.isOn(.dishCollections) {
+                        SGFormSection(title: "Folder · optional") {
+                            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                                Toggle("Put these Dishes in one folder", isOn: $groups).accessibilityIdentifier("separate-folder-toggle")
+                                if groups { TextField("Folder name", text: $folder).accessibilityIdentifier("separate-folder-name").sgField() }
+                            }
                         }
                     }
-                    Text("Its ranking, score, photos and notes move with it. \(source?.name ?? "The Dish")’s Recipe, description and earlier posts stay where they are.")
-                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }
             .background(SGTheme.ColorToken.background)
-            .navigationTitle("Separate Dish").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-            .sheet(isPresented: $choosing) {
-                DishSelectionView(dishes: others, onSelect: { dish in choosing = false; move(to: dish) }, onCancel: { choosing = false })
+            .navigationTitle("Separate Cooks").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Save", action: save).disabled(!valid).accessibilityIdentifier("separate-save") }
             }
-            .alert("Couldn't move this cook", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
+            .alert("Couldn't separate", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
         }
     }
-    private func move(to destination: Dish?) {
+
+    @ViewBuilder private func cookRow(_ row: Binding<Row>) -> some View {
+        let cook = row.wrappedValue.cook
+        let lastStaying = !row.wrappedValue.separate && rows.filter { !$0.separate }.count == 1
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            HStack(spacing: SGTheme.Space.small) {
+                DishPhoto(media: cook.primaryImage, thumbnail: true, name: cook.displayName).sgPhotoFrame(.compactThumbnail)
+                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                    Text(cook.versionTitle.flatMap(CookName.normalized) ?? CookName.fallback(sequence: cook.sequenceNumber)).font(SGTheme.TypeRole.headline)
+                    Text([cook.cookedAt?.formatted(date: .abbreviated, time: .omitted), cook.id == recipeCookID ? "Made from the Recipe" : nil].compactMap { $0 }.joined(separator: " · "))
+                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Toggle("Separate Dish", isOn: row.separate).labelsHidden().disabled(lastStaying)
+                    .accessibilityLabel("Make \(cook.displayName) a separate Dish").accessibilityIdentifier("separate-toggle-\(cook.versionTitle ?? String(cook.sequenceNumber))")
+            }
+            if row.wrappedValue.separate {
+                TextField("New Dish name", text: row.name).accessibilityIdentifier("separate-name-\(cook.versionTitle ?? String(cook.sequenceNumber))").sgField()
+                if cook.id == recipeCookID, let recipeTitle {
+                    Text("“\(recipeTitle)” stays with \(dishName). Link it to the new Dish later if it belongs there.")
+                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    private func save() {
+        let label = groups ? DishCollectionPolicy.normalized([folder]) : []
+        var moved = Set<UUID>()
         do {
-            let target = try DishIdentityStore.move(cook, toNewDishNamed: name, destination: destination,
-                                                    collections: flags.isOn(.dishCollections) ? labels : [], context: context)
-            onMoved(target); dismiss()
-        } catch { self.error = "Nothing changed. Try again." }
+            try DishIdentityStore.rename(dish, to: dishName, context: context)
+            for row in separating {
+                try DishIdentityStore.move(row.cook, toNewDishNamed: row.name, collections: label, context: context)
+                moved.insert(row.cook.id)
+            }
+            if !label.isEmpty { try DishCollectionStore.set(dish.collections + label, on: dish, context: context) }
+            onSaved(moved); dismiss()
+        } catch {
+            // Each move is its own synced edit: anything already moved stays moved and is reported.
+            self.error = moved.isEmpty ? "Nothing changed. Try again." : "Some cooks were separated; the rest are unchanged. Try again for those."
+            if !moved.isEmpty { onSaved(moved) }
+        }
     }
 }
 
-// MARK: - My Kitchen collections
+// MARK: - Folders (Grub Rank tab and My Kitchen)
+
+/// Folder cards in a two-column grid: food photo, name, "3 Dishes · 7 cooks". Opens `DishCollectionView`.
+struct FolderGrid: View {
+    let summaries: [DishCollectionSummary]
+    var body: some View {
+        if summaries.isEmpty {
+            SGContentState(title: "No folders yet", symbol: "folder",
+                           message: "Group related Dishes, like all your risottos. Add a Dish to a folder from its page, or use Separate Cooks.")
+                .accessibilityIdentifier("folders-empty")
+        } else {
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top), GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top)],
+                      alignment: .leading, spacing: SGTheme.Space.medium) {
+                ForEach(summaries) { summary in
+                    NavigationLink { DishCollectionView(label: summary.label) } label: { FolderCard(summary: summary) }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
+                        .accessibilityHint("Opens the folder").accessibilityIdentifier("folder-\(summary.label)")
+                }
+            }
+        }
+    }
+}
+
+struct FolderCard: View {
+    let summary: DishCollectionSummary
+    var body: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+            DishPhoto(media: summary.members.lazy.compactMap { $0.best?.attempt.primaryImage ?? $0.dish.attempts.compactMap(\.primaryImage).first }.first,
+                      thumbnail: true, name: summary.label)
+                .frame(maxWidth: .infinity).aspectRatio(4/3, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card))
+            Label(summary.label, systemImage: "folder").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(2)
+            Text("\(summary.dishCountText) · \(summary.cookCountText)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - My Kitchen folders
 
 /// My Kitchen: collections as compact cards (photo, name, "3 Dishes · 7 cooks"). A view over Dishes only.
 struct KitchenCollectionsSection: View {
@@ -189,9 +288,9 @@ struct KitchenCollectionsSection: View {
     let scores: ScoreUnlockState
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SGSectionHeader(title: "Collections")
+            SGSectionHeader(title: "Folders")
             if summaries.isEmpty {
-                Text("Group related Dishes, like all your risottos, from any Dish’s page.")
+                Text("Group related Dishes, like all your risottos, from any Dish’s page or Separate Cooks.")
                     .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).accessibilityIdentifier("collections-empty")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -201,7 +300,7 @@ struct KitchenCollectionsSection: View {
                                 .buttonStyle(.plain)
                                 .accessibilityElement(children: .ignore)
                                 .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
-                                .accessibilityHint("Opens the collection").accessibilityIdentifier("kitchen-collection-\(summary.label)")
+                                .accessibilityHint("Opens the folder").accessibilityIdentifier("kitchen-collection-\(summary.label)")
                         }
                     }
                 }
@@ -250,10 +349,10 @@ struct DishCollectionView: View {
                         .accessibilityIdentifier("collection-counts")
                     Text(scores.isUnlocked ? "Ranked by each Dish’s best cook in your Grub Rank." : "Ranked by each Dish’s best cook in your Grub Rank. Scores unlock as you rank more cooks.")
                         .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    if summary.members.count > 8 { SGSearchField(placeholder: "Search this collection", text: $search, identifier: "collection-search") }
+                    if summary.members.count > 8 { SGSearchField(placeholder: "Search this folder", text: $search, identifier: "collection-search") }
                     ForEach(Array(members.enumerated()), id: \.element.id) { index, member in row(member, position: index + 1) }
                 } else {
-                    SGContentState(title: "Collection is empty", symbol: "square.stack", message: "Add Dishes to “\(label)” from their pages.")
+                    SGContentState(title: "Folder is empty", symbol: "folder", message: "Add Dishes to “\(label)” from their pages.")
                 }
             }
             .padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
@@ -263,20 +362,20 @@ struct DishCollectionView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Rename Collection", systemImage: "pencil") { newName = label; renaming = true }.accessibilityIdentifier("collection-rename")
-                    Button("Delete Collection", systemImage: "trash", role: .destructive) { removing = true }.accessibilityIdentifier("collection-delete")
-                } label: { SGToolbarIcon(symbol: "ellipsis") }.accessibilityLabel("Collection actions").accessibilityIdentifier("collection-actions")
+                    Button("Rename Folder", systemImage: "pencil") { newName = label; renaming = true }.accessibilityIdentifier("collection-rename")
+                    Button("Delete Folder", systemImage: "trash", role: .destructive) { removing = true }.accessibilityIdentifier("collection-delete")
+                } label: { SGToolbarIcon(symbol: "ellipsis") }.sgUtilityTint().accessibilityLabel("Folder actions").accessibilityIdentifier("collection-actions")
             }
         }
-        .alert("Rename Collection", isPresented: $renaming) {
+        .alert("Rename Folder", isPresented: $renaming) {
             TextField("Name", text: $newName)
             Button("Save") { apply { try DishCollectionStore.rename(label, to: newName, dishes: dishes, context: context); dismiss() } }
             Button("Cancel", role: .cancel) { }
         }
         .alert("Delete “\(label)”?", isPresented: $removing) {
-            Button("Delete Collection", role: .destructive) { apply { try DishCollectionStore.remove(label, dishes: dishes, context: context); dismiss() } }
+            Button("Delete Folder", role: .destructive) { apply { try DishCollectionStore.remove(label, dishes: dishes, context: context); dismiss() } }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("Only the collection goes. Every Dish, cook and Recipe in it stays.") }
+        } message: { Text("Only the folder goes. Every Dish, cook and Recipe in it stays.") }
         .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
     }
 

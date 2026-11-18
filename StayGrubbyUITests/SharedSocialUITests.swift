@@ -10,9 +10,9 @@ final class SharedSocialUITests: StayGrubbyUITestCase {
     @MainActor private func notifications(_ app: XCUIApplication) {
         for _ in 0..<3 {
             app.tabBars.buttons["The Pass"].tap()
-            if app.navigationBars["The Pass"].waitForExistence(timeout: 3) { break }
+            if app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "primary-brand-title", "The Pass")).firstMatch.waitForExistence(timeout: 3) { break }
         }
-        XCTAssertTrue(app.navigationBars["The Pass"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "primary-brand-title", "The Pass")).firstMatch.waitForExistence(timeout: 5), app.debugDescription)
         let link = app.buttons["notifications-open"]
         XCTAssertTrue(link.waitForExistence(timeout: 8), app.debugDescription)
         for _ in 0..<3 {

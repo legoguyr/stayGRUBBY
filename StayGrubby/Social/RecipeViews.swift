@@ -31,9 +31,9 @@ struct RecipeDetailView: View {
                     }
                     RecipeReaderContent(model: model, recipe: recipe, relatedDish: relatedDish, linkedCook: linkedCook)
                 }
-                else if !model.failed { ProgressView("Loading Recipe").frame(maxWidth: .infinity) }
+                else if !model.failed { SGLoadingState(label: "Loading Recipe") }
                 if model.failed {
-                    Text(recipe?.isOwner == true ? "Offline. Showing your previously opened Recipe. Changes need a connection to save." : "Recipe unavailable, changed, or offline. Your cooking history is unchanged.").font(.subheadline).accessibilityIdentifier("recipe-error")
+                    Text(recipe?.isOwner == true ? "Offline. Showing your previously opened Recipe. Changes need a connection to save." : "Recipe unavailable, changed, or offline. Your cooking history is unchanged.").font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-error")
                     Button("Retry") { Task { await load() } }.buttonStyle(SGButtonStyle())
                 }
             }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
@@ -59,10 +59,10 @@ struct RecipeCookingProvenance: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             ForEach(cooks) { cook in
-                Text("Recipe · \(cook.snapshot.title)").font(.headline)
-                if let creator = cook.creatorName { Text("Created by \(creator)").font(.subheadline) }
-                if let source = cook.snapshot.source { Text("Source · \(source)").font(.subheadline) }
-                Text("Recipe revision \(cook.revision) when this cook began").font(.caption).foregroundStyle(.secondary)
+                Text("Recipe · \(cook.snapshot.title)").font(SGTheme.TypeRole.headline)
+                if let creator = cook.creatorName { Text("Created by \(creator)").font(SGTheme.TypeRole.body) }
+                if let source = cook.snapshot.source { Text("Source · \(source)").font(SGTheme.TypeRole.body) }
+                Text("Recipe revision \(cook.revision) when this cook began").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 NavigationLink("View recipe used for this cook") { RecipeSnapshotView(cook: cook) }
             }
             if failed { Button("Retry recipe provenance") { Task { await load() } } }
@@ -81,7 +81,7 @@ struct RecipeSnapshotView: View {
     var body: some View {
         List {
             Text(cook.snapshot.title).font(.title2.bold())
-            if let creator = cook.creatorName { Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-snapshot-creator") }
+            if let creator = cook.creatorName { Text("Created by \(creator)").font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-snapshot-creator") }
             if let description = cook.snapshot.description { Text(description) }
             if let source = cook.snapshot.source { Text("Source · \(source)") }
             RecipeReadingBody(content: cook.snapshot)

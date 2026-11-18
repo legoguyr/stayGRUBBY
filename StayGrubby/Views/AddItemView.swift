@@ -25,7 +25,7 @@ struct AddItemView: View {
                                        onAnswer: answer, onUndo: { draft.session?.undo() })
                     } else {
                         VStack(spacing: 20) {
-                            Text("Ready to save your ranking").font(.headline)
+                            Text("Ready to save your ranking").font(SGTheme.TypeRole.headline)
                             Button("Save Ranking", action: save).buttonStyle(.borderedProminent)
                             if session.canUndo { Button("Undo last answer") { draft.session?.undo() } }
                         }

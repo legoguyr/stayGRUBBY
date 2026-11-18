@@ -44,9 +44,9 @@ struct FriendsView: View {
                 }
                 if section == .search {
                     SGSearchField(placeholder: "Search @username", text: $query, identifier: "friends-search").textInputAutocapitalization(.never).autocorrectionDisabled()
-                    Text("Search by username. Only people who allow discovery appear here.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Search by username. Only people who allow discovery appear here.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
-                if loading && page.people.isEmpty { ProgressView("Loading people") }
+                if loading && page.people.isEmpty { SGLoadingState(label: "Loading people") }
                 if let error {
                     Text(error).foregroundStyle(.secondary).accessibilityIdentifier("friends-error")
                     Button("Retry") { revision += 1 }
@@ -121,7 +121,7 @@ struct FriendProfileView: View {
     @State private var socialRoute: SocialPostRoute?
     var body: some View {
         SGEditorialList {
-            if unavailable { ContentUnavailableView("Person unavailable", systemImage: "person.crop.circle.badge.xmark", description: Text("Their privacy or relationship may have changed.")) }
+            if unavailable { SGContentState(title: "Person unavailable", symbol: "person.crop.circle.badge.xmark", message: "Their privacy or relationship may have changed.") }
             else {
                 KitchenIdentityPresentation(name: person.displayName, username: person.username, avatarPath: person.avatarPath)
                     .listRowSeparator(.hidden)

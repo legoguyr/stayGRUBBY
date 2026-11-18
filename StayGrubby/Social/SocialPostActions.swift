@@ -85,7 +85,7 @@ struct SocialPostDescriptionEditor: View {
                     Text(post.title).font(SGTheme.TypeRole.headline)
                     TextField("Tell your Sous Chefs about this cook", text: $description, axis: .vertical).lineLimit(3...10)
                         .accessibilityIdentifier("post-description-input")
-                    Text("Your Dish’s Public Description, shown as this caption. Saving updates the Dish and its other posts. Private Notes are never shared.").font(.footnote)
+                    Text("Your Dish’s Public Description, shown as this caption. Saving updates the Dish and its other posts. Private Notes are never shared.").font(SGTheme.TypeRole.footnote)
                 }
                 if failed { Text("Couldn’t save. The post or your access may have changed. Check your connection and retry.").accessibilityIdentifier("post-edit-error") }
             }.navigationTitle("Edit Description").navigationBarTitleDisplayMode(.inline).disabled(busy)

@@ -41,7 +41,7 @@ final class DesignReviewUITests: StayGrubbyUITestCase {
     @MainActor func testSocialRecipeAndEditorInBothAppearances() {
         for appearance in ["--test-light", "--test-dark"] {
             let app = launch([appearance])
-            tab("The Pass", app); XCTAssertTrue(app.navigationBars["The Pass"].waitForExistence(timeout: 8)); shot("08 The Pass \(appearance)", app)
+            tab("The Pass", app); XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "primary-brand-title", "The Pass")).firstMatch.waitForExistence(timeout: 8)); shot("08 The Pass \(appearance)", app)
             let hands = app.buttons["social-like-20000000-0000-0000-0000-000000000001"]
             reach(hands, app); hands.tap()
             let liked = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == '1 Hands'"), object: hands)

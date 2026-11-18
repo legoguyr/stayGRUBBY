@@ -39,7 +39,8 @@ struct EditCookingView: View {
             CookingFormScroll(draft: $draft, editing: true,
                               cookedWith: selection == nil ? nil : $participants, editingParticipants: true,
                               selectedPeople: selection?.event?.participants.map(\.person) ?? [],
-                              fallbackCookName: CookName.label(custom: nil, sequence: attempt.sequenceNumber, siblingCount: attempt.dish?.attempts.count ?? 1))
+                              fallbackCookName: CookName.label(custom: nil, sequence: attempt.sequenceNumber, siblingCount: attempt.dish?.attempts.count ?? 1),
+                              sharedCookCount: attempt.dish?.attempts.count ?? 0)
                 .disabled(saving || savedDraft)
                 .navigationTitle("Edit Cook").navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -50,7 +51,7 @@ struct EditCookingView: View {
                 .safeAreaInset(edge: .bottom) {
                     VStack(spacing: SGTheme.Space.small) {
                         if request != nil && selection == nil {
-                            if !accepted { Text("Sous Chef tags are available once this cook syncs.").font(.footnote) }
+                            if !accepted { Text("Sous Chef tags are available once this cook syncs.").font(SGTheme.TypeRole.footnote) }
                             else if tagsPending { Button("Retry pending Sous Chef invitations") { sharedCooking?.retry() } }
                             else if selectionFailed { Button("Reload Sous Chef tags") { reloadSelection += 1 } }
                             else { ProgressView("Loading Sous Chef tags") }

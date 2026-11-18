@@ -11,10 +11,9 @@ final class StayGrubbyUITests: StayGrubbyUITestCase {
         app.launchWithReviewOptions()
 
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.buttons["creation-toggle"].exists)
-        XCTAssertFalse(app.buttons["new-dish"].exists)
-        app.revealCreation()
+        // Grub Rank's circular + is Rank a Dish itself (no menu, no Add Recipe here).
         XCTAssertTrue(app.buttons["new-dish"].exists)
+        XCTAssertFalse(app.buttons["new-recipe"].exists)
         XCTAssertFalse(app.buttons["new-version"].exists, "Cook Again lives inside Rank a Dish")
         XCTAssertFalse(app.buttons["my-cooking"].exists)
         XCTAssertFalse(app.buttons["New Ranking"].exists)

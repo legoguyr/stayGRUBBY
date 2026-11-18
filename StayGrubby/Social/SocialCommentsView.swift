@@ -39,7 +39,7 @@ struct SocialEngagementView<Accessory: View>: View {
                 Spacer(minLength: 0)
                 accessory
             }.disabled(busy || failed).frame(minHeight: 44)
-            if failed { Text("Post unavailable or connection interrupted.").font(.footnote); Button("Refresh post") { Task { await update(nil) } } }
+            if failed { Text("Post unavailable or connection interrupted.").font(SGTheme.TypeRole.footnote); Button("Refresh post") { Task { await update(nil) } } }
             // The 💬 count opens the comments sheet; no second "View all N comments" line (no repeated metadata).
         }
         .onChange(of: post.commentCount) { _, _ in latest = nil }
@@ -95,11 +95,11 @@ struct SocialCommentsView: View {
                 if let post {
                     header(post).listRowSeparator(.hidden)
                     if handsFailed {
-                        Text("Couldn’t update Hands. Try again.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
+                        Text("Couldn’t update Hands. Try again.").font(SGTheme.TypeRole.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
                             .listRowSeparator(.hidden).accessibilityIdentifier("comments-hands-error")
                     }
                 }
-                if loading && comments.isEmpty { ProgressView("Loading comments").frame(maxWidth: .infinity) }
+                if loading && comments.isEmpty { SGLoadingState(label: "Loading comments") }
                 if failed {
                     Text("Comments unavailable. The post or your access may have changed, or your connection was interrupted.")
                     Button("Retry") { Task { await load() } }.accessibilityIdentifier("comments-retry")
@@ -211,7 +211,7 @@ struct SocialCommentsView: View {
     }
     private var composer: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            if deliveryFailed { Text("Couldn’t send. Your comment is still here.").font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("comment-send-error") }
+            if deliveryFailed { Text("Couldn’t send. Your comment is still here.").font(SGTheme.TypeRole.footnote).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("comment-send-error") }
             HStack(alignment: .bottom, spacing: SGTheme.Space.small) {
                 TextField("Add a comment…", text: $text, axis: .vertical).lineLimit(1...4)
                     .focused($writingComment).accessibilityIdentifier("comment-body").sgField()
@@ -222,7 +222,7 @@ struct SocialCommentsView: View {
                 }.accessibilityLabel("Send comment").accessibilityIdentifier("comment-send")
                     .disabled(busy || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || text.unicodeScalars.count > 1000)
             }.disabled(busy)
-            if text.unicodeScalars.count > 900 { Text("\(text.unicodeScalars.count) / 1000").font(.caption).foregroundStyle(.secondary) }
+            if text.unicodeScalars.count > 900 { Text("\(text.unicodeScalars.count) / 1000").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
         }.padding(SGTheme.Space.small).background(SGTheme.ColorToken.background)
     }
     private func load(more: Bool = false) async {

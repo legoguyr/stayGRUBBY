@@ -111,15 +111,15 @@ struct RecipeReaderContent: View {
                         .accessibilityAddTraits(.isHeader).accessibilityIdentifier("recipe-title")
                 }
                 let metadata = [recipe.content.cuisine, recipe.content.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
-                if !metadata.isEmpty { Text(metadata).font(.subheadline).foregroundStyle(.secondary) }
+                if !metadata.isEmpty { Text(metadata).font(SGTheme.TypeRole.body).foregroundStyle(.secondary) }
                 if let creator = RecipeSharingPolicy.creatorCredit(recipe) {
-                    Text("Created by \(creator)").font(.subheadline).accessibilityIdentifier("recipe-attribution")
-                    if !recipe.isOwner, let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(.subheadline) }
+                    Text("Created by \(creator)").font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-attribution")
+                    if !recipe.isOwner, let added = recipe.creator, added.displayName.caseInsensitiveCompare(creator) != .orderedSame { Text("Added by \(added.displayName)").font(SGTheme.TypeRole.body) }
                 }
                 // The Dish's cook count sits in the Dish header beside score and rank; the standalone
                 // reader shows the same noninteractive count.
                 if showsHeader, recipe.isOwner, cooks > 0 { DishCookCount(count: cooks) }
-                if let description = recipe.content.description, !description.isEmpty { Text(description).font(.body).lineSpacing(6) }
+                if let description = recipe.content.description, !description.isEmpty { Text(description).font(SGTheme.TypeRole.reading).lineSpacing(6) }
             }
             Button { Task { await model.begin(context: context, request: request) } } label: { Label("Rank My Version", systemImage: "fork.knife").frame(maxWidth: .infinity) }
                 .buttonStyle(SGButtonStyle(prominent: true)).disabled(model.busy).accessibilityIdentifier("recipe-make")
@@ -140,8 +140,8 @@ struct RecipeReaderContent: View {
                 if let source = recipe.content.source, !source.isEmpty { Text("Source · \(source)") }
                 if let url = recipe.content.externalURL.flatMap(URL.init(string:)) { Link("Original source", destination: url) }
                 if recipe.isOwner { RecipeForkAttribution(recipeID: recipe.id) }
-                Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private Recipe")").font(.caption).foregroundStyle(.secondary)
-            }.font(.subheadline)
+                Text("Revision \(recipe.revision) · \(recipe.visibility == "friends" ? "Shared with current Sous Chefs" : "Private Recipe")").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            }.font(SGTheme.TypeRole.body)
         }
     }
 }

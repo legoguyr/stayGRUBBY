@@ -47,7 +47,7 @@ struct RankingView: View {
                 lastCompleted = nil
                 draft = RankingDraft()
             } label: {
-                Label("Add Item", systemImage: "plus").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
+                Label("Add Item", systemImage: "plus").font(SGTheme.TypeRole.headline).frame(maxWidth: .infinity).padding(.vertical, 8)
             }.buttonStyle(.borderedProminent).accessibilityIdentifier("add-item").padding().background(.bar)
         }
         .sheet(item: $draft) { draft in

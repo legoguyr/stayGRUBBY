@@ -20,11 +20,11 @@ struct DishTextEditor: View {
             Form {
                 Section("Public Description") {
                     TextField("About this dish", text: $description, axis: .vertical).lineLimit(3...8).accessibilityIdentifier("dish-text-public")
-                    Text("Shown as the caption when you post this Dish to The Pass. Saving updates its existing posts too.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Shown as the caption when you post this Dish to The Pass. Saving updates its existing posts too.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 Section("Private Notes") {
                     TextField("For your kitchen only", text: $notes, axis: .vertical).lineLimit(3...10).accessibilityIdentifier("dish-text-private")
-                    Text("Only you can read these Dish notes. Your individual cooks keep their existing private notes separately.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Only you can read these Dish notes. Your individual cooks keep their existing private notes separately.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 if failed { Text("Couldn’t save these details. Your changes are still here.").foregroundStyle(.secondary) }
             }.scrollDismissesKeyboard(.interactively).navigationTitle("Dish Details").navigationBarTitleDisplayMode(.inline)

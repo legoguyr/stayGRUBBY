@@ -25,7 +25,7 @@ struct RecipeImportView: View {
                         disclosure
                     } else {
                     Text("Describe how you make it. StayGrubby will create a recipe with organized ingredients, a cooking plan and suggested details for you to review.").foregroundStyle(.secondary)
-                    TextEditor(text: $raw).font(.body).frame(minHeight: 260).padding(8)
+                    TextEditor(text: $raw).font(SGTheme.TypeRole.reading).frame(minHeight: 260).padding(8)
                         .scrollContentBackground(.hidden).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12))
                         .accessibilityLabel("Recipe text").accessibilityIdentifier("recipe-import-text").disabled(formatting)
                     if formatting {
@@ -35,7 +35,7 @@ struct RecipeImportView: View {
                         Button("Create Recipe") { format() }.buttonStyle(SGButtonStyle(prominent: true))
                             .disabled(raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !cloudConsent)
                             .accessibilityIdentifier("recipe-import-format")
-                        if let failure { Text(failure.message).font(.subheadline).accessibilityIdentifier("recipe-import-error") }
+                        if let failure { Text(failure.message).font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-import-error") }
                         Button("Continue Manually") { review(RecipeImportValidation.manual(raw, dishTitle: dish?.name ?? "Recipe")) }.buttonStyle(SGButtonStyle())
                             .accessibilityIdentifier("recipe-import-manual")
                     }

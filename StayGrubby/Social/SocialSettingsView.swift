@@ -21,7 +21,7 @@ struct SocialSettingsView: View {
                     Button(busy ? "Saving…" : "Save default") { Task { await save() } }
                         .disabled(busy || automaticallyShare == identity?.sharingDefault).accessibilityIdentifier("social-settings-save")
                     if saved { Label("Sharing default saved", systemImage: "checkmark.circle").accessibilityIdentifier("social-settings-saved") }
-                } else if !failed { ProgressView("Loading social settings") }
+                } else if !failed { SGLoadingState(label: "Loading social settings") }
             }
             if failed {
                 Text("Couldn’t update the sharing default. Existing cooking and posts are unchanged.")

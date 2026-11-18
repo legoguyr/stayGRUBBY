@@ -75,9 +75,9 @@ struct SocialAvatarPicker: View {
                     .accessibilityIdentifier("avatar-remove")
             }
             if loading { ProgressView("Preparing profile photo") }
-            if failed { Text("Couldn’t read that photo. Choose it again or try another image.").font(.footnote) }
+            if failed { Text("Couldn’t read that photo. Choose it again or try another image.").font(SGTheme.TypeRole.footnote) }
             Text("Optional. Visible wherever your profile is visible. A circular preview keeps the full photo unchanged.")
-                .font(.footnote).foregroundStyle(.secondary)
+                .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
         }
         .buttonStyle(.borderless)
         .task(id: selection) {

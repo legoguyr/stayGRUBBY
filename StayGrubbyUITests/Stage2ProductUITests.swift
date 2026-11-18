@@ -124,7 +124,7 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
     }
     @MainActor func testLargeTypePortraitBrandingAndCookEntry() {
         let app = launch(["--test-dark", "--test-large-type", "--score-unlock-fixture", "9"])
-        XCTAssertTrue(app.buttons["creation-toggle"].isHittable && app.buttons["ranking-search"].isHittable)
+        XCTAssertTrue(app.buttons["new-dish"].isHittable && app.rankingSearchField.isHittable)
         shot("Stage 2 Grub Rank dark accessibility", app)
         select("My Kitchen", app)
         XCTAssertTrue(app.buttons["settings-open"].waitForExistence(timeout: 8)); XCTAssertTrue(app.buttons["notifications-open"].isHittable)

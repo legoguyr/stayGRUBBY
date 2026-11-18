@@ -10,16 +10,15 @@ struct CookingRankingView: View {
     @State private var choosingDish = false
     @State private var selectedDish: Dish?
     @State private var pendingDish: Dish?
-    @State private var addingRecipe = false
     /// Rank a Dish → "Add another cook": which Dish (nil = open the picker), applied once the sheet closes.
     @State private var existingChoice: Dish??
-    @Environment(\.socialRequest) private var socialRequest
+    @Environment(\.featureFlags) private var flags
+    /// All Dishes | Folders (Folders only while the `dish_collections` gate is on).
+    @State private var section = GrubRankSection.dishes
     @State private var searchText = ""
     @State private var sort = CookingBrowseSort.grubRank
     @State private var filters = CookingFilters()
     @State private var filterGroup: CookingFilterGroup?
-    @State private var searching = false
-    @State private var creationExpanded = false
     @State private var appliedRequest: UUID?
     @Environment(\.sgReduceMotion) private var reduceMotion
     @Environment(\.scoreUnlockState) private var scores
@@ -30,13 +29,19 @@ struct CookingRankingView: View {
     var body: some View {
         let eligible = ScoreUnlockPolicy.entries(in: context, list: list)
         let matching = CookingDiscovery.entries(in: list, attempts: attempts, query: searchText, filters: filters)
+        // All Dishes: one row per Dish, placed by its best-ranked cook (owner decision, Nov 18, 2026).
         let entries = CookingBrowseOrder.entries(RankingsPresentation.entries(eligible, matching: matching,
-            mode: .allVersions), order: sort, scores: scores)
+            mode: .topVersion), order: sort, scores: scores)
         ScrollView {
+            if showsFolders {
+                FolderGrid(summaries: DishCollectionSummary.all(dishes: dishes, entries: eligible, scores: scores))
+                    .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.small)
+                    .frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
+            } else {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if !scores.isUnlocked { ScoreUnlockProgressBanner(state: scores) }
                 if !list.items.isEmpty && (hasSearch || filters.isActive) {
-                    Text("\(entries.count) of \(eligible.count) ranked cooks · Global ranks")
+                    Text("\(entries.count) of \(Set(eligible.compactMap { $0.attempt.dish?.id }).count) Dishes · Global ranks")
                         .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, SGTheme.Space.xSmall)
@@ -67,6 +72,7 @@ struct CookingRankingView: View {
             .frame(maxWidth: SGTheme.Size.contentMaximum)
             .padding(.horizontal, SGTheme.Space.medium).padding(.bottom, SGTheme.Space.large)
             .frame(maxWidth: .infinity)
+            }
         }
         .accessibilityIdentifier("ranking-scroll")
         .background(SGTheme.ColorToken.background)
@@ -76,26 +82,28 @@ struct CookingRankingView: View {
         .task(id: grubRankRequest?.id) {
             guard let request = grubRankRequest, appliedRequest != request.id else { return }
             appliedRequest = request.id
-            filters = CookingFilters(); searchText = ""; searching = false; sort = .grubRank; creationExpanded = false
+            filters = CookingFilters(); searchText = ""; sort = .grubRank; section = .dishes
         }
         .navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: SGTheme.Space.xSmall) {
-                StayGrubbyHeader(page: "Rankings", onCreate: {
-                    withAnimation(reduceMotion ? nil : SGTheme.Motion.quick) { creationExpanded.toggle() }
-                }, onSearch: list.items.isEmpty ? nil : { creationExpanded = false }, searchText: $searchText, searching: $searching)
-                if creationExpanded {
-                    SGCreationChoices(rankDish: {
-                        creationExpanded = false; newDish = true
-                    }, addRecipe: socialRequest == nil ? nil : {
-                        creationExpanded = false; addingRecipe = true
-                    })
-                    .transition(.opacity)
+                // Grub Rank's + goes straight to Rank a Dish (no menu; Recipes are added in Food Bible).
+                SGLibraryHeader(page: "Grub Rank", create: { newDish = true }, createTitle: "Rank a Dish",
+                                createIdentifier: "new-dish", identifier: "staygrubby-header-rankings")
+                if !list.items.isEmpty {
+                    SGSearchField(placeholder: "Search dishes and cooks", text: $searchText,
+                                  identifier: "ranking-search-field", clearIdentifier: "header-clear-search")
+                    if flags.isOn(.dishCollections) {
+                        Picker("Grub Rank view", selection: $section) {
+                            ForEach(GrubRankSection.allCases) { Text($0.title).tag($0) }
+                        }.pickerStyle(.segmented).accessibilityIdentifier("grub-rank-sections")
+                    }
+                    if !showsFolders { browseControls }
                 }
-                // An empty library has nothing to browse: no filter/sort/view controls.
-                if !list.items.isEmpty { browseControls }
-            }.padding(.bottom, SGTheme.Space.xSmall).background(SGTheme.ColorToken.background)
+            }
+            .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.xSmall)
+            .background(SGTheme.ColorToken.background)
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .scrollDismissesKeyboard(.interactively)
@@ -108,7 +116,6 @@ struct CookingRankingView: View {
         }) {
             AddCookingView(list: list, chooseExisting: { dish in existingChoice = .some(dish); newDish = false })
         }
-        .sheet(isPresented: $addingRecipe) { AddRecipeFlow(context: .library) }
         .sheet(item: $selectedDish) { CookAgainFlow(list: list, dish: $0) }
         .sheet(isPresented: $choosingDish, onDismiss: {
             selectedDish = pendingDish; pendingDish = nil
@@ -124,16 +131,14 @@ struct CookingRankingView: View {
         return "Rank \(entry.globalRank), \(entry.attempt.displayName), \(detail)"
     }
 
-    /// Grub Rank browse controls: one even row of direct filter groups, then Sort and a clear action shown
-    /// only while filters are active. Grub Rank always lists every ranked cook (owner decision, Nov 18, 2026:
-    /// the Top / All Cooks toggle is gone; the stored preference is no longer read).
-    /// Nothing moves when filters toggle. At large text sizes each row wraps instead of clipping.
+    private var showsFolders: Bool { section == .folders && flags.isOn(.dishCollections) }
+    /// Grub Rank browse controls: the shared filter rail (Course · Cuisine scroll horizontally, clear X at
+    /// their end) with the circular Sort beside it. All Dishes always shows one row per Dish (Nov 18, 2026).
     private var browseControls: some View {
-        VStack(spacing: SGTheme.Space.xSmall) {
-            HStack(spacing: SGTheme.Space.xSmall) { filterChips(CookingFilterGroup.grubRank) }
-            HStack(spacing: SGTheme.Space.xSmall) { sortMenu; Spacer(minLength: 0); clearFilters }
-        }
-        .padding(.horizontal, SGTheme.Space.medium)
+        SGFilterRail(clearActive: clearActive, clearTitle: hasSearch && !filters.isActive ? "Clear Search" : "Clear Search and Filters",
+                     clear: { filters = CookingFilters(); searchText = "" }) {
+            filterChips(CookingFilterGroup.grubRank)
+        } sort: { sortMenu }
         .accessibilityElement(children: .contain).accessibilityIdentifier("filter-strip")
     }
     private func filterChips(_ groups: [CookingFilterGroup]) -> some View {
@@ -145,19 +150,9 @@ struct CookingRankingView: View {
     private var sortMenu: some View {
         SGBrowseSortMenu(options: CookingBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
                          disabled: { $0.needsScores && !scores.isUnlocked },
-                         active: sort != .grubRank, identifier: "ranking-sort", label: sort.rawValue)
+                         active: sort != .grubRank, identifier: "ranking-sort", label: sort.rawValue, circular: true)
     }
-    /// One X clears search and filters: shown while either is active, hidden otherwise. It keeps its
-    /// slot while hidden so activating a filter or typing never moves Sort or All Cooks.
     private var clearActive: Bool { filters.isActive || hasSearch }
-    private var clearFilters: some View {
-        SGIconButton(title: hasSearch && !filters.isActive ? "Clear Search" : "Clear Search and Filters", symbol: "xmark") {
-            filters = CookingFilters(); searchText = ""
-        }
-            .opacity(clearActive ? 1 : 0).disabled(!clearActive)
-            .accessibilityHidden(!clearActive)
-            .accessibilityIdentifier(clearActive ? "clear-filters" : "clear-filters-hidden")
-    }
 
     private var noResults: some View {
         ContentUnavailableView {

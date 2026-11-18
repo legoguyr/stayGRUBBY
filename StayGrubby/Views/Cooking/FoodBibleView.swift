@@ -54,14 +54,14 @@ struct FoodBibleView: View {
                         }.buttonStyle(.plain).accessibilityIdentifier("bible-entry-\(entry.recipeID)")
                     }
                 }
-                if !entries.isEmpty { Text(entries.count == 1 ? "1 Recipe" : "\(entries.count) Recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
+                if !entries.isEmpty { Text(entries.count == 1 ? "1 Recipe" : "\(entries.count) Recipes").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
             }.padding(SGTheme.Space.margin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }
         }.accessibilityIdentifier("bible-scroll").background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively)
             .safeAreaPadding(.bottom, SGTheme.Space.medium)
             .safeAreaInset(edge: .top, spacing: 0) { searchHeader }
             .navigationTitle("Food Bible").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "Food Bible") }; ToolbarItem(placement: .primaryAction) { Button("Add Recipe", systemImage: "plus") { choosing = true }.accessibilityIdentifier("bible-add") }.sgIndependentToolbarBackground() }
+            .toolbar(.hidden, for: .navigationBar)
             // Read caching (MVP stabilization): tab switches, back navigation and returning to the app show
             // the cookbook at once; it refreshes in the background only when stale or after a change.
             .task { await load(onlyIfStale: true) }.refreshable { await load() }
@@ -83,27 +83,23 @@ struct FoodBibleView: View {
     /// Food Bible offers the deeper Recipe groups. Chips wrap into two even rows.
     private var searchHeader: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            SGLibraryHeader(page: "Food Bible", create: { choosing = true }, createTitle: "Add Recipe", createIdentifier: "bible-add")
             Picker("Recipes", selection: $library) {
                 ForEach(FoodBibleLibrary.allCases) { Text($0.title).tag($0) }
             }.pickerStyle(.segmented).accessibilityIdentifier("bible-library")
             SGSearchField(placeholder: library == .saved ? "Search saved Recipes" : "Dish, ingredient, cuisine…", text: $query, identifier: "bible-search",
                           clearIdentifier: "bible-search-clear", accessibilityLabel: "Search your cookbook")
             if library == .mine {
-            VStack(spacing: SGTheme.Space.xSmall) {
-                HStack(spacing: SGTheme.Space.xSmall) { filterChips([.course, .cuisine, .diet, .cooked]) }
-                HStack(spacing: SGTheme.Space.xSmall) { filterChips([.contains, .avoid, .source]) }
+                // The shared filter rail (Nov 18, 2026): one scrolling row, circular Sort beside it.
+                SGFilterRail(clearActive: clearActive, clearTitle: filters.isActive ? "Clear Search and Filters" : "Clear Search",
+                             clearIdentifier: "bible-clear-filters", clear: { filters = RecipeFilters(); query = "" }) {
+                    filterChips([.course, .cuisine, .diet, .cooked, .contains, .avoid, .source])
+                } sort: {
+                    SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
+                                     active: sort != .updated, identifier: "bible-sort", label: sort.rawValue, circular: true)
+                }.accessibilityElement(children: .contain).accessibilityIdentifier("bible-filters")
             }
-            HStack(spacing: SGTheme.Space.xSmall) {
-                SGBrowseSortMenu(options: RecipeBrowseSort.allCases, selection: $sort, title: { $0.rawValue },
-                                 active: sort != .updated, identifier: "bible-sort", label: sort.rawValue)
-                Spacer(minLength: 0)
-                // One X clears search and filters, shown while either is active (same control as Grub Rank).
-                SGIconButton(title: filters.isActive ? "Clear Search and Filters" : "Clear Search", symbol: "xmark") { filters = RecipeFilters(); query = "" }
-                    .opacity(clearActive ? 1 : 0).disabled(!clearActive).accessibilityHidden(!clearActive)
-                    .accessibilityIdentifier(clearActive ? "bible-clear-filters" : "bible-clear-filters-hidden")
-            }.accessibilityElement(children: .contain).accessibilityIdentifier("bible-filters")
-            }
-        }.padding(.horizontal, SGTheme.Space.margin).padding(.top, SGTheme.Space.compact).padding(.bottom, SGTheme.Space.xSmall)
+        }.padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.xSmall)
             .background(SGTheme.ColorToken.background)
     }
     private var clearActive: Bool { filters.isActive || !query.isEmpty }
@@ -145,7 +141,7 @@ struct FoodBibleView: View {
                     }
                 }
             }
-            if !saved.isEmpty { Text(saved.count == 1 ? "1 Saved Recipe" : "\(saved.count) Saved Recipes").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-saved-count") }
+            if !saved.isEmpty { Text(saved.count == 1 ? "1 Saved Recipe" : "\(saved.count) Saved Recipes").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-saved-count") }
         }.padding(SGTheme.Space.margin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
     }
     private func loadSaved(onlyIfStale: Bool = false) async {
@@ -197,7 +193,7 @@ struct SavedRecipeCard: View {
         VStack(alignment: .leading, spacing: SGTheme.Space.compact) {
             RecipePhoto(id: recipe.content.photoID, name: recipe.content.title).sgPhotoFrame(.cookbook).accessibilityHidden(true)
             Text(recipe.content.title).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
-            if let creator { Text("by \(creator)").font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            if let creator { Text("by \(creator)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).lineLimit(1) }
         }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore)
             .accessibilityLabel([recipe.content.title, creator.map { "by \($0)" }].compactMap { $0 }.joined(separator: ", "))
             .accessibilityHint("Opens the saved Recipe")
@@ -234,9 +230,9 @@ struct CookbookCard: View {
             // Food Bible lists Dishes with Recipe content: the Dish name leads, the Recipe title
             // follows only when it differs.
             Text(title).font(SGTheme.TypeRole.dish).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
-            if title != entry.recipeTitle { Text(entry.recipeTitle).font(.caption).foregroundStyle(.secondary).lineLimit(2) }
+            if title != entry.recipeTitle { Text(entry.recipeTitle).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).lineLimit(2) }
             let metadata = [entry.cuisine, entry.duration.map { "\($0) min" } ?? entry.course.flatMap { DishCategory(rawValue: $0)?.label }].compactMap { $0 }.joined(separator: " · ")
-            if !metadata.isEmpty { Text(metadata).font(.caption).foregroundStyle(.secondary) }
+            if !metadata.isEmpty { Text(metadata).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary) }
             // The Dish's verified local cook count (same wording as the Dish page header).
             if let status { Text(status).font(.caption.weight(.semibold)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("bible-cook-status-\(entry.recipeID)") }
         }.frame(maxWidth: .infinity, alignment: .leading).accessibilityElement(children: .ignore).accessibilityLabel([title, title == entry.recipeTitle ? nil : entry.recipeTitle, entry.cuisine, entry.duration.map { "\($0) minutes" }, status].compactMap { $0 }.joined(separator: ", ")).accessibilityHint("Opens the recipe")

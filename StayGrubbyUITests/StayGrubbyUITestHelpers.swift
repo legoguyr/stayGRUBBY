@@ -32,8 +32,9 @@ extension XCUIApplication {
         launchArguments = cleaned + ["-UIPreferredContentSizeCategoryName", category]
         launch()
     }
+    /// Grub Rank's + is now Rank a Dish itself; this waits for it (older tests opened a menu first).
     @MainActor func revealCreation() {
-        if buttons["new-dish"].exists { return }
+        if buttons["new-dish"].waitForExistence(timeout: 15) { return }
         let toggle = buttons["creation-toggle"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 15))
         for _ in 0..<3 {
@@ -83,7 +84,7 @@ extension XCUIApplication {
         return chip.label
     }
     @MainActor func revealSearch() {
-        if rankingSearchField.exists { return }
+        if rankingSearchField.waitForExistence(timeout: 10) { return }
         buttons["ranking-search"].tap()
         XCTAssertTrue(rankingSearchField.waitForExistence(timeout: 10))
     }

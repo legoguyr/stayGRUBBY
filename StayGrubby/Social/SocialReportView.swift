@@ -54,7 +54,7 @@ struct SocialReportEditor: View {
                 TextField("Additional context (optional)", text: $context, axis: .vertical).lineLimit(3...6)
                     .accessibilityIdentifier("social-report-context")
                 Text("Up to 500 characters. Reports are private to StayGrubby’s review process; the reported person cannot see your report or reporter details.")
-                Text("For privacy or support, contact support@staygrubby.com. Reports do not automatically hide content.").font(.footnote).foregroundStyle(.secondary)
+                Text("For privacy or support, contact support@staygrubby.com. Reports do not automatically hide content.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 if failed { Text("Couldn’t send this report. The content may no longer be available. You can retry.") }
                 if recipeChanged {
                     Text("This Recipe changed. Review it before sending a new report.")

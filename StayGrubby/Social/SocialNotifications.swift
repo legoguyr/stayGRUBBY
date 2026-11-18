@@ -62,20 +62,20 @@ struct SocialNotificationsView: View {
     @State private var generation = UUID()
     var body: some View {
         SGEditorialList {
-            if busy && notifications.isEmpty { ProgressView("Loading Tickets") }
+            if busy && notifications.isEmpty { SGLoadingState(label: "Loading Tickets") }
             if failed {
                 Text("Tickets unavailable. Check your connection and retry.")
                 Button("Retry Tickets") { Task { await load() } }
             } else if !busy && notifications.isEmpty {
-                ContentUnavailableView("You’re all caught up", systemImage: "bell", description: Text("Sous Chef requests and cooking activity appear here."))
+                SGContentState(title: "You’re all caught up", symbol: "bell", message: "Sous Chef requests and cooking activity appear here.")
             }
-            Text(unread == 1 ? "1 New Ticket" : "\(unread) New Tickets").font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("notifications-unread")
+            Text(unread == 1 ? "1 New Ticket" : "\(unread) New Tickets").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).accessibilityIdentifier("notifications-unread")
             ForEach(notifications) { notice in
                 Button { Task { await open(notice) } } label: {
                     HStack(alignment: .top, spacing: 12) {
                         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                             SocialPersonLabel(person: notice.actor, detail: notice.message, size: 36)
-                            Text(SocialPostPresentation.timestamp(notice.date)).font(.caption).foregroundStyle(.secondary)
+                            Text(SocialPostPresentation.timestamp(notice.date)).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         }
                         if !notice.read { Image(systemName: "circle.fill").font(.system(size: 6)).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true) }
                     }.padding(.vertical, SGTheme.Space.small).padding(.horizontal, SGTheme.Space.xSmall).contentShape(Rectangle())
@@ -97,7 +97,7 @@ struct SocialNotificationsView: View {
                 case "post_shared": SocialPostDetailView(postID: notice.targetID)
                 default:
                     if let postID = notice.postID { SocialPostDetailView(postID: postID, comments: notice.kind == "comment") }
-                    else { ContentUnavailableView("Activity unavailable", systemImage: "bell.slash", description: Text("The shared content is no longer available.")) }
+                    else { SGContentState(title: "Activity unavailable", symbol: "bell.slash", message: "The shared content is no longer available.") }
                 }
             }
     }

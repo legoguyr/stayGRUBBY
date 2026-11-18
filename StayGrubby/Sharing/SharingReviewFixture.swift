@@ -37,7 +37,7 @@ struct SharingReviewFixture: View {
                 else {
                     ScrollView {
                         VStack(spacing: SGTheme.Space.medium) {
-                            Text("Isolated share-card review").font(.caption)
+                            Text("Isolated share-card review").font(SGTheme.TypeRole.secondary)
                             if let card {
                                 Image(uiImage: card.image).resizable().scaledToFit()
                                     .accessibilityIdentifier("sharing-review-preview")

@@ -168,8 +168,8 @@ struct DishActions: View {
     var rerank: () -> Void
     var shareWithSousChefs: (() -> Void)?
     var editDishText: () -> Void
-    /// Only when the Dish has another cook: separates this cook into its own Dish.
-    var separateCook: (() -> Void)? = nil
+    /// Only when the Dish has several cooks: separate cooks that are really different Dishes.
+    var separateCooks: (() -> Void)? = nil
     var editCollections: (() -> Void)? = nil
     var delete: () -> Void
     var body: some View {
@@ -178,8 +178,8 @@ struct DishActions: View {
             Button("Re-rank", systemImage: "arrow.triangle.2.circlepath", action: rerank).accessibilityIdentifier("detail-rerank")
             if let shareWithSousChefs { Button("Post to The Pass", systemImage: "person.2", action: shareWithSousChefs).accessibilityIdentifier("share-with-friends") }
             Button("Edit Dish Description & Notes", systemImage: "text.alignleft", action: editDishText).accessibilityIdentifier("dish-text-edit")
-            if let editCollections { Button("Collections", systemImage: "square.stack", action: editCollections).accessibilityIdentifier("dish-collections-edit") }
-            if let separateCook { Button("Make This Cook a Separate Dish", systemImage: "arrow.up.right.square", action: separateCook).accessibilityIdentifier("cook-separate") }
+            if let editCollections { Button("Folders", systemImage: "folder", action: editCollections).accessibilityIdentifier("dish-collections-edit") }
+            if let separateCooks { Button("Separate Cooks", systemImage: "square.split.2x1", action: separateCooks).accessibilityIdentifier("cook-separate") }
             Button("Delete Cook", systemImage: "trash", role: .destructive, action: delete)
         } label: { SGToolbarIcon(symbol: "ellipsis") }
             .sgUtilityTint()

@@ -107,7 +107,7 @@ struct RecipeShareChoice: View {
             }
         } else if model.failed {
             Section("Recipe") {
-                Button("Couldn’t check for a Recipe · Retry", action: retry).font(.footnote).accessibilityIdentifier("post-recipe-retry")
+                Button("Couldn’t check for a Recipe · Retry", action: retry).font(SGTheme.TypeRole.footnote).accessibilityIdentifier("post-recipe-retry")
             }
         }
         // No Recipe: no section at all.
@@ -134,12 +134,12 @@ struct RecipePostSharingEditor: View {
                         if let recipeID = post.recipeID { NavigationLink("View Recipe") { RecipeDetailView(id: recipeID) } }
                         else { Text("Recipe access is currently off. You can still remove this saved attachment.") }
                         Button("Remove Recipe from Post", role: .destructive) { confirmingRemoval = true }.accessibilityIdentifier("post-unshare-recipe")
-                        Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke every Sous Chef’s Recipe access.").font(.footnote)
+                        Text("The post stays available. This removes its Recipe reader. Turn Recipe sharing off in Edit Recipe to revoke every Sous Chef’s Recipe access.").font(SGTheme.TypeRole.footnote)
                     }
                 } else {
                     RecipeShareChoice(model: attachment) { Task { await resolve() } }
                     if attachment.checking { ProgressView("Checking for a Recipe") }
-                    else if attachment.recipe == nil && !attachment.failed { Text("This Dish has no Recipe of yours to add yet.").font(.footnote) }
+                    else if attachment.recipe == nil && !attachment.failed { Text("This Dish has no Recipe of yours to add yet.").font(SGTheme.TypeRole.footnote) }
                     else if attachment.recipe != nil {
                         Button("Add Recipe to Post") { Task { await change(remove: false) } }.disabled(attachment.selection == nil || busy).accessibilityIdentifier("post-share-recipe")
                     }
@@ -184,9 +184,9 @@ struct SharedRecipeView: View {
                     } else { SocialPhoto(path: value.photoPath).sgPhotoFrame(.hero) }
                     Text(value.content.title).font(SGTheme.TypeRole.hero).accessibilityIdentifier("shared-recipe-title")
                     if let description = value.content.description { Text(description).accessibilityIdentifier("shared-recipe-description") }
-                    if let creator = value.creator { Text("Recipe shared by \(creator.displayName)").font(.subheadline) }
-                    if let cook = value.cook { Text("Cooked by \(cook.displayName)").font(.subheadline) }
-                    Text("Shared revision \(value.revision). The current Recipe may have changed.").font(.footnote).foregroundStyle(.secondary)
+                    if let creator = value.creator { Text("Recipe shared by \(creator.displayName)").font(SGTheme.TypeRole.body) }
+                    if let cook = value.cook { Text("Cooked by \(cook.displayName)").font(SGTheme.TypeRole.body) }
+                    Text("Shared revision \(value.revision). The current Recipe may have changed.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                     // Connected UI: no in-app copies of another creator's Recipe. Open the current Recipe
                     // (live access check) to save a reference or Rank My Version there.
                     NavigationLink { RecipeDetailView(id: value.recipeID) } label: {
@@ -195,9 +195,9 @@ struct SharedRecipeView: View {
                     RecipeReadingBody(content: value.content, allowScaling: true)
                     if let source = value.content.source { Text("Source · \(source)") }
                     if let creator = value.content.originalCreator { Text("Original creator · \(creator)") }
-                    Text("This link opens this post’s shared revision for Sous Chefs who still have access.").font(.footnote).foregroundStyle(.secondary)
+                    Text("This link opens this post’s shared revision for Sous Chefs who still have access.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
 
-                } else if !failed { ProgressView("Loading shared Recipe") }
+                } else if !failed { SGLoadingState(label: "Loading shared Recipe") }
                 if failed { Text("Recipe unavailable or sharing has changed. Your saved cooking is unchanged.").accessibilityIdentifier("shared-recipe-unavailable"); Button("Retry") { Task { await load() } } }
             }.padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }.background(SGTheme.ColorToken.background).navigationTitle("Shared Recipe").navigationBarTitleDisplayMode(.inline)
@@ -245,7 +245,7 @@ struct RecipeForkAttribution: View {
     var body: some View {
         Group {
             if let provenance {
-                Text(provenance.creator.map { "Private copy from \($0.displayName) · source revision \(provenance.sourceRevision)" } ?? "Independent private copy · source revision \(provenance.sourceRevision)").font(.footnote).foregroundStyle(.secondary)
+                Text(provenance.creator.map { "Private copy from \($0.displayName) · source revision \(provenance.sourceRevision)" } ?? "Independent private copy · source revision \(provenance.sourceRevision)").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
             }
         }.task(id: recipeID) { await load() }
             .onChange(of: phase) { _, next in provenance = nil; if next == .active { Task { await load() } } }

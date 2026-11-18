@@ -52,7 +52,7 @@ struct CookedWithSelection: View {
                     }
                 }
             }
-            if failed { Text("Sous Chefs unavailable. Open to retry.").font(.footnote).foregroundStyle(.secondary) }
+            if failed { Text("Sous Chefs unavailable. Open to retry.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary) }
         }
         .animation(reduceMotion ? nil : SGTheme.Motion.quick, value: selected)
         .sensoryFeedback(.selection, trigger: selected)
@@ -62,13 +62,13 @@ struct CookedWithSelection: View {
                 SGEditorialList {
                     Section {
                         Text(editing ? "Add or remove up to eight Sous Chefs. New invitations are sent when you save." : "Invite up to eight Sous Chefs after ranking. They choose whether to add their own cook.")
-                            .font(.footnote).foregroundStyle(.secondary)
+                            .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                         DisclosureGroup("What invitations share") {
                             Text("Dish title, Course, Cuisine and public source attribution. Private notes, allergens and photos stay private. Tagging does not post to The Pass.")
-                                .font(.footnote).foregroundStyle(.secondary)
+                                .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                         }
                     }
-                    if loading { ProgressView("Loading Sous Chefs") }
+                    if loading { SGLoadingState(label: "Loading Sous Chefs") }
                     if failed { Button("Retry Sous Chefs") { revision += 1 } }
                     ForEach(people.filter { query.isEmpty || $0.displayName.localizedCaseInsensitiveContains(query) || $0.username.localizedCaseInsensitiveContains(query) }) { person in
                         SocialPersonSelectionRow(person: person, selected: selected.contains(person.id)) { toggle(person); searching = false }
@@ -81,7 +81,7 @@ struct CookedWithSelection: View {
                 .searchable(text: $query, isPresented: $searching, prompt: "Search your Sous Chefs")
                 .navigationTitle("Tag a Sous Chef").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { choosing = false }.accessibilityIdentifier("cooked-with-done") } }
-                .safeAreaInset(edge: .bottom) { Text("\(selected.count) of 8 selected").font(.footnote).foregroundStyle(.secondary).padding().frame(maxWidth: .infinity).background(SGTheme.ColorToken.background) }
+                .safeAreaInset(edge: .bottom) { Text("\(selected.count) of 8 selected").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).padding().frame(maxWidth: .infinity).background(SGTheme.ColorToken.background) }
             }
         }
     }
@@ -124,11 +124,11 @@ struct SharedCookingEntryView: View {
     var body: some View {
         SGEditorialList {
             if failed {
-                ContentUnavailableView("Cooking activity unavailable", systemImage: "wifi.exclamationmark", description: Text("Your access may have changed or the connection was interrupted."))
+                SGContentState(title: "Cooking activity unavailable", symbol: "wifi.exclamationmark", message: "Your access may have changed or the connection was interrupted.")
                 Button("Retry") { Task { await load() } }
             } else if declined { Text("Invitation declined. Nothing was added to your cooking history.") }
             else {
-                if busy { ProgressView("Loading cooking activity") }
+                if busy { SGLoadingState(label: "Loading cooking activity") }
                 if let event {
                     Text(event.metadata.title ?? "Cooked Together").font(.title2.bold())
                     Label(event.owner.displayName, systemImage: "person.2")
@@ -151,7 +151,7 @@ struct SharedCookingEntryView: View {
                 } else if completed { Text("Already added to your cooking. Let your account finish restoring to see it here.") }
                 else if event?.isOwner != true && (event != nil || post != nil) {
                     Text("Review the details and rank this cook in your own library. Scores, comparisons, private notes and photos are never copied.")
-                    if event != nil { Text("Joining confirms you cooked together. Participation may appear to mutual Sous Chefs when either cook is shared.").font(.footnote).foregroundStyle(.secondary) }
+                    if event != nil { Text("Joining confirms you cooked together. Participation may appear to mutual Sous Chefs when either cook is shared.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary) }
                     Button(event != nil ? "Add to My Cooking" : "Run It Back") { Task { await begin() } }
                         .accessibilityIdentifier("shared-begin").disabled(busy)
                     if event != nil { Button("Decline invitation", role: .destructive) { Task { await decline() } }.accessibilityIdentifier("shared-decline").disabled(busy) }
@@ -228,14 +228,14 @@ struct CookingProvenanceView: View {
                 if let page {
                     ForEach(page.origins) { origin in
                         Text(origin.kind == "recreated" ? origin.creator.map { "Inspired by \($0.displayName)" } ?? "Original cooking activity unavailable" : origin.creator.map { "Cooked with \($0.displayName)" } ?? "Cooked Together · original activity unavailable")
-                            .font(.subheadline)
+                            .font(SGTheme.TypeRole.body)
                     }
                     ForEach(page.events) { event in
                         NavigationLink(SharedCookingEvent.collaboratorLine(event)) { SharedCookingEntryView(eventID: event.id) }
                             .accessibilityIdentifier("cook-collaborators")
                     }
                 }
-                if failed { Button("Retry cooking provenance") { Task { await load() } }.font(.footnote) }
+                if failed { Button("Retry cooking provenance") { Task { await load() } }.font(SGTheme.TypeRole.footnote) }
                 if includesRecipe { RecipeCookingProvenance(itemID: itemID) }
                 SharedCookingPending(itemID: itemID)
             }.task(id: itemID) { await load() }

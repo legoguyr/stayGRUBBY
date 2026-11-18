@@ -108,6 +108,20 @@ import SwiftData
         } catch { context.rollback(); throw error }
     }
 
+    /// Renames a Dish (every cook's display cache follows). No write when the name is unchanged.
+    static func rename(_ dish: Dish, to name: String, context: ModelContext) throws {
+        let clean = String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200))
+        guard !clean.isEmpty else { throw CookingStore.StoreError.invalidDraft }
+        guard clean != dish.name else { return }
+        let baseline = try SyncJournal.begin(context)
+        do {
+            dish.name = clean
+            for cook in dish.attempts { cook.rankedItem?.name = cook.displayName; cook.updatedAt = .now }
+            try SyncJournal.stage(baseline, kind: "editDish", context: context)
+            try context.save(); SyncJournal.didCommit(context)
+        } catch { context.rollback(); throw error }
+    }
+
     /// Target notes first; the combined Dish's notes and (when both had one) its Source follow.
     nonisolated static func mergedNotes(_ target: String?, _ source: String?, sourceLabel: String?, keepsSource: Bool) -> String? {
         var parts = [target, source].compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }

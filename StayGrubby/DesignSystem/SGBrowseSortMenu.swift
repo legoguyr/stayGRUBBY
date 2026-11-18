@@ -18,6 +18,8 @@ struct SGBrowseSortMenu<Option: Hashable & Identifiable>: View {
     var identifier: String
     /// Text shown in the control; defaults to "Sort".
     var label: String? = nil
+    /// The compact circular icon used beside a filter rail (Nov 18, 2026); text label otherwise.
+    var circular = false
 
     var body: some View {
         Menu {
@@ -29,7 +31,15 @@ struct SGBrowseSortMenu<Option: Hashable & Identifiable>: View {
                     }.disabled(disabled(option)).accessibilityIdentifier("\(identifier)-\(String(describing: option.id))")
                 }
             }
-        } label: { SGBrowseControlLabel(title: label ?? "Sort", symbol: "arrow.up.arrow.down", active: active) }
+        } label: {
+            if circular {
+                Image(systemName: "arrow.up.arrow.down").font(SGTheme.TypeRole.headline)
+                    .frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
+                    .foregroundStyle(active ? SGTheme.ColorToken.accent : SGTheme.ColorToken.primaryText)
+                    .background(active ? SGTheme.ColorToken.selected : SGTheme.ColorToken.surface, in: Circle())
+                    .contentShape(Circle())
+            } else { SGBrowseControlLabel(title: label ?? "Sort", symbol: "arrow.up.arrow.down", active: active) }
+        }
             .accessibilityLabel("Sort, \(title(selection))").accessibilityValue(label ?? title(selection))
             .accessibilityIdentifier(identifier)
     }

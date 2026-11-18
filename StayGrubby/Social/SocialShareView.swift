@@ -97,13 +97,13 @@ struct SocialPostComposer: View {
                     else { Text("Your score is locked and will not be shared.").accessibilityIdentifier("social-share-score-locked") }
                     if attempt.primaryImage != nil { Toggle("Include this food photo", isOn: $includePhoto).accessibilityIdentifier("social-share-photo") }
                     Text("Shares Course, Cuisine and the public source. Private notes, tags, allergens and comparison history stay private. An unlocked score may show its rank at sharing. You can edit the description later from the post’s menu.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 RecipeShareChoice(model: attachment) { Task { await resolveRecipe() } }
                 Section("Public Description · optional") {
                     TextField("Tell your Sous Chefs about this Dish", text: $postDescription, axis: .vertical)
                         .lineLimit(3...8).accessibilityIdentifier("post-description-input")
-                    Text("Your Dish’s Public Description, shown as the caption. Changing it here updates the Dish too. Private Notes are never shared.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Your Dish’s Public Description, shown as the caption. Changing it here updates the Dish too. Private Notes are never shared.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 if let identity {
                     if !identity.isConfigured {
@@ -124,7 +124,7 @@ struct SocialPostComposer: View {
                     else { ProgressView("Loading profile") }
                 }
                 if failed { Text("Couldn’t share. Check your connection and cooking sync, then retry. You can cancel a pending draft and try again.").accessibilityIdentifier("social-share-error") }
-                Text("The separate Share action opens the native image share sheet; it does not publish to Sous Chefs.").font(.footnote).foregroundStyle(.secondary)
+                Text("The separate Share action opens the native image share sheet; it does not publish to Sous Chefs.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Post to The Pass").navigationBarTitleDisplayMode(.inline)

@@ -102,7 +102,7 @@ struct SharedCookingPending: View {
     var body: some View {
         if let coordinator, coordinator.pendingSavedCooks.contains(where: { itemID == nil || $0.rankedItemID == itemID }) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Your cook and ranking are saved. Cooking attribution or invitations are pending.").font(.footnote)
+                Text("Your cook and ranking are saved. Cooking attribution or invitations are pending.").font(SGTheme.TypeRole.footnote)
                 Button("Retry cooking details") { coordinator.retry() }.accessibilityIdentifier("shared-cooking-retry")
                 ForEach(coordinator.intents.filter { intent in !intent.participants.isEmpty && (itemID == nil || intent.id == itemID) && coordinator.pendingSavedCooks.contains(where: { $0.rankedItemID == intent.id }) }) { intent in
                     Button("Cancel pending invitations", role: .destructive) { Task { await coordinator.cancelInvitations(intent.id) } }

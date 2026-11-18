@@ -158,7 +158,7 @@ struct SocialOnboardingView: View {
                     case .privacy: privacyStep
                     case .photo: photoStep
                     }
-                    if let failure { Text(failure.message).font(.subheadline).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("onboarding-error") }
+                    if let failure { Text(failure.message).font(SGTheme.TypeRole.body).foregroundStyle(SGTheme.ColorToken.destructive).accessibilityIdentifier("onboarding-error") }
                 }
                 .frame(maxWidth: SGTheme.Size.contentMaximum, alignment: .leading)
                 .padding(SGTheme.Space.margin).frame(maxWidth: .infinity)
@@ -271,7 +271,7 @@ struct SocialOnboardingView: View {
     private var photoStep: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
             SocialAvatarPicker(name: draft.displayName, path: identity?.avatarPath, photo: $photo, removePhoto: $removePhoto, loading: $preparingPhoto)
-            if photoFailed { Text("Couldn’t upload this photo. Try again, or finish without one.").font(.subheadline).accessibilityIdentifier("onboarding-photo-error") }
+            if photoFailed { Text("Couldn’t upload this photo. Try again, or finish without one.").font(SGTheme.TypeRole.body).accessibilityIdentifier("onboarding-photo-error") }
         }
     }
 

@@ -26,9 +26,9 @@ struct RecipeHistoryView: View {
                 ForEach(versions) { version in
                     Button { selection = version } label: {
                         VStack(alignment: .leading, spacing: 5) {
-                            Text("Revision \(version.revision)\(version.revision == recipe.revision ? " · Current" : "")").font(.headline)
-                            Text(version.title).font(.subheadline)
-                            Text(Date(timeIntervalSince1970: version.createdAt), format: .dateTime.month().day().year()).font(.caption).foregroundStyle(.secondary)
+                            Text("Revision \(version.revision)\(version.revision == recipe.revision ? " · Current" : "")").font(SGTheme.TypeRole.headline)
+                            Text(version.title).font(SGTheme.TypeRole.body)
+                            Text(Date(timeIntervalSince1970: version.createdAt), format: .dateTime.month().day().year()).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         }.frame(minHeight: 44)
                     }.accessibilityIdentifier("recipe-version-\(version.revision)")
                 }
@@ -70,7 +70,7 @@ private struct RecipeVersionReader: View {
                     if let text = content.description { Text(text) }
                     RecipeReadingBody(content: content)
                     if version != recipe.revision { Button("Restore as Current Revision") { confirming = true }.buttonStyle(SGButtonStyle(prominent: true)).disabled(busy).accessibilityIdentifier("recipe-restore") }
-                    Text("Restoring creates a new current revision. Earlier revisions and cooked snapshots stay unchanged.").font(.footnote).foregroundStyle(.secondary)
+                    Text("Restoring creates a new current revision. Earlier revisions and cooked snapshots stay unchanged.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 } else if !failed { ProgressView() }
                 if failed { Text("This revision is unavailable or the Recipe changed. Close Recipe History and refresh before retrying.") }
             }.padding(SGTheme.Space.readingMargin)
@@ -105,7 +105,7 @@ struct RecipeDishLinker: View {
         DishSelectionView(dishes: dishes.filter { !$0.attempts.isEmpty }, onSelect: { _ in }, onCancel: { dismiss() },
                           selectedCookID: recipe.linkedAttemptID, disabled: busy, onSelectCook: { cook in Task { await attach(cook) } })
             .safeAreaInset(edge: .bottom) {
-                if failed { Text("Couldn’t link. Refresh the Recipe and check cooking sync. A cook linked to another Recipe must be unlinked first.").font(.footnote).padding().background(SGTheme.ColorToken.background).accessibilityIdentifier("recipe-link-error") }
+                if failed { Text("Couldn’t link. Refresh the Recipe and check cooking sync. A cook linked to another Recipe must be unlinked first.").font(SGTheme.TypeRole.footnote).padding().background(SGTheme.ColorToken.background).accessibilityIdentifier("recipe-link-error") }
             }.interactiveDismissDisabled(busy)
     }
     private func attach(_ cook: CookingAttempt) async {

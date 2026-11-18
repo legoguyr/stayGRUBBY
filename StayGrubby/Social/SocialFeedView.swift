@@ -23,14 +23,14 @@ struct SocialFeedView: View {
     var body: some View {
         SGEditorialList {
             if request == nil {
-                ContentUnavailableView("The Pass", systemImage: "person.2", description: Text("Sign in to connect with your Sous Chefs. Your cooking library stays private."))
+                SGContentState(title: "The Pass", symbol: "person.2", message: "Sign in to connect with your Sous Chefs. Your cooking library stays private.")
             } else if let identity, !identity.isConfigured {
                 Section {
                     Text("Choose your profile name and username to connect. Your cooking stays private until you share it.")
                     Button("Set up Profile") { editingIdentity = true }
                 }
             } else {
-                if loading && posts.isEmpty { ProgressView("Loading posts") }
+                if loading && posts.isEmpty { SGLoadingState(label: "Loading posts") }
                 if failed {
                     Text("Couldn’t load posts. Check your connection and retry.").accessibilityIdentifier("feed-error")
                     Button("Retry") { refresh() }.accessibilityIdentifier("feed-retry")
@@ -47,11 +47,12 @@ struct SocialFeedView: View {
         }
         .accessibilityIdentifier("grub-list")
         .listStyle(.plain).background(SGTheme.ColorToken.background)
-        .navigationTitle("The Pass").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
-        .toolbar {
-            ToolbarItem(placement: .principal) { SGPrimaryBrandTitle(page: "The Pass") }
-            ToolbarItem(placement: .topBarTrailing) { NotificationsLink().labelStyle(.iconOnly) }.sgIndependentToolbarBackground()
-            ToolbarItem(placement: .topBarTrailing) { NavigationLink { FriendsView() } label: { SGToolbarIcon(asset: "SousChefs") }.sgUtilityTint().accessibilityLabel("Sous Chefs") }.sgIndependentToolbarBackground()
+        .navigationTitle("The Pass")
+        .sgTabHeader {
+            SGLibraryHeader(page: "The Pass") {
+                NotificationsLink().labelStyle(.iconOnly).sgHeaderAction()
+                NavigationLink { FriendsView() } label: { SGToolbarIcon(asset: "SousChefs") }.sgHeaderAction().accessibilityLabel("Sous Chefs")
+            }
         }
         .safeAreaPadding(.bottom, SGTheme.Space.medium)
         .navigationDestination(item: $route) { SocialPostDestination(route: $0) }
@@ -215,7 +216,7 @@ struct SocialCompactScore: View {
                 SGScore(text: score, role: .pill, identifier: "social-score")
             }
         } else {
-            Image(systemName: "lock").font(.subheadline).foregroundStyle(.secondary)
+            Image(systemName: "lock").font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                 .accessibilityLabel("Score locked").accessibilityIdentifier("post-score-locked")
         }
     }

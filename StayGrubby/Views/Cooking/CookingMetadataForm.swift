@@ -14,6 +14,8 @@ struct CookingMetadataForm: View {
     var fallbackCookName: String? = nil
     /// Rank a Dish only: lets the owner explicitly pick an existing Dish instead (nil opens the picker).
     var chooseExisting: ((Dish?) -> Void)? = nil
+    /// Edit Cook: how many cooks share this Dish (its name renames all of them).
+    var sharedCookCount = 0
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.featureFlags) private var flags
     @State private var details = false
@@ -35,6 +37,11 @@ struct CookingMetadataForm: View {
                                 .focused($focusedField, equals: .name).submitLabel(.done).onSubmit { focusedField = nil }
                                 .accessibilityIdentifier("dish-name").sgField()
                             if let chooseExisting { ExistingDishPrompt(name: draft.dishName, choose: chooseExisting) }
+                            if editing && sharedCookCount > 1 {
+                                // The owner's risotto trap: renaming here renamed every cook's shared Dish.
+                                Text("This renames the Dish for all \(sharedCookCount) cooks. If this cook is a different dish, use Separate Cooks on the Dish page instead.")
+                                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).accessibilityIdentifier("edit-dish-name-shared")
+                            }
                         }
                         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                             Text("Public Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
@@ -54,7 +61,7 @@ struct CookingMetadataForm: View {
                         }
                         if !draft.validDishText {
                             Text("Keep the description within 2,000 characters and private notes within 8,000.")
-                                .font(.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
+                                .font(SGTheme.TypeRole.footnote).foregroundStyle(SGTheme.ColorToken.destructive)
                         }
                 }
             }
@@ -131,9 +138,10 @@ struct CookingFormScroll: View {
     var selectedPeople: [SocialPerson] = []
     var fallbackCookName: String? = nil
     var chooseExisting: ((Dish?) -> Void)? = nil
+    var sharedCookCount = 0
     var body: some View {
         ScrollView {
-            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople, fallbackCookName: fallbackCookName, chooseExisting: chooseExisting)
+            CookingMetadataForm(draft: $draft, existingDish: existingDish, editing: editing, sharingSelection: sharingSelection, cookedWith: cookedWith, editingParticipants: editingParticipants, selectedPeople: selectedPeople, fallbackCookName: fallbackCookName, chooseExisting: chooseExisting, sharedCookCount: sharedCookCount)
                 .frame(maxWidth: SGTheme.Size.contentMaximum)
                 .padding(SGTheme.Space.medium).frame(maxWidth: .infinity)
         }.accessibilityIdentifier("cooking-form").scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)

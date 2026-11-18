@@ -43,7 +43,22 @@ struct AuthenticationGateView: View {
         .init(state: session.state, setupFailed: setupFailed, isSigningOut: session.isSigningOut, failure: session.lastFailure)
     }
 
+    /// A returning account restoring its session or opening its library: a plain branded loading screen,
+    /// never the sign-up story and never private content (November 18, 2026). Apple sign-in in progress,
+    /// failures and deletion keep the full gate.
+    private var restoring: Bool {
+        switch session.state {
+        case .loadingSession: true
+        case .resolved: !setupFailed && session.lastFailure == nil && !session.isSigningOut
+        default: false
+        }
+    }
+
     var body: some View {
+        if restoring { SGLaunchView(label: "Opening your kitchen") } else { gate }
+    }
+
+    private var gate: some View {
         // Large text gets one continuous scroll, so the action area can never
         // consume the entire screen. At standard sizes, sign-in stays in reach.
         ScrollView {
@@ -73,8 +88,9 @@ struct AuthenticationGateView: View {
         .sheet(isPresented: $showingPrivacyPolicy) { PrivacyPolicyView() }
     }
 
+    /// The short opening story (November 18, 2026): what the three places are for and how scores unlock.
     private var introduction: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
+        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
             // The canonical PNG includes transparent margins; display the
             // existing artwork without reconstructing its lettering.
             Image("StayGrubbyWordmark")
@@ -91,15 +107,15 @@ struct AuthenticationGateView: View {
                     .font(SGTheme.TypeRole.hero)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityAddTraits(.isHeader)
-                Text("Keep your cooks in Grub Rank. Find your Signature Dishes. Share a little inspiration.")
-                    .font(.body).foregroundStyle(.secondary)
             }
 
             comparisonExample
 
             VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                story("Your Grub Rank", detail: "Save dishes, photos, and every cook.", symbol: "book.closed")
-                story("Share your favorites", detail: "Send a dish, your Signature Dishes or your Kitchen when you want.", symbol: "square.and.arrow.up")
+                story("Grub Rank", detail: "Rank what you cook by comparing two dishes at a time.", symbol: "chart.bar.fill")
+                story("Food Bible", detail: "Keep your recipes, typed yourself or organized with AI.", symbol: "book.closed.fill")
+                story("The Pass", detail: "Share cooks with your Sous Chefs, only when you choose.", symbol: "person.2.fill")
+                story("Scores unlock at \(ScoreUnlockPolicy.requiredRankedEntryCount)", detail: "After \(ScoreUnlockPolicy.requiredRankedEntryCount) ranked cooks, each one gets a score. Until then, your order is what counts.", symbol: "lock.open.fill")
             }
         }
         .accessibilityElement(children: .contain)
@@ -108,15 +124,15 @@ struct AuthenticationGateView: View {
 
     private var comparisonExample: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            Text("Which would you cook again?").font(.headline)
+            Text("Which would you cook again?").font(SGTheme.TypeRole.headline)
             HStack(spacing: SGTheme.Space.medium) {
                 exampleDish("🍝", name: "Sunday pasta")
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                 exampleDish("🌮", name: "Taco night")
             }
             Text("Rank by comparison. No made-up numbers.")
-                .font(.subheadline).foregroundStyle(.secondary)
+                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .sgCard()
@@ -138,10 +154,10 @@ struct AuthenticationGateView: View {
         HStack(alignment: .top, spacing: SGTheme.Space.medium) {
             Image(systemName: symbol)
                 .font(.title3).frame(width: 28)
-                .foregroundStyle(.secondary).accessibilityHidden(true)
+                .foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                Text(title).font(.headline)
-                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                Text(title).font(SGTheme.TypeRole.headline)
+                Text(detail).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -153,10 +169,10 @@ struct AuthenticationGateView: View {
             VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                 HStack(alignment: .firstTextBaseline, spacing: SGTheme.Space.small) {
                     if presentation.isWorking { ProgressView().accessibilityHidden(true) }
-                    Text(presentation.title).font(.headline)
+                    Text(presentation.title).font(SGTheme.TypeRole.headline)
                 }
                 Text(presentation.message)
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .accessibilityElement(children: .combine)
@@ -187,16 +203,16 @@ struct AuthenticationGateView: View {
             }
             if let label = presentation.signOutTitle {
                 Button(label) { Task { await session.signOut() } }
-                    .font(.subheadline).frame(minHeight: SGTheme.Size.minimumTap)
+                    .font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap)
                     .disabled(session.isSigningOut)
                     .accessibilityIdentifier("account-sign-out")
             }
             if session.remoteSignOutFailed {
                 Text("Signed out on this device. The server couldn’t confirm sign-out.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
             }
             Button("Privacy Policy") { showingPrivacyPolicy = true }
-                .font(.footnote).frame(minHeight: SGTheme.Size.minimumTap)
+                .font(SGTheme.TypeRole.footnote).frame(minHeight: SGTheme.Size.minimumTap)
                 .accessibilityIdentifier("privacy-policy-open")
         }
     }

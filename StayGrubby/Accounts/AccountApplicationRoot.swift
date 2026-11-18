@@ -95,9 +95,9 @@ struct AccountApplicationRoot: View {
                 AuthenticationGateView(setupFailed:access.failed,retrySetup:{ retryID += 1 })
                 #if DEBUG
                 Button("Open development library") { openDevelopment() }
-                    .font(.footnote).padding().accessibilityIdentifier("development-library-open")
+                    .font(SGTheme.TypeRole.footnote).padding().accessibilityIdentifier("development-library-open")
                     .disabled(!mayOpenDevelopment)
-                if developmentFailed { Text("Couldn't open the preserved development store.").font(.footnote) }
+                if developmentFailed { Text("Couldn't open the preserved development store.").font(SGTheme.TypeRole.footnote) }
                 #endif
             }.background(SGTheme.ColorToken.background)
         }

@@ -27,14 +27,14 @@ struct PasteIngredientsView: View {
             ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 Text("Paste or type one ingredient per line. Bullets and numbered lists are welcome.").foregroundStyle(.secondary)
-                TextEditor(text: $text).font(.body).frame(minHeight: 240).padding(8)
+                TextEditor(text: $text).font(SGTheme.TypeRole.reading).frame(minHeight: 240).padding(8)
                     .scrollContentBackground(.hidden).background(SGTheme.ColorToken.surface, in: RoundedRectangle(cornerRadius: 12))
                     .accessibilityLabel("Ingredient list").accessibilityIdentifier("bulk-ingredient-text")
-                Text("Formatted on your device. No AI or connection needed.").font(.footnote).foregroundStyle(.secondary)
+                Text("Formatted on your device. No AI or connection needed.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 Button("Format Ingredients") { insert(text); dismiss() }.buttonStyle(SGButtonStyle(prominent: true))
                     .disabled(rows.isEmpty || invalid)
                     .accessibilityIdentifier("bulk-ingredient-format")
-                if invalid { Text("Use up to \(capacity) more ingredients in this section, at most 500 characters per line (32 KB total).").font(.footnote) }
+                if invalid { Text("Use up to \(capacity) more ingredients in this section, at most 500 characters per line (32 KB total).").font(SGTheme.TypeRole.footnote) }
             }.padding(SGTheme.Space.readingMargin)
             }.scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
                 .navigationTitle("Paste Ingredients").navigationBarTitleDisplayMode(.inline)

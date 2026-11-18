@@ -46,6 +46,9 @@ struct DishView: View {
     private var shownCook: CookingAttempt? {
         if let cook { return cook }
         guard let attempts = dish?.attempts, !attempts.isEmpty else { return nil }
+        // Opened from a Recipe (Food Bible): lead with the cook made from that Recipe, never another
+        // cook's photo and name, so the Recipe reads as this Dish's (Nov 18 owner report).
+        if let linked = recipe.recipe?.linkedAttemptID, let made = attempts.first(where: { $0.id == linked }) { return made }
         func position(_ attempt: CookingAttempt) -> Int {
             guard let item = attempt.rankedItem, let ordered = item.list?.orderedItems else { return .max }
             return ordered.firstIndex { $0.id == item.id } ?? .max
@@ -58,13 +61,14 @@ struct DishView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                 header
-                if flags.isOn(.dishCollections), let dish { DishCollectionChips(dish: dish) { editingCollections = true } }
+                if flags.isOn(.dishCollections), let dish { DishFolderCallout(dish: dish) { editingCollections = true } }
                 Picker("Dish view", selection: $tab) {
                     ForEach(DishTab.allCases) { Text($0.title).tag($0) }
                 }.pickerStyle(.segmented).accessibilityIdentifier("dish-tabs")
                 switch tab {
                 case .ranking: DishRankingTab(dish: dish, cook: shownCook, recipe: recipe, openRecipe: { tab = .recipe },
-                                              addRecipe: { addingRecipe = true }, cookAgain: { addingVersion = true })
+                                              addRecipe: { addingRecipe = true }, cookAgain: { addingVersion = true },
+                                              separateCooks: (dish?.attempts.count ?? 0) > 1 ? { separating = true } : nil)
                 case .recipe: recipeTab
                 }
             }
@@ -83,7 +87,7 @@ struct DishView: View {
                     DishActions(editCook: { editing = true }, rerank: { reranking = true },
                                 shareWithSousChefs: request == nil ? nil : { sharingSocial = true },
                                 editDishText: { editingDishText = true },
-                                separateCook: (dish?.attempts.count ?? 0) > 1 ? { separating = true } : nil,
+                                separateCooks: (dish?.attempts.count ?? 0) > 1 ? { separating = true } : nil,
                                 editCollections: flags.isOn(.dishCollections) && dish != nil ? { editingCollections = true } : nil,
                                 delete: { deleting = true })
                 }.sgIndependentToolbarBackground()
@@ -105,7 +109,12 @@ struct DishView: View {
         .sheet(isPresented: $editingCollections) { if let dish { DishCollectionsEditor(dish: dish) } }
         // The cook now belongs to another Dish, so this page (of the original Dish) closes.
         .sheet(isPresented: $separating, onDismiss: { if separated { dismiss() } }) {
-            if let shownCook { MoveCookSheet(cook: shownCook) { _ in separated = true } }
+            if let dish {
+                SeparateCooksSheet(dish: dish, recipeCookID: recipe.recipe?.linkedAttemptID, recipeTitle: recipe.recipe?.content.title) { moved in
+                    // This page was opened for a cook that now belongs to another Dish: close it.
+                    if let cook, moved.contains(cook.id) { separated = true }
+                }
+            }
         }
         .sheet(isPresented: $editing) { if let shownCook { EditCookingView(attempt: shownCook) } }
         .sheet(isPresented: $reranking) { if let shownCook { ReRankView(attempt: shownCook) } }
@@ -136,13 +145,13 @@ struct DishView: View {
     /// card. Every option is an existing stored asset shown by reference, never a copy.
     @ViewBuilder private var header: some View {
         if let media = cook?.primaryImage {
-            SGHeroMedia(media: media, name: dishName)
+            SGHeroMedia(media: media, name: dishName, opensViewer: true)
         } else if let value = recipe.recipe {
             // Exactly the Food Bible card's photo: the Recipe's own photo, else its linked/representative cook's.
             RecipePhoto(id: value.content.photoID, dish: dish, name: dishName, cook: linkedCook(value), exactCookLink: value.linkedAttemptID != nil)
                 .sgPhotoFrame(.hero).accessibilityIdentifier("recipe-hero")
         } else if let media = dish?.cookbookRepresentativeCook?.primaryImage ?? shownCook?.primaryImage {
-            SGHeroMedia(media: media, name: dishName)
+            SGHeroMedia(media: media, name: dishName, opensViewer: true)
         } else {
             SGHeroMedia(media: nil, name: dishName)
         }
@@ -158,10 +167,21 @@ struct DishView: View {
 
     @ViewBuilder private var recipeTab: some View {
         if let value = recipe.recipe {
+            if let dish, !dish.attempts.isEmpty {
+                // The Recipe's own Dish, resolved by stable Dish ID (never title or folder).
+                Button { tab = .ranking } label: {
+                    HStack(spacing: SGTheme.Space.small) {
+                        Label("Dish details: \(dish.name)", systemImage: "fork.knife").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                        Spacer(minLength: 0)
+                        Text(dish.attempts.count == 1 ? "1 cook" : "\(dish.attempts.count) cooks").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        Image(systemName: "chevron.right").foregroundStyle(.secondary)
+                    }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+                }.buttonStyle(.plain).accessibilityIdentifier("recipe-open-dish")
+            }
             if recipe.failed {
                 // Same offline contract as the standalone reader: the owner's last-opened Recipe stays readable.
                 Text("Offline. Showing your previously opened Recipe. Changes need a connection to save.")
-                    .font(.subheadline).accessibilityIdentifier("recipe-error")
+                    .font(SGTheme.TypeRole.body).accessibilityIdentifier("recipe-error")
             }
             RecipeReaderContent(model: recipe, recipe: value, relatedDish: dish, linkedCook: linkedCook(value), showsHeader: false)
         } else if recipe.failed {
@@ -199,6 +219,7 @@ private struct DishRankingTab: View {
     var openRecipe: () -> Void
     var addRecipe: () -> Void
     var cookAgain: () -> Void
+    var separateCooks: (() -> Void)? = nil
     @Environment(\.socialRequest) private var request
     @Environment(\.modelContext) private var context
     @ScaledMetric(relativeTo: .caption) private var tagColumnWidth = SGTheme.Size.tagColumnWidth
@@ -235,6 +256,13 @@ private struct DishRankingTab: View {
         }
         if let dish, let cook {
             DishCooksSection(dish: dish, current: cook, cookAgain: cook.rankedItem?.list == nil ? nil : cookAgain)
+            if let separateCooks {
+                // Several cooks that are really different Dishes (e.g. three risottos) are separated here.
+                Button(action: separateCooks) {
+                    Label("Different dishes in here? Separate Cooks", systemImage: "square.split.2x1")
+                        .font(SGTheme.TypeRole.secondary.weight(.medium)).frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
+                }.buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("dish-separate-cooks")
+            }
         } else if let value = recipe.recipe {
             // A Recipe-only Dish: ranking starts with the first cook of its Recipe.
             SGContentState(title: "Not ranked yet", symbol: "fork.knife", message: "Cook it and rank it to bring \(dish?.name ?? value.content.title) into Grub Rank.") {
@@ -277,7 +305,7 @@ private struct DishRankingTab: View {
         return VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
             Label(cook.category.label, systemImage: "fork.knife").font(.subheadline.weight(.semibold))
             Label(cook.cookedAt?.formatted(date: .abbreviated, time: .omitted) ?? "Date unknown", systemImage: "calendar")
-                .font(.subheadline).foregroundStyle(.secondary)
+                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
             if !tags.isEmpty {
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: SGTheme.Space.xSmall) { ForEach(tags, id: \.self) { TagChip(title: $0) } }
@@ -295,7 +323,7 @@ private struct DishRankingTab: View {
             }
             if !cook.allergyTags.isEmpty {
                 Text("Legacy free-of labels: " + cook.allergyTags.map(\.label).sorted().joined(separator: ", "))
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
             }
         }.padding(.vertical, SGTheme.Space.medium)
     }

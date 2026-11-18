@@ -50,9 +50,9 @@ private struct KitchenRecipeCollection: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                if loading && entries.isEmpty { ProgressView("Loading Recipes") }
+                if loading && entries.isEmpty { SGLoadingState(label: "Loading Recipes") }
                 if failed {
-                    Text("Recipes unavailable. Try again when connected.").font(.subheadline)
+                    Text("Recipes unavailable. Try again when connected.").font(SGTheme.TypeRole.body)
                     Button("Retry Recipes") { Task { await load() } }.frame(minHeight: SGTheme.Size.minimumTap).accessibilityIdentifier("kitchen-recipes-retry")
                 } else if !loading && entries.isEmpty {
                     Text(personID == nil ? "No Recipes yet" : "No shared Recipes available").foregroundStyle(.secondary)
