@@ -6,11 +6,11 @@ nonisolated enum SocialMediaAction: Sendable {
     case upload(path: String, bytes: Data), download(path: String), remove(paths: [String])
     case avatarUpload(path: String, bytes: Data), avatarDownload(path: String), avatarRemove(paths: [String])
     case recipeUpload(path: String, bytes: Data), recipeDownload(path: String), recipeRemove(paths: [String])
-    case authorize(bucket: String, path: String), reviewDownload(bucket: String, path: String)
-    var isDownload: Bool { switch self { case .download, .avatarDownload, .recipeDownload, .authorize, .reviewDownload: true; default: false } }
-    var bucket: String { switch self { case .authorize(let bucket, _), .reviewDownload(let bucket, _): bucket; case .recipeUpload, .recipeDownload, .recipeRemove: "recipe-photos"; case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
+    case authorize(bucket: String, path: String)
+    var isDownload: Bool { switch self { case .download, .avatarDownload, .recipeDownload, .authorize: true; default: false } }
+    var bucket: String { switch self { case .authorize(let bucket, _): bucket; case .recipeUpload, .recipeDownload, .recipeRemove: "recipe-photos"; case .avatarUpload, .avatarDownload, .avatarRemove: "profile-photos"; default: "social-photos" } }
     var paths: [String] {
-        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path), .recipeUpload(let path, _), .recipeDownload(let path): [path]; case .authorize(_, let path), .reviewDownload(_, let path): [path]; case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): paths }
+        switch self { case .upload(let path, _), .download(let path), .avatarUpload(let path, _), .avatarDownload(let path), .recipeUpload(let path, _), .recipeDownload(let path): [path]; case .authorize(_, let path): [path]; case .remove(let paths), .avatarRemove(let paths), .recipeRemove(let paths): paths }
     }
 }
 nonisolated enum SocialMediaRules {
@@ -46,7 +46,6 @@ extension SupabaseAccountBackend: SocialMediaBackend {
             let response = try await client.schema("api").rpc("image_access", params: Parameters(bucket: name, path: path)).execute()
             guard try JSONDecoder().decode(Bool.self, from: response.data) else { throw AccountFoundationError.invalidResolution }
             result = Data()
-        case .reviewDownload(_, let path): result = try await bucket.download(path: path, cacheNonce: UUID().uuidString)
         case .upload(let path, let bytes), .avatarUpload(let path, let bytes):
             guard SocialMediaRules.validJPEG(bytes) else { throw AccountFoundationError.invalidResolution }
             _ = try await bucket.upload(path, data: bytes, options: FileOptions(cacheControl: "0", contentType: "image/jpeg", upsert: true)); result = Data()

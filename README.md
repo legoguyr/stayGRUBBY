@@ -6,7 +6,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 
 **November 13–14 infrastructure checkpoint:** [Phase 2B](supabase/CLEAN_MIGRATION_PHASE_2A.md#phase-2b-live-progress) reconciled 1,077 rows and 109 photos. The owner accepted iPhone staging. Target-configured StayGrubby 1.0 (5) is available to the four-member internal **Alpha Testers** group only. The owner waived both live signed Edge Function probes for this rollout. The owner updated their existing iPhone installation in place and verified the original account, library, photos and sync. Build 4 and earlier still use the frozen source. November 15: the migrated target now runs the [automatic capacity monitor](supabase/README.md#automatic-target-monitoring). The owner-approved [acknowledgment write reduction](supabase/README.md#automatic-target-monitoring) is also live.
 
-**November 17 integration candidate:** completed Claude stabilization and the backend foundation are integrated locally. Exact social Dish identity/pagination is wired into iOS. Zero-billing manual image review is implemented locally; production moderation and signed staging acceptance remain gated in [Backend MVP readiness](BACKEND_MVP_READINESS.md).
+**November 18 local integration candidate:** completed Claude stabilization and the backend foundation are integrated locally. Exact social Dish identity/pagination is wired into iOS. Immediate photo publishing with report-based moderation supersedes manual image approval locally; production moderation and signed staging acceptance remain gated in [Backend MVP readiness](BACKEND_MVP_READINESS.md).
 
 ## Read first
 
@@ -27,7 +27,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
 | [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |
 | [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md), [DevelopmentTools/README.md](DevelopmentTools/README.md) | Backend tooling, hosted deployment history, development tools |
-| [PUBLIC_MVP_MODERATION.md](PUBLIC_MVP_MODERATION.md), [IMAGE_MODERATION.md](IMAGE_MODERATION.md), [BACKEND_MVP_READINESS.md](BACKEND_MVP_READINESS.md) | Moderation contracts, pending rollout, image-processing approval and backend release evidence |
+| [PUBLIC_MVP_MODERATION.md](PUBLIC_MVP_MODERATION.md), [IMAGE_MODERATION.md](IMAGE_MODERATION.md), [BACKEND_MVP_READINESS.md](BACKEND_MVP_READINESS.md) | Moderation contracts, pending rollout, report-based image moderation and backend release evidence |
 | Domain specs | [COOKING_MODEL.md](COOKING_MODEL.md), [RANKING_MODEL.md](RANKING_MODEL.md), [ACCOUNT_ARCHITECTURE.md](ACCOUNT_ARCHITECTURE.md), [SYNC_ARCHITECTURE.md](SYNC_ARCHITECTURE.md), [MEDIA_SYNC_ARCHITECTURE.md](MEDIA_SYNC_ARCHITECTURE.md), [SOCIAL_ARCHITECTURE.md](SOCIAL_ARCHITECTURE.md), [V1_SHARING_ARCHITECTURE.md](V1_SHARING_ARCHITECTURE.md), [RECIPE_STYLE_GUIDE.md](RECIPE_STYLE_GUIDE.md) |
 
 All other `*_REVIEW.md` files, [NEXT_RELEASE_SPEC.md](NEXT_RELEASE_SPEC.md) and [UI_ARCHITECTURE_HISTORY.md](UI_ARCHITECTURE_HISTORY.md) are dated evidence. They are not a competing roadmap or instruction system, and their pending gates/counts are not current. Future prompts need only name the cycle, its unique requirements and acceptance criteria.

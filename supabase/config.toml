@@ -437,10 +437,3 @@ entrypoint = "./functions/recipe-import/index.ts"
 enabled = false
 verify_jwt = true
 entrypoint = "./functions/development-test-session/index.ts"
-
-# Optional zero-billing structural validator. Manual review works without it.
-# Keep disabled for the MVP; no provider key, billing or scheduler is required.
-[functions.moderate-images]
-enabled = false
-verify_jwt = true
-entrypoint = "./functions/moderate-images/index.ts"

@@ -3,7 +3,6 @@ import SwiftUI
 struct KitchenSettings<AccountUtilities: View>: View {
     @Environment(\.socialRequest) private var request
     @State private var showingPolicy = false
-    @State private var reviewer = false
     @ViewBuilder var account: () -> AccountUtilities
     var body: some View {
         List {
@@ -27,11 +26,7 @@ struct KitchenSettings<AccountUtilities: View>: View {
                     Text("Sharing is for mutual Sous Chefs. Profiles are private unless you choose Public in Profile; your cooking library is never public. Blocked accounts can’t see your profile or what you share, and their content is hidden from you.")
                 }
             }
-            if reviewer {
-                Section("Moderation") {
-                    NavigationLink("Image Review") { ImageModerationView() }.accessibilityIdentifier("image-review-open")
-                }
-            }
+
             #if DEBUG
             Section("Developer") { NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() } }
             #endif
@@ -41,7 +36,6 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
         }.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
-            .task { if let request { reviewer = await ImageModerationModel.authorized(request: request) } }
             .sheet(isPresented: $showingPolicy) { PrivacyPolicyView() }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
