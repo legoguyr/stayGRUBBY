@@ -12,6 +12,8 @@ nonisolated struct SocialPost: Codable, Identifiable, Sendable {
     let published: Bool
     let isAuthor: Bool
     let moderationState: String
+    /// Opaque server-authorized identity of this creator's source Dish.
+    var dishKey: String? = nil
     var likeCount: Int? = nil
     var commentCount: Int? = nil
     var liked: Bool? = nil

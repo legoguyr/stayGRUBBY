@@ -5,7 +5,7 @@ import SwiftUI
 /// the full description, source and cooking context, the linked Recipe (live and as posted) and the
 /// creator's other shared cooks of the same Dish.
 ///
-/// Reads only server-authorized post snapshots (`social_feed post` / `profile`); opening it never writes.
+/// Reads only server-authorized post snapshots (`social_feed post` / `dish`); opening it never writes.
 /// The page is an ordered list of independent sections (`DishDetailsSection`), so a later section such as
 /// Shop This Dish (equipment, specialty ingredients, creator recommendations) is one more case, not a redesign.
 struct SocialPostDetailView: View {
@@ -207,23 +207,22 @@ struct DishSharedCooks: View {
     var navigate: (SocialPostRoute) -> Void
     @Environment(\.socialRequest) private var request
     @Environment(\.accountContentCache) private var cache
-    @State private var posts: [SocialPost]?
-    @State private var failed = false
+    @State private var model = SharedCooksModel()
     @State private var order: SharedCookOrder = .recent
-    private var cooks: [SocialPost] { posts.map { SharedCookOrder.otherCooks(of: post, among: $0, order: order) } ?? [] }
+    private var cooks: [SocialPost] { SharedCookOrder.otherCooks(of: post, among: model.posts ?? [], order: order) }
     var body: some View {
         // A container that always exists, so the load task runs even before there is anything to show.
         VStack(alignment: .leading, spacing: 0) {
-            if failed {
+            if model.failed {
                 VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     SGSectionHeader(title: "More Cooks of This Dish")
                     Text("Couldn’t load other cooks.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                     Button("Retry") { Task { await load(force: true) } }.accessibilityIdentifier("dish-cooks-retry")
                 }
-            } else if !cooks.isEmpty {
+            } else if !cooks.isEmpty || model.hasMore {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                     SGSectionHeader(title: "More Cooks of This Dish") {
-                        if cooks.count > 1 {
+                        if cooks.count > 1 || model.hasMore {
                             SGBrowseSortMenu(options: SharedCookOrder.allCases, selection: $order, title: \.title,
                                              identifier: "dish-cooks-sort", label: order.title)
                         }
@@ -232,55 +231,19 @@ struct DishSharedCooks: View {
                         Button { navigate(.post(cook.id)) } label: { SharedCookRow(post: cook) }
                             .buttonStyle(SGRowButtonStyle()).accessibilityIdentifier("dish-cook-\(cook.id)")
                     }
+                    if model.hasMore {
+                        Button("Load more cooks") { Task { await load(more: true) } }
+                            .disabled(model.loading).accessibilityIdentifier("dish-cooks-more")
+                    }
                 }.accessibilityElement(children: .contain).accessibilityIdentifier("dish-other-cooks")
             } else { Color.clear.frame(height: 0).accessibilityHidden(true) }
         }
-        .task(id: post.id) { await load(force: false) }
+        .task(id: "\(post.id)/\(post.dishKey ?? "legacy")/\(order.rawValue)") { await load() }
+        .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await load(force: true) } }
     }
-    private func load(force: Bool) async {
+    private func load(more: Bool = false, force: Bool = false) async {
         guard let request else { return }
-        if !force, let cached = SharedCookLookup.cached(for: post, cache: cache) {
-            posts = cached.posts
-            if cached.fresh { return }
-        }
-        do {
-            let next = try await SharedCookLookup.candidates(for: post, request: request, cache: cache)
-            guard !Task.isCancelled else { return }
-            posts = next; failed = false
-        } catch is CancellationError { } catch { if posts == nil { failed = true } }
-    }
-}
-
-/// **Dish identity integration point** (UI_ARCHITECTURE "The Pass — feed, comments and Dish Details").
-/// Everything More Cooks of This Dish knows about "the same Dish" lives here: which posts are candidates and
-/// which of them match. Today that is one cached page of the creator's authorized posts matched by the
-/// Dish title snapshot. When the backend's social Dish identity contract ships (a viewer-safe Dish key on
-/// post cards, or a Dish-posts read), only `candidates`, `cached` and `sameDish` change; Dish Details,
-/// the rows and `SharedCookOrder` stay as they are.
-@MainActor enum SharedCookLookup {
-    static func cached(for post: SocialPost, cache: AccountContentCache?) -> (posts: [SocialPost], fresh: Bool)? {
-        guard let cached = cache?.authorPosts(post.author.id), cached.hasValue, let value = cached.value else { return nil }
-        return (value, cached.isFresh())
-    }
-    /// One bounded page of the creator's own authorized posts (own posts: the server resolves "me"),
-    /// coalesced and cached per creator. Read-only.
-    static func candidates(for post: SocialPost, request: @escaping SocialRequest, cache: AccountContentCache?) async throws -> [SocialPost] {
-        let author = post.author.id, peer = post.isAuthor ? nil : author
-        let fetch: @MainActor () async throws -> Data = { try await request("social_feed", "profile", .init(peerID: peer)) }
-        let data: Data
-        if let cache { data = try await cache.coalesced("author-posts/\(author)", fetch) } else { data = try await fetch() }
-        let posts = try JSONDecoder().decode(SocialPostsPage.self, from: data).posts
-        cache?.storeAuthorPosts(posts, for: author)
-        return posts
-    }
-    /// Same creator and same Dish. Posts snapshot the Dish title when shared, so a renamed Dish's older posts
-    /// are simply not grouped until the server supplies Dish identity.
-    nonisolated static func sameDish(_ candidate: SocialPost, as post: SocialPost) -> Bool {
-        candidate.author.id == post.author.id && dishKey(candidate.title) == dishKey(post.title)
-    }
-    nonisolated static func dishKey(_ title: String) -> String {
-        title.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: Locale(identifier: "en_US_POSIX"))
-            .split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        await model.load(for: post, order: order, more: more, force: force, request: request, cache: cache)
     }
 }
 

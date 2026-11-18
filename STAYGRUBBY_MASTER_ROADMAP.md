@@ -19,7 +19,7 @@
 | Phase | Window | Scope | Status |
 | --- | --- | --- | --- |
 | S1 — MVP stabilization | Nov 16 – Nov 30, 2026 | Connected UI Phase 1 plus stabilization: one Dish page, consistent Dish/Recipe photos, read caching for Food Bible and The Pass, Dish cook count. Connected UI cohesion: Recipe preview on the Dish page, Food Bible cook status, My Kitchen statistics that open Grub Rank, Last cooked and Recent Cooks. Fix reproducible defects from the one consolidated owner Xcode review. | **Implemented Nov 16 (Claude); automated acceptance passed; one consolidated owner physical review pending.** |
-| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Owner-private authorization and text screening passed local verification. Image screening and exact social Dish identity are locally implemented. Provider activation, signed/staff rehearsal and deployment are pending. |
+| S2 — Public-release requirements | Dec 1 – Dec 20, 2026 | The MVP Required items below, chiefly moderation, social onboarding, legal/privacy documents and disclosures, account deletion review, security dispositions, Supabase capacity plan. | Started Nov 16. Moderation backend and Recipe report entry points tested locally. Owner-private authorization and text screening passed local verification. Image screening and exact social Dish identity, including iOS pagination/cache integration, are locally implemented. Provider activation, signed/staff rehearsal and deployment are pending. |
 | S3 — Release candidate and submission | Stretch: Dec 21 – 31, 2026; target: Jan 2027 | Release build, one proportionate regression and Release verification, owner physical acceptance through Xcode, App Store metadata and submission (each step needs explicit owner approval). Optional external TestFlight. | Not started |
 
 ### MVP Required (public-release blockers)
@@ -114,7 +114,7 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
   - Comments stay in a sheet with Hands.
   - Dish Details shows the facts, Recipe and the creator's other shared cooks of the Dish (Recent / Highest Rated; locked scores never ranked) ([UI](UI_ARCHITECTURE.md)).
   - **Backend dependencies (Codex, Post-launch Priority unless noted):**
-    - a viewer-safe Dish key on post cards (or a `social_feed` Dish-posts action), so other cooks group by exact Dish identity rather than the title snapshot and include more than one page. Client integration point: `SharedCookLookup` in `DishPostDetails.swift` (replace `candidates` / `cached` / `sameDish` only)
+    - **Implemented locally in the Supabase/iOS integration milestone:** viewer-safe `dishKey`, exact per-Dish pagination and server Recent/Highest Rated sorting through `SharedCookLookup.swift`. Pending backend deployment; legacy responses omit inferred grouping.
     - a cooked-at snapshot on posts, so Dish Details can show the cooking date instead of the shared date
     - an optional comment Hands field (comment likes do not exist)
   - **Future (post-V1, not designed):** a *Shop This Dish* section (equipment, specialty ingredients, creator recommendations, affiliate links) fits as another Dish Details section. It needs its own privacy, disclosure and legal review before any product data exists.

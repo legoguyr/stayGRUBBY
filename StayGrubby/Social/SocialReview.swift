@@ -471,11 +471,12 @@ import Supabase
             if !passRedesignSeeded, ProcessInfo.processInfo.arguments.contains("--pass-redesign-review"), let index = posts.firstIndex(where: { $0.id == UUID(uuidString: "20000000-0000-0000-0000-000000000001")! }) {
                 passRedesignSeeded = true
                 let now = Date().timeIntervalSince1970
+                posts[index].dishKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                 posts[index].postDescription = "Marinated overnight in harissa, garlic and lemon, then charred hard on a ripping-hot grill pan. The peppers roasted underneath in the chicken juices until they slumped. Next time: more lemon at the end and a handful of mint."
                 posts[index].metadata = .init(course: "main", cuisine: CuisineCatalog.resolve("Moroccan"), source: .init(type: "cookbook", name: "Weeknight Fire", author: "A. Cook", recipe: "Harissa Chicken", page: "112"))
-                for (suffix, version, score, age, title) in [("a1", "Charred and smoky", "9.1", 2.0, "Harissa Chicken with Roasted Peppers"),
+                for (suffix, version, score, age, title) in [("a1", "Charred and smoky", "9.1", 2.0, "Renamed Harissa Chicken"),
                                                             ("a2", "Weeknight version", nil, 1.0, "harissa chicken with roasted peppers"),
-                                                            ("a3", "Lemon rice", "7.0", 0.5, "Lemon Rice")] as [(String, String, String?, Double, String)] {
+                                                            ("a3", "Lemon rice", "7.0", 0.5, "Harissa Chicken with Roasted Peppers")] as [(String, String, String?, Double, String)] {
                     posts.append(SocialPost(id: UUID(uuidString: "20000000-0000-0000-0000-0000000000" + suffix)!, author: people[0], title: title, versionTitle: version, scoreText: score, achievement: nil,
                                             createdAt: now - 86_400 * age, photoPath: nil, published: true, isAuthor: false, moderationState: "active"))
                 }
@@ -488,12 +489,35 @@ import Supabase
                 recipeFeedSeeded = true; posts[index].recipeID = id; posts[index].recipeRevision = r.revision
                 if sharedRecipeSnapshots[posts[index].id] == nil { sharedRecipeSnapshots[posts[index].id] = .init(postID: posts[index].id, recipeID: id, revision: r.revision, content: r.content, creator: posts[index].author, cook: posts[index].author, isAuthor: false) }
             }
+            if ProcessInfo.processInfo.arguments.contains("--pass-redesign-review") {
+                for index in posts.indices {
+                    if ["a1", "a2"].contains(String(posts[index].id.uuidString.suffix(2)).lowercased()) {
+                        posts[index].dishKey = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    } else if posts[index].id.uuidString.lowercased().hasSuffix("00a3") {
+                        posts[index].dishKey = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    }
+                }
+            }
             let visible = posts.filter { post in post.isAuthor || people.contains(where: { $0.id == post.author.id && $0.relationship == .friends }) }.sorted { $0.createdAt == $1.createdAt ? $0.id.uuidString > $1.id.uuidString : $0.createdAt > $1.createdAt }
             if action == "profile" { return try JSONEncoder().encode(SocialPostsPage(posts: visible.filter { post in
                 if let peer = payload.peerID { return post.author.id == peer }
                 return post.isAuthor
             })) }
             if action == "post" { return try JSONEncoder().encode(SocialPostsPage(posts: visible.filter { $0.id == payload.postID })) }
+            if action == "dish", let source = visible.first(where: { $0.id == payload.postID }) {
+                let order = SharedCookOrder(rawValue: payload.order ?? "recent") ?? .recent
+                var rows = SharedCookOrder.otherCooks(of: source, among: visible, order: order)
+                if let time = payload.beforeTime, let id = payload.beforeID {
+                    rows = rows.filter { row in
+                        if order == .highestRated, let before = payload.beforeScore {
+                            let score = SharedCookOrder.score(row) ?? -1
+                            if score != before { return score < before }
+                        }
+                        return row.createdAt < time || (row.createdAt == time && row.id.uuidString < id.uuidString)
+                    }
+                }
+                return try JSONEncoder().encode(SocialPostsPage(posts: Array(rows.prefix(SharedCookPage.size))))
+            }
             if action == "activity_page" {
                 if ProcessInfo.processInfo.arguments.contains("--v1-closeout-review"), let id = recipes.values.first(where: { !$0.isOwner && $0.visibility == "friends" })?.id, recipeActivityTimes[id] == nil { recipeActivityTimes[id] = (UUID(),Date().timeIntervalSince1970) }
                 // Mirrors the deployed server: Cook posts interleaved with legacy `recipe_created` items,

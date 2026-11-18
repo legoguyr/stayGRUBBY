@@ -5,14 +5,14 @@ import Testing
 /// The Pass Dish Details: the creator's other shared cooks of one Dish (November 17, 2026).
 struct SharedCookOrderTests {
     private let author = SocialPerson(id: UUID(), displayName: "Alex", username: "alex", relationship: .friends)
-    private func post(_ title: String, score: String?, age: Double, author: SocialPerson? = nil, published: Bool = true, moderation: String = "active") -> SocialPost {
+    private func post(_ title: String, score: String?, age: Double, author: SocialPerson? = nil, published: Bool = true, moderation: String = "active", key: String? = "dish-fixture") -> SocialPost {
         SocialPost(id: UUID(), author: author ?? self.author, title: title, versionTitle: nil, scoreText: score, achievement: nil,
-                   createdAt: 1_000_000 - age, photoPath: nil, published: published, isAuthor: false, moderationState: moderation)
+                   createdAt: 1_000_000 - age, photoPath: nil, published: published, isAuthor: false, moderationState: moderation, dishKey: key)
     }
     @Test func groupsOnlyTheSameCreatorsVisibleCooksOfTheSameDish() {
         let shown = post("Harissa Chicken", score: "8.6", age: 0)
         let same = post("  harissa   CHICKEN ", score: "9.1", age: 10)
-        let other = post("Lemon Rice", score: "7.0", age: 5)
+        let other = post("Lemon Rice", score: "7.0", age: 5, key: "other-dish")
         let someoneElse = post("Harissa Chicken", score: "9.9", age: 3, author: SocialPerson(id: UUID(), displayName: "Sam", username: "sam", relationship: .friends))
         let draft = post("Harissa Chicken", score: "5.0", age: 4, published: false)
         let hidden = post("Harissa Chicken", score: "5.0", age: 4, moderation: "hidden")
@@ -30,13 +30,14 @@ struct SharedCookOrderTests {
                 "Unlocked scores high to low; locked cooks follow, never ranked")
         #expect(SharedCookOrder.score(locked) == nil)
     }
-    /// The Dish identity integration point: the only place "same Dish" is decided until the server
-    /// supplies a viewer-safe Dish key.
-    @Test func sameDishIsTheSingleIdentitySeam() {
+    @Test func exactIdentitySurvivesRenamingAndNeverGuessesFromTitles() {
         let shown = post("Crème Brûlée", score: nil, age: 0)
-        #expect(SharedCookLookup.sameDish(post("creme  brulee", score: nil, age: 1), as: shown), "Case, accents and spacing fold")
-        #expect(!SharedCookLookup.sameDish(post("Crème Caramel", score: nil, age: 1), as: shown))
+        #expect(SharedCookLookup.sameDish(post("Renamed dessert", score: nil, age: 1), as: shown))
+        #expect(!SharedCookLookup.sameDish(post("Crème Brûlée", score: nil, age: 1, key: "other-dish"), as: shown))
+        #expect(!SharedCookLookup.sameDish(post("Crème Brûlée", score: nil, age: 1, key: nil), as: shown))
+        let legacy = post("Crème Brûlée", score: nil, age: 0, key: nil)
+        #expect(!SharedCookLookup.sameDish(legacy, as: legacy))
         let sam = SocialPerson(id: UUID(), displayName: "Sam", username: "sam", relationship: .friends)
-        #expect(!SharedCookLookup.sameDish(post("Crème Brûlée", score: nil, age: 1, author: sam), as: shown), "Never another creator's cook")
+        #expect(!SharedCookLookup.sameDish(post("Crème Brûlée", score: nil, age: 1, author: sam), as: shown))
     }
 }

@@ -49,7 +49,7 @@ async function action(name,n,action,payload={}) {
 
 try {
  await db.connect();
- const blank = (await db.query("select (select count(*) from auth.users)+(select count(*) from staygrubby.accounts) n")).rows[0].n;
+ const blank = (await db.query("select (select count(*) from auth.users)+(select count(*) from staygrubby.accounts)+(select count(*) from storage.objects) n")).rows[0].n;
  check(Number(blank)===0,'A fresh disposable stack is required');
  check(Boolean((await db.query("select to_regclass('staygrubby.image_reviews') object")).rows[0].object),'Reviewed migrations must already be replayed');
  for(let i=0;i<3;i++){
@@ -69,6 +69,27 @@ try {
  }
  await action('social_people',0,'request',{peerID:users[1].id});
  await action('social_people',1,'accept',{peerID:users[0].id});
+ const library = await rpc('open_account_library', users[0].token, {});
+ const ranking = library.graph.rankings[0].id;
+ const dishes = [randomUUID(), randomUUID()];
+ for (const dish of dishes) {
+  await db.query("insert into staygrubby.dishes(account_id,id,name,default_course_code,created_at_ref) values($1,$2,'Same fixture title','soup',1000)", [users[0].id,dish]);
+ }
+ const posts = [];
+ for (let n = 0; n < 3; n++) {
+  const item = randomUUID(), attempt = randomUUID(), post = randomUUID();
+  await db.query("insert into staygrubby.ranked_items(account_id,id,ranking_id,name,created_at_ref,strength,uncertainty) values($1,$2,$3,'Fixture cook',1000,0,1)", [users[0].id,item,ranking]);
+  await db.query("insert into staygrubby.cooking_attempts(account_id,id,dish_id,ranked_item_id,course_code,sequence_number,created_at_ref,updated_at_ref,is_legacy_import) values($1,$2,$3,$4,'soup',$5,1000,1000,false)", [users[0].id,attempt,dishes[n < 2 ? 0 : 1],item,n < 2 ? n + 1 : 1]);
+  const revision = Number((await db.query('select sync_revision from staygrubby.accounts where id=$1', [users[0].id])).rows[0].sync_revision);
+  const result = await action('social_content',0,'prepare',{postID:post,attemptID:attempt,expectedRevision:revision,confirmed:true});
+  posts.push(result.posts[0]);
+ }
+ check(posts[0].dishKey === posts[1].dishKey && posts[0].dishKey !== posts[2].dishKey, 'Signed cards preserve exact Dish identity across matching titles');
+ const siblings = await action('social_feed',1,'dish',{postID:posts[0].id,order:'recent'});
+ check(siblings.posts.length === 1 && siblings.posts[0].id === posts[1].id, 'Signed exact-Dish lookup excludes independent same-name Dish');
+ const hidden = await call('/rest/v1/rpc/social_feed',users[2].token,'POST',JSON.stringify({action:'dish',payload:{postID:posts[0].id}}),{'Content-Type':'application/json','Content-Profile':'api'});
+ check(hidden.status === 403, 'Unrelated signed account cannot enumerate Dish cooks');
+ await db.query('insert into staygrubby.moderation_reviewers(account_id) values($1)',[users[2].id]);
  const rid=randomUUID(),photo=randomUUID(),path=users[0].id+'/'+photo+'.jpg';
  const bytes=Buffer.from('/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3SiiiszQ//9k=','base64');
  await action('recipes',0,'prepare_photo',{assetID:photo,photoHash:createHash('sha256').update(bytes).digest('hex'),photoBytes:bytes.length});
@@ -83,16 +104,24 @@ try {
  const claim=claims.find(c=>c.path===path);
  assert(claim,'Local upload must have pending screening work');
  const approved=await rpc('finish_image_review',config.SERVICE_ROLE_KEY,{
-  object_id:claim.objectID,generation:claim.generation,lease_id:claim.leaseID,outcome:'approved',
+  object_id:claim.objectID,generation:claim.generation,lease_id:claim.leaseID,outcome:'review',
   sha256:createHash('sha256').update(bytes).digest('hex')
  });
  check(approved,'Synthetic provider verdict accepted on the exact lease');
+ const pending = await action('image_moderation',2,'inspect',{objectID:claim.objectID});
+ const inspected = await read(users[2].token);
+ check(inspected.ok && Buffer.from(await inspected.arrayBuffer()).equals(bytes), 'Named staff can inspect exact flagged original bytes');
+ await action('image_moderation',2,'resolve',{objectID:claim.objectID,generation:pending.generation,decision:'approved'});
  const approvedBytes=await read(users[1].token);
  check(approvedBytes.ok&&Buffer.from(await approvedBytes.arrayBuffer()).equals(bytes),'Actual authorized byte round trip');
  check(!(await read(users[2].token)).ok,'Outsider denied approved photo');
+ const peerPhoto = randomUUID(), peerPath = users[1].id+'/'+peerPhoto+'.jpg';
+ await action('recipes',1,'prepare_photo',{assetID:peerPhoto,photoHash:createHash('sha256').update(bytes).digest('hex'),photoBytes:bytes.length});
+ check((await call('/storage/v1/object/recipe-photos/'+peerPath,users[1].token,'POST',bytes,{'Content-Type':'image/jpeg'})).ok, 'Peer private fixture uploaded');
+ await action('recipes',1,'complete_photo',{assetID:peerPhoto});
+ await action('recipes',1,'save',{recipeID:randomUUID(),recipe:{title:'Peer private fixture',ingredients:['water'],steps:['Heat.'],photoID:peerPhoto},visibility:'private'});
  const report=await action('social_report',1,'report',{targetType:'profile',targetID:users[0].id,reason:'other'});
  check(report.reported,'Signed report accepted');
- await db.query('insert into staygrubby.moderation_reviewers(account_id) values($1)',[users[2].id]);
  const queue=await action('moderation_review',2,'queue');
  await action('moderation_review',2,'resolve',{reportID:queue.reports[0].id,decision:'hide'});
  check((await action('recipes',0,'get',{recipeID:rid})).id===rid,'Hidden-profile owner retains signed personal Recipe read');
@@ -127,6 +156,12 @@ try {
  await db.query('select api.erase_account_data($1)',[users[0].user]);
  check(!(await read(users[0].token)).ok,'Erased owner token cannot recover object bytes');
  check(Number((await db.query('select count(*) n from staygrubby.image_reviews')).rows[0].n)===0,'No orphan image review');
+ const removedAuth = await call('/auth/v1/admin/users/'+users[0].user,config.SERVICE_ROLE_KEY,'DELETE',JSON.stringify({should_soft_delete:false}),{'Content-Type':'application/json'});
+ check(removedAuth.ok,'Synthetic Auth user removed through Auth Admin');
+ check(Number((await db.query('select count(*) n from auth.users where id=$1',[users[0].user])).rows[0].n) === 0, 'Erased Auth identity is absent');
+ check(Number((await db.query('select count(*) n from staygrubby.account_deletion_jobs where auth_user_id=$1',[users[0].user])).rows[0].n) === 0, 'Completed deletion job is retired by Auth FK cleanup');
+ const peerBytes = await call('/storage/v1/object/authenticated/recipe-photos/'+peerPath,users[1].token,'GET');
+ check(peerBytes.ok && Buffer.from(await peerBytes.arrayBuffer()).equals(bytes), 'Peer private original survives another account erasure byte-for-byte');
  check((await action('social_identity',1,'get')).username==='local_fixture_1','Peer account remains intact');
  console.log('PASS '+checks+' local signed Auth, Edge, Storage and moderation checks; synthetic accounts only');
 } catch (error) {
