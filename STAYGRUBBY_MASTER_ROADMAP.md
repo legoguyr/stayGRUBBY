@@ -61,14 +61,14 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
   - Owner iPhone result on `426eb19`: Pass photos and avatars PASS. Risotto still combined because the hosted data was never separated (one Dish, three cooks, renamed "Mahi Mahi Risotto" through Edit Cook).
   - **Separate Cooks** (Dish page): choose which cooks are different Dishes, name them, rename the Dish that keeps its Recipe, optional folder. Edit Cook warns that the Dish name renames every cook's Dish.
   - Food Bible → Recipe → **Dish details** by Dish ID; the page leads with the cook made from that Recipe.
-  - Grub Rank **All Dishes | Folders**: one row per Dish numbered by its best cook; Folders gated. Grub Rank **+** opens Rank a Dish; Food Bible **+** offers Create Manually / Create with AI.
+  - Grub Rank **All Dishes | Dish Variations**: one row per Dish numbered by its best cook; Dish Variations gated. Grub Rank **+** opens Rank a Dish; Food Bible **+** offers Create Manually / Create with AI.
   - **Design system v2** across the app: one tab header, search, filter rail with circular Sort, shared states, compact unlock banner, white pages, photo viewer, launch screen and a concise opening story (UI_ARCHITECTURE §13).
 - **Dish & Recipe integrity, Smart Collections, P0 Pass photos (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).**
   - **P0 The Pass photos:** feed photos and avatars showed the logo placeholder on the hosted project because the integrated image code required `api.image_access`, which only exists in a pending migration. Fixed in the client: uncached photos download straight from Storage (which authorizes them); cached photos still need the check and fall back to a fresh Storage download when it is missing. No data, Storage or server change.
   - **Dish/Recipe integrity:** the owner's "one Recipe on several risottos" was three different risottos logged as cooks of one "Risotto" Dish (hosted data is otherwise consistent). New explicit **Make This Cook a Separate Dish** (Dish page ⋯): lossless, ranking-neutral, never automatic. Server hardening migration (pending): a Dish only shows a Recipe whose identity is that Dish; legacy family links no longer decide sharing or the Dish's Recipe.
   - **Grub Rank shows every cook** (owner, Nov 18): the Top / All Cooks toggle is removed.
   - **+ menu:** **Rank a Dish** and **Add a Recipe** replace New Dish / Cook Again. Inside Rank a Dish, a known Dish name offers *Add Another Cook of …*; nothing merges by name.
-  - **Smart Collections** (built, gated `dish_collections` until its migration is deployed): Dish-level labels; My Kitchen collection cards; a collection page ranking its Dishes by each Dish's best cook; Add to Collection in Rank a Dish, Add a Recipe, Edit Cook and the Dish page.
+  - **Dish Variations** (Smart Collections; built, gated `dish_collections` until its migration is deployed and the flag row is set — both ready for owner approval): Dish-level labels; Grub Rank variation cards with Create Variation; My Kitchen cards; a variation page ranking its Dishes by each Dish's best cook, with Edit Variation and Remove from Variation; Add to Variation in Rank a Dish, Add a Recipe, Edit Cook and the Dish page.
 - **Master UI milestone — The Pass, Dish/Cook/Recipe, icons, two roadmaps (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or migration.
   - The Pass card: creator → Dish name with compact score → cook line → photo → caption → Hands · Comments · Recipe on one row; no repeated comment line or large Recipe card.
   - **One Public Description:** the Dish's Public Description is the post caption, edited from Dish details, Edit Cook, the composer or Edit Description, kept in step by explicit saves (server-side derivation is a Codex dependency).
@@ -156,9 +156,9 @@ Candidate scope (only accepted, enabled functionality):
 - new tab icons
 - the November 17 stabilization fixes
 - **P0:** The Pass and profile photos load on the hosted project (client fix)
-- Separate Cooks; Recipe → Dish details; All Dishes (Folders gated); contextual + buttons; design system v2 across the app
+- Separate Cooks; Recipe → Dish details; All Dishes (Dish Variations gated); contextual + buttons; design system v2 across the app
 
-Not in scope (built but hidden, or not built): Smart Collections (gated until `20261118160100_dish_collections` is deployed), the follow model, multiple-photo galleries, Shop This Dish and Discover.
+Not in scope (built but hidden, or not built): Dish Variations (gated until `20261118160100_dish_collections` is deployed and its flag set), the follow model, multiple-photo galleries, Shop This Dish and Discover.
 
 **UI consistency:** implemented in the Nov 18 overhaul (UI_ARCHITECTURE §13); remaining exceptions are listed there.
 
@@ -167,7 +167,7 @@ Not in scope (built but hidden, or not built): Smart Collections (gated until `2
 | Code implemented | Done (UI milestone `bc8c3e2`; P0 photos + Dish integrity on `agent/claude`) |
 | Integrated on `main` | Done locally November 18 with Codex's instant image publishing (`d475257`); not pushed |
 | Locally verified | Focused tests, Debug + Release builds, Simulator light/dark |
-| Backend deployed | Not required for the P0 photo fix. Pending approval: Codex's nine migrations, `20261118160000_dish_recipe_integrity` (recommended before release) and `20261118160100_dish_collections` (only to enable Smart Collections) |
+| Backend deployed | Not required for the P0 photo fix. Pending approval: Codex's nine migrations, `20261118160000_dish_recipe_integrity` (recommended before release) and `20261118160100_dish_collections` (only to enable Dish Variations; deployable alone, standalone-rehearsed) |
 | Physical iPhone accepted | Pending (owner checklist) |
 | TestFlight-ready | After push + iPhone acceptance (image-publishing migrations need production approval) |
 | Distributed | Not authorized |

@@ -29,6 +29,24 @@ nonisolated enum DishCollectionPolicy {
     static func valid(_ labels: [String]) -> Bool { labels == normalized(labels) }
 }
 
+/// User-facing name of Smart Collections. Presentation only (owner decision, November 18, 2026: "Dish
+/// Variations"); storage, sync and identifiers keep the `collections` name. Change the product name here.
+nonisolated enum DishVariationCopy {
+    static let singular = "Dish Variation"
+    static let plural = "Dish Variations"
+    static let short = "Variation"
+    static let symbol = "square.stack.3d.up"
+    static let addSymbol = "square.stack.3d.up.badge.plus"
+    static let addTo = "Add to Variation"
+    static let create = "Create Variation"
+    static let edit = "Edit Variation"
+    static let editMany = "Edit Variations"
+    static let rename = "Rename Variation"
+    static let delete = "Delete Variation"
+    static let removeFrom = "Remove from Variation"
+    static let explanation = "Dish Variations group related Dishes, like all your risottos. Each Dish keeps its own cooks, Recipe and ranking."
+}
+
 @MainActor enum DishCollectionStore {
     /// Sets one Dish's collections. Writes (and syncs) only when membership actually changes.
     static func set(_ labels: [String], on dish: Dish, context: ModelContext) throws {
@@ -56,6 +74,29 @@ nonisolated enum DishCollectionPolicy {
         let members = dishes.filter { $0.collections.contains { DishCollectionPolicy.key($0) == old } }
         guard !members.isEmpty else { return }
         try write(context) { for dish in members { dish.collections.removeAll { DishCollectionPolicy.key($0) == old } } }
+    }
+
+    /// Create/Edit Variation: one synced edit that makes exactly `members` carry the variation, named `name`.
+    /// `label` is the variation being edited (nil to create). Dishes outside `members` only lose this label;
+    /// no Dish, cook, Recipe or ranking row is created, merged or deleted.
+    static func setMembers(of label: String?, name: String, members: Set<UUID>, dishes: [Dish], context: ModelContext) throws {
+        guard let replacement = DishCollectionPolicy.normalized([name]).first else { throw CookingStore.StoreError.invalidDraft }
+        let old = label.map(DishCollectionPolicy.key)
+        var changes: [(Dish, [String])] = []
+        for dish in dishes {
+            var next = dish.collections
+            if members.contains(dish.id) {
+                // Renamed in place (keeps its position in this Dish's list), or added at the end.
+                if let old, let index = next.firstIndex(where: { DishCollectionPolicy.key($0) == old }) { next[index] = replacement }
+                else { next.append(replacement) }
+            } else if let old {
+                next.removeAll { DishCollectionPolicy.key($0) == old }
+            }
+            next = DishCollectionPolicy.normalized(next)
+            if next != dish.collections { changes.append((dish, next)) }
+        }
+        guard !changes.isEmpty else { return }
+        try write(context) { for (dish, next) in changes { dish.collections = next } }
     }
 
     private static func write(_ context: ModelContext, _ change: () -> Void) throws {

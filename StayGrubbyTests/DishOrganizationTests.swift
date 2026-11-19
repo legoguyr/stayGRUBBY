@@ -98,6 +98,31 @@ import Testing
         #expect(throws: (any Error).self) { try DishIdentityStore.move(pea, toNewDishNamed: "   ", context: s.context) }
     }
 
+    /// Create Variation / Edit Variation: one synced edit; Dishes only gain or lose the label.
+    @Test func createAndEditVariationChangeOnlyMembership() throws {
+        let s = try Store()
+        let butternut = try #require(try s.cook("Butternut Squash Risotto").dish)
+        let mushroom = try #require(try s.cook("Mushroom Risotto").dish)
+        let pea = try #require(try s.cook("Pea and Mahi Mahi Risotto").dish)
+        try DishCollectionStore.set(["Comfort Food"], on: butternut, context: s.context)
+        let all = try s.dishes(), before = try s.operations(), order = s.list.orderedItems.map(\.id)
+
+        try DishCollectionStore.setMembers(of: nil, name: " Risotto ", members: [butternut.id, mushroom.id, pea.id], dishes: all, context: s.context)
+        #expect(butternut.collections == ["Comfort Food", "Risotto"] && mushroom.collections == ["Risotto"] && pea.collections == ["Risotto"])
+        #expect(try s.operations() == before + 1, "Creating a variation for three Dishes is one synced edit")
+
+        // Rename in place and remove one Dish; the other variation and every Dish stay.
+        try DishCollectionStore.setMembers(of: "risotto", name: "Risottos", members: [butternut.id, mushroom.id], dishes: all, context: s.context)
+        #expect(butternut.collections == ["Comfort Food", "Risottos"] && mushroom.collections == ["Risottos"] && pea.collections.isEmpty)
+        #expect(try s.dishes().count == 3 && s.list.orderedItems.map(\.id) == order && pea.attempts.count == 1)
+        // Unchanged membership writes nothing; a blank name is refused.
+        let settled = try s.operations()
+        try DishCollectionStore.setMembers(of: "Risottos", name: "Risottos", members: [butternut.id, mushroom.id], dishes: all, context: s.context)
+        #expect(try s.operations() == settled)
+        #expect(throws: (any Error).self) { try DishCollectionStore.setMembers(of: nil, name: "  ", members: [pea.id], dishes: all, context: s.context) }
+        #expect(DishVariationCopy.plural == "Dish Variations" && GrubRankSection.folders.title == DishVariationCopy.plural)
+    }
+
     @Test func emptyAndMissingCollectionsAreTheSameSyncState() throws {
         let s = try Store()
         let dish = try #require(try s.cook("Saffron Risotto").dish)

@@ -40,7 +40,7 @@ Use established vocabulary where appropriate:
 | Make the Dish again / every cook of a Dish / Recipe revisions | Cook Again / All Cooks (Dish page; Grub Rank always lists every cook) / Recipe History |
 | Delete | **Delete** for every basic action — Delete Cook/Recipe/Comment/Post, "Delete this Cook?" (owner decision, November 18, 2026; replaces "86") |
 | Future achievements / intention list | Stars ⭐ / Want to Cook (approved post-V1) |
-| Dish organization labels / repair a mis-logged cook | Collections (Smart Collections; never folders) / Make This Cook a Separate Dish |
+| Dish organization labels / repair a mis-logged cook | Dish Variations (owner decision, November 18, 2026; internally Smart Collections / `collections`; never folders) — Add to Variation, Create Variation, Edit Variation, Remove from Variation / Separate Cooks |
 | + menu entries | Rank a Dish / Add a Recipe |
 
 **The Pass** (owner decision, November 11, 2026; formerly "Grub List") is intentionally shared Cook activity from Sous Chefs; Recipes never appear there merely because they were created, imported or edited. Internal API/table/identifier names (`social_feed`, `activity_page`, `feed-*`, `StayGrubbyTab.feed`) stay stable.

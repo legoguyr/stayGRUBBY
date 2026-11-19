@@ -263,7 +263,7 @@ Keep: The Pass stays a feed, Grub Rank a ranking, Food Bible a Recipe library, M
 
 - **+ menu:** *Rank a Dish* (`new-dish`) and *Add a Recipe* (`new-recipe`, hidden without the Recipe service). In Rank a Dish, *Made one of your Dishes again? Choose it* opens the Dish picker; a typed name equal to a ranked Dish shows *Add Another Cook of …* (`cook-existing-match`). Never an automatic merge.
 - **Dish page ⋯:** *Make This Cook a Separate Dish* (`cook-separate`, only with 2+ cooks) opens `MoveCookSheet` (name suggested from Cook Name + Dish name; the old Dish name suggested as a collection) and *Collections* when the gate is on.
-- **Smart Collections (gated):** `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
+- **Dish Variations (Smart Collections, gated; name from `DishVariationCopy`):** Grub Rank *Dish Variations* tab of photo cards led by *Create Variation* (`variation-create`) → `VariationEditorSheet` (name + Dish checklist; also *Edit Variation* `collection-edit` in a variation's ⋯); *Remove from Variation* on each Dish row's context menu (`collection-dish-remove`). `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
 
 ## 13. Design system v2 and screen inventory (UI overhaul, November 18, 2026)
 
@@ -285,10 +285,10 @@ Owner direction: one recognizable visual language and interaction convention acr
 | `SGCreateButton` | Grub Rank + menu, Food Bible toolbar + | Grub Rank (Rank a Dish), Food Bible (New Recipe) |
 | `SGSearchField` (always visible, below the header) | Grub Rank search behind a header button with *Done* | Grub Rank, Food Bible (and in-sheet lists) |
 | `SGFilterRail` + `SGBrowseSortMenu(circular:)` | Fixed chip rows, full-width text Sort, All Cooks switch | Grub Rank, Food Bible |
-| Segmented views under search | — | Grub Rank *All Dishes / Folders*, Food Bible *My Recipes / Saved Recipes* |
+| Segmented views under search | — | Grub Rank *All Dishes / Dish Variations*, Food Bible *My Recipes / Saved Recipes* |
 | `SGContentState` / `SGLoadingState` | 7 bespoke empty views and 15 page spinners | Social screens, The Pass, Food Bible, folders |
 | `SGPhotoViewer` (`sgOpensPhotoViewer`) | — | Dish page hero, post Dish Details hero |
-| `FolderGrid` / `FolderCard` / `DishFolderCallout` | — | Grub Rank Folders, Dish page *Explore Risotto* |
+| `FolderGrid` / `FolderCard` / `DishFolderCallout` | — | Grub Rank Dish Variations, Dish page *Explore Risotto* |
 | `SGLaunchView` | Sign-up story shown to returning accounts while restoring | Session restore / library open |
 | `ScoreUnlockProgressBanner` (compact) | Tall unlock card | Grub Rank, My Kitchen |
 
@@ -307,7 +307,7 @@ Owner direction: one recognizable visual language and interaction convention acr
 | --- | --- | --- |
 | Shell | Tab bar, tab headers | Unified (§13.2) |
 | Launch | Opening story, sign-in, restore | Opening story rewritten (Grub Rank, Food Bible, The Pass, unlock at 10); restore shows `SGLaunchView`; Sign in with Apple untouched |
-| Grub Rank | List, filters, Folders, folder page | Unified; All Dishes numbers Dishes 1, 2, 3… by best cook |
+| Grub Rank | List, filters, Dish Variations, variation page | Unified; All Dishes numbers Dishes 1, 2, 3… by best cook |
 | Grub Rank | Rank a Dish form, comparison, result | Form gained existing-Dish prompt and folders; comparison/result preserved (frozen) |
 | Dish | Dish page, Cooks, Separate Cooks, Folders | Unified header position (#N in Grub Rank), Explore folder, Separate Cooks, photo viewer |
 | Food Bible | Library, Saved, filters, + | Unified; Recipe tab links to Dish details by ID |

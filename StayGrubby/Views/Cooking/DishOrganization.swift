@@ -27,7 +27,7 @@ struct DishCollectionsField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-            Label("Folders · optional", systemImage: "folder").font(SGTheme.TypeRole.secondary.weight(.semibold))
+            Label("\(DishVariationCopy.plural) · optional", systemImage: DishVariationCopy.symbol).font(SGTheme.TypeRole.secondary.weight(.semibold))
             if !labels.isEmpty {
                 ForEach(labels, id: \.self) { label in
                     HStack(spacing: SGTheme.Space.small) {
@@ -35,12 +35,12 @@ struct DishCollectionsField: View {
                         Spacer(minLength: 0)
                         Button { labels.removeAll { $0 == label } } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                             .buttonStyle(.plain).frame(width: SGTheme.Size.minimumTap, height: SGTheme.Size.minimumTap)
-                            .accessibilityLabel("Remove from \(label)").accessibilityIdentifier("collection-remove-\(label)")
+                            .accessibilityLabel("\(DishVariationCopy.removeFrom): \(label)").accessibilityIdentifier("collection-remove-\(label)")
                     }
                 }
             }
             if labels.count < DishCollectionPolicy.maximumPerDish {
-                TextField("Add to a folder, like Risotto", text: $entry)
+                TextField("Add to a variation, like Risotto", text: $entry)
                     .focused($focused).submitLabel(.done).onSubmit { if let newLabel { add(newLabel) } }
                     .autocorrectionDisabled().accessibilityIdentifier("collection-entry").sgField()
                 if focused || !entry.isEmpty {
@@ -54,7 +54,7 @@ struct DishCollectionsField: View {
                     }
                 }
             }
-            Text("Folders group related Dishes. Each Dish keeps its own cooks, Recipe and ranking.")
+            Text(DishVariationCopy.explanation)
                 .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }
     }
@@ -73,7 +73,7 @@ struct DishCollectionsEditor: View {
         NavigationStack {
             ScrollView { DishCollectionsField(labels: $labels).padding(SGTheme.Space.medium) }
                 .background(SGTheme.ColorToken.background)
-                .navigationTitle("Folders").navigationBarTitleDisplayMode(.inline)
+                .navigationTitle(DishVariationCopy.plural).navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                     ToolbarItem(placement: .confirmationAction) {
@@ -88,7 +88,7 @@ struct DishCollectionsEditor: View {
     }
 }
 
-/// Dish page: the folders this Dish is in, as "Explore Risotto" links, plus one quiet edit action.
+/// Dish page: the Dish Variations this Dish is in, as "Explore Risotto" links, plus one quiet edit action.
 /// A folder is organization only; the page's own cook history stays below.
 struct DishFolderCallout: View {
     let dish: Dish
@@ -98,7 +98,7 @@ struct DishFolderCallout: View {
             ForEach(dish.collections, id: \.self) { label in
                 NavigationLink { DishCollectionView(label: label) } label: {
                     HStack(spacing: SGTheme.Space.small) {
-                        Image(systemName: "folder").foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
+                        Image(systemName: DishVariationCopy.symbol).foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
                         Text("Explore \(label)").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
                         Spacer(minLength: 0)
                         Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
@@ -106,10 +106,10 @@ struct DishFolderCallout: View {
                 }.buttonStyle(.plain).accessibilityIdentifier("dish-explore-\(label)")
             }
             Button(action: edit) {
-                Label(dish.collections.isEmpty ? "Add to Folder" : "Edit Folders", systemImage: dish.collections.isEmpty ? "folder.badge.plus" : "folder")
+                Label(dish.collections.isEmpty ? DishVariationCopy.addTo : DishVariationCopy.editMany, systemImage: dish.collections.isEmpty ? DishVariationCopy.addSymbol : DishVariationCopy.symbol)
                     .font(SGTheme.TypeRole.secondary.weight(.medium)).frame(minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent)
-                .accessibilityLabel(dish.collections.isEmpty ? "Add to Folder" : "Edit Folders: \(dish.collections.joined(separator: ", "))")
+                .accessibilityLabel(dish.collections.isEmpty ? DishVariationCopy.addTo : "\(DishVariationCopy.editMany): \(dish.collections.joined(separator: ", "))")
                 .accessibilityIdentifier("dish-collections")
         }
     }
@@ -179,10 +179,10 @@ struct SeparateCooksSheet: View {
                         }
                     }
                     if flags.isOn(.dishCollections) {
-                        SGFormSection(title: "Folder · optional") {
+                        SGFormSection(title: "\(DishVariationCopy.singular) · optional") {
                             VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                                Toggle("Put these Dishes in one folder", isOn: $groups).accessibilityIdentifier("separate-folder-toggle")
-                                if groups { TextField("Folder name", text: $folder).accessibilityIdentifier("separate-folder-name").sgField() }
+                                Toggle("Put these Dishes in one variation", isOn: $groups).accessibilityIdentifier("separate-folder-toggle")
+                                if groups { TextField("Variation name", text: $folder).accessibilityIdentifier("separate-folder-name").sgField() }
                             }
                         }
                     }
@@ -242,28 +242,130 @@ struct SeparateCooksSheet: View {
     }
 }
 
-// MARK: - Folders (Grub Rank tab and My Kitchen)
+// MARK: - Dish Variations (Grub Rank tab and My Kitchen)
 
-/// Folder cards in a two-column grid: food photo, name, "3 Dishes · 7 cooks". Opens `DishCollectionView`.
+/// Dish Variation cards in a two-column grid: food photo, name, "3 Dishes · 7 cooks", led by Create Variation.
+/// Opens `DishCollectionView`.
 struct FolderGrid: View {
     let summaries: [DishCollectionSummary]
+    @State private var creating = false
     var body: some View {
-        if summaries.isEmpty {
-            SGContentState(title: "No folders yet", symbol: "folder",
-                           message: "Group related Dishes, like all your risottos. Add a Dish to a folder from its page, or use Separate Cooks.")
-                .accessibilityIdentifier("folders-empty")
-        } else {
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top), GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top)],
-                      alignment: .leading, spacing: SGTheme.Space.medium) {
-                ForEach(summaries) { summary in
-                    NavigationLink { DishCollectionView(label: summary.label) } label: { FolderCard(summary: summary) }
-                        .buttonStyle(.plain)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
-                        .accessibilityHint("Opens the folder").accessibilityIdentifier("folder-\(summary.label)")
+        VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
+            if summaries.isEmpty {
+                SGContentState(title: "No Dish Variations yet", symbol: DishVariationCopy.symbol,
+                               message: "Group related Dishes, like all your risottos. Each Dish keeps its own cooks, Recipe and ranking.") {
+                    Button(DishVariationCopy.create, systemImage: "plus") { creating = true }
+                        .buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("variation-create")
+                }
+                .accessibilityElement(children: .contain).accessibilityIdentifier("folders-empty")
+            } else {
+                Button { creating = true } label: {
+                    Label(DishVariationCopy.create, systemImage: "plus").font(SGTheme.TypeRole.headline)
+                        .frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap)
+                }
+                .buttonStyle(SGButtonStyle(prominent: false)).accessibilityIdentifier("variation-create")
+                LazyVGrid(columns: [GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top), GridItem(.flexible(), spacing: SGTheme.Space.small, alignment: .top)],
+                          alignment: .leading, spacing: SGTheme.Space.medium) {
+                    ForEach(summaries) { summary in
+                        NavigationLink { DishCollectionView(label: summary.label) } label: { FolderCard(summary: summary) }
+                            .buttonStyle(.plain)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
+                            .accessibilityHint("Opens the variation").accessibilityIdentifier("folder-\(summary.label)")
+                    }
                 }
             }
         }
+        .sheet(isPresented: $creating) { VariationEditorSheet(label: nil) }
+    }
+}
+
+/// Create Variation / Edit Variation: a name and the Dishes in it, chosen from every Dish (search for many).
+/// Saves one synced edit through `DishCollectionStore.setMembers`; Dishes only gain or lose the label.
+struct VariationEditorSheet: View {
+    /// The variation being edited; nil creates one.
+    let label: String?
+    var onSaved: (String) -> Void = { _ in }
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    @Query(sort: \Dish.name) private var dishes: [Dish]
+    @State private var name: String
+    @State private var selected: Set<UUID>?
+    @State private var search = ""
+    @State private var error: String?
+
+    init(label: String?, preselected: Set<UUID> = [], onSaved: @escaping (String) -> Void = { _ in }) {
+        self.label = label; self.onSaved = onSaved
+        _name = State(initialValue: label ?? "")
+        _selected = State(initialValue: label == nil ? preselected : nil)
+    }
+    private var members: Set<UUID> {
+        selected ?? Set(dishes.filter { dish in dish.collections.contains { DishCollectionPolicy.key($0) == DishCollectionPolicy.key(label ?? "") } }.map(\.id))
+    }
+    private var cleanName: String? { DishCollectionPolicy.normalized([name]).first }
+    /// Another variation already uses this name: saving would merge them, so ask for a different name.
+    private var nameTaken: Bool {
+        guard let cleanName else { return false }
+        let key = DishCollectionPolicy.key(cleanName)
+        return key != label.map(DishCollectionPolicy.key) && DishCollectionSummary.labels(in: dishes).contains { DishCollectionPolicy.key($0) == key }
+    }
+    private var shown: [Dish] {
+        let query = TagNormalization.key(search)
+        return dishes.filter { query.isEmpty || TagNormalization.key($0.name).contains(query) }
+    }
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    TextField("Variation name, like Risotto", text: $name)
+                        .autocorrectionDisabled().accessibilityIdentifier("variation-name")
+                    if nameTaken { Text("“\(cleanName ?? "")” already exists. Choose another name.").font(SGTheme.TypeRole.secondary).foregroundStyle(SGTheme.ColorToken.accent) }
+                } footer: { Text(DishVariationCopy.explanation) }
+                Section {
+                    if dishes.count > 8 { TextField("Search Dishes", text: $search).accessibilityIdentifier("variation-search") }
+                    ForEach(shown) { dish in
+                        let on = members.contains(dish.id)
+                        Button { toggle(dish.id) } label: {
+                            HStack(spacing: SGTheme.Space.small) {
+                                DishPhoto(media: dish.attempts.compactMap(\.primaryImage).first, thumbnail: true, name: dish.name).sgPhotoFrame(.compactThumbnail)
+                                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
+                                    Text(dish.name).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
+                                    Text(dish.attempts.count == 1 ? "1 cook" : "\(dish.attempts.count) cooks").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.title3)
+                                    .foregroundStyle(on ? SGTheme.ColorToken.accent : .secondary)
+                            }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(dish.name).accessibilityAddTraits(on ? .isSelected : [])
+                        .accessibilityIdentifier("variation-dish-\(dish.name)")
+                    }
+                } header: { Text(members.count == 1 ? "1 Dish selected" : "\(members.count) Dishes selected") }
+            }
+            .scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
+            .navigationTitle(label == nil ? DishVariationCopy.create : DishVariationCopy.edit).navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save", action: save).disabled(cleanName == nil || nameTaken || members.isEmpty).accessibilityIdentifier("variation-save")
+                }
+            }
+            .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
+        }
+    }
+    private func toggle(_ id: UUID) {
+        var next = members
+        if next.contains(id) { next.remove(id) } else { next.insert(id) }
+        selected = next
+    }
+    private func save() {
+        guard let cleanName else { return }
+        do {
+            try DishCollectionStore.setMembers(of: label, name: cleanName, members: members, dishes: dishes, context: context)
+            onSaved(cleanName); dismiss()
+        } catch { self.error = "Nothing changed. Try again." }
     }
 }
 
@@ -274,7 +376,7 @@ struct FolderCard: View {
             DishPhoto(media: summary.members.lazy.compactMap { $0.best?.attempt.primaryImage ?? $0.dish.attempts.compactMap(\.primaryImage).first }.first,
                       thumbnail: true, name: summary.label)
                 .frame(maxWidth: .infinity).aspectRatio(4/3, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card))
-            Label(summary.label, systemImage: "folder").font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(2)
+            Label(summary.label, systemImage: DishVariationCopy.symbol).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(2)
             Text("\(summary.dishCountText) · \(summary.cookCountText)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
         }
     }
@@ -288,9 +390,9 @@ struct KitchenCollectionsSection: View {
     let scores: ScoreUnlockState
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            SGSectionHeader(title: "Folders")
+            SGSectionHeader(title: DishVariationCopy.plural)
             if summaries.isEmpty {
-                Text("Group related Dishes, like all your risottos, from any Dish’s page or Separate Cooks.")
+                Text("Group related Dishes, like all your risottos, from Grub Rank or any Dish’s page.")
                     .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).accessibilityIdentifier("collections-empty")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -300,7 +402,7 @@ struct KitchenCollectionsSection: View {
                                 .buttonStyle(.plain)
                                 .accessibilityElement(children: .ignore)
                                 .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
-                                .accessibilityHint("Opens the folder").accessibilityIdentifier("kitchen-collection-\(summary.label)")
+                                .accessibilityHint("Opens the variation").accessibilityIdentifier("kitchen-collection-\(summary.label)")
                         }
                     }
                 }
@@ -324,8 +426,7 @@ struct DishCollectionView: View {
     let label: String
     @Environment(\.modelContext) private var context
     @Query private var dishes: [Dish]
-    @State private var renaming = false
-    @State private var newName = ""
+    @State private var editing = false
     @State private var removing = false
     @State private var search = ""
     @State private var error: String?
@@ -349,10 +450,10 @@ struct DishCollectionView: View {
                         .accessibilityIdentifier("collection-counts")
                     Text(scores.isUnlocked ? "Ranked by each Dish’s best cook in your Grub Rank." : "Ranked by each Dish’s best cook in your Grub Rank. Scores unlock as you rank more cooks.")
                         .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    if summary.members.count > 8 { SGSearchField(placeholder: "Search this folder", text: $search, identifier: "collection-search") }
+                    if summary.members.count > 8 { SGSearchField(placeholder: "Search this variation", text: $search, identifier: "collection-search") }
                     ForEach(Array(members.enumerated()), id: \.element.id) { index, member in row(member, position: index + 1) }
                 } else {
-                    SGContentState(title: "Folder is empty", symbol: "folder", message: "Add Dishes to “\(label)” from their pages.")
+                    SGContentState(title: "No Dishes yet", symbol: DishVariationCopy.symbol, message: "Add Dishes to “\(label)” with \(DishVariationCopy.edit).")
                 }
             }
             .padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
@@ -362,20 +463,19 @@ struct DishCollectionView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button("Rename Folder", systemImage: "pencil") { newName = label; renaming = true }.accessibilityIdentifier("collection-rename")
-                    Button("Delete Folder", systemImage: "trash", role: .destructive) { removing = true }.accessibilityIdentifier("collection-delete")
-                } label: { SGToolbarIcon(symbol: "ellipsis") }.sgUtilityTint().accessibilityLabel("Folder actions").accessibilityIdentifier("collection-actions")
+                    Button(DishVariationCopy.edit, systemImage: "pencil") { editing = true }.accessibilityIdentifier("collection-edit")
+                    Button(DishVariationCopy.delete, systemImage: "trash", role: .destructive) { removing = true }.accessibilityIdentifier("collection-delete")
+                } label: { SGToolbarIcon(symbol: "ellipsis") }.sgUtilityTint().accessibilityLabel("Variation actions").accessibilityIdentifier("collection-actions")
             }
         }
-        .alert("Rename Folder", isPresented: $renaming) {
-            TextField("Name", text: $newName)
-            Button("Save") { apply { try DishCollectionStore.rename(label, to: newName, dishes: dishes, context: context); dismiss() } }
-            Button("Cancel", role: .cancel) { }
+        // Renaming here changes the label on its Dishes; this page then closes back to the list.
+        .sheet(isPresented: $editing) {
+            VariationEditorSheet(label: label) { saved in if DishCollectionPolicy.key(saved) != DishCollectionPolicy.key(label) { dismiss() } }
         }
         .alert("Delete “\(label)”?", isPresented: $removing) {
-            Button("Delete Folder", role: .destructive) { apply { try DishCollectionStore.remove(label, dishes: dishes, context: context); dismiss() } }
+            Button(DishVariationCopy.delete, role: .destructive) { apply { try DishCollectionStore.remove(label, dishes: dishes, context: context); dismiss() } }
             Button("Cancel", role: .cancel) { }
-        } message: { Text("Only the folder goes. Every Dish, cook and Recipe in it stays.") }
+        } message: { Text("Only the variation goes. Every Dish, cook and Recipe in it stays.") }
         .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
     }
 
@@ -404,6 +504,11 @@ struct DishCollectionView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibility(member, position: position))
         .accessibilityHint("Opens the Dish").accessibilityIdentifier("collection-dish-\(member.dish.name)")
+        .accessibilityAction(named: DishVariationCopy.removeFrom) { removeFromVariation(member.dish) }
+        .contextMenu {
+            Button(DishVariationCopy.removeFrom, systemImage: "minus.circle") { removeFromVariation(member.dish) }
+                .accessibilityIdentifier("collection-dish-remove")
+        }
     }
     /// Which cook produced the score, and how many cooks the Dish has.
     private func detail(_ member: DishCollectionSummary.Member) -> String {
@@ -415,6 +520,11 @@ struct DishCollectionView: View {
     private func accessibility(_ member: DishCollectionSummary.Member, position: Int) -> String {
         guard let best = member.best else { return "\(member.dish.name), \(detail(member))" }
         return "\(position), \(member.dish.name), Grub Rank \(best.globalRank), \(member.scoreText.map { "score \($0)" } ?? "score locked"), \(detail(member))"
+    }
+    /// Only this Dish loses the label; the Dish and everything in it stays.
+    private func removeFromVariation(_ dish: Dish) {
+        let key = DishCollectionPolicy.key(label)
+        apply { try DishCollectionStore.set(dish.collections.filter { DishCollectionPolicy.key($0) != key }, on: dish, context: context) }
     }
     private func apply(_ work: () throws -> Void) { do { try work() } catch { self.error = "Nothing changed. Try again." } }
 }

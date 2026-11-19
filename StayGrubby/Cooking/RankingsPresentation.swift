@@ -44,9 +44,9 @@ struct GrubRankRequest: Equatable {
     }
 }
 
-/// Grub Rank's two views: every Dish (one row each) or Folders (Smart Collections, gated).
+/// Grub Rank’s two views: every Dish (one row each) or Dish Variations (Smart Collections, gated).
 nonisolated enum GrubRankSection: String, CaseIterable, Identifiable {
     case dishes, folders
     var id: String { rawValue }
-    var title: String { switch self { case .dishes: "All Dishes"; case .folders: "Folders" } }
+    var title: String { switch self { case .dishes: "All Dishes"; case .folders: DishVariationCopy.plural } }
 }

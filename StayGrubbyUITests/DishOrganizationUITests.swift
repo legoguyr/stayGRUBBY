@@ -76,17 +76,46 @@ final class DishOrganizationUITests: StayGrubbyUITestCase {
         let original = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Butternut Squash'")).firstMatch // the Dish that stays
         openDish(original, app)
         XCTAssertTrue(app.buttons["dish-explore-Risotto"].waitForExistence(timeout: 8), "Both Dishes are in the folder")
-        // Folders tab: one Risotto folder holding both Dishes, never merged.
+        // Dish Variations tab: one Risotto variation holding both Dishes, never merged.
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.segmentedControls["grub-rank-sections"].waitForExistence(timeout: 8))
-        app.segmentedControls["grub-rank-sections"].buttons["Folders"].tap()
+        app.segmentedControls["grub-rank-sections"].buttons["Dish Variations"].tap()
         let card = app.descendants(matching: .any).matching(identifier: "folder-Risotto").firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 8), app.debugDescription); XCTAssertTrue(card.label.contains("2 Dishes"), card.label)
         let folders = XCTAttachment(screenshot: app.screenshot()); folders.name = "Grub Rank Folders"; folders.lifetime = .keepAlways; add(folders)
         card.tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collection-dish-Mushroom Risotto").firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collection-dish-Risotto").firstMatch.exists)
-        let inside = XCTAttachment(screenshot: app.screenshot()); inside.name = "Risotto folder"; inside.lifetime = .keepAlways; add(inside)
+        let inside = XCTAttachment(screenshot: app.screenshot()); inside.name = "Risotto variation"; inside.lifetime = .keepAlways; add(inside)
+
+        // Remove from Variation keeps the Dish; Create Variation adds it to a second one.
+        let mushroomRow = app.descendants(matching: .any).matching(identifier: "collection-dish-Mushroom Risotto").firstMatch
+        mushroomRow.press(forDuration: 1.0)
+        let remove = app.buttons["collection-dish-remove"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5)); remove.tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collection-dish-Risotto").firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(mushroomRow.waitForExistence(timeout: 2), "Removed from the variation")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let create = app.buttons["variation-create"]
+        XCTAssertTrue(create.waitForExistence(timeout: 8)); create.tap()
+        let variationName = app.textFields["variation-name"]
+        XCTAssertTrue(variationName.waitForExistence(timeout: 5)); variationName.tap(); variationName.typeText("Weeknight")
+        app.buttons["variation-dish-Mushroom Risotto"].tap(); app.buttons["variation-dish-Risotto"].tap()
+        app.buttons["variation-save"].tap()
+        let weeknight = app.descendants(matching: .any).matching(identifier: "folder-Weeknight").firstMatch
+        XCTAssertTrue(weeknight.waitForExistence(timeout: 8)); XCTAssertTrue(weeknight.label.contains("2 Dishes"), weeknight.label)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "folder-Risotto").firstMatch.label.contains("1 Dish"))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).count == 0, "Variations tab shows cards, not rows")
+        app.segmentedControls["grub-rank-sections"].buttons["All Dishes"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Mushroom Risotto'")).firstMatch.waitForExistence(timeout: 8), "The removed Dish still exists")
+        let grid = XCTAttachment(screenshot: app.screenshot()); grid.name = "All Dishes after variations"; grid.lifetime = .keepAlways; add(grid)
+
+        // Persistence: relaunch the same isolated store.
+        app.terminate(); app.launchWithReviewOptions()
+        XCTAssertTrue(app.segmentedControls["grub-rank-sections"].waitForExistence(timeout: 15))
+        app.segmentedControls["grub-rank-sections"].buttons["Dish Variations"].tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "folder-Weeknight").firstMatch.waitForExistence(timeout: 8), "Variations persist after relaunch")
+        let cards = XCTAttachment(screenshot: app.screenshot()); cards.name = "Dish Variations after relaunch"; cards.lifetime = .keepAlways; add(cards)
     }
 
     /// Food Bible → Recipe → its exact Dish, by Dish ID. A similarly named Dish never borrows the Recipe.
