@@ -1,5 +1,5 @@
 // Dish Variations deployment rehearsal (November 18, 2026). Rebuilds the hosted migration head
-// (20261115154948) in PGlite, applies ONLY 20261118160100_dish_collections, and checks that existing
+// (20261115154948) in PGlite, applies ONLY the dish_collections migration (deployed alone November 20 as 20261120150047), and checks that existing
 // data is preserved, sync round-trips labels, older clients and other accounts cannot erase or write
 // them, and the remaining pending migrations still apply afterwards. Never touches a hosted project.
 import { fixture } from './social-harness.mjs';

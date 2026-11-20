@@ -11,9 +11,9 @@ nonisolated enum FeatureFlag: String, CaseIterable, Sendable {
     /// but show `SGLockedKitchenNotice` until a follow request is approved. Off until the server contract,
     /// RLS and the client follow flow are complete (STAYGRUBBY_DEVELOPMENT_ROADMAP.md).
     case accountPrivacyFollows = "account_privacy_follows"
-    /// Smart Collections (Dish organization labels). Needs `20261118160100_dish_collections` on the hosted
-    /// project: without the column the server drops labels, so they would never sync. Enable only after
-    /// that migration is deployed and verified (STAYGRUBBY_DEVELOPMENT_ROADMAP.md §1).
+    /// Smart Collections (Dish organization labels). Needs `20261120150047_dish_collections` on the hosted
+    /// project (deployed and enabled November 20, 2026): without the column the server drops labels, so
+    /// never enable it on a server that lacks the migration (STAYGRUBBY_DEVELOPMENT_ROADMAP.md §1).
     case dishCollections = "dish_collections"
 }
 
