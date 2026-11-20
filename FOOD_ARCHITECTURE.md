@@ -113,7 +113,7 @@ Food Bible has **My Recipes** (owned, including any copies made before November 
 - Edit Cook's Dish name renames the Dish for **all** its cooks; with several cooks it now says so and points to Separate Cooks (the owner's risotto was renamed this way).
 - **Grub Rank All Dishes** lists one row per Dish at its best cook, numbered by Dish position; **Dish Variations** (gated) lists variation cards. Recipe → Dish navigation resolves by Dish ID and leads with the Recipe's own cook.
 - Rank a Dish never merges by name: when the typed name matches a ranked Dish, the form offers *Add Another Cook of …*; otherwise a new Dish is created.
-- Server migration `20261118160000_dish_recipe_integrity` (pending deployment; PGlite-tested): removes the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
+- Server migration `20261120171728_dish_recipe_integrity` (deployed November 20, 2026; local `20261118160000`) removes the `dish` legacy fallback; `20261118160050_recipe_share_option_integrity` (pending, deploys with Codex's share-option migration) removes the `share_options` one. Together they remove the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
 
 ## 4. Cooking Attempts: final terminology and naming
 
@@ -321,5 +321,5 @@ User-facing name **Dish Variations** (owner decision, November 18, 2026), e.g. t
 
 - Board-relative positions on future contextual rank boards (post-V1 feature).
 - ~~Whether to also show the Recipe on Grub Rank rows~~ — **decided: no.** Grub Rank rows stay cook-focused; View Recipe lives on Dish Detail.
-- When to retire the transitional association tables (§3.3) — a later authorized cleanup (after `20261118160000` they no longer influence what a Dish shows).
+- When to retire the transitional association tables (§3.3) — a later authorized cleanup (since `20261120171728` they no longer influence what a Dish shows).
 - Recipe reservation expiry and snapshot retention after explicit cook deletion (privacy decision, carried from the audit; V1 release gate).

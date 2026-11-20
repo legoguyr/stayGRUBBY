@@ -71,7 +71,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Make This (cook another Sous Chef's Recipe) | Enabled as **Rank My Version** | Creates the user's own Dish/cook; creator attribution preserved |
 | Public / private follow model | Foundation, gated | Backend contract (§4) |
 | P0 The Pass / avatar photos on hosted | Verified (unit), iPhone pending | Client-only; works before and after `api.image_access` is deployed |
-| Dish/Recipe integrity — separate a cook | Verified (unit + UI) | Client; server hardening migration `20261118160000` pending (PGlite-verified) |
+| Dish/Recipe integrity — separate a cook | Verified (unit + UI) | Client; server hardening `20261120171728` deployed Nov 20; share-option half `20261118160050` pending with Codex's chain |
 | Rank a Dish / Add a Recipe + menu | Verified (UI) | Replaces New Dish / Cook Again choices |
 | Dish Variations (Smart Collections) | Deployed + Enabled Nov 20; Create/Edit Variation, Remove from Variation | Owner iPhone acceptance; reaches users only with the next build |
 | App-wide UI consistency / design system v2 | Implemented, Verified (focused UI), iPhone pending | UI_ARCHITECTURE §13; remaining exceptions §13.5 |
@@ -88,7 +88,8 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Caption derived from `dishes.public_description` (or an `editDishDescription` action that updates the Dish row and all its posts in one transaction) | One canonical Public Description across devices, atomic | `PublicDescriptionSync` updates posts after explicit saves; reports failures |
 | Follow model: `account_visibility` (`public`/`private`), `follows` with `pending/accepted`, searchable private accounts with a minimal locked card, RLS so only accepted followers read audience-scoped content | Public/private accounts (owner decision, Nov 18) | Current model stays: mutual Sous Chefs + discoverable flag; `account_privacy_follows` off |
 | Cooked-at snapshot on posts | Dish Details cooking date | Shows the shared date |
-| `20261118160000_dish_recipe_integrity` (written by Claude, PGlite-tested, not deployed) | `recipes dish` returns only a Recipe whose `dish_id` is that Dish; `share_options` drops the legacy family-link step; new legacy links that disagree with identity are skipped; provable legacy-only Recipes get their Dish | Client unchanged; Codex review requested before deployment |
+| `20261120171728_dish_recipe_integrity` (owner-authorized, **deployed** November 20 ahead of the other pending files; local `20261118160000`, renamed byte-identically) | `recipes dish` returns only a Recipe whose `dish_id` is that Dish (fallback patched in place in `recipe_api_before_diet_index`); new legacy links that disagree with identity are skipped; provable legacy-only Recipes get their Dish (none in production) | `Backend/tests/hosted-order-rehearsal.test.mjs` proves Codex's pending chain still applies afterwards |
+| `20261118160050_recipe_share_option_integrity` (split from the above, not deployed) | `share_options` drops the legacy family-link step | Needs `20261117063020`; deploy with Codex's chain |
 | `20261120150047_dish_collections` (deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); applied alone on hosted head `20261115154948`, independent of the other ten pending migrations) | `dishes.collections text[]` (≤20 labels, ≤40 chars), accepted by the cooking outbox only when sent, restored as `collections` (null when empty) | Client always sends the key; older servers ignore it |
 | `api.image_access` (Codex, pending) | Permission read before reusing cached photos | Client falls back to fresh Storage downloads while it is missing |
 | Optional comment Hands | Hands on comments | Not shown |
@@ -99,7 +100,7 @@ Contract rules: authenticated RPC/Edge action, DTO documented in the owning doma
 
 1. ~~Integrate the November 18 UI milestone with Codex's instant image publishing (`d475257`)~~ — done locally on `main` November 18 (one UI_ARCHITECTURE conflict, both sides kept).
 1a. Integrate the P0 photo fix + Dish integrity milestone (`agent/claude`); owner iPhone check of Pass photos first.
-1b. Deploy (owner-authorized) Codex's migrations, then `20261118160000`. ~~Dish Variations migration and `dish_collections` flag~~ — deployed and enabled November 20.
+1b. Deploy (owner-authorized) Codex's migrations with `20261118160050`. ~~`20261118160000` integrity core~~ — deployed November 20. ~~Dish Variations migration and `dish_collections` flag~~ — deployed and enabled November 20.
 1c. P2 app-wide UI consistency pass (UI_ARCHITECTURE §10.1).
 2. Physical iPhone acceptance of the UI milestone → next TestFlight candidate (owner authorizes upload).
 3. Codex: Public Description server contract, then follow model; Claude builds the gated client flows against the documented DTOs in parallel.

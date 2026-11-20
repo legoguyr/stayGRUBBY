@@ -7,7 +7,8 @@ import { randomUUID, createHash } from 'node:crypto';
 const dir = new URL('../../supabase/migrations/', import.meta.url);
 const integrity = (await readdir(dir)).find(f => f.endsWith('_dish_recipe_integrity.sql'));
 const collections = (await readdir(dir)).find(f => f.endsWith('_dish_collections.sql'));
-const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: integrity });
+const shareIntegrity = (await readdir(dir)).find(f => f.endsWith('_recipe_share_option_integrity.sql'));
+const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: shareIntegrity });
 const owner = users[0].id;
 const content = title => ({ title, ingredients: ['rice'], steps: ['Stir.'] });
 const dishOf = async attempt => (await db.query('select dish_id from staygrubby.cooking_attempts where id=$1', [attempt])).rows[0].dish_id;
@@ -41,7 +42,8 @@ try {
  await db.exec('reset role');
  const before = await fingerprint();
  await db.exec(await readFile(new URL(integrity, dir), 'utf8'));
- check(await fingerprint() === before, 'Integrity migration deletes or adds no rows');
+ await db.exec(await readFile(new URL(shareIntegrity, dir), 'utf8'));
+ check(await fingerprint() === before, 'Integrity migrations delete or add no rows');
  check((await db.query('select dish_id from staygrubby.recipes where id=$1', [legacyOnly])).rows[0].dish_id === legacyDish,
   'A Recipe whose only legacy link is one Dish without a Recipe takes that Dish (provable repair)');
  check((await db.query('select dish_id from staygrubby.recipes where id=$1', [recipeA])).rows[0].dish_id === butternut,

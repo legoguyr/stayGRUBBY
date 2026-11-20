@@ -7,10 +7,13 @@
 --  3. Completing any cook of a visible Recipe (`complete`) and older builds'
 --     `attach` kept writing legacy links for whatever Dish the cook landed in,
 --     including another creator's Recipe.
--- This migration makes Dish identity authoritative in all three and repairs only
+-- This migration makes Dish identity authoritative for 1 and 3 and repairs only
 -- associations that are provable. Additive and reversible: no table, Recipe,
 -- revision, cook, ranking or provenance row is deleted or rewritten; legacy rows
--- stay for older builds. No new tables (growth: none).
+-- stay for older builds. No new tables (growth: none). Path 2 lives in
+-- 20261118160050_recipe_share_option_integrity, which needs 20261117063020's
+-- share option function; this file depends only on the deployed head (split
+-- November 20, 2026, before either was applied, so it deploys alone).
 begin;
 
 -- Safe repair: an owned Recipe with no Dish identity whose only legacy link is one
@@ -46,35 +49,25 @@ revoke all on function staygrubby.legacy_dish_recipe_consistent() from public,an
 create trigger legacy_dish_recipe_consistent before insert on staygrubby.dish_recipes
  for each row execute function staygrubby.legacy_dish_recipe_consistent();
 
--- 1. A Dish shows only a Recipe whose identity is that Dish.
-alter function staygrubby.recipe_api(text,jsonb) rename to recipe_api_before_recipe_integrity;
-revoke all on function staygrubby.recipe_api_before_recipe_integrity(text,jsonb) from public,anon,authenticated;
-create function staygrubby.recipe_api(action text,payload jsonb default '{}'::jsonb) returns jsonb
-language plpgsql volatile security definer set search_path='' as $$
-declare result jsonb:=staygrubby.recipe_api_before_recipe_integrity(action,payload);
-begin
- if action='dish' and jsonb_typeof(result->'recipe')='object'
-  and (result->'recipe'->>'dishID') is distinct from (payload->>'dishID') then
-  return jsonb_build_object('recipe',null);
- end if;
- return result;
-end $$;
-revoke all on function staygrubby.recipe_api(text,jsonb) from public,anon;
-grant execute on function staygrubby.recipe_api(text,jsonb) to authenticated;
-
--- 2. Share options: the cook's exact snapshot, its exact link, then the Dish's own
--- Recipe. The legacy family link no longer decides.
+-- 1. A Dish shows only a Recipe whose identity is that Dish: the `dish` action's
+-- legacy family-link fallback (in the compatibility chain's `recipe_api_before_diet_index`)
+-- now answers "no Recipe". Patched in place, as the rest of the chain is, so names,
+-- grants and every other action stay exactly as they are (and later migrations that
+-- verify this chain still find it). Equivalent to filtering the fallback's result:
+-- the Dish's own Recipe is returned just above it, and the safe repair has already
+-- given every provable legacy-only Recipe its Dish.
 do $apply$
-declare body text:=pg_get_functiondef('staygrubby.owned_recipe_share_option(jsonb)'::regprocedure);
- legacy constant text:=$legacy$ if not historical and rid is null then
-  select r.id,r.revision into rid,version from staygrubby.dish_recipes l
-  join staygrubby.recipes r on r.id=l.recipe_id and r.owner_id=actor
-  where l.account_id=actor and l.dish_id=attempt_dish;
- end if;
-$legacy$;
+declare body text:=pg_get_functiondef('staygrubby.recipe_api_before_diet_index(text,jsonb)'::regprocedure);
+ fallback constant text:=$f$  if found then return jsonb_build_object('recipe',staygrubby.recipe_card(actor,rid)); end if;
+  return staygrubby.recipe_api_before_dish_identity(action,payload);
+ end if;$f$;
 begin
- if strpos(body,legacy)=0 then raise exception 'Unexpected share option predecessor'; end if;
- execute replace(body,legacy,'');
+ if (length(body)-length(replace(body,fallback,'')))/length(fallback)<>1 then
+  raise exception 'Unexpected Dish Recipe predecessor';
+ end if;
+ execute replace(body,fallback,$f$  if found then return jsonb_build_object('recipe',staygrubby.recipe_card(actor,rid)); end if;
+  return jsonb_build_object('recipe',null);
+ end if;$f$);
 end $apply$;
 
 notify pgrst,'reload schema';

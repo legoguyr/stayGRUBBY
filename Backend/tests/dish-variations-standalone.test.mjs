@@ -30,7 +30,7 @@ const dishRow = (id, name, extra = {}) => ({ id, name, defaultCategoryCode: 'sou
 const graph = async () => (await db.query('select api.open_account_library() result')).rows[0].result.graph;
 
 try {
- check(pending.length === 10 && !pending.includes(collections), `Ten other migrations stay pending (${pending.length})`);
+ check(pending.length > 0 && !pending.includes(collections), `The other migrations stay pending (${pending.length})`);
  // Three independent risotto Dishes with their own cooks, before deployment.
  const { attempts } = await cooking(0, 3);
  await cooking(1, 1);

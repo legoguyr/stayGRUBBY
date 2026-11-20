@@ -167,7 +167,7 @@ Not in scope (built but hidden, or not built): the follow model, multiple-photo 
 | Code implemented | Done (UI milestone `bc8c3e2`; P0 photos + Dish integrity on `agent/claude`) |
 | Integrated on `main` | Done locally November 18 with Codex's instant image publishing (`d475257`); not pushed |
 | Locally verified | Focused tests, Debug + Release builds, Simulator light/dark |
-| Backend deployed | Not required for the P0 photo fix. Pending approval: Codex's nine migrations, `20261118160000_dish_recipe_integrity` (recommended before release) . Deployed November 20: `20261120150047_dish_collections` + `dish_collections` flag (Dish Variations) |
+| Backend deployed | Not required for the P0 photo fix. Pending approval: Codex's nine migrations with `20261118160050_recipe_share_option_integrity`. Deployed November 20: `20261120150047_dish_collections` + `dish_collections` flag (Dish Variations) and `20261120171728_dish_recipe_integrity` (a Dish shows only its own Recipe) |
 | Physical iPhone accepted | Pending (owner checklist) |
 | TestFlight-ready | After push + iPhone acceptance (image-publishing migrations need production approval) |
 | Distributed | Not authorized |
