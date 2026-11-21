@@ -7,10 +7,11 @@ import Network
 /// One foreground worker for one verified account/store. Guest/demo trees never connect it.
 @MainActor @Observable final class CookingSyncCoordinator {
     enum Status: Equatable {
-        case idle, syncing, current, savedLocally, conflict, needsReview, signInRequired, rankingUpdateRequired
+        case idle, syncing, current, savedLocally, conflict, needsReview, signInRequired, rankingUpdateRequired, cookDescriptionUpdateRequired
         var label: String {
             switch self {
             case .rankingUpdateRequired: "Local changes saved · An older ranking change needs review. Update StayGrubby on all devices."
+            case .cookDescriptionUpdateRequired: "Local changes saved · Cook descriptions are waiting for a service update"
             case .idle: ""
             case .syncing: "Syncing cooking data…"
             case .current: "Cooking data up to date"
@@ -130,6 +131,7 @@ import Network
                     case "revision-conflict": self.status = .conflict; return
                     case "operation-rejected": self.status = .needsReview; return
                     case "ranking-update-required": self.status = .rankingUpdateRequired; return
+                    case "cook-description-update-required": self.status = .cookDescriptionUpdateRequired; return
                     case "authentication-required": self.status = .signInRequired; return
                     default: break
                     }
@@ -193,6 +195,7 @@ import Network
                     if (try? SyncJournal.pending(store.container.mainContext).isEmpty) == false { self.requested = true }
                     else { self.scheduleRetry(store: store, token: token) }
                 case CookingSyncError.rankingUpdateRequired: self.status = .rankingUpdateRequired
+                case CookingSyncError.cookDescriptionUpdateRequired: self.status = .cookDescriptionUpdateRequired
                 case CookingSyncError.conflict: self.status = .conflict
                 case CookingSyncError.authenticationRequired, AccountFoundationError.identityChanged: self.status = .signInRequired
                 case CookingSyncError.rejected, is SyncFoundationError: self.status = .needsReview

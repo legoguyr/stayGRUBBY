@@ -3,7 +3,14 @@ import { storageStubSQL } from './storage-stub.mjs';
 import { readFile,readdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import assert from 'node:assert/strict';
-export async function fixture({before} = {}) {
+// Verified production ledger: 51 baseline migrations, then these three independent
+// deployments. --production-order rehearses pending migrations against that real state.
+export const deployedAheadOfPending = [
+ '20261120150047_dish_collections.sql',
+ '20261120171728_dish_recipe_integrity.sql',
+ '20261121023911_recipe_unlink_and_recently_deleted.sql'
+];
+export async function fixture({before, productionOrder=process.argv.includes('--production-order')} = {}) {
  const db=new PGlite();let checks=0;
  await db.exec(`create role authenticated;create role anon;create role service_role;create schema auth;
  create table auth.users(id uuid primary key,is_anonymous boolean default false,deleted_at timestamptz);
@@ -12,7 +19,15 @@ export async function fixture({before} = {}) {
  create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb $$;`);
  await db.exec(storageStubSQL);
  const dir=new URL('../../supabase/migrations/',import.meta.url);
- for(const f of (await readdir(dir)).filter(f=>f.endsWith('.sql') && (!before || f < before)).sort())await db.exec(await readFile(new URL(f,dir),'utf8'));
+ const files=(await readdir(dir)).filter(f=>f.endsWith('.sql')).sort();
+ let ordered=files;
+ if(productionOrder){
+  for(const f of deployedAheadOfPending)assert.ok(files.includes(f), 'Missing production predecessor: '+f);
+  ordered=[...files.filter(f=>f<'20261116'),...deployedAheadOfPending,
+   ...files.filter(f=>f>='20261116'&&!deployedAheadOfPending.includes(f))];
+ }
+ const stop=before?ordered.indexOf(before):-1;
+ for(const f of stop>=0?ordered.slice(0,stop):ordered.filter(f=>!before||f<before))await db.exec(await readFile(new URL(f,dir),'utf8'));
  const users=[];
  for(let n=0;n<4;n++){
   const user=randomUUID(),session=randomUUID();
