@@ -34,8 +34,8 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         let store = UUID().uuidString, app = launch(["--test-light"], store: store)
         app.revealCreation(); app.buttons["new-dish"].press(forDuration: 0.2)
         XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8))
-        // Stage F grouping: This Dish (name, description, private notes), then This cook (name, date, Details).
-        let ids = ["dish-name", "cook-dish-description", "cook-dish-private-notes", "version-title", "cook-date", "cook-details"]
+        // This Dish (name, private notes), then This cook (name, its own description, date, Details) — Nov 21, 2026.
+        let ids = ["dish-name", "cook-dish-private-notes", "version-title", "cook-dish-description", "cook-date", "cook-details"]
         let frames = ids.map { app.descendants(matching: .any).matching(identifier: $0).firstMatch.frame.minY }
         XCTAssertEqual(frames, frames.sorted())
         XCTAssertFalse(app.staticTexts["Custom tags"].exists); shot("Owner corrections compact entry light", app)

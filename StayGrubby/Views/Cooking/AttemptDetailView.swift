@@ -71,6 +71,14 @@ struct EditCookingView: View {
                 } message: { Text(error ?? "") }
         }
         .task(id: "\(accepted):\(tagsPending):\(reloadSelection)") { await loadSelection() }
+        // A cook with no description of its own yet (nil = legacy): show its current caption, or the old Dish
+        // text if it was never posted, as the starting text. Showing it is not an edit; only a change saves.
+        .task(id: attempt.id) {
+            guard attempt.publicDescription == nil, let request,
+                  let legacy = try? await CookDescriptionService.load(attempt.id, request: request),
+                  !draft.shouldSavePublicDescription else { return } // never replace text the owner already typed
+            draft.useLegacyDescriptionContext(legacy)
+        }
         .deferRemoteCookingUpdates()
     }
 
@@ -90,12 +98,9 @@ struct EditCookingView: View {
         defer { saving = false }
         do {
             if !savedDraft {
-                let before = PublicDescriptionSync.trimmed(attempt.dish?.publicDescription)
+                // The description saves on this cook only; The Pass reads it from the cook after ordinary sync.
                 try CookingStore.edit(attempt, draft: draft, context: context, mediaDirectory: mediaRoot)
                 savedDraft = true
-                if let dish = attempt.dish, let request, PublicDescriptionSync.trimmed(dish.publicDescription) != before {
-                    Task { await PublicDescriptionSync.pushToPosts(of: dish, request: request) }
-                }
             }
             if let request, let selection, participants != selection.selectedIDs {
                 var payload = SocialPayload(attemptID: attempt.id, confirmed: true)

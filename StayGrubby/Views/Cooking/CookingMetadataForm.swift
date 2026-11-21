@@ -44,11 +44,6 @@ struct CookingMetadataForm: View {
                             }
                         }
                         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
-                            Text("Public Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
-                            TextField("A few words for your Sous Chefs", text: $draft.publicDescription, axis: .vertical)
-                                .focused($focusedField, equals: .description).lineLimit(1...4).accessibilityIdentifier("cook-dish-description").sgField()
-                        }
-                        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                             Label("Private Notes", systemImage: "lock").font(SGTheme.TypeRole.secondary.weight(.semibold))
                             TextField("For your kitchen only", text: $draft.privateNotes, axis: .vertical)
                                 .focused($focusedField, equals: .dishNotes).lineLimit(1...4).accessibilityIdentifier("cook-dish-private-notes").sgField()
@@ -57,7 +52,7 @@ struct CookingMetadataForm: View {
                             DishCollectionsField(labels: Binding(get: { draft.collections ?? [] }, set: { draft.collections = $0 }))
                         }
                         if existingDish || editing {
-                            Text(editing ? "These apply to every cook of this Dish, including Cuisine and Source in Details." : "Description and Private Notes apply to every cook of this Dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                            Text(editing ? "These apply to every cook of this Dish, including Cuisine and Source in Details." : "Private Notes apply to every cook of this Dish.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         }
                         if !draft.validDishText {
                             Text("Keep the description within 2,000 characters and private notes within 8,000.")
@@ -69,6 +64,14 @@ struct CookingMetadataForm: View {
                 VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
                         TextField("Cook Name (optional)", text: $draft.versionTitle).accessibilityIdentifier("version-title")
                             .focused($focusedField, equals: .version).submitLabel(.done).onSubmit { focusedField = nil }.sgField()
+                        // One description per cook (November 21, 2026): this cook's own text, the caption The Pass
+                        // shows when this cook is posted. Never shared with the Dish's other cooks.
+                        VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
+                            Text("Description").font(SGTheme.TypeRole.secondary.weight(.semibold))
+                            TextField("A few words about this cook for your Sous Chefs", text: $draft.publicDescription, axis: .vertical)
+                                .focused($focusedField, equals: .description).lineLimit(1...4).accessibilityIdentifier("cook-dish-description").sgField()
+                            Text("Shown with this cook on The Pass when you post it.").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                        }
                         if let fallbackCookName, draft.cleanTitle == nil {
                             Text("Leave blank to show \(fallbackCookName).").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                                 .accessibilityIdentifier("cook-name-fallback")

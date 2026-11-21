@@ -227,7 +227,12 @@ private struct DishRankingTab: View {
     var body: some View {
         if let cook { metadata(cook) }
         if let dish {
-            if let description = dish.publicDescription { Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description") }
+            // The shown cook's own description; a cook without one yet (legacy) still shows the old Dish text.
+            // An empty description is a deliberate clear and shows nothing.
+            if let description = cook.map({ $0.publicDescription ?? dish.publicDescription }) ?? dish.publicDescription,
+               !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description")
+            }
             if let notes = dish.privateNotes {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                     SGSectionHeader(title: "Dish Notes · private")

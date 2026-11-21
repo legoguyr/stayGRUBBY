@@ -43,10 +43,12 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
         fill("dish-name", "Stage 2 Soup", app)
         fill("cook-dish-description", "Bright lemon soup", app)
         fill("cook-dish-private-notes", "Only my Dish technique", app)
+        app.openCookingDetails() // Cuisine and Source live in Details (Stage F).
         let cuisine = app.buttons["dish-cuisine"]; reach(cuisine, app); cuisine.tap()
         XCTAssertTrue(app.buttons["cuisine-option-italian"].waitForExistence(timeout: 5)); app.buttons["cuisine-option-italian"].tap()
         let source = app.buttons["dish-source-type"]; reach(source, app); source.tap()
         XCTAssertTrue(app.buttons["source-choice-myOwn"].waitForExistence(timeout: 5)); app.buttons["source-choice-myOwn"].tap()
+        app.closeCookingDetails()
         let tag = app.buttons["cooked-with-open"]; reach(tag, app); tag.tap()
         XCTAssertTrue(app.navigationBars["Tag a Sous Chef"].waitForExistence(timeout: 8))
         let search = app.searchFields.firstMatch; search.tap(); search.typeText("Friendly")
@@ -62,7 +64,7 @@ final class Stage2ProductUITests: StayGrubbyUITestCase {
         app.terminate(); app.launchWithReviewOptions(); XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8)); row.tap(); app.buttons["cook-more-actions"].tap(); app.buttons["dish-text-edit"].tap()
-        XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-public").firstMatch.value as? String, "Bright lemon soup")
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "dish-text-public").firstMatch.exists, "Descriptions belong to each cook, not the Dish notes editor")
         XCTAssertEqual(app.descendants(matching: .any).matching(identifier: "dish-text-private").firstMatch.value as? String, "Only my Dish technique")
         app.buttons["Cancel"].tap(); app.cookAction("detail-edit-cook").tap()
         let editedDescription = app.descendants(matching: .any).matching(identifier: "cook-dish-description").firstMatch

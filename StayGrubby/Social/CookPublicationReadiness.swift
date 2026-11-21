@@ -19,7 +19,10 @@ import SwiftData
               let acceptedItem = graph.items.first(where: { $0.id == item.id }), acceptedItem.rankingID == rankID
         else { return nil }
         if requireCurrent {
+            // The caption is read from the cook at read time, so a post waits until this cook's own
+            // description has synced (Cook descriptions, November 21, 2026).
             guard acceptedCook.versionTitle == attempt.versionTitle,
+                  acceptedCook.publicDescription == attempt.publicDescription,
                   acceptedCook.sequenceNumber == attempt.sequenceNumber,
                   acceptedCook.categoryCode == attempt.categoryCode,
                   acceptedDish.name == dish.name, acceptedDish.cuisine == dish.cuisine,

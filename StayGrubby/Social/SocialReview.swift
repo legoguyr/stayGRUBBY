@@ -103,6 +103,14 @@ import Supabase
         }
     }
     private struct RecipeReviewArchive: Codable { var versions: [Recipe]; var photos: [UUID: RecipePhotoDescriptor]; var bytes: [String: Data]; var cookLinks: [UUID:UUID]? = nil; var dishLinks: [UUID:UUID]? = nil }
+    private func projectCookCaptions() {
+        let cooks = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>())) ?? []
+        for index in posts.indices where posts[index].isAuthor {
+            guard let id = postCookIDs[posts[index].id] ?? nil, let cook = cooks.first(where: { $0.id == id }) else { continue }
+            posts[index].sourceAttemptID = id
+            if let text = cook.publicDescription { posts[index].postDescription = text.isEmpty ? nil : text }
+        }
+    }
     private func persistRecipes() throws {
         if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars, cookLinks: cookRecipeLinks, dishLinks: dishRecipes)).write(to: url, options: .atomic) }
     }
@@ -180,6 +188,17 @@ import Supabase
             }
             guard let person = people.first(where: { $0.username == payload.username && $0.relationship != .blocked }) else { throw URLError(.resourceUnavailable) }
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
+        }
+        // Mirrors canonical Cook descriptions (November 21, 2026): an author's post carries its exact cook
+        // (`sourceAttemptID`, author only) and reads its caption from that cook when the cook has its own text.
+        if ["social_feed", "social_content"].contains(endpoint) { projectCookCaptions() }
+        if endpoint == "cook_description", let id = payload.attemptID {
+            let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first { $0.id == id }
+            let caption = posts.first { postCookIDs[$0.id] == id && $0.isAuthor }?.postDescription
+            let body: [String: Any?] = ["attemptID": id.uuidString, "publicDescription": cook?.publicDescription,
+                "effectiveDescription": cook?.publicDescription ?? caption ?? cook?.dish?.publicDescription,
+                "legacyDishDescription": cook?.dish?.publicDescription, "legacyPosts": [Any](), "hasMoreLegacyPosts": false, "needsReview": false]
+            return try JSONSerialization.data(withJSONObject: body.mapValues { $0 ?? NSNull() })
         }
         if endpoint == "recipe_library" {
             // Mirrors `api.recipe_library`: Unlink keeps the Recipe; Restore reclaims only a free Dish.
@@ -593,6 +612,9 @@ import Supabase
                 }
             } else if action == "editDescription", let index = posts.firstIndex(where: { $0.id == payload.postID && $0.isAuthor }) {
                 posts[index].postDescription = payload.postDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let id = postCookIDs[posts[index].id] ?? nil, let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.id == id }) {
+                    cook.publicDescription = posts[index].postDescription ?? ""; try? reviewContext?.save()
+                }
             } else if action == "delete" { posts.removeAll { $0.id == payload.postID } }
             else if action == "publish", let index = posts.firstIndex(where: { $0.id == payload.postID }) {
                 let p = posts[index]; posts[index] = SocialPost(id: p.id, author: p.author, title: p.title, versionTitle: p.versionTitle, scoreText: p.scoreText, achievement: p.achievement, createdAt: p.createdAt, photoPath: p.photoPath, published: true, isAuthor: p.isAuthor, moderationState: p.moderationState, recipeID: p.recipeID, recipeRevision: p.recipeRevision, postDescription: p.postDescription, metadata: p.metadata)
