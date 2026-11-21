@@ -22,6 +22,7 @@ extension CookingGraph {
             try require(item.rankingID.map(lists.contains) == true && item.strength.isFinite && item.uncertainty.isFinite && item.uncertainty >= 0)
         }
         for attempt in attempts {
+            try require(CookDescriptionPolicy.valid(attempt.publicDescription))
             try require(attempt.dishID.map(dishIDs.contains) == true && itemMap[attempt.rankedItemID] != nil && attempt.sequenceNumber > 0)
             try unique(attempt.tagKeys); try require(Set(attempt.tagKeys).isSubset(of: tagIDs))
         }

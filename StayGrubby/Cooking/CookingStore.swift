@@ -89,7 +89,6 @@ enum CookingStore {
                 context.insert(dish)
                 DishSourceStore.apply(draft.source, to: dish, context: context)
             }
-            dish.publicDescription = CookingDraft.optional(draft.publicDescription)
             dish.privateNotes = CookingDraft.optional(draft.privateNotes)
             if let labels = draft.collections { dish.collections = DishCollectionPolicy.normalized(labels) }
             let number = (dish.attempts.map(\.sequenceNumber).max() ?? 0) + 1
@@ -133,7 +132,6 @@ enum CookingStore {
             let renamed = dish.name != draft.cleanDishName
             dish.name = draft.cleanDishName
             dish.cuisine = draft.cuisine
-            dish.publicDescription = CookingDraft.optional(draft.publicDescription)
             dish.privateNotes = CookingDraft.optional(draft.privateNotes)
             if let labels = draft.collections { dish.collections = DishCollectionPolicy.normalized(labels) }
             DishSourceStore.apply(draft.source, to: dish, context: context)
@@ -227,6 +225,7 @@ enum CookingStore {
     private static func apply(_ draft: CookingDraft, to attempt: CookingAttempt) {
         attempt.cookedAt = draft.cookedAt; attempt.versionTitle = draft.cleanTitle
         attempt.notes = CookingDraft.optional(draft.notes); attempt.category = draft.category
+        if draft.shouldSavePublicDescription { attempt.publicDescription = CookDescriptionPolicy.normalized(draft.publicDescription) }
         attempt.updatedAt = .now
     }
 

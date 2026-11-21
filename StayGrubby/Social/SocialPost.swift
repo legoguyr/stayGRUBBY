@@ -22,6 +22,8 @@ nonisolated struct SocialPost: Codable, Identifiable, Sendable {
     var recipeRevision: Int? = nil
     var recipeAttachmentPresent: Bool? = nil
     var postDescription: String? = nil
+    /// Exact private Cook ID, projected only for this post's author.
+    var sourceAttemptID: UUID? = nil
     var metadata: SharedCookingMetadata? = nil
     var rankAtSharing: Int? = nil
     var rankedCountAtSharing: Int? = nil

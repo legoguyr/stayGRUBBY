@@ -32,9 +32,11 @@ nonisolated struct ProvisionedAccount: Codable, Equatable, Sendable {
     let accountID: UUID
     let syncRevision: Int
     let libraryState: LibraryState
+    var cookDescriptionVersion: Int? = nil
     enum CodingKeys: String, CodingKey {
         case formatVersion = "format_version", authUserID = "auth_user_id", accountID = "account_id"
         case syncRevision = "sync_revision", libraryState = "library_state"
+        case cookDescriptionVersion = "cook_description_version"
     }
     func validate(for identity: AuthenticatedIdentity) throws {
         guard formatVersion == 1, authUserID == identity.userID, accountID != authUserID, syncRevision >= 0
@@ -66,6 +68,7 @@ nonisolated struct AccountDeletionStatus: Codable, Equatable, Sendable {
 
 @MainActor final class SupabaseAccountBackend: AccountLibraryBackend, AccountDeletionBackend {
     let client: SupabaseClient
+    var cookDescriptionUserID: UUID?
     init(configuration: SupabaseClientConfiguration) {
         // SDK defaults persist sessions in Keychain; no custom preferences or model storage.
         client = SupabaseClient(supabaseURL: configuration.projectURL, supabaseKey: configuration.publishableKey)
@@ -84,6 +87,7 @@ nonisolated struct AccountDeletionStatus: Codable, Equatable, Sendable {
         let account: ProvisionedAccount = try await client.schema("api").rpc("provision_account").execute().value
         try account.validate(for: identity)
         guard client.auth.currentSession?.user.id == identity.userID else { throw AccountFoundationError.identityChanged }
+        cookDescriptionUserID = (account.cookDescriptionVersion ?? 0) >= 1 ? identity.userID : nil
         return account
     }
     func identityChanges() -> AsyncStream<AuthenticatedIdentity?> {

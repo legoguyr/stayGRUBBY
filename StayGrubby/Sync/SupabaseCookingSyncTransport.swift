@@ -38,6 +38,10 @@ extension SupabaseAccountBackend: AccountSyncBackend {
         guard let user = client.auth.currentSession?.user.id else { throw CookingSyncError.authenticationRequired }
         struct Parameters: Encodable { let envelope: SyncEnvelope }
         do {
+            if try CookDescriptionSyncSupport.requiresSupport(envelope.payload), cookDescriptionUserID != user {
+                let account = try await provision(for: AuthenticatedIdentity(userID: user))
+                guard (account.cookDescriptionVersion ?? 0) >= 1 else { throw CookingSyncError.unavailable }
+            }
             let response = try await client.schema("api").rpc("apply_cooking_operation", params: Parameters(envelope: envelope)).execute()
             try Task.checkCancellation()
             guard client.auth.currentSession?.user.id == user else { throw AccountFoundationError.identityChanged }

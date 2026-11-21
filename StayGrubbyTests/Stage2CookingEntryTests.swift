@@ -9,7 +9,7 @@ import Testing
         _ = try CookingStore.prepare(context: container.mainContext)
         return container
     }
-    @Test func entrySavesDishTextAndCookMetadataSeparately() throws {
+    @Test func entrySavesCookDescriptionAndPrivateMetadataSeparately() throws {
         let container = try container(); let context = container.mainContext
         defer { withExtendedLifetime(container) {} }
         var draft = CookingDraft(); draft.dishName = "Roasted peppers"
@@ -19,14 +19,14 @@ import Testing
         draft.category = .main; draft.customTags = ["Sunday"]
         let cook = try CookingStore.create(draft: draft, session: RankingEngine(itemID: UUID(), orderedIDs: [], reaction: .liked), context: context)
         let dish = try #require(cook.dish)
-        #expect(dish.publicDescription == "Sweet, smoky peppers" && dish.privateNotes == "My private Dish technique")
+        #expect(cook.publicDescription == "Sweet, smoky peppers" && dish.publicDescription == nil && dish.privateNotes == "My private Dish technique")
         #expect(cook.notes == "This cook needed less salt" && cook.customTags == ["Sunday"])
         let graph = try CookingGraphExport.snapshot(context: context)
         #expect(graph.dishes.first?.publicDescription == dish.publicDescription)
         #expect(graph.dishes.first?.privateNotes == dish.privateNotes)
-        #expect(graph.attempts.first?.notes == cook.notes)
+        #expect(graph.attempts.first?.notes == cook.notes && graph.attempts.first?.publicDescription == cook.publicDescription)
         let inherited = CookingDraft(dish: dish)
-        #expect(inherited.publicDescription == dish.publicDescription && inherited.privateNotes == dish.privateNotes)
+        #expect(inherited.publicDescription.isEmpty && inherited.privateNotes == dish.privateNotes)
         #expect(inherited.notes.isEmpty && inherited.existingPhotoCount == 0)
     }
     @Test func editingAndCancellingDraftsPreserveEvidenceAndOriginalCookNotes() throws {
@@ -46,7 +46,7 @@ import Testing
         #expect(reread.publicDescription == "Public soup" && reread.privateNotes == "Private soup")
         edit.publicDescription = ""; edit.privateNotes = ""
         try CookingStore.edit(cook, draft: edit, context: context)
-        #expect(cook.dish?.publicDescription == nil && cook.dish?.privateNotes == nil && cook.notes == "Original cook notes")
+        #expect(cook.publicDescription == "" && cook.dish?.publicDescription == nil && cook.dish?.privateNotes == nil && cook.notes == "Original cook notes")
     }
     @Test func invalidDishTextCannotCreateOrPartiallyEdit() throws {
         let container = try container(); let context = container.mainContext

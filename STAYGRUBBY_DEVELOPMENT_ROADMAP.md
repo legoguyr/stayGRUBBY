@@ -42,7 +42,7 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `SocialEngagementView<Accessory>` | Social/SocialCommentsView.swift | Card and Dish Details; trailing accessory slot (Recipe today, Shop This Dish later) |
 | `DishDetailsSection` | Social/DishPostDetails.swift | Ordered Dish Details sections; `.shop` slots after `.recipe` |
 | `SharedCookLookup` / `SharedCooksModel` | Social/SharedCookLookup.swift | Previous Cooks by exact `dishKey`, paginated, cached |
-| `PublicDescriptionSync` | Social/PublicDescriptionSync.swift | One Public Description across Dish and its posts |
+| `CookingStore.editCookDescription`, `CookDescriptionService`, `PublicDescriptionSync.attempt` | Cooking/CookDescription.swift, Social/PublicDescriptionSync.swift | Exact Cook description edits/legacy context/author lookup; old Dish fanout is a no-op |
 | `DishCooksSection` + `CookMarks` / `CookTags` | Views/Cooking/DishParts.swift | Cook history (Latest / Top cook); ready for My Kitchen journal views |
 | `SGLockedKitchenNotice` | Social/KitchenPrivacy.swift | Non–Sous Chef Kitchens now; private accounts later |
 | `DishCollectionPolicy` / `DishCollectionStore` / `DishCollectionSummary` | Cooking/DishCollections.swift | Smart Collections: labels on Dishes, derived membership and best-cook ranking |
@@ -65,7 +65,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Feature | Status | Notes / dependency |
 | --- | --- | --- |
 | The Pass card, comments sheet, Dish Details, Previous Cooks | Integrated (pending iPhone) | Exact `dishKey` integrated by Codex (d26b56c) |
-| One Public Description (Dish ↔ caption) | Verified client sync | Backend: derive caption server-side from the Dish row (§4) |
+| One canonical description per Cook ↔ Pass caption | Verified local model/sync/backend (320 database assertions, 25 native tests; Debug/Release) | Supersedes Dish-wide text/fanout; Claude UI binding, deployment and integrated acceptance pending ([contract](COOK_DESCRIPTION_INTEGRITY.md)) |
 | Standard Delete wording | Verified | Replaces "86" in actions and confirmations |
 | Tab icon system | Verified (Simulator) | iPhone visual acceptance pending |
 | Cook history marks (Latest / Top cook) | Verified | Presentation only; ranking unchanged |
@@ -88,8 +88,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 
 | Contract | Why | Client boundary today |
 | --- | --- | --- |
-| **Cook description** — Codex owns the contract (`COOK_DESCRIPTION_INTEGRITY.md` on `agent/codex`, Nov 21): `CookingAttempt.publicDescription` per Cook, Pass captions read it, author-only `sourceAttemptID`, `CookingStore.editCookDescription`, no guessed backfill | One description per Cook (owner milestone, Nov 21) | Claude binds the editors to the exact Cook and removes Dish-wide caption fanout once Codex hands over the final helpers; not before |
-| Caption derived from `dishes.public_description` (or an `editDishDescription` action that updates the Dish row and all its posts in one transaction) | One canonical Public Description across devices, atomic | `PublicDescriptionSync` updates posts after explicit saves; reports failures |
+| `cooking_attempts.public_description` / attempt `publicDescription`; owner-only `cook_description/get`; author-only post `sourceAttemptID` | One independent description per Cook, exact read-time caption, no duplicate editable field | `CookingStore.editCookDescription` + existing outbox; `CookDescriptionService.load`; remove all Dish-wide UI writes/fanout. Nil preserves legacy, empty string clears. `cook_description_version: 1` on the normal receipt gates durable sends; unsupported servers leave new operations pending. Backend rollout must precede UI activation ([contract](COOK_DESCRIPTION_INTEGRITY.md)) |
 | Follow model: `account_visibility` (`public`/`private`), `follows` with `pending/accepted`, searchable private accounts with a minimal locked card, RLS so only accepted followers read audience-scoped content | Public/private accounts (owner decision, Nov 18) | Current model stays: mutual Sous Chefs + discoverable flag; `account_privacy_follows` off |
 | Cooked-at snapshot on posts | Dish Details cooking date | Shows the shared date |
 | `20261120171728_dish_recipe_integrity` (owner-authorized, **deployed** November 20 ahead of the other pending files; local `20261118160000`, renamed byte-identically) | `recipes dish` returns only a Recipe whose `dish_id` is that Dish (fallback patched in place in `recipe_api_before_diet_index`); new legacy links that disagree with identity are skipped; provable legacy-only Recipes get their Dish (none in production) | `Backend/tests/hosted-order-rehearsal.test.mjs` proves Codex's pending chain still applies afterwards |
@@ -107,7 +106,7 @@ Contract rules: authenticated RPC/Edge action, DTO documented in the owning doma
 1b. Deploy (owner-authorized) Codex's migrations with `20261118160050`. ~~`20261118160000` integrity core~~ — deployed November 20. ~~Dish Variations migration and `dish_collections` flag~~ — deployed and enabled November 20.
 1c. P2 app-wide UI consistency pass (UI_ARCHITECTURE §10.1).
 2. Physical iPhone acceptance of the UI milestone → next TestFlight candidate (owner authorizes upload).
-3. Codex: Public Description server contract, then follow model; Claude builds the gated client flows against the documented DTOs in parallel.
+3. Codex: exact-Cook description contract; Claude binds description UI, then integrated/deployment acceptance. Follow-model work stays separate; Claude builds the gated client flows against the documented DTOs in parallel.
 4. Enable gates one at a time after hosted acceptance.
 
 Ownership: Claude owns SwiftUI presentation, design system and client flows; Codex owns Supabase schema, functions, RLS, sync contracts and client transport changes that alter a contract. Shared files are reconciled at authorized integration.
@@ -121,7 +120,7 @@ Ownership: Claude owns SwiftUI presentation, design system and client flows; Cod
 
 ## 7. Capacity and safety
 
-- No writes from navigation; post caption updates happen only after an explicit Save and only when the text differs (bounded to 20 cooks per Dish).
+- No writes from navigation; Cook descriptions change only after an explicit save; unchanged description saves create no operation/write. Pass captions are read-time projections; no 20-cook fanout remains.
 - Read caches stay bounded (`AccountContentCache`, 120 s freshness; media cache 120 MB / 24 MB low-space).
 - Locked Kitchens skip a request; Dish Details refreshes on return only when stale.
 - Hidden features add no polling, background work or Storage objects.
@@ -132,6 +131,6 @@ Ownership: Claude owns SwiftUI presentation, design system and client flows; Cod
 | --- | --- | --- |
 | Stale UI tests (Edit Cook in the actions menu, `hero-photo`/`hero-placeholder`, SocialUX share-default switch tap) | Noise in regression runs | Update with the next Dish page cycle (UI_ARCHITECTURE §10) |
 | Add Manually nested navigation (`RecipeEditor` owns a `NavigationStack`) | Back + Cancel | Embedded editor mode, coordinated with the Recipe editor owner |
-| Per-post caption copies | Cross-device drift possible | Server contract (§4) |
+| Legacy caption/Dish conflicts and old Dish-bound UI | Seven active hosted value differences, three historical-caption groups (overlap possible) | No guessed overwrite; owner-only evidence and explicit per-Cook choice. Claude UI binding before release (§4) |
 | Client features that silently depend on pending migrations | The Pass photo P0 (Nov 18) | Every client call to a pending function must degrade (missing-function → fallback) and be listed in §4 until deployed |
 | Two search entry patterns, fixed filter rows, text Sort menus | Inconsistent library chrome | P2 pass (UI_ARCHITECTURE §10.1) |

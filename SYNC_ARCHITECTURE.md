@@ -15,6 +15,12 @@ Client-side; no schema, RPC or Storage policy change. Works with the deployed ba
 
 Build 5 and earlier treat these as a permanent rejection (*Sync needs review*, outbox kept), so a server-side write circuit breaker stays off until a build with this client is the minimum supported version. Never use `40001`/`40P01` for throttling.
 
+## Cook description correction — local candidate, November 20, 2026
+
+`AttemptTransfer.publicDescription` carries only that Cook's public text through the existing graph/outbox. Missing/null old-client writes preserve the server value; an empty string deliberately clears it. New cooks initialize their own value, never copy it from another Cook or write the Dish description. An unrelated edit of an unresolved legacy Cook does not silently choose its Dish text. Hydration/relaunch retains the field; private notes remain separate.
+
+Native edits use `CookingStore.editCookDescription` and the usual atomic journal. An unchanged save returns before staging. The compatible old Pass editor writes the exact linked Cook under the existing account lock and advances `sync_revision` once only on change. A device with stale pending changes receives PT409 and retains its original outbox; no automatic merge, payload rewrite or data loss is introduced. The normal revision probe/restore discovers remote description changes. Server deployment must precede the coordinated new UI. The normal account receipt advertises `cook_description_version: 1`; the SDK transport caches positive support per Auth identity and leaves new description operations pending with existing bounded backoff when the server lacks support, so unknown-field omission cannot be acknowledged as durable success. Old operations without the field keep their existing path. No photo/ranking envelope or receipt identity is changed. [Full contract and deployment gates](COOK_DESCRIPTION_INTEGRITY.md)
+
 # Current Phase 3D Part 2 — private photo sync
 
 > Current overview: [STAYGRUBBY_ARCHITECTURE.md](STAYGRUBBY_ARCHITECTURE.md). Structured and private photo sync are implemented and physically reviewed. Old two-tab/hidden-Feed and pending-photo-review statements below describe their dated checkpoints. Protocol/outbox contracts remain applicable; [AGENTS.md](AGENTS.md) governs risk-based verification, rather than automatic full historical regression.

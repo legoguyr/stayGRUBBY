@@ -24,6 +24,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 | --- | --- |
 | [FOOD_ARCHITECTURE.md](FOOD_ARCHITECTURE.md) | One Dish over separate Dish/Recipe/cook records: relationships, Main Recipe, renameable cooks and final terminology, as written vs as made, lenses and filters, Add Recipe / Cook Again flows, reusable Dish UI parts |
 | [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul stages and their run order |
+| [COOK_DESCRIPTION_INTEGRITY.md](COOK_DESCRIPTION_INTEGRITY.md) | Per-Cook description contract, legacy conflicts, Codex/Claude ownership and pending rollout |
 | [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md) | V1 release requirements and state |
 | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
 | [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |
