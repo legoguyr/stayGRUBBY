@@ -1,7 +1,7 @@
 import {randomUUID,createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 import {fixture} from './social-harness.mjs';
-const migration='20261121030333_canonical_cook_descriptions.sql';
+const migration='20261121161925_canonical_cook_descriptions.sql';
 const {db,users,actor,rpc,cooking,check,rejects,finish}=await fixture({before:migration});
 const published=[];
 const owner=users[0].id;

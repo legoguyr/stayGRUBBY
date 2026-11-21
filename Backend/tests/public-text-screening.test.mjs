@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261117142843_public_text_screening.sql';
+const migration = '20261121161536_public_text_screening.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 const threat = 'I will kill you';
 const normal = 'Beat the egg whites for chicken breasts. Kill the heat. I will shoot you a photo.';

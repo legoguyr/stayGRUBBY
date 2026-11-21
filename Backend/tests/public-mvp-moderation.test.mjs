@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261116204043_public_mvp_moderation.sql';
+const migration = '20261121161421_public_mvp_moderation.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 const report = (kind, id, extra = {}) => rpc('social_report', 'report', {
  targetType: kind, targetID: id, reason: 'spam', context: ' Review this reference. ', ...extra

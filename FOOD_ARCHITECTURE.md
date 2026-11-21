@@ -113,7 +113,7 @@ Food Bible has **My Recipes** (owned, including any copies made before November 
 - Edit Cook's Dish name renames the Dish for **all** its cooks; with several cooks it now says so and points to Separate Cooks (the owner's risotto was renamed this way).
 - **Grub Rank All Dishes** lists one row per Dish at its best cook, numbered by Dish position; **Dish Variations** (gated) lists variation cards. Recipe → Dish navigation resolves by Dish ID and leads with the Recipe's own cook.
 - Rank a Dish never merges by name: when the typed name matches a ranked Dish, the form offers *Add Another Cook of …*; otherwise a new Dish is created.
-- Server migration `20261120171728_dish_recipe_integrity` (deployed November 20, 2026; local `20261118160000`) removes the `dish` legacy fallback; `20261118160050_recipe_share_option_integrity` (pending, deploys with Codex's share-option migration) removes the `share_options` one. Together they remove the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
+- Server migration `20261120171728_dish_recipe_integrity` (deployed November 20, 2026; local `20261118160000`) removes the `dish` legacy fallback; `20261121161847_recipe_share_option_integrity` (pending, deploys with Codex's share-option migration) removes the `share_options` one. Together they remove the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
 
 ### 3.6 Unlink Recipe and Recently Deleted (November 20, 2026)
 

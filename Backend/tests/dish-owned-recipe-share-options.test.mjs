@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261117063020_dish_owned_recipe_share_options.sql';
+const migration = '20261121161446_dish_owned_recipe_share_options.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 const content = title => ({ title, ingredients: ['water'], steps: ['Heat.'] });
 const option = payload => rpc('recipes', 'share_options', payload);
