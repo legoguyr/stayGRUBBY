@@ -115,6 +115,14 @@ Food Bible has **My Recipes** (owned, including any copies made before November 
 - Rank a Dish never merges by name: when the typed name matches a ranked Dish, the form offers *Add Another Cook of …*; otherwise a new Dish is created.
 - Server migration `20261120171728_dish_recipe_integrity` (deployed November 20, 2026; local `20261118160000`) removes the `dish` legacy fallback; `20261118160050_recipe_share_option_integrity` (pending, deploys with Codex's share-option migration) removes the `share_options` one. Together they remove the legacy fallbacks above, skips new legacy links that disagree with identity, and gives a Dish only to a Recipe whose single legacy link proves it. Ambiguous cases stay unassigned for explicit linking. No row is deleted.
 
+### 3.6 Unlink Recipe and Recently Deleted (November 20, 2026)
+
+Owner P0 after a Recipe was deleted when only unlinking was intended. The model stays: a Recipe has zero or one Dish (`recipes.dish_id`, unique per owner), a Dish has zero or one Recipe, both can exist alone, cooks of one Dish share its Recipe, and links are never inferred from names.
+- **Unlink from Dish** (Recipe menu, owner, Recipe on a Dish; never styled destructive) clears only the association (`api.recipe_library('unlink_dish')`). The Recipe stays in Food Bible with its photos, Recipe History and cook provenance; the Dish keeps its cooks, scores and rankings. Confirmation says so.
+- **Delete Recipe** names the Recipe in its confirmation, says what happens, and offers Unlink as the alternative when the Recipe has a Dish. It never deletes Dishes, cooks or rankings.
+- **Recently Deleted** (Food Bible, end of My Recipes): a deleted Recipe is copied with everything that would cascade (revisions, saves, activity, cook and Dish links, post attachments, forks) into `recipe_trash` by a delete trigger, for 30 days. **Restore** reinserts the same ID, content, revision and history, and reclaims its Dish only when that Dish still exists without another Recipe. **Delete Permanently** is separate and confirmed. Expired copies go on the owner's next delete or visit; account erasure keeps none. Photos stay referenced (so not cleaned up) only while restorable. Recipes are server-authoritative, so sync cannot resurrect or erase them.
+- Gated by `recipe_recovery` until `20261120180000_recipe_unlink_and_recently_deleted` is deployed; without it Delete says it is permanent and Unlink is hidden. The trash table is generic enough to become the pattern for other entities later; no other entity uses it in V1.
+
 ## 4. Cooking Attempts: final terminology and naming
 
 ### 4.1 Words

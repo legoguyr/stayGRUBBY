@@ -8,6 +8,7 @@ struct FoodBibleView: View {
     @Environment(\.scenePhase) private var phase
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accountContentCache) private var cache
+    @Environment(\.featureFlags) private var flags
     @Query private var dishes: [Dish]
     @State private var entries: [CookbookEntry] = []
     @State private var query = ""
@@ -55,6 +56,12 @@ struct FoodBibleView: View {
                     }
                 }
                 if !entries.isEmpty { Text(entries.count == 1 ? "1 Recipe" : "\(entries.count) Recipes").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary).accessibilityIdentifier("bible-count") }
+                if flags.isOn(.recipeRecovery) {
+                    NavigationLink { RecentlyDeletedRecipesView() } label: {
+                        Label("Recently Deleted", systemImage: "trash").font(SGTheme.TypeRole.secondary.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: SGTheme.Size.minimumTap, alignment: .leading).contentShape(Rectangle())
+                    }.buttonStyle(.plain).foregroundStyle(SGTheme.ColorToken.accent).accessibilityIdentifier("bible-recently-deleted")
+                }
             }.padding(SGTheme.Space.margin).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
             }
         }.accessibilityIdentifier("bible-scroll").background(SGTheme.ColorToken.background).scrollDismissesKeyboard(.interactively)

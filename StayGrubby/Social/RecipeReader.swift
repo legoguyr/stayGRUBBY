@@ -15,6 +15,10 @@ import SwiftData
     var list: RankingList?
     var deleting = false
     var deleted = false
+    var unlinking = false
+    var notice: String?
+    /// The Dish this reader was opened for (the Dish page's Recipe tab), if any.
+    @ObservationIgnored private(set) var shownForDish: UUID?
     @ObservationIgnored var reservation = UUID()
     @ObservationIgnored private var generation = UUID()
 
@@ -28,6 +32,7 @@ import SwiftData
     /// The Dish's own Recipe (`recipes.dish_id`); nil means the Dish has no Recipe yet.
     func load(dishID: UUID, request: SocialRequest?) async {
         guard let request else { failed = true; return }
+        shownForDish = dishID
         await fetch {
             var payload = SocialPayload(); payload.dishID = dishID
             return try JSONDecoder().decode(DishRecipeResponse.self, from: await request("recipes", "dish", payload)).recipe
@@ -64,6 +69,17 @@ import SwiftData
             recipe?.saved.toggle()
             NotificationCenter.default.post(name: .recipeSavesChanged, object: nil)
         } catch is CancellationError {} catch { failed = true }
+    }
+    /// Unlink Recipe: the Dish and the Recipe both stay; only their association goes. On the Dish page the
+    /// Recipe tab then shows that the Dish has no Recipe; elsewhere the reader keeps showing the Recipe.
+    func unlink(request: SocialRequest?) async {
+        guard let request, let recipe, recipe.isOwner, recipe.dishID != nil else { return }; busy = true; defer { busy = false }
+        do {
+            let next = try await RecipeLibraryService.unlink(recipe, request: request); try Task.checkCancellation()
+            self.recipe = shownForDish == nil ? (next ?? recipe) : nil
+            notice = "“\(recipe.content.title)” is still in Food Bible."
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+        } catch is CancellationError {} catch { notice = "Couldn’t unlink. Try again." }
     }
     func delete(context: ModelContext, relatedDish: Dish?, request: SocialRequest?) async {
         guard let request, let recipe else { return }
@@ -149,6 +165,8 @@ struct RecipeReaderContent: View {
 /// Owner management and sharing in the navigation bar, for any host showing a Recipe.
 struct RecipeReaderToolbar: ToolbarContent {
     let model: RecipeReaderModel
+    /// Unlink is offered only once its server action is live (`FeatureFlag.recipeRecovery`).
+    @Environment(\.featureFlags) private var flags
     var body: some ToolbarContent {
         if let recipe = model.recipe {
             RecipeToolbarActions(url: recipe.visibility == "friends" ? AppRoute.recipeURL(recipe.id) : nil, sendContent: recipe.visibility == "friends" ? .recipe(recipe.id) : nil, disabled: model.busy) {
@@ -156,6 +174,12 @@ struct RecipeReaderToolbar: ToolbarContent {
                     Button("Edit Recipe", systemImage: "pencil") { model.management = .edit(recipe) }.accessibilityIdentifier("recipe-edit")
                     Button("Recipe History", systemImage: "clock") { model.management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                     Button("Save as New Recipe", systemImage: "document.on.document") { model.management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
+                    // Unlink is never a destructive action and is listed apart from Delete.
+                    if flags.isOn(.recipeRecovery), recipe.dishID != nil {
+                        Divider()
+                        Button("Unlink from Dish", systemImage: "link") { model.unlinking = true }.accessibilityIdentifier("recipe-unlink")
+                    }
+                    Divider()
                     Button("Delete Recipe", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
                 } else {
                     Button("Report Recipe", systemImage: "flag") {
@@ -174,6 +198,16 @@ private struct RecipeReaderPresentation: ViewModifier {
     var reload: () async -> Void
     @Environment(\.socialRequest) private var request
     @Environment(\.modelContext) private var context
+    @Environment(\.featureFlags) private var flags
+    private var dishName: String { relatedDish?.name ?? "its Dish" }
+    /// Delete always names the Recipe and what happens; Unlink is offered as the alternative when the Recipe has a Dish.
+    private var deleteMessage: String {
+        let recovery = flags.isOn(.recipeRecovery)
+        let alternative = recovery && model.recipe?.dishID != nil ? " To keep the Recipe and only remove it from \(dishName), choose Unlink from Dish instead." : ""
+        return recovery
+            ? "It moves to Recently Deleted in Food Bible for 30 days, then is deleted permanently. Your Dishes, cooks and rankings stay.\(alternative)"
+            : "This permanently deletes the Recipe and its Recipe History. It can’t be undone. Your Dishes, cooks and rankings stay."
+    }
     func body(content: Content) -> some View {
         content
             .recipeReportSheet($model.reportTarget, reload: reload)
@@ -192,9 +226,14 @@ private struct RecipeReaderPresentation: ViewModifier {
                                    newDishID: relatedDish == nil && model.recipe?.isOwner == true ? model.recipe?.dishID : nil, origin: claim)
                 }
             }
-            .confirmationDialog("Delete this Recipe?", isPresented: $model.deleting, titleVisibility: .visible) {
+            .confirmationDialog("Unlink “\(model.recipe?.content.title ?? "Recipe")” from \(dishName)?", isPresented: $model.unlinking, titleVisibility: .visible) {
+                Button("Unlink Recipe") { Task { await model.unlink(request: request) } }.accessibilityIdentifier("recipe-unlink-confirm")
+            } message: { Text("The Recipe stays in Food Bible with its photos and Recipe History. \(dishName) keeps its cooks and rankings.") }
+            .confirmationDialog("Delete “\(model.recipe?.content.title ?? "Recipe")”?", isPresented: $model.deleting, titleVisibility: .visible) {
                 Button("Delete Recipe", role: .destructive) { Task { await model.delete(context: context, relatedDish: relatedDish, request: request) } }
-            } message: { Text("This removes the Recipe and can’t be undone. Your cooks, rankings and saved cook snapshots stay intact.") }
+                    .accessibilityIdentifier("recipe-delete-confirm")
+            } message: { Text(deleteMessage) }
+            .alert("Recipe", isPresented: Binding(get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })) { Button("OK") { model.notice = nil } } message: { Text(model.notice ?? "") }
     }
 }
 extension View {

@@ -309,42 +309,24 @@ struct VariationEditorSheet: View {
         let key = DishCollectionPolicy.key(cleanName)
         return key != label.map(DishCollectionPolicy.key) && DishCollectionSummary.labels(in: dishes).contains { DishCollectionPolicy.key($0) == key }
     }
-    private var shown: [Dish] {
-        let query = TagNormalization.key(search)
-        return dishes.filter { query.isEmpty || TagNormalization.key($0.name).contains(query) }
-    }
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            // The shared Dish picker (multiple selection), with the variation's name above the Dishes.
+            DishPickerList(dishes: dishes, query: search, selection: .multiple(Binding(get: { members }, set: { selected = $0 }))) {
+                VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
                     TextField("Variation name, like Risotto", text: $name)
-                        .autocorrectionDisabled().accessibilityIdentifier("variation-name")
+                        .autocorrectionDisabled().font(SGTheme.TypeRole.title).accessibilityIdentifier("variation-name").sgField()
                     if nameTaken { Text("“\(cleanName ?? "")” already exists. Choose another name.").font(SGTheme.TypeRole.secondary).foregroundStyle(SGTheme.ColorToken.accent) }
-                } footer: { Text(DishVariationCopy.explanation) }
-                Section {
-                    if dishes.count > 8 { TextField("Search Dishes", text: $search).accessibilityIdentifier("variation-search") }
-                    ForEach(shown) { dish in
-                        let on = members.contains(dish.id)
-                        Button { toggle(dish.id) } label: {
-                            HStack(spacing: SGTheme.Space.small) {
-                                DishPhoto(media: dish.attempts.compactMap(\.primaryImage).first, thumbnail: true, name: dish.name).sgPhotoFrame(.compactThumbnail)
-                                VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                                    Text(dish.name).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText)
-                                    Text(dish.attempts.count == 1 ? "1 cook" : "\(dish.attempts.count) cooks").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                                }
-                                Spacer(minLength: 0)
-                                Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.title3)
-                                    .foregroundStyle(on ? SGTheme.ColorToken.accent : .secondary)
-                            }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(dish.name).accessibilityAddTraits(on ? .isSelected : [])
-                        .accessibilityIdentifier("variation-dish-\(dish.name)")
-                    }
-                } header: { Text(members.count == 1 ? "1 Dish selected" : "\(members.count) Dishes selected") }
+                    Text(DishVariationCopy.explanation).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    SGSectionHeader(title: members.count == 1 ? "1 Dish selected" : "\(members.count) Dishes selected").padding(.top, SGTheme.Space.small)
+                }.padding(.bottom, SGTheme.Space.xSmall)
             }
-            .scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
+            .safeAreaInset(edge: .top) {
+                SGSearchField(placeholder: "Search dishes", text: $search, identifier: "parent-dish-search")
+                    .padding(SGTheme.Space.medium).background(SGTheme.ColorToken.background)
+            }
+            .scrollDismissesKeyboard(.interactively).background(SGTheme.ColorToken.background)
             .navigationTitle(label == nil ? DishVariationCopy.create : DishVariationCopy.edit).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -354,11 +336,6 @@ struct VariationEditorSheet: View {
             }
             .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
         }
-    }
-    private func toggle(_ id: UUID) {
-        var next = members
-        if next.contains(id) { next.remove(id) } else { next.insert(id) }
-        selected = next
     }
     private func save() {
         guard let cleanName else { return }

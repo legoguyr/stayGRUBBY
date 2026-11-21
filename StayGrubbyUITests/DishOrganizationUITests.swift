@@ -169,4 +169,69 @@ final class DishOrganizationUITests: StayGrubbyUITestCase {
         app.segmentedControls["dish-tabs"].buttons["Recipe"].tap()
         XCTAssertTrue(app.buttons["dish-link-recipe"].waitForExistence(timeout: 10), "No inherited Recipe")
     }
+
+    /// Recipe safety (November 20, 2026): Unlink keeps the Recipe in Food Bible; Delete moves it to Recently
+    /// Deleted, and Restore brings it back on its Dish.
+    @MainActor func testUnlinkKeepsTheRecipeAndDeletedRecipesCanBeRestored() throws {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--test-light", "--test-reduce-motion", "--feature-flag", "recipe_recovery"]
+        app.launchWithReviewOptions()
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
+        app.revealCreation(); app.buttons["new-dish"].tap()
+        let name = app.textFields["dish-name"]; XCTAssertTrue(name.waitForExistence(timeout: 5)); name.tap(); name.typeText("Butternut Squash Risotto")
+        if app.buttons["cook-keyboard-done"].exists { app.buttons["cook-keyboard-done"].tap() }
+        app.buttons["Continue"].tap(); app.buttons["Liked it"].tap()
+        XCTAssertTrue(app.buttons["ranking-result-close"].waitForExistence(timeout: 15)); app.buttons["ranking-result-close"].tap()
+        let notNow = app.buttons["Not Now"]; if notNow.waitForExistence(timeout: 1), notNow.isHittable { notNow.tap() }
+
+        // Give the Dish a Recipe from its own page.
+        openDish(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'cook-row-' AND label CONTAINS 'Butternut'")).firstMatch, app)
+        let addRecipe = app.buttons["dish-add-recipe"]
+        for _ in 0..<6 where !addRecipe.isHittable { app.swipeUp() }
+        addRecipe.tap()
+        XCTAssertTrue(app.buttons["dish-recipe-manual"].waitForExistence(timeout: 8)); app.buttons["dish-recipe-manual"].tap()
+        XCTAssertTrue(app.textFields["recipe-edit-title"].waitForExistence(timeout: 8))
+        if app.buttons["recipe-keyboard-done"].exists { app.buttons["recipe-keyboard-done"].tap() }
+        app.buttons["recipe-save"].tap()
+        XCTAssertTrue(app.segmentedControls["dish-tabs"].waitForExistence(timeout: 10))
+        app.segmentedControls["dish-tabs"].buttons["Recipe"].tap()
+
+        // Unlink is its own, non-destructive action; the Recipe stays in Food Bible.
+        let menu = app.buttons["recipe-actions"]; XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        XCTAssertTrue(app.buttons["recipe-unlink"].waitForExistence(timeout: 5), "Unlink is offered next to Delete")
+        XCTAssertTrue(app.buttons["recipe-delete"].exists)
+        let menuShot = XCTAttachment(screenshot: app.screenshot()); menuShot.name = "Recipe menu with Unlink"; menuShot.lifetime = .keepAlways; add(menuShot)
+        app.buttons["recipe-unlink"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'stays in Food Bible'")).firstMatch.waitForExistence(timeout: 5))
+        app.buttons["recipe-unlink-confirm"].firstMatch.tap()
+        let ok = app.alerts.buttons["OK"]; if ok.waitForExistence(timeout: 5) { ok.tap() }
+        XCTAssertTrue(app.buttons["dish-link-recipe"].waitForExistence(timeout: 10), "The Dish no longer has a Recipe")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.tabBars.buttons["Food Bible"].tap()
+        let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-' AND label CONTAINS 'Butternut'")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "The unlinked Recipe is still in Food Bible")
+
+        // Delete names the Recipe and moves it to Recently Deleted.
+        entry.tap()
+        XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        XCTAssertFalse(app.buttons["recipe-unlink"].exists, "No Unlink once the Recipe has no Dish")
+        app.buttons["recipe-delete"].tap()
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Recently Deleted'")).firstMatch.waitForExistence(timeout: 5))
+        let deleteShot = XCTAttachment(screenshot: app.screenshot()); deleteShot.name = "Delete confirmation"; deleteShot.lifetime = .keepAlways; add(deleteShot)
+        app.buttons["recipe-delete-confirm"].firstMatch.tap()
+        if app.navigationBars.buttons.element(boundBy: 0).waitForExistence(timeout: 3), !app.buttons["bible-recently-deleted"].exists { app.navigationBars.buttons.element(boundBy: 0).tap() }
+        XCTAssertTrue(entry.waitForNonExistence(timeout: 10), "Deleted Recipes leave Food Bible")
+        let trash = app.buttons["bible-recently-deleted"]
+        for _ in 0..<4 where !trash.isHittable { app.swipeUp() }
+        trash.tap()
+        let restore = app.buttons["recently-deleted-restore-Butternut Squash Risotto"]
+        XCTAssertTrue(restore.waitForExistence(timeout: 10))
+        let trashShot = XCTAttachment(screenshot: app.screenshot()); trashShot.name = "Recently Deleted"; trashShot.lifetime = .keepAlways; add(trashShot)
+        restore.tap()
+        XCTAssertTrue(app.alerts.buttons["OK"].waitForExistence(timeout: 5)); app.alerts.buttons["OK"].tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "recently-deleted-empty").firstMatch.waitForExistence(timeout: 5))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "Restored Recipes return to Food Bible")
+    }
 }

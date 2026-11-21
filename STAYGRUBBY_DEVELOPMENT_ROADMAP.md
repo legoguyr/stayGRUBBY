@@ -27,6 +27,7 @@ Every feature carries one status. These are separate states; reaching one never 
 | --- | --- | --- |
 | `dish_aggregate_scores` | Planned (reserved) | Aggregate score/make-count backend (FOOD_ARCHITECTURE §10) |
 | `account_privacy_follows` | Foundation (`SGLockedKitchenNotice`) | Follow model backend contract, RLS and client follow flow (§4) |
+| `recipe_recovery` (Unlink + Recently Deleted) | Implemented + Verified (PGlite full chain and hosted order; client UI test), hidden; **awaiting owner deployment approval** | Deploy `20261120180000_recipe_unlink_and_recently_deleted` alone (no dependency on the pending chain), then insert the flag row |
 | `dish_collections` (Dish Variations) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); client on `agent/claude`, not yet in a TestFlight build; owner iPhone acceptance pending | Migration deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); flag row inserted. Turn off with `enabled = false`. Debug review: `--feature-flag dish_collections` |
 
 ## 2. Reusable components (LEGO inventory)
@@ -50,6 +51,8 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `AuthorizedRemoteImage` + `ImageAccessCheck` | Social/AuthorizedRemoteImage.swift | One image pipeline; degrades safely without `api.image_access` |
 | `SGLibraryHeader`, `SGCreateButton`, `SGFilterRail`, `sgTabHeader`, `sgHeaderAction` | DesignSystem/SGBrowseBar.swift | Every tab root (UI_ARCHITECTURE §13) |
 | `SGPhotoViewer`, `SGLaunchView` | DesignSystem/SGPhotoViewer.swift | Full-screen photos; account restore |
+| `DishPickerList` / `DishPickerRow` | Views/Cooking/DishSelectionView.swift | The one Dish picker (single and multiple selection) |
+| `RecipeLibraryService`, `RecentlyDeletedRecipesView` | Social/RecentlyDeletedRecipes.swift | Unlink, Recently Deleted, Restore, Delete Permanently |
 | `SeparateCooksSheet`, `FolderGrid`, `DishFolderCallout`, `VariationEditorSheet` | Views/Cooking/DishOrganization.swift | Dish separation and Dish Variations (cards, Create/Edit Variation) |
 | `DishVariationCopy` | Cooking/DishCollections.swift | The one place the user-facing feature name is set |
 | `RecipeShareChoice` / `RecipeAttachmentModel` | Social/RecipeSocial.swift | Composer Recipe consent with status line |

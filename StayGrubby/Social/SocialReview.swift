@@ -27,6 +27,8 @@ import Supabase
     var ticketDates: [UUID: Double] = [:]
     var recipeClaims: [UUID: SocialCookingClaim] = [:]
     var recipeClaimSnapshots: [UUID: RecipeCookSnapshot] = [:]
+    /// Fixture mirror of `recipe_trash` (Recently Deleted): the Recipe, its former Dish and when it was deleted.
+    var deletedRecipes: [UUID: (recipe: Recipe, dish: UUID?, deletedAt: Double)] = [:]
     private var personaLoaded = false
     private var simulatedReportConflict = false
 
@@ -179,6 +181,33 @@ import Supabase
             guard let person = people.first(where: { $0.username == payload.username && $0.relationship != .blocked }) else { throw URLError(.resourceUnavailable) }
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
         }
+        if endpoint == "recipe_library" {
+            // Mirrors `api.recipe_library`: Unlink keeps the Recipe; Restore reclaims only a free Dish.
+            if action == "deleted" {
+                let dishes = (try? reviewContext?.fetch(FetchDescriptor<Dish>())) ?? []
+                let rows = deletedRecipes.values.sorted { $0.deletedAt > $1.deletedAt }.map { item in
+                    RecipeLibraryService.DeletedRecipe(id: item.recipe.id, title: item.recipe.content.title, photoID: item.recipe.content.photoID?.uuidString,
+                        deletedAt: item.deletedAt, expiresAt: item.deletedAt + 30 * 86_400, dishID: item.dish,
+                        dishName: item.dish.flatMap { id in dishes.first { $0.id == id }?.name })
+                }
+                struct Page: Encodable { var recipes: [RecipeLibraryService.DeletedRecipe] }
+                return try JSONEncoder().encode(Page(recipes: rows))
+            }
+            guard let rid = payload.recipeID else { throw URLError(.badURL) }
+            if action == "unlink_dish" {
+                guard recipes[rid]?.isOwner == true else { throw URLError(.userAuthenticationRequired) }
+                recipeDishes[rid] = nil; dishRecipes = dishRecipes.filter { $0.value != rid }; recipes[rid]?.linkedDishID = nil
+                try persistRecipes(); return try JSONEncoder().encode(DishRecipeResponse(recipe: linkedRecipe(rid)))
+            }
+            guard let item = deletedRecipes[rid] else { throw URLError(.userAuthenticationRequired) }
+            deletedRecipes[rid] = nil
+            if action == "purge" { return Data("{}".utf8) }
+            recipes[rid] = item.recipe
+            let reattached = item.dish.map { dish in !recipeDishes.values.contains(dish) } ?? false
+            if reattached, let dish = item.dish { recipeDishes[rid] = dish }
+            try persistRecipes()
+            return try JSONEncoder().encode(RecipeLibraryService.Restored(recipe: linkedRecipe(rid), dishReattached: reattached))
+        }
         if endpoint == "recipes" {
             if DebugReviewConfiguration.current.developmentPersona, let reviewContext {
                 let active = Set(try reviewContext.fetch(FetchDescriptor<CookingAttempt>()).map(\.id))
@@ -284,7 +313,8 @@ import Supabase
             if action == "dish", let dish = payload.dishID, let own = recipes.keys.first(where: { linkedRecipe($0)?.dishID == dish }) {
                 return try JSONEncoder().encode(DishRecipeResponse(recipe: linkedRecipe(own)))
             }
-            if action == "dish", let dish = payload.dishID { return try JSONEncoder().encode(DishRecipeResponse(recipe: dishRecipes[dish].flatMap { recipes[$0] })) }
+            // Since the integrity migration (deployed November 20) a Dish shows only its own Recipe.
+            if action == "dish", payload.dishID != nil { return try JSONEncoder().encode(DishRecipeResponse(recipe: nil)) }
             if action == "attach", let dish = payload.dishID, let id = payload.recipeID { dishRecipes[dish] = id; recipes[id]?.linkedDishID = dish; return try JSONEncoder().encode(recipes[id]) }
             if action == "detach", let dish = payload.dishID { dishRecipes[dish] = nil; return Data("{}".utf8) }
             if action == "list" { return try JSONEncoder().encode(RecipesPage(recipes: Array(recipes.values))) }
@@ -327,6 +357,8 @@ import Supabase
                 return try JSONEncoder().encode(linkedRecipe(id))
             }
             if action == "delete" {
+                if let gone = recipes[id], gone.isOwner { deletedRecipes[id] = (gone, linkedRecipe(id)?.dishID, Date().timeIntervalSince1970) }
+                recipeDishes[id] = nil
                 cookRecipeLinks[id] = nil; recipes[id] = nil; ticketDates[id] = nil
                 dishRecipes = dishRecipes.filter { $0.value != id }
                 for origin in recipeClaimSnapshots.keys where recipeClaimSnapshots[origin]?.recipeID == id {
