@@ -27,7 +27,7 @@ Every feature carries one status. These are separate states; reaching one never 
 | --- | --- | --- |
 | `dish_aggregate_scores` | Planned (reserved) | Aggregate score/make-count backend (FOOD_ARCHITECTURE §10) |
 | `account_privacy_follows` | Foundation (`SGLockedKitchenNotice`) | Follow model backend contract, RLS and client follow flow (§4) |
-| `recipe_recovery` (Unlink + Recently Deleted) | Implemented + Verified (PGlite full chain and hosted order; client UI test), hidden; **awaiting owner deployment approval** | Deploy `20261120180000_recipe_unlink_and_recently_deleted` alone (no dependency on the pending chain), then insert the flag row |
+| `recipe_recovery` (Unlink + Recently Deleted) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); owner iPhone acceptance pending | `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically); flag row inserted. Turn off with `enabled = false` |
 | `dish_collections` (Dish Variations) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); client on `agent/claude`, not yet in a TestFlight build; owner iPhone acceptance pending | Migration deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); flag row inserted. Turn off with `enabled = false`. Debug review: `--feature-flag dish_collections` |
 
 ## 2. Reusable components (LEGO inventory)

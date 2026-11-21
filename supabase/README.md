@@ -147,6 +147,10 @@ Owner-authorized. The connector applied `20261120150047_dish_collections` (local
 
 **Owner-authorized `20261120171728_dish_recipe_integrity`** (local `20261118160000`, renamed byte-identically; stored SQL SHA-256 matches) was applied ahead of the other pending files after splitting its share-option half into `20261118160050` (which needs Codex's `20261117063020`). Its target function body matched the rehearsal predecessor (`recipe_api_before_diet_index` md5 `57a88806…`); the safe repair changed no rows. All 43 tables byte-identical before and after; the trigger function has no client execute. Health all ok; advisor unchanged.
 
+## Recipe Unlink and Recently Deleted — November 20, 2026
+
+Owner-authorized. The connector applied `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically; stored SQL SHA-256 `3194f85e…` equals the file) alone, with the remaining pending files still undeployed (rehearsed in `recipe-recently-deleted.test.mjs --hosted-order`). It adds the RLS-closed, RPC-only `recipe_trash` (30-day recoverable copies; growth one row per deleted Recipe), the `archive_deleted_recipe` delete trigger (skips non-active accounts), trash-aware `recipe_photo_referenced`, and authenticated-only `api.recipe_library` (`unlink_dish`, `deleted`, `restore`, `purge`). The 43 existing tables were byte-identical before and after; the trash started empty; anon cannot execute the API and clients cannot read the table. The `recipe_recovery` flag row was then inserted. Health all ok (32 MB); the advisor adds only the expected RPC-only RLS note for `recipe_trash`.
+
 ## P0 incident: retry storm, read-only database — November 11, 2026
 
 **Symptoms.** Fresh TestFlight Sign in with Apple returned to "Let's try signing in again", a second phone could not restore its account, existing photos stopped loading, and sharing after ranking reported a connection failure.

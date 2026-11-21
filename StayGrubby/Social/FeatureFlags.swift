@@ -15,9 +15,10 @@ nonisolated enum FeatureFlag: String, CaseIterable, Sendable {
     /// project (deployed and enabled November 20, 2026): without the column the server drops labels, so
     /// never enable it on a server that lacks the migration (STAYGRUBBY_DEVELOPMENT_ROADMAP.md §1).
     case dishCollections = "dish_collections"
-    /// Recipe Unlink and Recently Deleted (November 20, 2026). Needs
-    /// `20261120180000_recipe_unlink_and_recently_deleted` (`api.recipe_library`) on the hosted project;
-    /// without it Unlink and Recently Deleted would fail, and Delete must not promise recovery.
+    /// Recipe Unlink and Recently Deleted (deployed and enabled November 20, 2026). Needs
+    /// `20261121023911_recipe_unlink_and_recently_deleted` (`api.recipe_library`) on the hosted project;
+    /// never enable it on a server without it: Unlink and Recently Deleted would fail, and Delete must not
+    /// promise recovery.
     case recipeRecovery = "recipe_recovery"
 }
 
