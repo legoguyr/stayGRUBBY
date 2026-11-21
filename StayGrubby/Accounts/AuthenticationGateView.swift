@@ -49,6 +49,9 @@ struct AuthenticationGateView: View {
     private var restoring: Bool {
         switch session.state {
         case .loadingSession: true
+        // The first frames of a launch, before restore has looked for a saved session: a signed-in owner must
+        // never see the sign-up story flash first.
+        case .guest: !session.launchRestorationFinished && session.lastFailure == nil
         case .resolved: !setupFailed && session.lastFailure == nil && !session.isSigningOut
         default: false
         }

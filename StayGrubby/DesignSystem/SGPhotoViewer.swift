@@ -151,19 +151,49 @@ private struct PhotoViewerOpener: ViewModifier {
     }
 }
 
-/// The opening/loading screen: the wordmark, a native spinner and a plain label. No artificial delay; it
-/// shows only while the account or library is genuinely loading, and never any account content.
+/// The opening experience (launch & loading, November 21, 2026). The system launch screen
+/// (`StayGrubby-Info.plist` → `UILaunchScreen`: `LaunchBackground` + `LaunchWordmark`) and this view draw the
+/// same 160-pt wordmark at the screen's centre on the same background, so launch → session restore → library
+/// opening reads as one still screen with a quiet pulse beneath the wordmark. No artificial delay: it shows
+/// only while the account or library is genuinely opening, never account content, and the pulse fades in
+/// after a short moment so fast launches never flash it. Reduce Motion keeps the dots still. The label is
+/// for VoiceOver only.
 struct SGLaunchView: View {
     let label: String
+    @Environment(\.sgReduceMotion) private var reduceMotion
+    @State private var appeared = Date.now
     var body: some View {
-        VStack(spacing: SGTheme.Space.large) {
-            Image("StayGrubbyWordmark").resizable().scaledToFit().frame(width: 180, height: 120)
-                .accessibilityRepresentation { Text("#stayGRUBBY") }
-            ProgressView(label).font(SGTheme.TypeRole.secondary).tint(SGTheme.ColorToken.accent)
+        ZStack {
+            SGTheme.ColorToken.background.ignoresSafeArea()
+            Image("LaunchWordmark").accessibilityHidden(true)
+            LaunchPulse(start: appeared, still: reduceMotion).offset(y: 118).accessibilityHidden(true)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SGTheme.ColorToken.background)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("#stayGRUBBY. \(label)")
+        .accessibilityAddTraits(.updatesFrequently)
         .accessibilityIdentifier("launch-loading")
+    }
+}
+
+/// Three brand-red dots breathing in sequence. Driven by wall-clock time, so consecutive loading screens
+/// (session restore, then the library) continue the same rhythm instead of restarting.
+private struct LaunchPulse: View {
+    let start: Date
+    let still: Bool
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: still)) { timeline in
+            let now = timeline.date.timeIntervalSinceReferenceDate
+            let visible = min(max((timeline.date.timeIntervalSince(start) - 0.35) / 0.3, 0), 1)
+            HStack(spacing: 10) {
+                ForEach(0..<3, id: \.self) { index in
+                    let wave = still ? 0.5 : (sin((now * 2 * .pi / 1.2) - Double(index) * 0.7) + 1) / 2
+                    Circle().fill(SGTheme.Brand.red)
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(0.75 + 0.35 * wave)
+                        .opacity(0.35 + 0.65 * wave)
+                }
+            }
+            .opacity(still ? 1 : visible)
+        }
     }
 }

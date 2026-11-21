@@ -76,7 +76,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | P0 The Pass / avatar photos on hosted | Verified (unit), iPhone pending | Client-only; works before and after `api.image_access` is deployed |
 | Dish/Recipe integrity — separate a cook | Verified (unit + UI) | Client; server hardening `20261120171728` deployed Nov 20; share-option half `20261118160050` pending with Codex's chain |
 | Rank a Dish / Add a Recipe + menu | Verified (UI) | Replaces New Dish / Cook Again choices |
-| Dish Variations (Smart Collections) | Deployed + Enabled Nov 20; Create/Edit Variation, Remove from Variation | Owner iPhone acceptance; reaches users only with the next build |
+| Dish Variations (Smart Collections) | Deployed + Enabled Nov 20; Create/Edit Variation, Remove from Variation; **V2 implemented + verified Nov 21** (card averages; scoped Grub Rank page, app-only) | Owner iPhone acceptance; reaches users only with the next build |
 | App-wide UI consistency / design system v2 | Implemented, Verified (focused UI), iPhone pending | UI_ARCHITECTURE §13; remaining exceptions §13.5 |
 | Separate Cooks; Recipe → Dish details; All Dishes / Dish Variations tabs; contextual + | Implemented, Verified (UI) | Dish Variations tab behind `dish_collections` |
 | Full-screen photo viewer | Implemented (Dish and post heroes) | Recipe photos and avatars next |
@@ -88,6 +88,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 
 | Contract | Why | Client boundary today |
 | --- | --- | --- |
+| **Cook description** — Codex owns the contract (`COOK_DESCRIPTION_INTEGRITY.md` on `agent/codex`, Nov 21): `CookingAttempt.publicDescription` per Cook, Pass captions read it, author-only `sourceAttemptID`, `CookingStore.editCookDescription`, no guessed backfill | One description per Cook (owner milestone, Nov 21) | Claude binds the editors to the exact Cook and removes Dish-wide caption fanout once Codex hands over the final helpers; not before |
 | Caption derived from `dishes.public_description` (or an `editDishDescription` action that updates the Dish row and all its posts in one transaction) | One canonical Public Description across devices, atomic | `PublicDescriptionSync` updates posts after explicit saves; reports failures |
 | Follow model: `account_visibility` (`public`/`private`), `follows` with `pending/accepted`, searchable private accounts with a minimal locked card, RLS so only accepted followers read audience-scoped content | Public/private accounts (owner decision, Nov 18) | Current model stays: mutual Sous Chefs + discoverable flag; `account_privacy_follows` off |
 | Cooked-at snapshot on posts | Dish Details cooking date | Shows the shared date |

@@ -3,6 +3,11 @@ import SwiftData
 
 struct CookingRankingView: View {
     let list: RankingList
+    /// Dish Variations V2: scope this page to one variation's Dishes (its own title, back navigation and
+    /// numbering within the variation). Nil is Grub Rank itself.
+    var variation: String? = nil
+    /// Variation pages: Remove from Variation on a row (the Dish and its cooks always stay).
+    var removeFromVariation: ((Dish) -> Void)? = nil
     @Environment(\.modelContext) private var context
     @Query private var attempts: [CookingAttempt]
     @Query(sort: \Dish.name) private var dishes: [Dish]
@@ -26,9 +31,21 @@ struct CookingRankingView: View {
     private var eligibleDishes: [Dish] { dishes.filter { dish in dish.attempts.contains { $0.rankedItem?.list?.id == list.id } } }
     private var hasSearch: Bool { !TagNormalization.display(searchText).isEmpty }
 
+    /// A variation page lists only that variation's Dishes; Grub Rank lists every ranked Dish.
+    private func inScope(_ entry: CookingDiscovery.Entry) -> Bool {
+        guard let variation else { return true }
+        let key = DishCollectionPolicy.key(variation)
+        return entry.attempt.dish?.collections.contains { DishCollectionPolicy.key($0) == key } == true
+    }
+    private var variationDishes: [Dish] {
+        guard let variation else { return [] }
+        let key = DishCollectionPolicy.key(variation)
+        return dishes.filter { $0.collections.contains { DishCollectionPolicy.key($0) == key } }
+    }
+
     var body: some View {
-        let eligible = ScoreUnlockPolicy.entries(in: context, list: list)
-        let matching = CookingDiscovery.entries(in: list, attempts: attempts, query: searchText, filters: filters)
+        let eligible = ScoreUnlockPolicy.entries(in: context, list: list).filter(inScope)
+        let matching = CookingDiscovery.entries(in: list, attempts: attempts, query: searchText, filters: filters).filter(inScope)
         // All Dishes: one row per Dish, placed by its best-ranked cook (owner decision, Nov 18, 2026).
         let entries = CookingBrowseOrder.entries(RankingsPresentation.entries(eligible, matching: matching,
             mode: .topVersion), order: sort, scores: scores)
@@ -36,7 +53,9 @@ struct CookingRankingView: View {
         // filtering and a hidden second cook never leaves a gap. Ranking evidence is untouched.
         let dishRank = RankingsPresentation.dishPositions(eligible)
         ScrollView {
-            if showsFolders {
+            if variation != nil {
+                variationPage(entries: entries, eligible: eligible, dishRank: dishRank)
+            } else if showsFolders {
                 FolderGrid(summaries: DishCollectionSummary.all(dishes: dishes, entries: eligible, scores: scores))
                     .padding(.horizontal, SGTheme.Space.medium).padding(.vertical, SGTheme.Space.small)
                     .frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
@@ -87,14 +106,20 @@ struct CookingRankingView: View {
             appliedRequest = request.id
             filters = CookingFilters(); searchText = ""; sort = .grubRank; section = .dishes
         }
-        .navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+        .modifier(GrubRankChrome(isVariation: variation != nil))
         .safeAreaInset(edge: .top, spacing: 0) {
             VStack(spacing: SGTheme.Space.xSmall) {
                 // Grub Rank's + goes straight to Rank a Dish (no menu; Recipes are added in Food Bible).
-                SGLibraryHeader(page: "Grub Rank", create: { newDish = true }, createTitle: "Rank a Dish",
-                                createIdentifier: "new-dish", identifier: "staygrubby-header-rankings")
-                if !list.items.isEmpty {
+                // A variation page keeps the navigation bar (title, back, its ⋯ menu) instead of the tab header.
+                if variation == nil {
+                    SGLibraryHeader(page: "Grub Rank", create: { newDish = true }, createTitle: "Rank a Dish",
+                                    createIdentifier: "new-dish", identifier: "staygrubby-header-rankings")
+                }
+                if variation != nil, !variationDishes.isEmpty {
+                    SGSearchField(placeholder: "Search this variation", text: $searchText,
+                                  identifier: "ranking-search-field", clearIdentifier: "header-clear-search")
+                    browseControls
+                } else if variation == nil, !list.items.isEmpty {
                     SGSearchField(placeholder: "Search dishes and cooks", text: $searchText,
                                   identifier: "ranking-search-field", clearIdentifier: "header-clear-search")
                     if flags.isOn(.dishCollections) {
@@ -127,6 +152,51 @@ struct CookingRankingView: View {
                 pendingDish = dish; choosingDish = false
             }, onCancel: { choosingDish = false })
         }
+    }
+
+    /// One variation, Grub Rank style: its average, its Dishes ranked 1, 2, 3… by each Dish's best cook (the
+    /// same rows as Grub Rank), then any Dish in it that has no ranked cook yet.
+    @ViewBuilder private func variationPage(entries: [CookingDiscovery.Entry], eligible: [CookingDiscovery.Entry], dishRank: [UUID: Int]) -> some View {
+        let summary = variation.flatMap { label in
+            DishCollectionSummary.all(dishes: variationDishes, entries: eligible, scores: scores).first { $0.id == DishCollectionPolicy.key(label) }
+        }
+        let ranked = Set(eligible.compactMap { $0.attempt.dish?.id })
+        let unranked = variationDishes.filter { !ranked.contains($0.id) && (!hasSearch || TagNormalization.key($0.name).contains(TagNormalization.key(searchText))) }
+        LazyVStack(alignment: .leading, spacing: 0) {
+            if let summary {
+                Text("\(summary.dishCountText) · \(summary.averageText(scores))").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, SGTheme.Space.xSmall)
+                    .accessibilityIdentifier("collection-counts")
+            }
+            if variationDishes.isEmpty {
+                SGContentState(title: "No Dishes yet", symbol: DishVariationCopy.symbol, message: "Add Dishes with \(DishVariationCopy.edit) in the ⋯ menu.")
+            } else if entries.isEmpty && unranked.isEmpty { noResults }
+            ForEach(entries) { entry in
+                if let dish = entry.attempt.dish {
+                    NavigationLink { AttemptDetailView(attempt: entry.attempt) } label: {
+                        RankedDishRow(attempt: entry.attempt, rank: dishRank[entry.attempt.id] ?? entry.globalRank)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(rowLabel(entry, rank: dishRank[entry.attempt.id] ?? entry.globalRank))
+                    .accessibilityHint("Ranked by its best cook. Opens dish details.")
+                    .accessibilityIdentifier("collection-dish-\(dish.name)")
+                    .modifier(VariationRowActions(dish: dish, remove: removeFromVariation))
+                    Divider().overlay(SGTheme.ColorToken.border).accessibilityHidden(true)
+                }
+            }
+            if !unranked.isEmpty {
+                SGSectionHeader(title: "Not ranked yet").padding(.top, SGTheme.Space.medium)
+                ForEach(unranked) { dish in
+                    NavigationLink { DishView(dish: dish) } label: { DishPickerRow(dish: dish, accessory: .disclosure) }
+                        .buttonStyle(.plain).accessibilityIdentifier("collection-dish-\(dish.name)")
+                        .modifier(VariationRowActions(dish: dish, remove: removeFromVariation))
+                }
+            }
+        }
+        .animation(reduceMotion ? nil : SGTheme.Motion.standard, value: entries.map(\.id))
+        .frame(maxWidth: SGTheme.Size.contentMaximum)
+        .padding(.horizontal, SGTheme.Space.medium).padding(.bottom, SGTheme.Space.large)
+        .frame(maxWidth: .infinity)
     }
 
     private func rowLabel(_ entry: CookingDiscovery.Entry, rank: Int) -> String {
@@ -178,5 +248,30 @@ struct CookingRankingView: View {
             }
         }
         .buttonStyle(SGButtonStyle())
+    }
+}
+
+/// Grub Rank shows its own tab header (no navigation bar); a variation page keeps the navigation bar so it
+/// has a title, a back button to all variations and its ⋯ menu.
+private struct GrubRankChrome: ViewModifier {
+    let isVariation: Bool
+    func body(content: Content) -> some View {
+        if isVariation { content }
+        else { content.navigationTitle("Grub Rank").navigationBarTitleDisplayMode(.inline).toolbar(.hidden, for: .navigationBar) }
+    }
+}
+
+/// Remove from Variation on a variation row: only the label goes; the Dish and its cooks stay.
+private struct VariationRowActions: ViewModifier {
+    let dish: Dish
+    let remove: ((Dish) -> Void)?
+    func body(content: Content) -> some View {
+        if let remove {
+            content
+                .contextMenu {
+                    Button(DishVariationCopy.removeFrom, systemImage: "minus.circle") { remove(dish) }.accessibilityIdentifier("collection-dish-remove")
+                }
+                .accessibilityAction(named: DishVariationCopy.removeFrom) { remove(dish) }
+        } else { content }
     }
 }

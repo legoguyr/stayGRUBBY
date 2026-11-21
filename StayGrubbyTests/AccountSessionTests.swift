@@ -66,7 +66,20 @@ import Testing
         #expect(list.items.isEmpty)
         #expect(try SyncJournal.binding(guest.container.mainContext) == nil)
     }
-    @Test func absentSavedSessionDoesNotProvisionOrPrepareAccount() async {
+    /// Launch (November 21, 2026): until this launch's restore finishes the gate shows the opening screen, so a
+    /// signed-in owner never sees the sign-up story flash; signed-out and offline launches then reach the gate.
+    @Test func launchRestorationIsPendingUntilRestoreFinishes() async {
+        let backend = AccountMockBackend(); let session = AccountSessionCoordinator(backendFactory: { backend })
+        #expect(session.state == .guest && !session.launchRestorationFinished, "First frames: restore pending")
+        await session.restoreSessionOnLaunch()
+        #expect(session.state == .guest && session.launchRestorationFinished, "No saved session: the gate, once")
+        await session.restoreSessionOnLaunch()
+        #expect(backend.provisions == 0)
+        let offline = AccountSessionCoordinator(backendFactory: { throw URLError(.notConnectedToInternet) })
+        await offline.restoreSessionOnLaunch()
+        #expect(offline.launchRestorationFinished && offline.lastFailure != nil, "Offline launch finishes and shows retry, never loops")
+    }
+        @Test func absentSavedSessionDoesNotProvisionOrPrepareAccount() async {
         let backend = AccountMockBackend(); let session = AccountSessionCoordinator(backendFactory: { backend })
         await session.restoreSession()
         #expect(session.state == .guest && backend.provisions == 0 && session.preparedStore == nil)

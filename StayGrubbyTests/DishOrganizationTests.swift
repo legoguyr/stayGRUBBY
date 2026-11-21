@@ -123,6 +123,33 @@ import Testing
         #expect(DishVariationCopy.plural == "Dish Variations" && GrubRankSection.folders.title == DishVariationCopy.plural)
     }
 
+    /// Dish Variations V2: a variation's average is the mean of each Dish's best-cook score, each Dish counted
+    /// once, unscored Dishes left out, nothing while scores are locked — derived, never stored.
+    @Test func variationAverageCountsEachDishOnceByItsBestCook() throws {
+        let s = try Store()
+        var risottos: [Dish] = []
+        for name in ["Butternut Squash Risotto", "Mushroom Risotto", "Pea and Mahi Mahi Risotto"] { risottos.append(try #require(try s.cook(name).dish)) }
+        try s.cook("Mushroom Risotto", in: risottos[1], title: "Porcini")
+        let recipeOnly = Dish(name: "Saffron Risotto", category: .other); s.context.insert(recipeOnly); try s.context.save()
+        for dish in risottos + [recipeOnly] { try DishCollectionStore.set(["Risotto"], on: dish, context: s.context) }
+        let locked = try #require(DishCollectionSummary.all(dishes: try s.dishes(), entries: ScoreUnlockPolicy.entries(in: s.context), scores: ScoreUnlockPolicy.state(in: s.context)).first)
+        #expect(locked.averageScore == nil && locked.averageText(ScoreUnlockPolicy.state(in: s.context)).hasPrefix("Scores unlock"))
+
+        for n in 0..<7 { try s.cook("Filler \(n)") }
+        let scores = ScoreUnlockPolicy.state(in: s.context)
+        #expect(scores.isUnlocked)
+        let before = try s.operations()
+        let summary = try #require(DishCollectionSummary.all(dishes: try s.dishes(), entries: ScoreUnlockPolicy.entries(in: s.context), scores: scores).first)
+        let bests = summary.members.compactMap { $0.best?.attempt.rankedItem?.score }
+        #expect(summary.members.count == 4 && bests.count == 3 && summary.scoredCount == 3, "Each ranked Dish once; the uncooked Dish is not scored")
+        let expected = bests.reduce(0, +) / 3
+        #expect(abs((summary.averageScore ?? -1) - expected) < 0.0001)
+        let porcini = try #require(risottos[1].attempts.max { ($0.rankedItem?.score ?? 0) < ($1.rankedItem?.score ?? 0) })
+        #expect(summary.members.first { $0.dish.id == risottos[1].id }?.best?.attempt.id == porcini.id, "A Dish counts its best cook only")
+        #expect(summary.averageText(scores).contains("3 of 4 scored"))
+        #expect(try s.operations() == before, "Averages are derived; nothing is written")
+    }
+
     @Test func emptyAndMissingCollectionsAreTheSameSyncState() throws {
         let s = try Store()
         let dish = try #require(try s.cook("Saffron Risotto").dish)

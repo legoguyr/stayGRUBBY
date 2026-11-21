@@ -64,12 +64,19 @@ nonisolated enum AccountDeletionProgress: Equatable {
         offlineResolution = false
     }
     /// Runs behind onboarding; no saved session means no provisioning/network.
+    /// Presentation only: false until this launch's session restore has finished (or never started because a
+    /// review store opened instead). Until then the gate shows the opening screen, never the sign-up story.
+    private(set) var launchRestorationFinished = false
     func restoreSessionOnLaunch() async {
         guard !startedRestoration else { return }
         startedRestoration = true
         await restoreSession()
+        launchRestorationFinished = true
     }
     #if DEBUG
+    /// A review store opened at launch instead of restoring a session: nothing is pending, so closing the
+    /// review shows the normal gate rather than the opening screen.
+    func skipLaunchRestoration() { if !startedRestoration { launchRestorationFinished = true } }
     /// Explicit review mode has no Auth session or production account route.
     func beginDevelopmentReview() -> Bool {
         guard !isSigningOut else { return false }
