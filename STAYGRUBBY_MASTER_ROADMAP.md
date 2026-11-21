@@ -72,7 +72,7 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
   - **Dish Variations** (Smart Collections; backend deployed and flag enabled November 20, 2026; reaches users with the next build; owner iPhone acceptance pending): Dish-level labels; Grub Rank variation cards with Create Variation; My Kitchen cards; a variation page ranking its Dishes by each Dish's best cook, with Edit Variation and Remove from Variation; Add to Variation in Rank a Dish, Add a Recipe, Edit Cook and the Dish page.
 - **Master UI milestone — The Pass, Dish/Cook/Recipe, icons, two roadmaps (Nov 18, Claude; automated acceptance passed, owner physical acceptance pending).** Client-only; no schema, endpoint or migration.
   - The Pass card: creator → Dish name with compact score → cook line → photo → caption → Hands · Comments · Recipe on one row; no repeated comment line or large Recipe card.
-  - **One Public Description:** the Dish's Public Description is the post caption, edited from Dish details, Edit Cook, the composer or Edit Description, kept in step by explicit saves (server-side derivation is a Codex dependency).
+  - **One description per Cook (V1 correctness):** each Cook owns `publicDescription`; its Pass post reads that field. No Dish-wide overwrite or caption fanout. Codex's model/sync/backend candidate preserves legacy Dish/caption conflicts for explicit owner reconciliation; Claude's exact-Cook SwiftUI binding, authorized deployment and integrated acceptance remain required. See [contract](COOK_DESCRIPTION_INTEGRITY.md).
   - Standard **Delete** replaces "86" everywhere.
   - Previous Cooks (exact `dishKey`), sort only when useful.
   - Dish page cook tags (Latest / Top cook) and aligned thumbnails.
@@ -149,7 +149,7 @@ Everything under **POST-V1**, **LONG TERM** and **DISTANT / DORMANT** below, unc
 
 Candidate scope (only accepted, enabled functionality):
 - modernized The Pass and Dish Details with Previous Cooks
-- one Public Description / caption
+- one canonical description per Cook / its Pass caption
 - Delete wording
 - Dish page cook history marks
 - composer Recipe status

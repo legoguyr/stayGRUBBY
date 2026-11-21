@@ -87,6 +87,7 @@ import SwiftData
                 value.cookedAt = row.cookedAt
                 value.versionTitle = row.versionTitle
                 value.notes = row.notes
+                value.publicDescription = row.publicDescription
                 value.categoryCode = row.categoryCode
                 value.sequenceNumber = row.sequenceNumber
                 value.createdAt = row.createdAt

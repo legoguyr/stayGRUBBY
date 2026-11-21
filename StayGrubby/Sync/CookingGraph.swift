@@ -86,6 +86,7 @@ nonisolated struct AttemptTransfer: Codable, Equatable, Sendable {
     var isLegacyImport: Bool
     var dishID: UUID?
     var tagKeys: [String]
+    var publicDescription: String? = nil
     @MainActor init(_ value: CookingAttempt) {
         self.id = value.id
         self.rankedItemID = value.rankedItemID
@@ -99,6 +100,7 @@ nonisolated struct AttemptTransfer: Codable, Equatable, Sendable {
         self.isLegacyImport = value.isLegacyImport
         self.dishID = value.dish?.id
         self.tagKeys = value.tags.map(\.key).sorted()
+        publicDescription = value.publicDescription
     }
 }
 

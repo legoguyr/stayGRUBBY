@@ -12,6 +12,8 @@ final class CookingAttempt {
     var cookedAt: Date?
     var versionTitle: String?
     var notes: String?
+    /// nil preserves an unresolved legacy description; an empty string is an explicit clear.
+    var publicDescription: String?
     var categoryCode: String
     var sequenceNumber: Int
     var createdAt: Date

@@ -173,7 +173,7 @@ Recipe fields describe the Recipe **as written**. Cooking Attempt fields describ
 | Course | default | Recipe Course | snapshot | Unchanged |
 | Cuisine | ✅ | ✅ | — | Unchanged |
 | Source / inspiration | manual Source | source / original creator | — | Different meanings, kept apart |
-| Description / notes | Public Description, Private Notes | description, tips | cook notes | Private notes never public |
+| Description / notes | Legacy Dish description preserved; Dish Private Notes | Recipe description, tips | Canonical public Cook description + private cook notes | Private notes never public; no sibling caption fanout |
 | **Contains** | — | Contains / Possible (reviewed assessment) | Contains | Shown per side with labels; never merged into one claim |
 | **Dietary — Diet** (Dairy-Free, Gluten-Free, Vegan, Vegetarian) | — | **Implemented (Stage F)** `dietary` in `RecipeContent`: author-selected only | ✅ existing | The Recipe value says the Recipe *as written* fits that diet; the cook value says what was actually made |
 | **Dietary — Certification** (Halal, Kosher) | — | **Never** on a Recipe | ✅ existing | Certification depends on products, supervision and kitchen. It is a fact about the cook, so it is never inferred and never attached to written instructions |
@@ -248,7 +248,7 @@ External-AI consent, the burst guard, cooldown-to-manual, the 40 KB bound and Re
 
 **Implemented (Stage F)** in the shared cook form (`CookingMetadataForm` + `CookingDetailsSheet`, used by New Dish, Cook Again, Rank My Version and Edit Cook), grouped by owner with `SGFormSection` so scope is visible without moving data:
 
-- **This Dish:** name, Public Description, Private Notes; in Details, Cuisine and Source. The form states these apply to every cook (inherited as read-only in Cook Again's Details).
+- **This Dish:** name and Private Notes; in Details, Cuisine and Source. Public descriptions belong to the specific Cook, not every cook of its parent. `CookingAttempt.publicDescription` is the local candidate canonical field; a new Cook does not inherit sibling text. Existing Dish description/captions are retained as legacy evidence until explicit owner choice. Claude owns the coordinated form/reader binding. [Description contract](COOK_DESCRIPTION_INTEGRITY.md).
 - **This cook:** Cook Name (fallback hint), date, Details (Course, Diet, Certification, Contains — "as made"), then Tag a Sous Chef and sharing. The hero photo stays first.
 - **Prefill from a Recipe:** a Recipe-origin cook preselects Diet (as written) and the Recipe's reviewed Contains, never Possible or Certification, and the form says so ("check them in Details for what you actually made").
 

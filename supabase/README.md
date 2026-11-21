@@ -267,3 +267,7 @@ See the [November 17 capacity snapshot](../BACKEND_MVP_READINESS.md#storage-audi
 **New datasets.** Every new persistent table's migration header states its expected growth, whether it is canonical or operational, and its retention/cleanup rule.
 
 **Test traffic.** Automated tests use PGlite or mocks. The migrated target excludes `development-test-session` and default Function configuration skips it. Use a disposable environment for any separately approved live testing. [Moderation rollout and authentication checks](../PUBLIC_MVP_MODERATION.md).
+
+## Canonical Cook description candidate — not deployed
+
+`20261121030333_canonical_cook_descriptions.sql` changes the exact Cook field, sync projection and compatible caption API, never ranking or media. It requires the approved pending text/moderation chain; it is not a standalone hosted-head patch. The release manifest includes some independently applied files, so compare the actual ledger/dry run instead of treating every checksum entry as pending. No deployment occurred in this cycle. [Complete contract, preservation, capability guard and forward rollback](../COOK_DESCRIPTION_INTEGRITY.md)
