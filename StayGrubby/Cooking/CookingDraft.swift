@@ -13,7 +13,20 @@ import Foundation
     private var descriptionAttemptID: UUID?
     private var preservesLegacyDescription = false
     private var initialPublicDescription = ""
-    var shouldSavePublicDescription: Bool { !preservesLegacyDescription || publicDescription != initialPublicDescription }
+    var shouldSavePublicDescription: Bool {
+        // An untouched new Cook has no canonical text. Empty is reserved for an explicit
+        // clear of existing text, and requires a server that can preserve that intent.
+        if descriptionAttemptID == nil { return Self.optional(publicDescription) != nil }
+        return !preservesLegacyDescription || publicDescription != initialPublicDescription
+    }
+    /// The draft may be reused after its first Save resolved legacy nil. A later clear
+    /// must compare with that now-canonical Cook, not the draft's old nil baseline.
+    func shouldSavePublicDescription(for attempt: CookingAttempt) -> Bool {
+        if descriptionAttemptID == attempt.id, let current = attempt.publicDescription {
+            return CookDescriptionPolicy.normalized(publicDescription) != current
+        }
+        return shouldSavePublicDescription
+    }
     var privateNotes = ""
     var existingPhotoCount = 0
     var dietary: Set<DietaryTag> = []

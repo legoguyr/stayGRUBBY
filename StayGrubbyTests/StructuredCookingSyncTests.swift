@@ -53,6 +53,22 @@ private actor RankingRejectionCounter {
     func reject() throws -> SyncReceipt { calls += 1; throw CookingSyncError.rankingUpdateRequired }
 }
 
+/// Models the existing server capability boundary without an SDK or hosted account.
+private actor DescriptionCompatibilityCloud: SyncTransport {
+    let cloud: StructuredCloud
+    var supportsDescriptions = false
+    private(set) var calls = 0
+    init(_ cloud: StructuredCloud) { self.cloud = cloud }
+    func enableDescriptions() { supportsDescriptions = true }
+    func send(_ envelope: SyncEnvelope) async throws -> SyncReceipt {
+        calls += 1
+        if try CookDescriptionSyncSupport.requiresSupport(envelope.payload), !supportsDescriptions {
+            throw CookingSyncError.cookDescriptionUpdateRequired
+        }
+        return try await cloud.send(envelope)
+    }
+}
+
 @MainActor struct StructuredCookingSyncTests {
     private func root() -> URL { FileManager.default.temporaryDirectory.appendingPathComponent("structured-sync-\(UUID())") }
     private func empty(_ account: UUID) throws -> CookingGraph {
@@ -88,6 +104,64 @@ private actor RankingRejectionCounter {
     private func restore(_ store: LocalStoreSession, _ cloud: StructuredCloud) async throws {
         let snapshot = await cloud.snapshot()
         try CookingGraphHydration.apply(snapshot.graph, revision: snapshot.account.syncRevision, context: store.container.mainContext)
+    }
+    @Test func blankNewCookAndSubsequentEditsDrainAgainstAnOlderServer() async throws {
+        let owner = UUID(), base = root(), initial = try empty(owner)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let store = try device(initial, root: base), context = store.container.mainContext
+        let cloud = StructuredCloud(user: UUID(), graph: initial)
+        let older = DescriptionCompatibilityCloud(cloud)
+        let first = try create(context, "No description")
+        _ = try create(context, "Unrelated new Cook")
+        var draft = CookingDraft(attempt: first); draft.notes = "Unrelated private edit"
+        try CookingStore.edit(first, draft: draft, context: context)
+        let pending = try SyncJournal.pending(context)
+        #expect(pending.count == 3)
+        for operation in pending { #expect(!(try CookDescriptionSyncSupport.requiresSupport(operation.payload))) }
+        try await SyncDispatcher().flush(context: context, transport: older)
+        #expect(try SyncJournal.pending(context).isEmpty)
+        #expect(await older.calls == 3)
+        #expect(await cloud.count() == 3)
+        let snapshot = await cloud.snapshot()
+        #expect(snapshot.graph.attempts.count == 2 && snapshot.graph.attempts.allSatisfy { $0.publicDescription == nil })
+        #expect(snapshot.graph.attempts.first(where: { $0.id == first.id })?.notes == "Unrelated private edit")
+    }
+    @Test func unsupportedDescriptionStopsAutomaticRetriesAndResumesItsCausalQueueAfterDeployment() async throws {
+        let owner = UUID(), user = UUID(), base = root(), initial = try empty(owner)
+        defer { try? FileManager.default.removeItem(at: base) }
+        let store = try device(initial, root: base), context = store.container.mainContext
+        let cook = try create(context, "First cook")
+        let cloud = StructuredCloud(user: user, graph: initial), transport = DescriptionCompatibilityCloud(cloud)
+        try await SyncDispatcher().flush(context: context, transport: transport)
+        try CookingStore.editCookDescription(cook, publicDescription: "Preserve this intentional text", context: context)
+        _ = try create(context, "Unrelated later cook")
+        let originals = try SyncJournal.pending(context).map { SyncJournal.envelope($0) }
+        let graph = try current(store), coordinator = CookingSyncCoordinator()
+        let account = ProvisionedAccount(formatVersion: 1, authUserID: user, accountID: owner, syncRevision: 2, libraryState: .initialized)
+        try coordinator.connect(store: store, account: account, send: { try await transport.send($0) }, load: { await cloud.snapshot() })
+        for _ in 0..<200 {
+            if coordinator.status == .cookDescriptionUpdateRequired { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(coordinator.status == .cookDescriptionUpdateRequired)
+        #expect(try current(store) == graph)
+        #expect(try SyncJournal.pending(context).map { SyncJournal.envelope($0) } == originals)
+        coordinator.request(); coordinator.request(passive: true)
+        try await Task.sleep(for: .milliseconds(700))
+        #expect(await transport.calls == 2) // One supported create, one capability rejection; no retry loop.
+        await transport.enableDescriptions()
+        coordinator.request(forceRetry: true)
+        for _ in 0..<200 {
+            if coordinator.status == .current { break }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(coordinator.status == .current)
+        #expect(try SyncJournal.pending(context).isEmpty)
+        let snapshot = await cloud.snapshot()
+        #expect(snapshot.graph.attempts.count == 2)
+        #expect(snapshot.graph.attempts.first(where: { $0.id == cook.id })?.publicDescription == "Preserve this intentional text")
+        #expect(await cloud.count() == 3)
+        coordinator.disconnect()
     }
     @Test func legacyRankingOutboxIsPreservedAndStopsAutomaticRetries() async throws {
         let owner = UUID(), base = root(), initial = try empty(owner), user = UUID()

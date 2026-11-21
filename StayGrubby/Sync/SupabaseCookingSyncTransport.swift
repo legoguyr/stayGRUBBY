@@ -2,10 +2,11 @@ import Foundation
 import Supabase
 
 nonisolated enum CookingSyncError: Error, Equatable {
-    case conflict, rejected, authenticationRequired, unavailable, rankingUpdateRequired
+    case conflict, rejected, authenticationRequired, unavailable, rankingUpdateRequired, cookDescriptionUpdateRequired
     var diagnosticCode: String {
         switch self {
         case .rankingUpdateRequired: "ranking-update-required"
+        case .cookDescriptionUpdateRequired: "cook-description-update-required"
         case .conflict: "revision-conflict"
         case .rejected: "operation-rejected"
         case .authenticationRequired: "authentication-required"
@@ -40,7 +41,7 @@ extension SupabaseAccountBackend: AccountSyncBackend {
         do {
             if try CookDescriptionSyncSupport.requiresSupport(envelope.payload), cookDescriptionUserID != user {
                 let account = try await provision(for: AuthenticatedIdentity(userID: user))
-                guard (account.cookDescriptionVersion ?? 0) >= 1 else { throw CookingSyncError.unavailable }
+                guard (account.cookDescriptionVersion ?? 0) >= 1 else { throw CookingSyncError.cookDescriptionUpdateRequired }
             }
             let response = try await client.schema("api").rpc("apply_cooking_operation", params: Parameters(envelope: envelope)).execute()
             try Task.checkCancellation()

@@ -225,7 +225,7 @@ enum CookingStore {
     private static func apply(_ draft: CookingDraft, to attempt: CookingAttempt) {
         attempt.cookedAt = draft.cookedAt; attempt.versionTitle = draft.cleanTitle
         attempt.notes = CookingDraft.optional(draft.notes); attempt.category = draft.category
-        if draft.shouldSavePublicDescription { attempt.publicDescription = CookDescriptionPolicy.normalized(draft.publicDescription) }
+        if draft.shouldSavePublicDescription(for: attempt) { attempt.publicDescription = CookDescriptionPolicy.normalized(draft.publicDescription) }
         attempt.updatedAt = .now
     }
 

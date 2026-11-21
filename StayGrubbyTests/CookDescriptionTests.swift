@@ -18,6 +18,34 @@ import SwiftData
         while engine.nextOpponent != nil { engine.answer(.newItem) }
         return try CookingStore.create(draft: draft, existingDish: dish, session: engine, context: context)
     }
+    @Test func untouchedNewCooksOmitDescriptionInsteadOfWritingAnExplicitClear() throws {
+        let container = try memory(); let context = container.mainContext
+        for text in ["", "  \n\t"] {
+            let cook = try create(context, description: text)
+            #expect(cook.publicDescription == nil)
+            let encoded = try JSONEncoder().encode(AttemptTransfer(cook))
+            let record = try #require(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+            #expect(record["publicDescription"] == nil)
+            var edit = CookingDraft(attempt: cook); edit.notes = "Another private note"
+            try CookingStore.edit(cook, draft: edit, context: context)
+            #expect(cook.publicDescription == nil)
+        }
+        let described = try create(context, description: "  Intentional public description  ")
+        #expect(described.publicDescription == "Intentional public description")
+        let again = try create(context, description: "", dish: described.dish)
+        #expect(again.publicDescription == nil && described.publicDescription == "Intentional public description")
+    }
+    @Test func clearingExistingCanonicalAndLegacyTextRemainsIntentional() throws {
+        let container = try memory(); let context = container.mainContext
+        let cook = try create(context, description: "Canonical text")
+        var draft = CookingDraft(attempt: cook); draft.publicDescription = "  "
+        try CookingStore.edit(cook, draft: draft, context: context)
+        #expect(cook.publicDescription == "")
+        cook.publicDescription = nil; cook.dish?.publicDescription = "Legacy text"; try context.save()
+        draft = CookingDraft(attempt: cook); draft.publicDescription = ""
+        try CookingStore.edit(cook, draft: draft, context: context)
+        #expect(cook.publicDescription == "" && cook.dish?.publicDescription == "Legacy text")
+    }
     @Test func newCooksNeverInheritOrOverwriteSiblingDescription() throws {
         let container = try memory(); let context = container.mainContext
         let first = try create(context, description: "First cook")
