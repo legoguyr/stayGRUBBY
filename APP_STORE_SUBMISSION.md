@@ -45,10 +45,28 @@ Tracking: **No.** No analytics, advertising or crash-reporting SDKs (Privacy Pol
 | User Content › Other User Content | Yes | Yes | App Functionality | Cooks, notes, rankings, Recipes, comments, descriptions, reports |
 | Usage Data, Diagnostics, Location, Contacts, Health, Financial, Browsing/Search History, Sensitive Info | No | — | — | Not collected by StayGrubby |
 
-**Owner decision (Gemini):**
-- Paste Recipe sends the pasted text to Google Gemini on an unbilled project. Under Google's unpaid terms it may be used to improve Google's products, as the Privacy Policy discloses.
-- That text is already covered by "Other User Content › App Functionality".
-- Decide with legal input whether that Google use needs more disclosure, or whether a paid or no-training configuration should come first. Moving to paid requires explicit billing approval under AGENTS.md.
+**Third parties:**
+- **Supabase** (database, Auth, Storage, Edge Functions) and **Apple** (Sign in with Apple) process data only to run the app, so they're covered by App Functionality.
+- **Google Gemini** receives Paste Recipe text (§3a). On the unpaid tier, Google may also use that text for its own product improvement. While that's true, add **Other Purposes** to *User Content › Other User Content*, or move to paid so App Functionality alone stays accurate. Owner decision.
+
+### 3a. Gemini (Paste Recipe): confirmed configuration, November 22, 2026
+
+- **Path:** app → authenticated Supabase Edge Function `recipe-import` → `generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`, called with the project key `STAYGRUBBY_GEMINI_API_KEY` from the server, never the app. The owner confirmed the project has no billing, so it's **unpaid**.
+- **Sent to Google:**
+  - Only the text the user pastes: up to 12,000 characters, or 32 KB.
+  - StayGrubby's fixed formatting instructions and lists of cuisines and allergen codes.
+  - No account ID, email, name, photos, other Recipes, Dishes or rankings. Google also sees ordinary network request data from Supabase's servers.
+- **Consent:**
+  - The app requires `cloudConsent: true`. Before the first submission per account, a notice names Google Gemini and the unpaid-service terms, with Continue, Cancel/Add Manually and the Privacy Policy.
+  - Cancelling sends nothing, and typed Recipes never use AI.
+  - The Privacy Policy, under "Paste Recipe and external AI processing", says the same.
+- **Kept by StayGrubby:** short-burst usage counters only, deleted with the account. Logs carry request ID, stage, status and validation codes, never the Recipe text. A result is saved only when the user taps Save.
+- **Google's terms** (Gemini API Additional Terms, effective March 23, 2026, read November 22, 2026):
+  - **Unpaid services:** Google may use content and responses to improve its products, and human reviewers may read them. Google warns against sending sensitive or personal information.
+  - **Paid services:** not used for product improvement, and logged for a limited period only for abuse prevention and legal requirements.
+  - **Compliance blockers (legal review needed):**
+    - The terms require API users to be 18 or older, and say the API must not be used for apps likely to be accessed by people under 18.
+    - Developers may offer **only paid services** to users in the **EEA, Switzerland and the UK**.
 
 ## 4. Age-rating questionnaire recommendation
 
@@ -61,7 +79,7 @@ Tracking: **No.** No analytics, advertising or crash-reporting SDKs (Privacy Pol
 | Alcohol / tobacco / drugs | None (or Infrequent/Mild if counting wine in example Recipes) | App-authored content has none; user Recipes fall under user-generated content |
 | Medical / treatment information | None | Allergens are informational only, not medical advice (Terms must say so) |
 
-The likely result is **13+** under Apple's current tiers, because of social UGC. The owner confirms the final tier in App Store Connect.
+The likely result is **13+** under Apple's current tiers, because of social UGC. **But** while Paste Recipe uses the Gemini API, Google's terms say the API must not serve apps likely to be accessed by under-18s (§3a). Resolve that before choosing the tier: an 18+ rating, removing Gemini, or another approach with legal advice. The owner confirms the final tier in App Store Connect.
 
 ## 5. Reviewer sign-in with their own Apple ID: risks
 
@@ -75,11 +93,33 @@ The likely result is **13+** under Apple's current tiers, because of social UGC.
 5. **Feature flags.** Dish Variations and Recipe recovery are enabled for audience `everyone`, so reviewers get the same features as testers. Keep `legal_terms` off until the pages are live, or reviewers would hit broken links.
 6. **Account deletion and sign-out** are reachable without content; nothing blocks them.
 
+## 5a. App Review demonstration plan (safe test data)
+
+Goal: one short screen recording, under 2 minutes, attached in App Review notes. It shows Report Post, Report Comment, Report Recipe, Block account and account deletion. No real user's content appears.
+
+**Recommended: TestFlight build with two disposable accounts.**
+1. **Accounts.** Create two disposable Apple IDs, A and B, not used by real people. Sign in to TestFlight build 8 on two devices, or sign out and in on one. Set them up as `review_a` and `review_b`, private.
+2. **Sous Chefs.** A sends B a Sous Chef request (Find Sous Chefs → @review_b), and B accepts under Requests.
+3. **Content.** B ranks one throwaway cook, shares it to The Pass with a short neutral caption, and attaches a typed throwaway Recipe shared with Sous Chefs. B also comments on its own post.
+4. **Record on A, with iOS screen recording:**
+   - The Pass → B's post → ⋯ → **Report post** → choose a reason → Send.
+   - Open the comment → ⋯ → **Report comment** → Send.
+   - Open the attached Recipe → ⋯ → **Report Recipe** → Send.
+   - B's post → ⋯ → **Block account** → confirm. B's content disappears. Also show My Kitchen › Sous Chefs → Blocked Accounts.
+   - My Kitchen → Settings → Account & Sync → **Delete account…** → confirm → Apple re-authorization → back at the welcome screen.
+5. **Cleanup:**
+   - Delete account B in the app too.
+   - Dismiss the three test reports in the staff review queue, which records them as test reports in the audit.
+   - Production writes are limited to these two disposable accounts and their deletion. Nothing touches real users' data.
+
+**Fallback, no production writes:** record the same steps in a Debug simulator review store (`--social-review-ready --social-review-feed`), which has fixture Sous Chefs and posts. Account deletion can't be shown there because it needs real Sign in with Apple, so pair it with a still of the Delete account flow. Debug builds show a Developer Tools section, so stay out of Settings while recording.
+
 ## 6. Owner decisions
 
-1. Approve the Terms of Use and Community Guidelines text (including the Recipe, allergen and AI-estimate disclaimers in V1_RELEASE_GATE), then publish and enable `legal_terms`.
-2. Apple's standard EULA or a custom one. Community Guidelines are needed either way.
-3. Privacy labels as above, and the Gemini disclosure (§3).
-4. Age-rating answers (§4), especially the messaging question.
-5. Reviewer strategy for Report/Block (§5.1): screen recording recommended.
-6. Who handles reports, and response times (open in V1_RELEASE_GATE).
+1. **Gemini terms (blocker, §3a):** choose how Paste Recipe meets Google's 18+ and EEA/UK/Switzerland rules. Options: paid billing (needs billing approval, and fixes the EEA/UK/CH rule but not the age rule); excluding those regions and rating 18+; or switching Paste Recipe off for public launch, which changes the feature. Get legal advice.
+2. Approve the Terms of Use and Community Guidelines text (including the Recipe, allergen and AI-estimate disclaimers in V1_RELEASE_GATE). Then publish both pages and confirm each returns 200 (on November 22, 2026, both `/terms` and `/community-guidelines` returned 404). Only then enable `legal_terms`. The app shows the agreement whenever the flag is on, so this order is the only safeguard.
+3. Apple's standard EULA or a custom one. Community Guidelines are needed either way.
+4. Privacy labels as above. While on the unpaid tier, add Other Purposes for Other User Content because of Google's product-improvement use (§3).
+5. Age-rating answers (§4), especially the messaging question.
+6. Reviewer demonstration (§5a): two disposable TestFlight accounts recommended, with the fixture recording as fallback.
+7. Who handles reports, and response times (open in V1_RELEASE_GATE).
