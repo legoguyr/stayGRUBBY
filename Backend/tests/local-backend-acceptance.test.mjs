@@ -21,3 +21,17 @@ try{
  }
  console.log('PASS 3 local acceptance safety guards; zero network calls');
 }finally{await rm(root,{recursive:true,force:true});}
+
+// Exercise the actual prerequisite against the current disposable PostgreSQL schema.
+// SQL claim stubs do not claim hosted Gateway/JWT/Storage acceptance.
+const { fixture }=await import('./social-harness.mjs');
+const { verifyCurrentLocalSchema }=await import('./local-backend-schema.mjs');
+const {db}=await fixture();
+try {
+ await verifyCurrentLocalSchema(db);
+ await db.exec('reset role; create table staygrubby.image_reviews(id integer)');
+ await assert.rejects(()=>verifyCurrentLocalSchema(db),/Current report-based image migrations/);
+ await db.exec('drop table staygrubby.image_reviews; alter function api.image_access(text,text) rename to fixture_image_access');
+ await assert.rejects(()=>verifyCurrentLocalSchema(db),/Current report-based image migrations/);
+ console.log('PASS 3 local schema prerequisites: current chain accepted; obsolete and incomplete chains rejected');
+} finally { await db.close(); }

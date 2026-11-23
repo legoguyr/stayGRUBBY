@@ -27,8 +27,8 @@ Every feature carries one status. These are separate states; reaching one never 
 | --- | --- | --- |
 | `dish_aggregate_scores` | Planned (reserved) | Aggregate score/make-count backend (FOOD_ARCHITECTURE §10) |
 | `account_privacy_follows` | Foundation (`SGLockedKitchenNotice`) | Follow model backend contract, RLS and client follow flow (§4) |
-| `recipe_recovery` (Unlink + Recently Deleted) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`). Build 6 failed on iPhone: `recipe_library` was missing from the client endpoint allowlist. **Fixed on `agent/claude` for Build 7**, which adds Choose a Dish relink; owner iPhone acceptance pending | `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically); flag row inserted. Turn off with `enabled = false` |
-| `dish_collections` (Dish Variations) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); client on `agent/claude`, not yet in a TestFlight build; owner iPhone acceptance pending | Migration deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); flag row inserted. Turn off with `enabled = false`. Debug review: `--feature-flag dish_collections` |
+| `recipe_recovery` (Unlink + Recently Deleted) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`). Build 6 failed on iPhone: `recipe_library` was missing from the client endpoint allowlist. **Integrated and owner-accepted in Build 7** November 22, including Choose a Dish, Unlink and recovery | `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically); flag row inserted. Turn off with `enabled = false` |
+| `dish_collections` (Dish Variations) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); client integrated into the accepted Build 7 baseline; this audit does not claim a separate Variation-specific physical test | Migration deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); flag row inserted. Turn off with `enabled = false`. Debug review: `--feature-flag dish_collections` |
 
 ## 2. Reusable components (LEGO inventory)
 
@@ -71,7 +71,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Feature | Status | Notes / dependency |
 | --- | --- | --- |
 | The Pass card, comments sheet, Dish Details, Previous Cooks | Integrated (pending iPhone) | Exact `dishKey` integrated by Codex (d26b56c) |
-| One canonical description per Cook ↔ Pass caption | Verified local model/sync/backend; nil-default follow-up tested against Claude `c1d6eab` (29 native tests / 33 executions) | Supersedes Dish-wide text/fanout; Claude UI binding complete on its branch; correction integrated on `agent/claude` (`7dd1368`); backend **deployed** Nov 21 (`20261121161925`); merge to `main`, build and physical acceptance pending ([contract](COOK_DESCRIPTION_INTEGRITY.md)) |
+| One canonical description per Cook ↔ Pass caption | Verified local model/sync/backend; nil-default follow-up tested against Claude `c1d6eab` (29 native tests / 33 executions) | Supersedes Dish-wide text/fanout; Claude UI binding/correction integrated in accepted main; backend **deployed** Nov 21 (`20261121161925`); Build 7 owner acceptance recorded in the release gate ([contract](COOK_DESCRIPTION_INTEGRITY.md)) |
 | Standard Delete wording | Verified | Replaces "86" in actions and confirmations |
 | Tab icon system | Verified (Simulator) | iPhone visual acceptance pending |
 | Cook history marks (Latest / Top cook) | Verified | Presentation only; ranking unchanged |
@@ -102,9 +102,9 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Cooked-at snapshot on posts | Dish Details cooking date | Shows the shared date |
 | `20261120171728_dish_recipe_integrity` (owner-authorized, **deployed** November 20 ahead of the other pending files; local `20261118160000`, renamed byte-identically) | `recipes dish` returns only a Recipe whose `dish_id` is that Dish (fallback patched in place in `recipe_api_before_diet_index`); new legacy links that disagree with identity are skipped; provable legacy-only Recipes get their Dish (none in production) | `Backend/tests/hosted-order-rehearsal.test.mjs` proves Codex's pending chain still applies afterwards |
 | `20261121161847_recipe_share_option_integrity` (split from the above; **deployed** Nov 21 with the moderation/text chain, local `20261118160050` renamed byte-identically) | `share_options` drops the legacy family-link step | Deployed after `20261121161446_dish_owned_recipe_share_options` |
-| Public MVP moderation/text chain + canonical Cook descriptions (`20261121161421`…`20261121161925`, 11 files) | **Deployed** Nov 21, owner-authorized; data byte-identical, no backfill; one ledger-version collision repaired ([record](supabase/README.md)) | Remaining: signed Gateway/Storage/staff rehearsal, reviewer enrollment, client build with the Cook-bound UI |
+| Public MVP moderation/text chain + canonical Cook descriptions (`20261121161421`…`20261121161925`, 11 files) | **Deployed** Nov 21, owner-authorized; data byte-identical, no backfill; one ledger-version collision repaired ([record](supabase/README.md)) | Build 7 client accepted; remaining: signed Gateway/Storage/staff rehearsal and reviewer enrollment (zero memberships verified November 22) |
 | `20261120150047_dish_collections` (deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); applied alone on hosted head `20261115154948`, independent of the other ten pending migrations) | `dishes.collections text[]` (≤20 labels, ≤40 chars), accepted by the cooking outbox only when sent, restored as `collections` (null when empty) | Client always sends the key; older servers ignore it |
-| `api.image_access` (Codex, pending) | Permission read before reusing cached photos | Client falls back to fresh Storage downloads while it is missing |
+| `api.image_access` (deployed November 21) | Permission read before reusing cached photos | Client falls back to fresh Storage downloads while it is missing |
 | Optional comment Hands | Hands on comments | Not shown |
 
 Contract rules: authenticated RPC/Edge action, DTO documented in the owning domain doc, PT409 for conflicts (never 40001/40P01), RLS on every read, backward compatible with the shipped client, migration header with growth/retention.
@@ -122,6 +122,8 @@ Contract rules: authenticated RPC/Edge action, DTO documented in the owning doma
 Ownership: Claude owns SwiftUI presentation, design system and client flows; Codex owns Supabase schema, functions, RLS, sync contracts and client transport changes that alter a contract. Shared files are reconciled at authorized integration.
 
 ## 6. Testing and release gates
+
+**November 22 release gate:** owner accepts Build 7; Website V2 is live; all 65 production migrations match. The focused audit found no confirmed live exposure/data-loss defect. SQL moderation/erasure/privacy assertions and synthetic Edge tests pass, but positive signed-user Gateway/Storage transport remains unverified without disposable infrastructure. Corrected the local harness’s obsolete `image_reviews` prerequisite/cleanup assertion; production behavior is unchanged. Staff enrollment/workflow, legal coverage, external alert delivery/recovery plan and App Review access/disclosures remain required. [Exact evidence and next actions](PUBLIC_LAUNCH_SECURITY_REVIEW.md). No integration, deployment or upload authorized in this cycle.
 
 - Focused tests for changed behavior plus narrow regression where shared code changed (AGENTS.md verification table). Don't rerun frozen ranking/photo-sync suites when untouched.
 - Every new reusable component gets a unit or UI assertion where it carries logic (e.g. `SharedCookOrder`, `PublicDescriptionSync.needsUpdate`).

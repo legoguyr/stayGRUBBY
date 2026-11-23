@@ -92,6 +92,8 @@ When moderation hides a Recipe, reauthorization fails for foreign Recipe reads, 
 
 ## Rehearsal and deployment
 
+**November 22 public-launch review:** all 65 hosted migrations match current main. Focused SQL tests pass, but there is no available disposable Auth/Gateway/Storage runtime on this Mac and no approved hosted staging. Do not describe SQL fixtures as signed transport acceptance. The local harness now checks the retired approval queue is absent, checks current APIs, removes bytes before advancing the cleanup job, and checks actual owner media/manifest cleanup. Production has zero reviewer memberships and no demonstrated staff client; enrollment and staffed end-to-end rehearsal remain required. [Review evidence](PUBLIC_LAUNCH_SECURITY_REVIEW.md).
+
 **Disposable database rehearsal.** The connected projects are the production target and frozen source, with no staging branch. Use the local PostgreSQL rehearsal from a checkout containing the candidate.
 
 ```sh
@@ -106,7 +108,7 @@ The exact pending file set is pinned by [PUBLIC_MVP_MIGRATIONS.sha256](Backend/P
 
 **Deployed November 21, 2026** (owner-authorized; all 11 files as `20261121161421`…`20261121161925`; [deployment record](supabase/README.md)). Signed Gateway/Storage/staff rehearsal and reviewer enrollment below remain open public-release gates.
 
-**Production sequence after explicit authorization.** The November 20 read-only preflight confirms 54 applied migrations: 51 through `20261115154948`, then `20261120150047`, `20261120171728` and `20261121023911`. All ordered SQL statements match local files; there is no deployed moderation review RPC. The disposable production-order rehearsal includes all three independent predecessors, existing shared-photo metadata/captions and Recently Deleted history before applying the 11 pending files.
+**Historical pre-deployment sequence (completed November 21; do not redeploy).** The November 20 read-only preflight confirmed 54 applied migrations: 51 through `20261115154948`, then `20261120150047`, `20261120171728` and `20261121023911`. All ordered SQL statements match local files; there was then no deployed moderation review RPC; it is now deployed. The disposable production-order rehearsal includes all three independent predecessors, existing shared-photo metadata/captions and Recently Deleted history before applying the 11 pending files.
 
 1. Rehearse the signed RPCs, private Storage, immediate publishing and a reported image through resolution using authorized disposable staging actors. Check ordinary users cannot review, revoked staff lose access, blocks and hidden Recipe shares fail closed, and old client reporting still works.
 2. Confirm the linked project is the migrated production target. Compare local and hosted migration history and hashes through the predecessor. Run `supabase migration list --linked` and `supabase db push --linked --include-all --skip-vault --dry-run` from a release checkout with the exact approved set pending. The eleven pending candidates below form the reviewed local sequence, subject to a fresh hosted-ledger check. The manifest also contains the independently deployed Variations, integrity and Recipe recovery files; those must not be reapplied. Complete report-response handling, immediate-photo client acceptance and the signed fixture rehearsal before public rollout. If the preview differs, stop and resolve the history first.
