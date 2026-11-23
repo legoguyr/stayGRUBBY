@@ -3,9 +3,19 @@
 Canonical release checklist — reconciled November 22, 2026 against accepted main `c6fb1c3` and owner-accepted Build **1.0 (7)**; MVP timeline (target January 2027, stretch December 2026) and the MVP Required / Post-launch classification live in the [roadmap](STAYGRUBBY_MASTER_ROADMAP.md#development-strategy--accelerated-public-mvp-owner-decision-november-16-2026). External TestFlight is optional; physical iPhone acceptance is owner-led through Xcode. Sequence: internal TestFlight → Connected UI Overhaul and near-term product work → **this gate** → Release Candidate → App Store V1 ([roadmap](STAYGRUBBY_MASTER_ROADMAP.md)). The UI overhaul is the last normal product work before this gate; Discover, Personal Cooking Intelligence, Want to Cook and Collections are not V1 requirements. This gate authorizes no submission, upload, credential change, paid service or destructive real-account test. Record evidence/owner decisions here during the separately requested gate; unchecked items are not compliance claims.
 
 - [x] **Cook / Pass description integrity:** backend chain deployed November 21, client correction integrated into the accepted baseline. Owner approves Build 7 and existing-data checks. Blank new Cooks use nil; intentional unsupported descriptions preserve the causal queue without retry storms. [Contract](COOK_DESCRIPTION_INTEGRITY.md).
-- [ ] **Cook / Pass description integrity:** backend deployed November 21, 2026 (`20261121161925`, with the full moderation/text chain); nil-default correction integrated with Claude's Cook-bound UI on `agent/claude` (`7dd1368`), not yet on `main` or in a build; owner physical acceptance pending. Ordinary blank new Cooks remain old-server compatible; intentional unsupported descriptions retain the causal queue without retry loops until deployment and Retry. Preserve and explicitly reconcile legacy conflicts; deploy only after the required pending backend chain and focused acceptance. No Dish fanout, automatic post creation or private-note fallback. [Contract and evidence](COOK_DESCRIPTION_INTEGRITY.md)
 
-## Build 7 candidate — November 22, 2026
+## Final integration candidate — November 23, 2026 (local, not merged)
+
+Local branch `integration/v1-final` in the Claude worktree: accepted `main` `9ee1359` plus, by cherry-pick (no branch merges, no duplicated marketing commits), Codex's security checkpoint through `07f2a9c`, the Build 7/8 release notes, the approved privacy-manifest and inactive Terms/Guidelines integration with App Store drafts, the staff moderation interface (`005a178`) and one integration fix for migration-order tests.
+
+- [x] Migration chain: main's 65 hosted-aligned files plus exactly three new files (`20261123035208_staff_reported_photo_operation`, `20261123171953_moderation_staff_roles`, `20261123210229_staff_status`), byte-identical to Codex's; all 17 checked hashes match; reference schema equals the chain.
+- [x] Backend: the full in-memory PGlite suite (27 files) passes. The Dish/Recipe integrity test failed on `main` too since the November 21 hosted renaming; it now replays the hosted span. The hosted-order rehearsal expects the 3 new migrations by name.
+- [x] App: Debug build; 499/502 unit tests in the full run, and the 3 failures (Rankings presentation, share-sheet save, Stage 2 legacy metadata; untouched code) pass when rerun alone. UI: all three ModerationUITests (hidden for non-staff and with the flag off; queue, pagination, Dismiss, Hide, deleted content, concurrent handling), the legal-terms flag test and the new/existing-account tests pass.
+- [x] Release: iPhone Release build compiles; no review fixtures, `--feature-flag`, preview or developer tools in the binary; privacy manifest valid; preview-exclusion and secret scans pass.
+- [x] Production read-only baseline (before any deployment): 65 migrations, no role column, no `staff_status`, 0 reviewer memberships, flags `dish_collections` and `recipe_recovery` only, `@grubwithguy` one active account. Counts: 13 accounts, 68 Dishes, 72 Cooks, 72 ranked items, 13 rankings, 9 Recipes, 26 Recipe revisions, 6 Recipe photos, 35 posts, 0 reports, 0 moderation actions, 119 Storage objects. Health: 33 MB database, 112 MB WAL, no retry codes, no busy backends, no bloat. Compare after every deployment step.
+- [ ] `staff_moderation` and `legal_terms` stay off until their activation requirements are met. Deployment, enrollment, merge, push and the App Store build each need explicit owner approval.
+
+## Builds 7 and 8 — November 22, 2026
 
 - [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
 - [x] The first-time onboarding journey is implemented, with automated tests for new, returning and interrupted accounts.
@@ -15,7 +25,7 @@ Canonical release checklist — reconciled November 22, 2026 against accepted ma
   - Info.plist and entitlements were checked, and the privacy manifest is present.
   - Export used `testFlightInternalTestingOnly`, so it can't go to external testers or App Store review.
   - Since Build 6: no data model, migration or backend changes. Database health is ok (149 MB).
-- [x] Owner physical acceptance of 1.0 (7) from TestFlight (owner-confirmed, November 22, 2026).
+- [x] Owner physical acceptance: complete onboarding, Recipe recovery, launch experience and existing data checks passed. Archive metadata is **1.0 (7)** (owner shorthand “1.0.7”), iOS 17.0 minimum; the archived Release passes the Debug-preview exclusion scan. This audit authorizes no new upload or distribution.
 - [x] **1.0 (8) uploaded for external TestFlight** on November 22, 2026 (owner-authorized). It has the same app code as accepted build 7: `main` `c6fb1c3` differs from `2dfb241` only in website and doc files. It used the Release configuration and standard App Store Connect distribution, and the archive passed `check_release_excludes_preview.sh` (no preview code, no developer tools).
 - [ ] Beta App Review submission for the existing external group: the owner chose to submit it personally (November 22); outcome not recorded here. No further TestFlight release is required (owner, November 23). Never submit for public App Store release without a separate decision.
 
@@ -35,25 +45,12 @@ Settings › **Developer Tools — Debug Only** › *Preview First-Time Experien
 - [x] Disposable signed Auth/Gateway/Storage/erasure rehearsal: **34 actual HTTP/SQL checks pass** using CLI 2.120.0 native runtime and synthetic accounts; original private peer bytes survive erasure. No Gemini or Apple revocation. This verifies the local candidate, not a live signed production-user probe.
 - [ ] Approve integration/deployment of `20261123035208_staff_reported_photo_operation.sql`: actual Storage uses `storage.object.get_authenticated`; the deployed staff predicate directly compares the unprefixed name. The correction reuses the existing normalized allowlist helper and passes 22 focused assertions plus the real local byte path. No grants, records or policies change.
 - [ ] Prepare the minimal admin/moderator distinction and audited role controls, then enroll **only the owner’s existing account** with separate approval and exercise the authenticated staff workflow. No backup/new account is required. Production has **zero** reviewer memberships; API contracts exist, but no staff-facing operations client was found. Agree response/escalation coverage and App Review 1.2 filtering disposition. No mandatory image approval or paid classifier.
+  - **November 23 integration candidate:** roles/audit (`20261123171953`), `api.staff_status` (`20261123210229`) and the Settings → Moderation client are integrated on local `integration/v1-final`; none deployed or enrolled. See the integration candidate below.
 - [ ] Approve/publish Terms, Community Guidelines and appropriate Recipe/allergen/estimate safety language; `/terms` currently returns 404. Privacy/Support render correctly; hosted Privacy HTML matches the current build output.
 - [ ] Complete owner App Store privacy/age-rating answers and a working Apple-only reviewer-access procedure. The privacy manifest is not a substitute for App Store privacy disclosures.
 - [ ] Prove an external capacity alert reaches a named operator; document a practical backup/recovery procedure. Cron is active, but delivery is log-only and the Free project has no managed backups.
 - [x] Dashboard disk headroom: **0.31 GB / 2 GB (16%)**; current monitor has no alerts. No upgrade, throttling activation or sync rewrite is justified. Keep structured-sync throttling off while Build 5 is supported.
 
-
-## Build 7 — owner accepted November 22, 2026
-
-- [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
-- [x] The first-time onboarding journey is implemented, with automated tests for new, returning and interrupted accounts.
-- [x] **Preview First-Time Experience** is Debug-only and installed from Xcode, never distributed through TestFlight (owner decision, November 22, 2026; replaces the short-lived Internal configuration). Release excludes it, and the focused isolation and exit tests pass.
-- [x] Owner physical acceptance: complete onboarding, Recipe recovery, launch experience and existing data checks passed. Archive metadata is **1.0 (7)** (owner shorthand “1.0.7”), iOS 17.0 minimum; the archived Release passes the Debug-preview exclusion scan. This audit authorizes no new upload or distribution.
-
-## Debug-only first-run preview
-
-Settings › **Developer Tools — Debug Only** › *Preview First-Time Experience* exists only in Debug builds installed directly from Xcode. It is compiled out of Release, and TestFlight and App Store builds are always Release, so it can't be distributed by mistake. The AGENTS.md rule is unchanged: developer and test controls never compile into Release. There is no Internal configuration or scheme.
-
-- **Check:** `sh DevelopmentTools/check_release_excludes_preview.sh` verifies that Release doesn't compile `DEBUG` and that the StayGrubby scheme archives Release. It then builds Release and confirms the preview is absent. Pass an `.xcarchive`, `.app` or `.ipa` to scan a specific build.
-- **Owner use:** connect the iPhone and run the **StayGrubby** scheme in Xcode (Product → Run, which builds Debug). Reinstall from TestFlight afterwards to return to the normal build.
 
 ## Historical Build 6 internal candidate — November 15, 2026
 
