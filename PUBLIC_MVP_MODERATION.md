@@ -25,6 +25,28 @@ At public launch the owner’s existing account is the **only** intended staff a
 4. Use **dismiss** when no moderation action is warranted. Use **hide** to withdraw the item from its social audience. Resolution and its reviewer, decision and time are recorded atomically. A lost-response retry returns the original result. Conflicting final decisions return a refreshable `PT409`. The private audit survives removal of the reviewer identity while the case survives.
 5. Revoke access by removing the staff membership. The next request checks membership and session validity. An exceptional action outside the queue is restricted to database operators and requires an incident record with actor, reason, time and affected record. The legacy service-key mutation is revoked by the migration.
 
+## In-app staff interface (Settings → Moderation)
+
+Claude, November 23, 2026; built ahead, **inactive**. A thin client over `moderation_review`; no role management in the app for V1 (owner decision: the operator procedure is sufficient).
+
+- **Visibility:** a "Moderation" row under a Staff section in Settings appears only when the server flag `staff_moderation` is on for the account **and** `api.staff_status` returns `admin` or `moderator`. With the flag off the app makes no staff request at all; ordinary users never probe the report queue. The row is convenience only: the server authorizes every queue, review and resolve call, so a removed role fails on its next request.
+- **Queue:** pending reports oldest first, 25 per page with Load More (cursor = the last row's `id` and its `createdAt` text unchanged). Pull to refresh. Reports about the reviewer's own content are never returned (server rule; admins included). The owner accepts that, while `@grubwithguy` is the only staff member, reports about the owner's content wait for a second moderator.
+- **Report:** type, reason, date, the reporter's note and the reported content (profile name and photo, post title, description and photo, comment text, or the reported Recipe revision read-only). Reported photos download fresh through Storage (`review_image_allowed`) and are never written to the device photo cache. Deleted content says so and can only be dismissed.
+- **Decisions:** Dismiss Report or Hide Content, each behind a confirmation. Retries are idempotent on the server; `PT409` shows "Already handled" and removes the report from the queue; `42501` explains that staff access may have changed.
+- **Tests:** `ModerationTests` (contracts, cursor, decoding, errors) and `ModerationUITests` (hidden for non-staff and without the flag; pagination, dismiss, hide, deleted content, concurrent handling) against synthetic Debug-only reports. Nothing touches production reports.
+
+**Backend dependency implemented locally:** `20261123210229_staff_status.sql` supplies the exact `api.staff_status` contract below. It is not deployed. Invalid actions/nonempty payloads return `22023`; missing/revoked sessions or inactive accounts fail authorization. Active ordinary accounts receive role null. The endpoint is stable/read-only and creates no audit or provisioning writes.
+
+| Item | Contract |
+| --- | --- |
+| Call | `staff_status` with action `me`, empty payload, authenticated user session |
+| Response | `{"role":"admin"}`, `{"role":"moderator"}` or `{"role":null}` |
+| Rules | Read-only, own role only (from `staygrubby.social_actor()`; active account and current `moderation_reviewers` row). Never errors for an ordinary signed-in user (returns null). No audit row, no other account's data. Granted to `authenticated` only |
+
+**Codex verification:** 28 focused status/flag/activation assertions, five actual signed local HTTP cases and 101 schema/RLS assertions pass. Claude’s exact Swift role DTO independently decodes admin/moderator/null. Earlier role/erasure and UI evidence is reused; no broad app suite or production probe was run.
+
+**Activation:** integrate the reviewed Codex backend and Claude `005a178` after approval; deploy photo correction → staff roles → staff status; enroll only the pinned `@grubwithguy` account; install an approved build containing the UI; then separately enable `staff_moderation`. The flag reader now filters this key to current staff, so ordinary accounts receive no key and make no staff request. A global metadata audience alone was insufficient before this correction. [Exact ordered activation](DevelopmentTools/operations/README.md#staff-status-and-claude-005a178-integration).
+
 ## API contracts
 
 All calls use `POST /rest/v1/rpc/<function>` with `Content-Type: application/json`, `Content-Profile: api`, the project publishable key in `apikey` and an active Supabase user access token in `Authorization: Bearer …`. The JSON body is `{"action":"<action>","payload":{…}}`. The server derives the actor from the signed session. IDs refer to the permanent StayGrubby account or object, never the Apple subject or Auth user ID. The block operations require a social profile with a username. The staff operations also require a current operator-granted reviewer membership.
