@@ -8,7 +8,11 @@ const dir = new URL('../../supabase/migrations/', import.meta.url);
 const integrity = (await readdir(dir)).find(f => f.endsWith('_dish_recipe_integrity.sql'));
 const collections = (await readdir(dir)).find(f => f.endsWith('_dish_collections.sql'));
 const shareIntegrity = (await readdir(dir)).find(f => f.endsWith('_recipe_share_option_integrity.sql'));
-const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: shareIntegrity });
+// Since the November 21 hosted renaming, share-option integrity sorts after the integrity migration and the
+// whole deployed chain between them. Start before the integrity migration and replay that span in filename
+// (hosted) order, so the predecessor still shows the stale link the repair removes.
+const span = (await readdir(dir)).filter(f => f.endsWith('.sql') && f >= integrity && f <= shareIntegrity).sort();
+const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: integrity });
 const owner = users[0].id;
 const content = title => ({ title, ingredients: ['rice'], steps: ['Stir.'] });
 const dishOf = async attempt => (await db.query('select dish_id from staygrubby.cooking_attempts where id=$1', [attempt])).rows[0].dish_id;
@@ -41,8 +45,7 @@ try {
 
  await db.exec('reset role');
  const before = await fingerprint();
- await db.exec(await readFile(new URL(integrity, dir), 'utf8'));
- await db.exec(await readFile(new URL(shareIntegrity, dir), 'utf8'));
+ for (const f of span) await db.exec(await readFile(new URL(f, dir), 'utf8'));
  check(await fingerprint() === before, 'Integrity migrations delete or add no rows');
  check((await db.query('select dish_id from staygrubby.recipes where id=$1', [legacyOnly])).rows[0].dish_id === legacyDish,
   'A Recipe whose only legacy link is one Dish without a Recipe takes that Dish (provable repair)');
@@ -75,7 +78,8 @@ try {
  check(Number((await db.query('select count(*) n from staygrubby.dish_recipes')).rows[0].n) === Number(legacyBefore) + 1, 'A legacy link that agrees with identity is still accepted');
 
  // Dish collections: one column, synced only when sent; old clients leave it unchanged.
- await db.exec(await readFile(new URL(collections, dir), 'utf8'));
+ // Hosted order deploys Dish collections (20261120150047) before the integrity migration, so the fixture already has it.
+ if (collections > integrity) await db.exec(await readFile(new URL(collections, dir), 'utf8'));
  await actor(0);
  const record = (entity, data) => ({ reference: { entity, key: data.id }, data: Buffer.from(JSON.stringify(data)).toString('base64') });
  const apply = async upserts => {
