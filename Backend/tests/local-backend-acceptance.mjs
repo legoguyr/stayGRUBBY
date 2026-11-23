@@ -138,7 +138,9 @@ try {
  const foreignToken=foreignUnsigned+'.'+createHmac('sha256',randomBytes(32)).update(foreignUnsigned).digest('base64url');
  for(const route of ['recipe-import','delete-account']){
   for(const token of ['invalid-fixture-token',config.ANON_KEY,foreignToken]){
-   const denied=await call('/functions/v1/'+route,token,'GET');
+   const denied=route==='recipe-import'
+    ? await call('/functions/v1/'+route,token,'POST','{}',{'Content-Type':'application/json'})
+    : await call('/functions/v1/'+route,token,'GET');
    check(denied.status===401,'Edge Gateway rejects missing-user, malformed or foreign-signature token');
   }
  }
@@ -154,7 +156,7 @@ try {
  check(Number((await db.query(`select
   (select count(*) from staygrubby.media where account_id=$1)
   +(select count(*) from staygrubby.media_backups where account_id=$1)
-  +(select count(*) from staygrubby.recipe_photos where account_id=$1) n`,[users[0].id])).rows[0].n)===0,
+  +(select count(*) from staygrubby.recipe_photos where owner_id=$1) n`,[users[0].id])).rows[0].n)===0,
   'Erased owner has no remaining media metadata or manifests');
  const removedAuth = await call('/auth/v1/admin/users/'+users[0].user,config.SERVICE_ROLE_KEY,'DELETE',JSON.stringify({should_soft_delete:false}),{'Content-Type':'application/json'});
  check(removedAuth.ok,'Synthetic Auth user removed through Auth Admin');
