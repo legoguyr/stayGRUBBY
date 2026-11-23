@@ -24,6 +24,10 @@ nonisolated enum FeatureFlag: String, CaseIterable, Sendable {
     /// App Review 1.2). Built ahead: enable only after the owner approves the text and
     /// `LegalDocuments` URLs are live on staygrubby.com (V1_RELEASE_GATE.md).
     case legalTerms = "legal_terms"
+    /// Settings → Moderation for staff (PUBLIC_MVP_MODERATION.md). Needs `20261123171953_moderation_staff_roles`
+    /// and `api.staff_status` on the hosted project. The flag only allows the one staff-status read; the row
+    /// appears only for a current admin or moderator, and the server checks every moderation action.
+    case staffModeration = "staff_moderation"
 }
 
 /// Approved legal documents on staygrubby.com. Shown only with `FeatureFlag.legalTerms`; the text itself is

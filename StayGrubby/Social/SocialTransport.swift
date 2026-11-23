@@ -12,6 +12,7 @@ extension SupabaseAccountBackend: SocialBackend {
         "social_identity", "social_people", "social_report", "social_content", "social_feed", "social_interactions",
         "social_avatar", "social_cooking", "social_notifications", "social_send", "recipes", "recipe_library",
         "profile_link", "feature_flags", "cook_description",
+        "staff_status", "moderation_review",
     ]
     func socialRequest(endpoint: String, action: String, payload: SocialPayload) async throws -> Data {
         guard Self.socialEndpoints.contains(endpoint), let user = client.auth.currentSession?.user.id else { throw AccountFoundationError.accountNotResolved }

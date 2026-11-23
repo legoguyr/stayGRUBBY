@@ -5,6 +5,8 @@ struct KitchenSettings<AccountUtilities: View>: View {
     @Environment(\.featureFlags) private var flags
     @State private var showingPolicy = false
     @State private var showingTutorial = false
+    /// Current staff role from the server (`api.staff_status`); asked only while `staff_moderation` is on.
+    @State private var staffRole: StaffRole?
     #if DEBUG
     @State private var previewingFirstRun = false
     #endif
@@ -32,6 +34,15 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 }
             }
 
+            if staffRole != nil {
+                Section {
+                    NavigationLink { ModerationQueueView() } label: { Label("Moderation", systemImage: "checkmark.shield") }
+                        .accessibilityIdentifier("settings-moderation")
+                } header: { Text("Staff") } footer: {
+                    Text("Shown only to #stayGRUBBY staff. Reports about your own content go to another moderator.")
+                }
+            }
+
             #if DEBUG
             // Debug builds installed from Xcode only; compiled out of Release (TestFlight and App Store).
             Section {
@@ -53,6 +64,11 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
         }.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
+            .task(id: flags.isOn(.staffModeration)) {
+                // Ordinary users never ask unless the flag is on; the server still checks every moderation action.
+                guard flags.isOn(.staffModeration), let request else { staffRole = nil; return }
+                staffRole = await ModerationService.role(request)
+            }
             .sheet(isPresented: $showingPolicy) { PrivacyPolicyView() }
             .fullScreenCover(isPresented: $showingTutorial) { TutorialView(replay: true) { showingTutorial = false } }
             #if DEBUG
