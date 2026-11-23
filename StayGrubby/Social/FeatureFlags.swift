@@ -20,6 +20,17 @@ nonisolated enum FeatureFlag: String, CaseIterable, Sendable {
     /// never enable it on a server without it: Unlink and Recently Deleted would fail, and Delete must not
     /// promise recovery.
     case recipeRecovery = "recipe_recovery"
+    /// Terms of Use and Community Guidelines links (Settings, and the agreement line in kitchen setup;
+    /// App Review 1.2). Built ahead: enable only after the owner approves the text and
+    /// `LegalDocuments` URLs are live on staygrubby.com (V1_RELEASE_GATE.md).
+    case legalTerms = "legal_terms"
+}
+
+/// Approved legal documents on staygrubby.com. Shown only with `FeatureFlag.legalTerms`; the text itself is
+/// the owner's (never drafted into the app).
+nonisolated enum LegalDocuments {
+    static let termsOfUse = URL(string: "https://staygrubby.com/terms")!
+    static let communityGuidelines = URL(string: "https://staygrubby.com/community-guidelines")!
 }
 
 nonisolated struct FeatureFlags: Equatable, Sendable {

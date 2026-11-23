@@ -162,6 +162,7 @@ struct SocialOnboardingView: View {
     let announcesChanges: Bool
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
+    @Environment(\.featureFlags) private var flags
     @State private var draft: SocialOnboardingDraft
     @State private var saving = false
     @State private var failure: SocialIdentitySaveFailure?
@@ -260,6 +261,12 @@ struct SocialOnboardingView: View {
                     .font(SGTheme.TypeRole.secondary)
                     .foregroundStyle(SocialOnboardingPolicy.usernameMessage(draft.username) == nil ? Color.secondary : SGTheme.ColorToken.destructive)
                     .accessibilityIdentifier("onboarding-username-hint")
+            }
+            // App Review 1.2: people who can share agree to the Terms and Community Guidelines first.
+            if flags.isOn(.legalTerms) {
+                Text("By continuing, you agree to the [Terms of Use](\(LegalDocuments.termsOfUse.absoluteString)) and [Community Guidelines](\(LegalDocuments.communityGuidelines.absoluteString)).")
+                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).tint(SGTheme.ColorToken.accent)
+                    .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-terms-agreement")
             }
         }
     }

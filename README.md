@@ -26,6 +26,7 @@ Native iPhone cooking journal with comparison ranking, personal Recipes (Food Bi
 | [UI_ARCHITECTURE.md](UI_ARCHITECTURE.md) | Current design-system spec, known UI defects, overhaul stages and their run order |
 | [COOK_DESCRIPTION_INTEGRITY.md](COOK_DESCRIPTION_INTEGRITY.md) | Per-Cook description contract, legacy conflicts, Codex/Claude ownership and pending rollout |
 | [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md) | V1 release requirements and state |
+- [APP_STORE_SUBMISSION.md](APP_STORE_SUBMISSION.md) — draft App Review notes, privacy labels, age rating and reviewer-access risks (owner review)
 | [PERSONAL_COOKING_INTELLIGENCE.md](PERSONAL_COOKING_INTELLIGENCE.md) | Long-term intelligence direction, per-cycle data check, verified data inventory, Want to Cook / Collections concepts |
 | [Website/README.md](Website/README.md) | Cloudflare Worker, Universal Link fallbacks, safe production deployment |
 | [Backend/README.md](Backend/README.md), [supabase/README.md](supabase/README.md), [DevelopmentTools/README.md](DevelopmentTools/README.md) | Backend tooling, hosted deployment history, development tools |

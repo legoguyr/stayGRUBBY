@@ -33,6 +33,7 @@ final class PublicMVPUITests: StayGrubbyUITestCase {
         let title = app.staticTexts["onboarding-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 15)); XCTAssertEqual(title.label, "Set up your Kitchen")
         XCTAssertFalse(app.buttons["onboarding-not-now"].exists, "A new account must finish setup")
+        XCTAssertFalse(app.descendants(matching: .any)["onboarding-terms-agreement"].exists, "Terms stay hidden until legal_terms is enabled")
         let next = app.buttons["onboarding-continue"]
         XCTAssertFalse(next.isEnabled)
         type(app.textFields["onboarding-name"], "New Cook")
@@ -137,6 +138,27 @@ final class PublicMVPUITests: StayGrubbyUITestCase {
         app = launch(["--onboarding-review", "--test-light"], store: store)
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         XCTAssertFalse(firstPage.waitForExistence(timeout: 4), "The tour shows once")
+    }
+
+    /// App Review 1.2 integration point, built ahead: with `legal_terms` on, setup shows the agreement
+    /// line and Settings links the Terms and Community Guidelines.
+    @MainActor func testLegalTermsAppearOnlyWithTheirFlag() throws {
+        var app = launch(["--onboarding-review", "--test-light", "--feature-flag", "legal_terms"], store: UUID().uuidString)
+        let agreement = app.descendants(matching: .any)["onboarding-terms-agreement"]
+        XCTAssertTrue(agreement.waitForExistence(timeout: 15))
+        XCTAssertTrue(agreement.label.contains("Terms of Use") && agreement.label.contains("Community Guidelines"))
+        shot("Onboarding · terms agreement (flag on)", app)
+        app.terminate()
+        app = launch(["--social-review-ready", "--test-light", "--feature-flag", "legal_terms"], store: UUID().uuidString)
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
+        for _ in 0..<3 {
+            app.tabBars.buttons["My Kitchen"].tap()
+            if app.buttons["settings-open"].waitForExistence(timeout: 3) { break }
+        }
+        app.buttons["settings-open"].tap()
+        for _ in 0..<5 where !(app.buttons["settings-terms"].exists || app.links["settings-terms"].exists) { app.swipeUp() }
+        XCTAssertTrue(app.buttons["settings-terms"].exists || app.links["settings-terms"].exists)
+        XCTAssertTrue(app.buttons["settings-guidelines"].exists || app.links["settings-guidelines"].exists)
     }
 
     @MainActor func testExistingAccountsAreOfferedSetupOnceAndConfiguredAccountsNever() throws {

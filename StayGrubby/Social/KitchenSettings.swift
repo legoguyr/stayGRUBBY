@@ -2,6 +2,7 @@ import SwiftUI
 
 struct KitchenSettings<AccountUtilities: View>: View {
     @Environment(\.socialRequest) private var request
+    @Environment(\.featureFlags) private var flags
     @State private var showingPolicy = false
     @State private var showingTutorial = false
     #if DEBUG
@@ -44,6 +45,10 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 // Replay records nothing and touches no data (FirstRunTutorial).
                 Button("How #stayGRUBBY Works") { showingTutorial = true }.accessibilityIdentifier("settings-tutorial")
                 Button("Privacy Policy") { showingPolicy = true }.accessibilityIdentifier("privacy-policy-open")
+                if flags.isOn(.legalTerms) {
+                    Link("Terms of Use", destination: LegalDocuments.termsOfUse).accessibilityIdentifier("settings-terms")
+                    Link("Community Guidelines", destination: LegalDocuments.communityGuidelines).accessibilityIdentifier("settings-guidelines")
+                }
                 Link("Support", destination: URL(string: "https://staygrubby.com/support")!)
                 LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
