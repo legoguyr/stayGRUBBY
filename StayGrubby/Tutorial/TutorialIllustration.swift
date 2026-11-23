@@ -53,13 +53,13 @@ struct TutorialIllustration: View {
                 Tile(symbol: "fork.knife", size: 52)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("DISH").font(SGTheme.TypeRole.eyebrow).foregroundStyle(SGTheme.ColorToken.accent)
-                    Text("Butternut Squash Risotto").font(SGTheme.TypeRole.dish).lineLimit(2)
+                    Text("Rack of Lamb").font(SGTheme.TypeRole.dish).lineLimit(2)
                     Text("\(max(shown, 1)) \(max(shown, 1) == 1 ? "cook" : "cooks")").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                         .contentTransition(.numericText())
                 }
             }
             Divider()
-            ForEach(Array(["Sunday Batch", "Extra Sage", "Smoky"].enumerated()), id: \.offset) { index, name in
+            ForEach(Array(["Grilled Rack of Lamb", "Sous Vide Rack of Lamb", "Herb-Crusted Rack of Lamb"].enumerated()), id: \.offset) { index, name in
                 if index < max(shown, 1) {
                     HStack {
                         Image(systemName: "flame").foregroundStyle(SGTheme.ColorToken.accent).frame(width: 24)
@@ -79,9 +79,9 @@ struct TutorialIllustration: View {
         VStack(spacing: SGTheme.Space.small) {
             Text("Which was better?").font(SGTheme.TypeRole.headline)
             HStack(spacing: SGTheme.Space.small) {
-                pick(0, "Smoky Risotto", symbol: "flame")
+                pick(0, "Mushroom Risotto", symbol: "fork.knife")
                 Text("or").font(SGTheme.TypeRole.eyebrow).foregroundStyle(.secondary).accessibilityHidden(true)
-                pick(1, "Friday Tacos", symbol: "takeoutbag.and.cup.and.straw")
+                pick(1, "Pan-Seared Duck Breast", symbol: "flame")
             }
             HStack(spacing: SGTheme.Space.xSmall) {
                 ForEach(0..<3, id: \.self) { index in
@@ -122,7 +122,7 @@ struct TutorialIllustration: View {
     }
 
     private var grubRank: some View {
-        let rows: [(String, String)] = [("Smoky Risotto", "9.4"), ("Sunday Short Ribs", "8.8"), ("Friday Tacos", "8.1"), ("Weeknight Ramen", "6.9")]
+        let rows: [(String, String)] = [("Rack of Lamb", "9.4"), ("Mushroom Risotto", "8.8"), ("Pan-Seared Duck Breast", "8.1"), ("Chicken Piccata", "6.9")]
         return VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             HStack {
                 Image("TabRankFill").renderingMode(.template).resizable().scaledToFit().frame(width: 20, height: 20)
@@ -155,8 +155,8 @@ struct TutorialIllustration: View {
                 Tile(symbol: "book.closed", size: 44)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("FOOD BIBLE").font(SGTheme.TypeRole.eyebrow).foregroundStyle(SGTheme.ColorToken.accent)
-                    Text("Butternut Squash Risotto").font(SGTheme.TypeRole.headline).lineLimit(1)
-                    Text("Serves 4 · 45 min").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+                    Text("Herb-Crusted Rack of Lamb").font(SGTheme.TypeRole.headline).lineLimit(1)
+                    Text("Serves 4 · 1 hr").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
                 }
             }
             .padding(SGTheme.Space.small).frame(maxWidth: .infinity, alignment: .leading)
@@ -171,7 +171,7 @@ struct TutorialIllustration: View {
                         SGScore(text: "9.4", role: .pill)
                     }
                     Tile(symbol: "camera", size: nil).frame(height: 84)
-                    Text("Smoky Risotto, finally nailed it.").font(SGTheme.TypeRole.body)
+                    Text("Herb-crusted rack of lamb for Sunday dinner.").font(SGTheme.TypeRole.body)
                     HStack(spacing: SGTheme.Space.xSmall) {
                         Text("🙌").font(.title3).scaleEffect(shown >= 3 ? 1.15 : 1)
                         Text(shown >= 2 ? "\(shown >= 3 ? 4 : 3) Hands" : "Give Hands").font(SGTheme.TypeRole.secondary.weight(.semibold))

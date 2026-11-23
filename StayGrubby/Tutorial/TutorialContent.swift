@@ -27,7 +27,7 @@ nonisolated enum TutorialPage: Int, CaseIterable, Identifiable, Sendable {
     var message: String {
         switch self {
         case .dishAndCooks:
-            "A Dish is what you make, like Butternut Squash Risotto. Every time you make it is a cook, so you’ll know which night you nailed it."
+            "A Dish is what you make, like Rack of Lamb. Every time you make it is a cook, with its own score and photos."
         case .thisOrThat:
             "After a cook, pick between two things you’ve made. No stars, no sliders. Just this or that."
         case .grubRank:
@@ -39,10 +39,10 @@ nonisolated enum TutorialPage: Int, CaseIterable, Identifiable, Sendable {
     /// VoiceOver description of the illustration (the copy above stays the primary explanation).
     var illustrationLabel: String {
         switch self {
-        case .dishAndCooks: "Example: the Dish Butternut Squash Risotto with three cooks: Sunday Batch, Extra Sage and Smoky."
-        case .thisOrThat: "Example: two cooks side by side. One is chosen."
-        case .grubRank: "Example Grub Rank: four Dishes in order, the top three marked as Signature Dishes."
-        case .foodBibleAndPass: "Example: a Recipe saved in Food Bible and a cook posted to The Pass with Hands."
+        case .dishAndCooks: "Example: the Dish Rack of Lamb with three cooks: Grilled, Sous Vide and Herb-Crusted Rack of Lamb."
+        case .thisOrThat: "Example: Mushroom Risotto or Pan-Seared Duck Breast. One is chosen."
+        case .grubRank: "Example Grub Rank: Rack of Lamb, Mushroom Risotto, Pan-Seared Duck Breast and Chicken Piccata, the top three marked as Signature Dishes."
+        case .foodBibleAndPass: "Example: the Herb-Crusted Rack of Lamb Recipe in Food Bible and that cook posted to The Pass with Hands."
         }
     }
     var isLast: Bool { self == Self.allCases.last }
