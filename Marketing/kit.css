@@ -1,0 +1,123 @@
+/* #stayGRUBBY marketing kit. Loads after Website/site.css, so example cards, glyphs and tokens are the website's own.
+   Two surfaces only — logo red with white type, cream with charcoal type and red accents — alternating across the
+   feed so the grid reads as a checkerboard. System type (SF Pro on macOS), heavy and tight like the website hero. */
+html, body { margin: 0; background: transparent; }
+.canvas { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 64px 72px 60px; box-sizing: border-box;
+  -webkit-font-smoothing: antialiased; line-height: 1.2; }
+.theme-red { background: var(--red); color: var(--white); }
+.theme-cream { background: var(--cream); color: var(--ink); }
+.canvas h1 { font-weight: 850; letter-spacing: -.05em; line-height: .96; margin: 0; }
+.canvas .body { font-size: 38px; line-height: 1.3; font-weight: 550; letter-spacing: -.012em; max-width: 26ch; }
+.theme-cream .body { color: var(--muted); }
+.theme-red .body { color: rgb(255 255 255 / .9); }
+
+.wordmark { display: block; height: auto; }
+.wordmark.small { width: 150px; }
+.wordmark.mid { width: 300px; }
+.wordmark.hero { width: 560px; }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; }
+.counter { font-size: 26px; font-weight: 750; letter-spacing: .04em; font-variant-numeric: tabular-nums; opacity: .75; }
+.bottombar { margin-top: auto; display: flex; align-items: center; justify-content: space-between; padding-top: 28px; font-size: 28px; font-weight: 750; }
+.theme-red .bottombar { border-top: 2px solid rgb(255 255 255 / .35); }
+.theme-cream .bottombar { border-top: 2px solid var(--line); }
+.cta-chip { display: inline-flex; align-items: center; gap: 12px; padding: 16px 28px; border-radius: 999px; }
+.theme-red .cta-chip { background: var(--white); color: var(--accent); }
+.theme-cream .cta-chip { background: var(--accent); color: var(--white); }
+
+.eyebrow-kit { display: flex; align-items: center; gap: 14px; font-size: 30px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 22px; }
+.eyebrow-kit .glyph { width: 44px; height: 44px; }
+.theme-cream .eyebrow-kit { color: var(--accent); }
+.theme-red .eyebrow-kit, .theme-red .eyebrow-kit .glyph { color: var(--white); }
+
+/* Illustrative previews: the website's cards at poster scale, always captioned. */
+.preview-kit { margin: 0; display: grid; justify-items: center; gap: 22px; }
+.preview-kit .cards { display: grid; }  /* zoom is set per design in campaign.json */
+.preview-kit .layer { grid-area: 1 / 1; }
+.preview-kit .card { width: 340px; }
+.preview-kit .cards.n2 .layer-0 { rotate: -3deg; translate: -34px -6px; }
+.preview-kit .cards.n2 .layer-1 { rotate: 2.5deg; translate: 30px 132px; }
+.preview-kit .cards.n2 { padding-bottom: 132px; }
+.preview-kit .cards.n1 .layer-0 { rotate: -2deg; }
+.preview-kit figcaption { font-size: 24px; font-weight: 650; letter-spacing: .04em; }
+.theme-red .preview-kit figcaption { color: rgb(255 255 255 / .85); }
+.theme-cream .preview-kit figcaption { color: var(--muted); }
+.theme-red .card { box-shadow: 0 2px 4px rgb(31 31 31 / .08), 0 30px 60px -20px rgb(80 0 0 / .45); }
+.phone { width: 400px; padding: 14px; border-radius: 64px; }
+.phone img { border-radius: 52px; }
+
+/* Feed: feature */
+.layout-feature .copy, .layout-announce .copy { margin-top: 52px; }
+.layout-feature h1, .layout-announce h1 { font-size: 112px; max-width: 9.5ch; }
+.layout-feature .body, .layout-announce .body { margin-top: 24px; font-size: 36px; }
+.layout-feature .visual, .layout-announce .visual { flex: 1; display: grid; place-items: center; min-height: 0; padding-block: 12px; }
+.feed .visual .phone { width: 330px; }
+
+/* Feed: intro */
+.layout-intro .intro-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 0; }
+.layout-intro .wordmark.hero { width: 760px; margin: 0 0 56px -10px; }
+.layout-intro h1 { font-size: 132px; }
+.layout-intro .body { margin-top: 32px; }
+.photo-top { position: absolute; inset: 0 0 38% 0; background-size: cover; background-position: center; }
+.photo-panel { margin-top: auto; position: relative; padding-top: 40px; }
+
+/* Feed: how it works */
+.layout-steps .eyebrow-kit { margin-top: 60px; }
+.step-rows { list-style: none; margin: 8px 0 0; padding: 0; flex: 1; display: grid; }
+.step-rows li { display: grid; grid-template-columns: 96px 1fr; grid-template-rows: auto auto; column-gap: 12px; align-content: center;
+  border-top: 2px solid var(--line); padding: 18px 0; }
+.step-rows .no { grid-row: span 2; font-size: 40px; font-weight: 850; color: var(--red); padding-top: 22px; font-variant-numeric: tabular-nums; }
+.step-rows .verb { font-size: 104px; font-weight: 850; letter-spacing: -.05em; line-height: 1; }
+.step-rows li:nth-child(2) .verb { color: var(--red); }
+.step-rows .line { font-size: 31px; font-weight: 550; color: var(--muted); margin-top: 8px; }
+.tiles { list-style: none; margin: 0; padding: 0; flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.tile { border-radius: 28px; background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 22px; }
+.tile span { background: var(--white); color: var(--ink); border-radius: 999px; padding: 8px 20px; font-size: 32px; font-weight: 850; }
+
+/* Stories (1080x1920): keep type out of the top 220px and bottom 300px Instagram overlays. */
+.story { padding: 230px 80px 300px; }
+.layout-story-intro .story-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.layout-story-intro .wordmark.hero { width: 640px; margin: 0 0 72px -8px; }
+.layout-story-intro h1 { font-size: 150px; max-width: 7ch; }
+.layout-story-intro .body { margin-top: 36px; font-size: 44px; }
+.story .topbar { position: absolute; top: 120px; left: 80px; }
+.story .topbar .wordmark.small { width: 170px; }
+.story .copy { margin-top: 0; }
+.story h1 { font-size: 136px; max-width: 8ch; }
+.story .copy .body { margin-top: 26px; font-size: 42px; }
+.story .visual { flex: 1; display: grid; place-items: center; min-height: 0; }
+.link-zone { margin-top: 72px; display: grid; justify-items: center; gap: 6px; text-align: center; padding-top: 24px; }
+.link-zone p { font-size: 40px; font-weight: 800; }
+.link-zone .arrow { font-size: 56px; font-weight: 800; line-height: 1; }
+.link-zone .url { font-size: 30px; font-weight: 650; opacity: .8; }
+/* Space reserved for the Instagram link sticker, placed in the app over this band. */
+.link-zone::after { content: ""; height: 150px; }
+
+/* Flyer (US Letter, 816x1056 CSS px at 2x; prints to PDF). */
+.flyer { padding: 0; background: var(--cream); color: var(--ink); }
+.flyer-top { background: var(--red); color: var(--white); padding: 56px 64px 48px; }
+.flyer-top .wordmark.hero { width: 300px; margin: 0 0 36px -4px; }
+.flyer-top h1 { font-size: 84px; }
+.flyer-top .body { margin-top: 18px; font-size: 24px; max-width: 30ch; color: rgb(255 255 255 / .92); }
+.flyer-bottom { flex: 1; display: flex; flex-direction: column; gap: 36px; padding: 40px 64px 48px; }
+.flyer-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.flyer-steps li { background: var(--white); border-radius: 20px; padding: 18px; font-size: 26px; font-weight: 850; letter-spacing: -.03em; }
+.flyer-steps .no { display: block; color: var(--red); font-size: 18px; letter-spacing: .02em; margin-bottom: 6px; }
+.flyer-cta { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 32px; border-top: 2px solid var(--line); padding-top: 36px; }
+.cta-title { font-size: 46px; font-weight: 850; letter-spacing: -.04em; color: var(--accent); }
+.flyer-cta .url { font-size: 30px; font-weight: 800; margin-top: 6px; }
+.flyer-cta .note { font-size: 18px; color: var(--muted); margin-top: 8px; font-weight: 600; }
+.qr { width: 170px; height: 170px; padding: 12px; background: var(--white); border-radius: 16px; image-rendering: pixelated; }
+
+/* Link preview (1200x630): legible at feed-thumbnail size. */
+.link { flex-direction: row; align-items: center; gap: 64px; padding: 64px 80px; }
+.link-mark .wordmark { width: 500px; }
+.link-copy h1 { font-size: 92px; max-width: 6ch; }
+.link-copy .body { font-size: 32px; margin-top: 18px; }
+.link-copy .url { margin-top: 30px; font-size: 26px; font-weight: 800; letter-spacing: .02em; opacity: .85; }
+
+/* Template-only placeholder (never exported for posting). */
+.slot-placeholder { width: 330px; height: 560px; border: 4px dashed currentColor; border-radius: 56px; display: grid; place-content: center; text-align: center;
+  gap: 10px; font-size: 30px; font-weight: 800; opacity: .55; }
+.slot-placeholder .muted { font-size: 20px; font-weight: 600; max-width: 14ch; }
+.story .slot-placeholder { width: 340px; height: 560px; }
