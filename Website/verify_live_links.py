@@ -89,7 +89,8 @@ def verify():
                         if path in not_found:
                             assert not_found[path] in html, (path, "missing branded 404")
                         if path == "/":
-                            verify_link(html, "/beta", "Join the Beta")
+                            # Website V2: homepage CTAs use the same configured Apple destination as /beta.
+                            verify_link(html, beta, "Join the Beta" if is_testflight else "Download on the App Store")
                         if path == "/beta" and is_testflight:
                             assert "<h1>We’re in beta.</h1>" in html, (path, "missing beta heading")
                         if path in paths or path == "/beta":

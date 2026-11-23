@@ -89,6 +89,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Multiple-photo galleries | Planned | Reuse photo infrastructure; no new Storage writes until designed |
 | Shop This Dish | Planned (post-V1) | `DishDetailsSection.shop` + engagement accessory slot; needs privacy/legal review |
 | Discover | Planned (post-V1) | — |
+| Website V2 single-page homepage | Implemented, Verified (local build/tests, phone/desktop preview) on `agent/claude` | Owner media (`Website/media/media.json` slots), approved Terms, owner design approval, then integration and `deploy-production.sh` ([Website/README](Website/README.md#website-v2-single-page-homepage)) |
 
 ## 4. Backend contracts for Codex
 
