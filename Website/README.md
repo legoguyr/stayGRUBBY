@@ -6,6 +6,10 @@
 
 The existing Cloudflare Worker `staygrubby` serves `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. Do not create another website, change DNS/email, or add a public Recipe/feed browser. The November 2 Next-Version cycle explicitly reopened the contained app-link dependency; the historical assets-only/profile-only restriction is superseded for this router.
 
+## Upcoming single-page redesign
+
+Owner direction, November 22, 2026: one visual, mobile-first landing page — Hero, Cook/Rank/Remember/Share, a short feature showcase, Download CTA and minimal Privacy/Terms/Support footer. Claude owns the frontend after Build 7. Preserve the existing beta and private app-link utilities; no CMS, email signup or extra marketing pages. Use real approved screenshots/photography and the official wordmark. The [technical preflight and Claude handoff](REDESIGN_HANDOFF.md) records current infrastructure, download configuration, launch gaps and verification; this is preparation, not a deployed redesign.
+
 ## Architecture
 
 `link-worker.mjs` is a small stateless request handler over the existing static assets. It fetches no Supabase/account/content data, renders no private metadata, sets no cookies, runs no browser JavaScript and accepts only GET/HEAD. Ordinary pages/assets remain static. `association.json` is the shared AASA source for the build and handler. The app ID is `5DSB36G7LZ.com.guyrettig.StayGrubby`.
