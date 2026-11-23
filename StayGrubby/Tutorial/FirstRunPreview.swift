@@ -1,15 +1,15 @@
-#if DEBUG || INTERNAL_TESTING
+#if DEBUG
 import SwiftUI
 
-/// Internal first-run preview (Build 7; V1_RELEASE_GATE "Internal builds"). Replays the real new-account
-/// journey — Welcome → Your kitchen (name, privacy, photo) → kitchen tour → empty Grub Rank — on the
-/// owner's signed-in iPhone without touching the account:
+/// Debug-only first-run preview (Build 7; Settings › Developer Tools — Debug Only). Replays the real
+/// new-account journey — Welcome → Your kitchen (name, privacy, photo) → kitchen tour → empty Grub Rank —
+/// on the owner's signed-in iPhone (installed from Xcode) without touching the account:
 /// - every request goes to `PreviewSocialBackend`, an in-memory stand-in that answers only profile setup
 ///   and refuses everything else, so nothing can reach Supabase, Storage or Apple;
 /// - setup progress lives under a throwaway scope that is discarded on exit;
 /// - the real tour completion, username, profile and library are never read or written.
-/// Compiled only into Debug and the `Internal` configuration; public Release builds exclude it
-/// (`DevelopmentTools/check_release_excludes_internal.sh`). Settings shows it only with `INTERNAL_TESTING`.
+/// Compiled out of Release, so TestFlight and App Store builds never contain it
+/// (`DevelopmentTools/check_release_excludes_preview.sh`).
 @MainActor @Observable final class PreviewSocialBackend {
     struct Refused: Error, Equatable { let endpoint: String; let action: String }
     private(set) var identity = SocialIdentity(displayName: "", username: nil, discoverable: false)

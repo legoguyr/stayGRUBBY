@@ -1,15 +1,10 @@
 import SwiftUI
 
 struct KitchenSettings<AccountUtilities: View>: View {
-    #if INTERNAL_TESTING
-    private static var buildSuffix: String { " · Internal" }
-    #else
-    private static var buildSuffix: String { "" }
-    #endif
     @Environment(\.socialRequest) private var request
     @State private var showingPolicy = false
     @State private var showingTutorial = false
-    #if DEBUG || INTERNAL_TESTING
+    #if DEBUG
     @State private var previewingFirstRun = false
     #endif
     @ViewBuilder var account: () -> AccountUtilities
@@ -36,16 +31,13 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 }
             }
 
-            #if INTERNAL_TESTING
-            InternalTestingSettingsSection { previewingFirstRun = true }
-            #endif
             #if DEBUG
-            Section("Developer") {
+            // Debug builds installed from Xcode only; compiled out of Release (TestFlight and App Store).
+            Section {
                 NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() }
-                // UI-test entry to the same preview Internal builds show (isolated review stores only).
-                if DebugReviewConfiguration.current.storeID != nil, ProcessInfo.processInfo.arguments.contains("--internal-preview-review") {
-                    Button("Preview First-Time Experience") { previewingFirstRun = true }.accessibilityIdentifier("internal-preview-open")
-                }
+                Button("Preview First-Time Experience") { previewingFirstRun = true }.accessibilityIdentifier("internal-preview-open")
+            } header: { Text("Developer Tools — Debug Only") } footer: {
+                Text("The preview replays the new-account journey with temporary data. Nothing is saved and your account is unchanged.")
             }
             #endif
             Section("Support & About") {
@@ -53,12 +45,12 @@ struct KitchenSettings<AccountUtilities: View>: View {
                 Button("How #stayGRUBBY Works") { showingTutorial = true }.accessibilityIdentifier("settings-tutorial")
                 Button("Privacy Policy") { showingPolicy = true }.accessibilityIdentifier("privacy-policy-open")
                 Link("Support", destination: URL(string: "https://staygrubby.com/support")!)
-                LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))\(Self.buildSuffix)")
+                LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
         }.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
             .sheet(isPresented: $showingPolicy) { PrivacyPolicyView() }
             .fullScreenCover(isPresented: $showingTutorial) { TutorialView(replay: true) { showingTutorial = false } }
-            #if DEBUG || INTERNAL_TESTING
+            #if DEBUG
             .fullScreenCover(isPresented: $previewingFirstRun) { FirstRunPreview { previewingFirstRun = false } }
             #endif
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)

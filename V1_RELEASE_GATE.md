@@ -8,24 +8,15 @@ Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e
 
 - [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
 - [x] The first-time onboarding journey is implemented, with automated tests for new, returning and interrupted accounts.
-- [x] Internal configuration and **Preview First-Time Experience** implemented for internal TestFlight only. The Release exclusion check passes, an Internal app is rejected by it, and the focused isolation and exit tests pass.
+- [x] **Preview First-Time Experience** is Debug-only and installed from Xcode, never distributed through TestFlight (owner decision, November 22, 2026; replaces the short-lived Internal configuration). Release excludes it, and the focused isolation and exit tests pass.
 - [ ] Owner physical acceptance of the Build 7 checklist. Then approval to merge, push and upload to TestFlight.
 
-## Internal builds (owner-approved November 22, 2026)
+## Debug-only first-run preview
 
-The `Internal` build configuration is a copy of Release plus the compile condition `INTERNAL_TESTING`. It exists only so the owner can test internal-only tools, today the **Preview First-Time Experience**, on a physical iPhone through TestFlight. Release and Debug are unchanged, and the AGENTS.md rule still holds: developer and test controls never compile into Release.
+Settings › **Developer Tools — Debug Only** › *Preview First-Time Experience* exists only in Debug builds installed directly from Xcode. It is compiled out of Release, and TestFlight and App Store builds are always Release, so it can't be distributed by mistake. The AGENTS.md rule is unchanged: developer and test controls never compile into Release. There is no Internal configuration or scheme.
 
-- **Build an Internal archive:** in Xcode, choose the scheme **StayGrubby Internal**, then Product → Archive. Run, Profile and Archive in that scheme use `Internal`; Test stays on Debug.
-- **Return to normal builds:** choose the scheme **StayGrubby**, which archives `Release`. Nothing else needs switching off.
-- **Distribution:** an Internal build may go only to the designated **internal** TestFlight testing group. It must never be added to an external testing group, submitted for Beta App Review, or submitted for App Store review.
-- **How to recognize one:** Settings shows **Internal Testing** (Build: Internal Testing), and the version row ends in "· Internal".
-- **Pre-submission check (required):** before any App Store or external TestFlight submission, run this on the archive (Organizer → right-click → Show in Finder):
-
-  ```bash
-  sh DevelopmentTools/check_release_excludes_internal.sh PATH/TO/StayGrubby.xcarchive
-  ```
-
-  It fails if the archive contains internal-testing code. With no argument, it checks the Release settings and the StayGrubby scheme, builds Release and scans the result.
+- **Check:** `sh DevelopmentTools/check_release_excludes_preview.sh` verifies that Release doesn't compile `DEBUG` and that the StayGrubby scheme archives Release. It then builds Release and confirms the preview is absent. Pass an `.xcarchive`, `.app` or `.ipa` to scan a specific build.
+- **Owner use:** connect the iPhone and run the **StayGrubby** scheme in Xcode (Product → Run, which builds Debug). Reinstall from TestFlight afterwards to return to the normal build.
 
 ## Build 6 internal candidate — November 15, 2026
 

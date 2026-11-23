@@ -173,7 +173,7 @@ Rules (`FirstRunTutorial`, per account, on device):
 - **Done:** is never reset.
 - **Replay:** Settings › *How #stayGRUBBY Works* replays the tour and records nothing.
 - **Launch:** restoring a saved session shows only the branded launch at every step, including `.provisioning`, which caused the Build 6 flash.
-- **Internal preview:** Internal TestFlight builds have Settings › Internal Testing › *Preview First-Time Experience*. It runs the real Welcome, with sign-in simulated, then setup, tour and empty Grub Rank against an in-memory profile stand-in. Every other request is refused. Exit discards everything, and the account is unchanged.
+- **Debug-only preview:** Settings › Developer Tools — Debug Only › *Preview First-Time Experience*, in Xcode-installed Debug builds only. It runs the real Welcome, with sign-in simulated, then setup, tour and empty Grub Rank against an in-memory profile stand-in. Every other request is refused. Exit discards everything, and the account is unchanged.
 
 **Post to The Pass — Recipe attachment.** When the cook or its Dish has the poster's own Recipe, the composer shows one compact *Recipe* section:
 - the title and a one-line preview (time, yield, ingredients), which opens a read-only preview

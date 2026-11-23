@@ -1,23 +1,23 @@
 #!/bin/sh
-# Rejects internal-testing code in public builds (Build 7; V1_RELEASE_GATE.md "Internal builds").
+# Confirms public builds contain no Debug-only first-run preview code (Build 7; V1_RELEASE_GATE.md
+# "Debug-only first-run preview"). TestFlight and App Store builds are Release builds.
 #
-#   sh DevelopmentTools/check_release_excludes_internal.sh
-#       Checks that the Release configuration and the StayGrubby scheme's Archive action do not enable
-#       INTERNAL_TESTING, then builds Release (unsigned, generic iOS) and scans the app for internal code.
-#   sh DevelopmentTools/check_release_excludes_internal.sh PATH
-#       Scans an .xcarchive, .app or .ipa. Run it on every archive before App Store or external
-#       TestFlight submission: an Internal archive fails.
-#   sh DevelopmentTools/check_release_excludes_internal.sh --expect-internal PATH
-#       Positive control: passes only when PATH *is* an Internal build.
+#   sh DevelopmentTools/check_release_excludes_preview.sh
+#       Checks that Release does not compile DEBUG and that the StayGrubby scheme archives Release, then
+#       builds Release (unsigned, generic iOS) and scans the app for preview code.
+#   sh DevelopmentTools/check_release_excludes_preview.sh PATH
+#       Scans an .xcarchive, .app or .ipa (for example before App Store submission); fails if preview code is present.
+#   sh DevelopmentTools/check_release_excludes_preview.sh --expect-preview PATH
+#       Positive control: passes only when PATH is a build that contains the preview (a Debug build).
 set -eu
 
 cd "$(dirname "$0")/.."
-MARKERS="STAYGRUBBY-INTERNAL-TESTING-BUILD
-Preview First-Time Experience
+MARKERS="Preview First-Time Experience
+Developer Tools — Debug Only
 PreviewSocialBackend
 FirstRunPreview"
-expect_internal=0
-if [ "${1:-}" = "--expect-internal" ]; then expect_internal=1; shift; fi
+expect_preview=0
+if [ "${1:-}" = "--expect-preview" ]; then expect_preview=1; shift; fi
 
 scan() { # $1 = .app directory; prints each marker found in any Mach-O inside it
     find "$1" -type f \( -perm -u+x -o -name '*.dylib' \) | while IFS= read -r file; do
@@ -41,7 +41,7 @@ app_in() { # resolves an .xcarchive, .ipa or .app to an .app directory
 if [ $# -eq 0 ]; then
     conditions=$(xcodebuild -project StayGrubby.xcodeproj -scheme StayGrubby -configuration Release -showBuildSettings 2>/dev/null \
         | awk -F' = ' '/ SWIFT_ACTIVE_COMPILATION_CONDITIONS = /{print $2; exit}')
-    case " $conditions " in *INTERNAL_TESTING*) echo "FAIL Release enables INTERNAL_TESTING ($conditions)"; exit 1 ;; esac
+    case " $conditions " in *DEBUG*) echo "FAIL Release compiles DEBUG ($conditions)"; exit 1 ;; esac
     archive=$(sed -n 's/.*<ArchiveAction buildConfiguration="\([^"]*\)".*/\1/p' StayGrubby.xcodeproj/xcshareddata/xcschemes/StayGrubby.xcscheme)
     [ "$archive" = "Release" ] || { echo "FAIL StayGrubby scheme archives '$archive', not Release"; exit 1; }
     derived=$(mktemp -d)
@@ -54,12 +54,12 @@ fi
 [ -n "$app" ] && [ -d "$app" ] || { echo "FAIL no app found"; exit 2; }
 
 found=$(scan "$app")
-if [ "$expect_internal" -eq 1 ]; then
-    [ -n "$found" ] || { echo "FAIL expected an Internal build, found no internal code: $app"; exit 1; }
-    echo "PASS Internal build identified:"; printf '%s\n' "$found"; exit 0
+if [ "$expect_preview" -eq 1 ]; then
+    [ -n "$found" ] || { echo "FAIL expected a build with the preview, found none: $app"; exit 1; }
+    echo "PASS preview present (Debug build):"; printf '%s\n' "$found"; exit 0
 fi
 if [ -n "$found" ]; then
-    echo "FAIL internal-testing code is present. Do not submit this build to App Store review or external TestFlight:"
+    echo "FAIL Debug-only preview code is present. Do not upload or submit this build:"
     printf '%s\n' "$found"; exit 1
 fi
-echo "PASS no internal-testing code in $(basename "$app") (Release configuration and StayGrubby scheme archive Release)"
+echo "PASS no preview code in $(basename "$app") (Release configuration; StayGrubby scheme archives Release)"

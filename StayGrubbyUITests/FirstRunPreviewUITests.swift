@@ -1,9 +1,8 @@
 import XCTest
 
-/// Internal first-run preview (Build 7): the real Welcome, setup, tour and empty Grub Rank run on a
-/// signed-in account and exit back to it unchanged. Debug reaches it through an isolated review store;
-/// Internal TestFlight builds show the same `FirstRunPreview` in Settings › Internal Testing.
-final class InternalPreviewUITests: StayGrubbyUITestCase {
+/// Debug-only first-run preview (Build 7): the real Welcome, setup, tour and empty Grub Rank run on a
+/// signed-in account (Settings › Developer Tools — Debug Only) and exit back to it unchanged.
+final class FirstRunPreviewUITests: StayGrubbyUITestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
     @MainActor private func openPreview(_ app: XCUIApplication) {
@@ -22,7 +21,7 @@ final class InternalPreviewUITests: StayGrubbyUITestCase {
 
     @MainActor func testPreviewRunsTheRealJourneyAndExitsWithTheAccountUnchanged() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--internal-preview-review", "--test-light"]
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--test-light"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         app.openAccountProfileSettings()
