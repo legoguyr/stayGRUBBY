@@ -1,8 +1,8 @@
 # App Store submission drafts (for owner review)
 
-Status: **DRAFT, November 22, 2026. Not legal advice, and not entered in App Store Connect.** The owner reviews and enters everything below. Legal text (Terms of Use, Community Guidelines) stays the owner's. Release requirements live in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
+Status: **DRAFT, updated November 23, 2026. Not legal advice, and not entered in App Store Connect.** The owner reviews and enters everything below. Legal text (Terms of Use, Community Guidelines) stays the owner's. Release requirements live in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
 
-## 1. App changes already prepared (on `agent/claude`)
+## 1. App changes in build 1.0 (9) (on `main`)
 
 - **Privacy manifest** (`StayGrubby/PrivacyInfo.xcprivacy`):
   - `NSPrivacyTracking = false`, with no tracking domains.
@@ -27,6 +27,8 @@ Status: **DRAFT, November 22, 2026. Not legal advice, and not entered in App Sto
 > **Try it:** Rank a Dish → enter a name → Liked it. Add a second Dish to see a comparison. Scores unlock after 10 ranked cooks; until then the order is shown. Food Bible → + → Add a Recipe (typed, or paste text to organize it).
 >
 > **User-generated content safeguards (Guideline 1.2):** Sharing reaches only accepted Sous Chefs; profiles are private by default and there is no public feed. Every post, comment and shared Recipe has ⋯ → Report; Block is in a post's ⋯ menu and on each person in My Kitchen › Sous Chefs. Reports go to a staff review queue with audited hide/dismiss; text is screened server-side. Contact: support@staygrubby.com.
+>
+> **Moderation:** Reports go to StayGrubby staff, who review them in the app's staff-only Moderation screen and can hide content or dismiss the report; every decision is recorded. Reviewers don't need staff access.
 >
 > **Account deletion:** My Kitchen → Settings → Account & Sync → Delete account… (confirmed, with Apple re-authorization).
 >
@@ -143,15 +145,44 @@ Goal: one short screen recording, under 2 minutes, attached in App Review notes.
    - My Kitchen → Settings → Account & Sync → **Delete account…** → confirm → Apple re-authorization → back at the welcome screen.
 5. **Cleanup:**
    - Delete account B in the app too.
-   - Dismiss the three test reports in the staff review queue, which records them as test reports in the audit.
+   - Dismiss the three test reports in Settings → Moderation (after `staff_moderation` is on), which records them in the audit.
    - Production writes are limited to these two disposable accounts and their deletion. Nothing touches real users' data.
 
 **Fallback, no production writes:** record the same steps in a Debug simulator review store (`--social-review-ready --social-review-feed`), which has fixture Sous Chefs and posts. Account deletion can't be shown there because it needs real Sign in with Apple, so pair it with a still of the Delete account flow. Debug builds show a Developer Tools section, so stay out of Settings while recording.
 
-## 6. Owner decisions
+## 6. Final App Store Connect checklist — build 1.0 (9)
+
+Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (`~/Library/Developer/Xcode/Archives/2026-11-23`), built from `main`-equivalent app code with the moderation interface and corrected privacy manifest. Release checks pass (no preview/developer tools/test fixtures; manifest CA92.1/E174.1/C617.1, no tracking; Sign in with Apple and `applinks:staygrubby.com` entitlements; `ITSAppUsesNonExemptEncryption` false; iOS 17.0; iPhone only). A local App Store Connect export signed by Apple Distribution succeeded. **Not uploaded.** Upload: Organizer → Distribute App → App Store Connect → Upload, after owner approval.
+
+| Area | Entry | Status |
+| --- | --- | --- |
+| App Information | Name StayGrubby; subtitle (≤30 chars) e.g. "Rank what you cook"; category **Food & Drink** (secondary optional: Lifestyle); content rights: contains third-party content **Yes** (user-generated) | Owner enters |
+| URLs | Privacy Policy `https://staygrubby.com/privacy` (live); Support `https://staygrubby.com/support` (live); Marketing `https://staygrubby.com` | Ready |
+| License agreement | Apple standard EULA plus our Terms of Use (draft includes Apple's required terms), or a custom EULA | Owner decision |
+| Age rating | §4 answers; final tier depends on the Gemini decision (§3b): **18+** recommended while Paste Recipe uses Gemini | Owner decision |
+| App Privacy | §3 table; add **Other Purposes** to Other User Content while Gemini is unpaid; Tracking No | Owner enters |
+| Export compliance | Uses only exempt encryption (HTTPS); `ITSAppUsesNonExemptEncryption = false` is in the build | Ready |
+| Pricing and availability | Free; territories per Gemini decision (exclude EEA/UK/Switzerland if staying on the unpaid tier) | Owner decision |
+| Screenshots | iPhone 6.9" portrait, 1320×2868 (or 1290×2796), 3–10 images: Grub Rank, a Dish with cooks, This-or-That, Food Bible Recipe, The Pass. Capture on the iPhone 17 Pro Max Simulator from the isolated review store (synthetic, clearly sample data) or a safe demo account; no real users' content | To capture after approval |
+| Promotional text / description / keywords | Draft from the website copy; avoid claims about allergens or health | To draft |
+| App Review information | Notes §2; attach the §5a recording; contact name, phone, email; sign-in: "Sign in with Apple — use your own Apple ID" (no demo credentials) | Recording pending |
+| Version release | Manual release after approval recommended | Owner choice |
+
+## 7. Activation order (each step needs explicit owner approval)
+
+1. **Enroll `@grubwithguy` as sole admin.** Account `79237ea0-…87e` verified read-only (active since October 13, one sign-in link, unique username, no staff yet). Run Codex's `enroll_initial_admin.sql` with the ID pinned (prepared privately; the only change is the pin line). Verify exactly one admin and one audit row; counts unchanged. Harmless before the build: no flag, no UI.
+2. **Upload build 1.0 (9)** (internal TestFlight availability is automatic; no external release needed) and install it on the owner's iPhone.
+3. **Enable `staff_moderation`** with Codex's `enable_staff_interface.sql` (aborts unless only the pinned owner is enrolled). Only staff receive the flag. Owner checks My Kitchen › Settings › Staff › Moderation (empty queue today). Rollback: set only that flag's `enabled` to false.
+4. **Finalize and publish legal pages.** Owner approves the Terms and Guidelines text (fills the bracketed items, removes the DRAFT line). Merge branch `claude/legal-pages-activation`; the push to `main` deploys the website. Verify `/terms` and `/community-guidelines` return 200 with the live-link gate.
+5. **Enable `legal_terms`** only after step 4 is live. New kitchen setups then show the agreement line; Settings shows both links. Rollback: flag off.
+6. **App Store submission** of 1.0 (9) once §6 entries, the review recording and the Gemini decision are complete. If `legal_terms` is on at submission, the pages must already be live (step 4).
+
+`staff_moderation` and `legal_terms` are independent: either can go first, but each only after its own prerequisite.
+
+## 8. Owner decisions
 
 1. **Gemini terms (blocker, §3a):** choose how Paste Recipe meets Google's 18+ and EEA/UK/Switzerland rules. Options: paid billing (needs billing approval, and fixes the EEA/UK/CH rule but not the age rule); excluding those regions and rating 18+; or switching Paste Recipe off for public launch, which changes the feature. Get legal advice.
-2. Approve the Terms of Use and Community Guidelines text (including the Recipe, allergen and AI-estimate disclaimers in V1_RELEASE_GATE). Then publish both pages and confirm each returns 200 (on November 22, 2026, both `/terms` and `/community-guidelines` returned 404). Only then enable `legal_terms`. The app shows the agreement whenever the flag is on, so this order is the only safeguard.
+2. Approve the Terms of Use and Community Guidelines drafts in `Legal/` (November 23; preview with `python3 Website/preview_legal.py <folder>`). Bracketed items to settle: operator legal name, minimum age (18 recommended, §3b), report response target, liability cap, governing law/venue/arbitration, legal-notice address, Paste Recipe availability wording. Then publish (§7 step 4) and only then enable `legal_terms`.
 3. Apple's standard EULA or a custom one. Community Guidelines are needed either way.
 4. Privacy labels as above. While on the unpaid tier, add Other Purposes for Other User Content because of Google's product-improvement use (§3).
 5. Age-rating answers (§4), especially the messaging question.

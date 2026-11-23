@@ -16,6 +16,14 @@ Local branch `integration/v1-final` in the Claude worktree: accepted `main` `9ee
 - [x] Pushed to `origin/main` (`28028df`) and the three staff-security migrations deployed November 23 (owner-authorized); counts, grants and health unchanged ([record](supabase/README.md)).
 - [ ] `staff_moderation` and `legal_terms` stay off until their activation requirements are met. Deployment, enrollment, merge, push and the App Store build each need explicit owner approval.
 
+## Launch activation preparation — November 23, 2026
+
+- [x] `@grubwithguy` resolved read-only to one active permanent account (unique username, one sign-in link, no staff yet); Codex's enrollment script prepared with the pinned ID, not run.
+- [x] Terms of Use and Community Guidelines drafted in `Legal/`; unpublished preview renderer; publication branch `claude/legal-pages-activation` ready with a draft guard ([Website/README.md](Website/README.md)).
+- [x] **1.0 (9)** archived as Release (build number at archive time; checked-in value unchanged), release checks pass, local App Store Connect export signed by Apple Distribution. **Not uploaded.**
+- [x] App Store Connect checklist and activation order: [APP_STORE_SUBMISSION.md §6–§8](APP_STORE_SUBMISSION.md).
+- [ ] Owner approvals: enrollment, upload, `staff_moderation`, legal text + publication, `legal_terms`, Gemini/age/territories, App Store submission.
+
 ## Builds 7 and 8 — November 22, 2026
 
 - [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
