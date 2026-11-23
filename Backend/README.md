@@ -83,6 +83,41 @@ The two additive beta migrations add a safe exact-cook published-post lookup, dr
 
 ## Disposable signed backend acceptance
 
+### Docker-free final security gate (verified November 22, 2026)
+
+CLI **2.120.0**, with its experimental native stack enabled, runs actual local PostgreSQL 17, Auth, REST, Storage and JWT-protected Functions on Apple silicon. No Docker install, hosted project, Apple/Gemini secrets or real account is needed. It passed 34 signed/byte-level/erasure checks with the pending `staff_reported_photo_operation` correction. The 22-assertion regression preserves private/outsider/revoked-staff and alternate-route denial. Do not deploy merely because this local rehearsal passes.
+
+Use a clean reviewed checkpoint containing the correction. In the assigned worktree, prepare a disposable copy (not a new Git worktree):
+
+```sh
+umask 077
+sg_local="$(mktemp -d /private/tmp/staygrubby-final-gates.XXXXXXXX)"
+git archive HEAD supabase Backend/tests | tar -x -C "$sg_local"
+cd "$sg_local"
+python3 - <<'PY_LOCAL'
+from pathlib import Path
+import re, tomllib
+p=Path('supabase/config.toml')
+s=p.read_text().replace('project_id = "staygrubby"', 'project_id = "staygrubby-final-gates"')
+s=re.sub(r'(?m)^\s*(?:port|shadow_port|inspector_port)\s*=\s*\d+\s*$', '', s)
+s=s.replace('[experimental]', '[experimental]\nstack = true')
+p.write_text(s); tomllib.loads(s)
+PY_LOCAL
+env -i PATH="$PATH" SUPABASE_EXPERIMENTAL_STACK=1 npx --yes supabase@2.120.0 stack start --runtime native --exclude realtime,studio,mail,analytics,pooler --eager > "$sg_local/start.log" 2>&1
+env -i PATH="$PATH" SUPABASE_EXPERIMENTAL_STACK=1 npx --yes supabase@2.120.0 status --output-format json > "$sg_local/native-status.json" 2> "$sg_local/status.log"
+python3 - <<'PY_LOCAL'
+import json
+from pathlib import Path
+p=Path('status.json'); p.write_text(json.dumps(json.loads(Path('native-status.json').read_text())['env'])); p.chmod(0o600)
+PY_LOCAL
+cd Backend/tests
+npm ci --ignore-scripts --no-audit --no-fund
+SG_LOCAL_STATUS="$sg_local/status.json" node local-backend-acceptance.mjs
+```
+
+CLI keys stay in owner-only files; never display/paste the status or startup logs. Do not link the temporary copy or supply a production `.env`. Native startup automatically serves only enabled checked-in Functions, retaining JWT verification; no `--no-verify-jwt`. Keep one local stack running at a time. After recording results, return to the same temporary root and run `SUPABASE_EXPERIMENTAL_STACK=1 npx --yes supabase@2.120.0 stack stop`. Preserve its disposable files for failure inspection; never point reset/cleanup at another checkout or a hosted URL. This experimental runtime is a test tool, not a production hosting change. The generic Docker procedure below remains an alternative.
+
+
 The [executable harness](tests/local-backend-acceptance.mjs) accepts only a fresh, unlinked loopback Supabase stack. It creates four synthetic local Auth users, signs in through local Auth, tests JWT-protected Edge routes without Gemini or Apple revocation, uploads/downloads/removes a tiny fixture through actual Storage, and checks immediate image publishing, report-based moderation and the erasure dependency order. It refuses hosted endpoints, preexisting accounts, unprotected configuration files and redirected requests. It does not reproduce native Apple authorization or automatic image detection.
 
 This milestone could not execute the full stack because no Docker-compatible runtime or staging branch was available. The harness safety guards passed. With an approved local container runtime installed, use a temporary release checkout, without linking a project.

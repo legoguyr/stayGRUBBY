@@ -109,6 +109,8 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 
 Contract rules: authenticated RPC/Edge action, DTO documented in the owning domain doc, PT409 for conflicts (never 40001/40P01), RLS on every read, backward compatible with the shipped client, migration header with growth/retention.
 
+**Final security candidate:** `20261123035208_staff_reported_photo_operation.sql` changes only the staff reported-original GET predicate to Supabase’s existing prefix-normalizing helper; no grants/RLS/records change. 34 real local signed/byte/erasure checks and 22 new regression assertions pass. Production deployment is not authorized. Owner/admin versus moderator roles, auditable role changes and last-admin protection are required but not implemented; owner-only launch staffing needs no backup/new account. Resolve self-case and last-admin erasure/offboarding policy before that role implementation ([procedure](PUBLIC_MVP_MODERATION.md#owneradmin-roles--approved-requirements-implementation-pending)).
+
 ## 5. Sequencing and parallel work
 
 1. ~~Integrate the November 18 UI milestone with Codex's instant image publishing (`d475257`)~~ — done locally on `main` November 18 (one UI_ARCHITECTURE conflict, both sides kept).
@@ -123,7 +125,7 @@ Ownership: Claude owns SwiftUI presentation, design system and client flows; Cod
 
 ## 6. Testing and release gates
 
-**November 22 release gate:** owner accepts Build 7; Website V2 is live; all 65 production migrations match. The focused audit found no confirmed live exposure/data-loss defect. SQL moderation/erasure/privacy assertions and synthetic Edge tests pass, but positive signed-user Gateway/Storage transport remains unverified without disposable infrastructure. Corrected the local harness’s obsolete `image_reviews` prerequisite/cleanup assertion; production behavior is unchanged. Staff enrollment/workflow, legal coverage, external alert delivery/recovery plan and App Review access/disclosures remain required. [Exact evidence and next actions](PUBLIC_LAUNCH_SECURITY_REVIEW.md). No integration, deployment or upload authorized in this cycle.
+**November 22 release gate:** owner accepts Build 7; Website V2 is live; all 65 production migrations match. The focused audit found no confirmed live exposure/data-loss defect. Prior SQL moderation/erasure/privacy assertions and synthetic Edge evidence are reused. **34 real local signed Auth/Storage/moderation/erasure checks now pass** with the pending operation-prefix correction; 22 focused new SQL assertions cover it. Corrected the local harness’s obsolete `image_reviews` prerequisite/cleanup assertion; production behavior is unchanged. Sole-owner launch staffing replaces the backup-reviewer requirement. Minimal admin/moderator role management/audit/last-admin protection is specified but not implemented or activated. Staff enrollment/workflow, correction deployment approval, legal coverage, external alert delivery/recovery plan and App Review access/disclosures remain required. [Exact evidence and next actions](PUBLIC_LAUNCH_SECURITY_REVIEW.md). No integration, deployment or upload authorized in this cycle.
 
 - Focused tests for changed behavior plus narrow regression where shared code changed (AGENTS.md verification table). Don't rerun frozen ranking/photo-sync suites when untouched.
 - Every new reusable component gets a unit or UI assertion where it carries logic (e.g. `SharedCookOrder`, `PublicDescriptionSync.needsUpdate`).
