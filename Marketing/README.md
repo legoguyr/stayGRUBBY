@@ -1,6 +1,6 @@
 # #stayGRUBBY marketing kit
 
-Status: **initial designs for owner approval (November 22, 2026)**. Nothing here has been posted, deployed, merged or pushed.
+Status: **visual direction owner-approved (November 22, 2026)**. Nothing here has been posted or wired into the website; final assets swap in real screenshots and photos as the owner supplies them.
 
 ## Visual direction
 
