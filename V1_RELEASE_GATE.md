@@ -10,6 +10,11 @@ Canonical release checklist — reconciled November 22, 2026 against accepted ma
 - [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
 - [x] The first-time onboarding journey is implemented, with automated tests for new, returning and interrupted accounts.
 - [x] **Preview First-Time Experience** is Debug-only and installed from Xcode, never distributed through TestFlight (owner decision, November 22, 2026; replaces the short-lived Internal configuration). Release excludes it, and the focused isolation and exit tests pass.
+- [x] **1.0 (7) uploaded to TestFlight, internal testing only** on November 22, 2026, with owner authorization. It was archived as Release from `main` `2dfb241`, with the build number passed at archive time; the checked-in setting is unchanged.
+  - `check_release_excludes_preview.sh` passed on the archive: no preview code and no developer tools.
+  - Info.plist and entitlements were checked, and the privacy manifest is present.
+  - Export used `testFlightInternalTestingOnly`, so it can't go to external testers or App Store review.
+  - Since Build 6: no data model, migration or backend changes. Database health is ok (149 MB).
 - [x] Owner physical acceptance of the Build 7 checklist (onboarding, Recipe recovery, launch and existing data; recorded November 22, 2026).
 
 ## Debug-only first-run preview
