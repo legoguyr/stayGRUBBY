@@ -141,7 +141,8 @@ class SiteTests(unittest.TestCase):
         # Missing screenshots fall back to labelled tutorial example cards, never an invented screen.
         examples = html.count('class="card example')
         self.assertEqual(examples, sum(not home.slots()[s]["present"] for s in ["hero-screen", "rank-screen", "kitchen-screen", "pass-screen"]))
-        self.assertEqual(html.count('aria-label="Example'), examples)
+        self.assertEqual(html.count('aria-label="Illustrative example'), examples)
+        self.assertEqual(html.count('<figcaption>Illustrative preview</figcaption>'), examples)
 
     def test_supplied_media_slot_is_published_and_allowlisted(self):
         import json, shutil

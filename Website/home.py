@@ -48,6 +48,11 @@ def phone(spec, eager=False):
             f'height="{spec["height"]}" alt="{html.escape(spec["alt"], quote=True)}" {loading}></figure>')
 
 
+def preview(card):
+    """Tutorial example shown as a clearly captioned illustration, never as a screenshot or a real user's data."""
+    return f'<figure class="preview">{card}<figcaption>Illustrative preview</figcaption></figure>'
+
+
 # Tutorial examples (illustrative names/scores; shown as labelled example cards, never as screenshots).
 def rank_card():
     rows = [("Rack of Lamb", "9.4"), ("Mushroom Risotto", "8.8"), ("Pan-Seared Duck Breast", "8.1"), ("Chicken Piccata", "6.9")]
@@ -55,7 +60,7 @@ def rank_card():
         f'<li><span class="rank-no">{i}</span><span class="rank-name">{name}'
         + ('<small>Signature Dish</small>' if i <= 3 else '') + f'</span><span class="score">{score}</span></li>'
         for i, (name, score) in enumerate(rows, 1))
-    return (f'<div class="card example" role="img" aria-label="Example Grub Rank: Rack of Lamb 9.4, Mushroom Risotto 8.8, '
+    return (f'<div class="card example" role="img" aria-label="Illustrative example of a Grub Rank: Rack of Lamb 9.4, Mushroom Risotto 8.8, '
             f'Pan-Seared Duck Breast 8.1 and Chicken Piccata 6.9; the top three are Signature Dishes.">'
             f'<p class="card-head">{icon("TabRankFill")}Grub Rank</p><ol class="rank-list">{items}</ol></div>')
 
@@ -63,7 +68,7 @@ def rank_card():
 def kitchen_card():
     cooks = [("Grilled Rack of Lamb", "Oct 2"), ("Sous Vide Rack of Lamb", "Oct 19"), ("Herb-Crusted Rack of Lamb", "Nov 8")]
     rows = "".join(f'<li><span>{name}</span><time>{date}</time></li>' for name, date in cooks)
-    return ('<div class="card example" role="img" aria-label="Example Dish Rack of Lamb with three cooks: Grilled, Sous Vide and '
+    return ('<div class="card example" role="img" aria-label="Illustrative example of a Dish: Rack of Lamb with three cooks: Grilled, Sous Vide and '
             'Herb-Crusted; the Herb-Crusted Rack of Lamb Recipe is saved in Food Bible.">'
             '<p class="eyebrow">Dish</p><p class="card-title">Rack of Lamb</p><p class="muted">3 cooks</p>'
             f'<ul class="cook-list">{rows}</ul>'
@@ -72,7 +77,7 @@ def kitchen_card():
 
 
 def pass_card():
-    return ('<div class="card example" role="img" aria-label="Example post on The Pass: Herb-Crusted Rack of Lamb, scored 9.4, '
+    return ('<div class="card example" role="img" aria-label="Illustrative example of a post on The Pass: Herb-Crusted Rack of Lamb, scored 9.4, '
             'with 4 Hands from Sous Chefs.">'
             f'<p class="card-head">{icon("TabPassFill")}The Pass<span class="pill">9.4</span></p>'
             '<p class="card-title">Herb-Crusted Rack of Lamb</p><p>Herb-crusted rack of lamb for Sunday dinner.</p>'
@@ -80,7 +85,7 @@ def pass_card():
 
 
 def versus_card():
-    return ('<div class="card example versus" role="img" aria-label="Example comparison: Mushroom Risotto or Pan-Seared Duck Breast. '
+    return ('<div class="card example versus" role="img" aria-label="Illustrative example of a comparison: Mushroom Risotto or Pan-Seared Duck Breast. '
             'Mushroom Risotto is chosen."><p class="card-title">This or that?</p>'
             '<div class="picks"><p class="pick chosen">Mushroom Risotto<span class="check" aria-hidden="true">✓</span></p>'
             '<p class="or" aria-hidden="true">or</p><p class="pick">Pan-Seared Duck Breast</p></div></div>')
@@ -109,7 +114,7 @@ def home(destination):
     button = f'<a class="button" href="{href}">{label}</a>'
 
     hero_visual = phone(media["hero-screen"], eager=True) if media["hero-screen"]["present"] else (
-        '<div class="stack">' + rank_card() + '</div>')
+        '<div class="stack">' + preview(rank_card()) + '</div>')
 
     steps = []
     for n, (slot, verb, line) in enumerate(STEPS, 1):
@@ -121,7 +126,7 @@ def home(destination):
 
     features = []
     for slot, card, glyph, name, title, line in FEATURES:
-        visual = phone(media[slot]) if media[slot]["present"] else card()
+        visual = phone(media[slot]) if media[slot]["present"] else preview(card())
         features.append(f'<article class="feature reveal"><div class="feature-visual">{visual}</div><div class="feature-copy">'
                         f'<p class="feature-name">{icon(glyph)}{name}</p><h3>{title}</h3><p>{line}</p></div></article>')
 

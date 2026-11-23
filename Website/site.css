@@ -64,7 +64,9 @@ nav a { display: inline-block; padding-block: 12px; text-decoration: none; }
 
 /* Tutorial example cards: owner-approved illustrative examples, never presented as screenshots. */
 .card { position: relative; background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); color: var(--ink); text-align: left; width: min(340px, 100%); }
-.example::after { content: "Example"; position: absolute; top: -11px; right: 18px; padding: 3px 10px; border-radius: 999px; background: var(--ink); color: var(--white); font-size: .68rem; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; }
+.preview { margin: 0; display: grid; justify-items: center; gap: 14px; width: min(340px, 100%); }
+.preview figcaption { font-size: .8rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
+.hero-visual .preview figcaption { color: var(--white); }
 .card-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.15rem; margin-bottom: 12px; }
 .card-head .pill { margin-left: auto; }
 .card-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -.02em; line-height: 1.2; margin: 4px 0; }
@@ -87,8 +89,7 @@ nav a { display: inline-block; padding-block: 12px; text-decoration: none; }
 .check { color: var(--white); background: var(--accent); border-radius: 50%; width: 26px; height: 26px; display: grid; place-items: center; font-size: .85rem; }
 .or { text-align: center; color: var(--muted); font-size: .85rem; font-weight: 650; }
 .stack { display: grid; gap: 16px; justify-items: center; width: 100%; }
-.stack .card:first-child { rotate: -2deg; }
-.stack .card:last-child { rotate: 1.5deg; }
+.stack .card { rotate: -1.5deg; }
 
 .how { padding: 40px 0 56px; }
 .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
@@ -129,10 +130,9 @@ nav a { display: inline-block; padding-block: 12px; text-decoration: none; }
 @media (min-width: 960px) {
   .hero { grid-template-columns: 1.05fr 1fr; align-items: center; gap: 56px; padding: 40px 0 96px; }
   .hero-visual { padding: 64px 40px; min-height: 600px; }
-  .hero-visual .card, .feature-visual .card { width: 390px; padding: 24px; font-size: 1.06rem; }
-  .stack { gap: 0; }
-  .stack .card:first-child { rotate: -3deg; translate: -36px 10px; }
-  .stack .card:last-child { rotate: 2deg; translate: 40px -6px; }
+  .hero-visual .preview, .feature-visual .preview, .hero-visual .card, .feature-visual .card { width: 390px; }
+  .hero-visual .card, .feature-visual .card { padding: 24px; font-size: 1.06rem; }
+  .stack .card { rotate: -2.5deg; }
   .steps { grid-template-columns: repeat(4, 1fr); }
   .feature { grid-template-columns: 1fr 1fr; gap: 72px; padding: 40px 0 72px; }
   .feature:nth-of-type(even) .feature-visual { order: 2; }
