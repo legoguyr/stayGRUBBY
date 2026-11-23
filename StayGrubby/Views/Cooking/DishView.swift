@@ -98,7 +98,7 @@ struct DishView: View {
         .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await loadRecipe() } }
         .onChange(of: phase) { _, next in recipe.cancelPending(); if next == .active { Task { await loadRecipe(onlyIfStale: true) } } }
         .onChange(of: recipe.deleted) { _, deleted in
-            // An uncooked Dish leaves with its Recipe; a cooked Dish stays and shows Link a Recipe.
+            // Deleting a Recipe never deletes the Dish; an uncooked Dish page closes, a cooked one shows Add Recipe.
             if deleted, (dish?.attempts.isEmpty ?? true) { dismiss() } else if deleted { recipe.deleted = false; tab = .ranking }
         }
         .onDisappear { recipe.cancelPending() }

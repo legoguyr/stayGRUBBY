@@ -3,6 +3,7 @@ import SwiftUI
 struct KitchenSettings<AccountUtilities: View>: View {
     @Environment(\.socialRequest) private var request
     @State private var showingPolicy = false
+    @State private var showingTutorial = false
     @ViewBuilder var account: () -> AccountUtilities
     var body: some View {
         List {
@@ -31,12 +32,15 @@ struct KitchenSettings<AccountUtilities: View>: View {
             Section("Developer") { NavigationLink("Recipe Intelligence") { RecipeIntelligenceDiagnosticsView() } }
             #endif
             Section("Support & About") {
+                // Replay records nothing and touches no data (FirstRunTutorial).
+                Button("How #stayGRUBBY Works") { showingTutorial = true }.accessibilityIdentifier("settings-tutorial")
                 Button("Privacy Policy") { showingPolicy = true }.accessibilityIdentifier("privacy-policy-open")
                 Link("Support", destination: URL(string: "https://staygrubby.com/support")!)
                 LabeledContent("StayGrubby", value: "\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""))")
             }
         }.listStyle(.insetGrouped).scrollContentBackground(.hidden).background(SGTheme.ColorToken.background)
             .sheet(isPresented: $showingPolicy) { PrivacyPolicyView() }
+            .fullScreenCover(isPresented: $showingTutorial) { TutorialView(replay: true) { showingTutorial = false } }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline).toolbar(.visible, for: .navigationBar)
     }
 }

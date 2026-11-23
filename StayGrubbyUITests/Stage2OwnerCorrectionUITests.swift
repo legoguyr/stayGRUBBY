@@ -118,7 +118,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
     }
     @MainActor func testEmptyKitchenAndLargeTypeKeyboardRemainUsable() {
         let app = launch(["--test-dark","--test-large-type","--social-review-no-friends","--bible-v2-empty"], ready: false)
-        XCTAssertTrue(app.staticTexts["No dishes yet"].exists); tab("My Kitchen", app)
+        XCTAssertTrue(app.staticTexts["Your kitchen is open"].exists); tab("My Kitchen", app)
         XCTAssertTrue(app.staticTexts["Your Kitchen"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["profile-top-food-1"].exists); XCTAssertFalse(app.buttons["profile-share-top-three"].isEnabled)
         shot("Owner corrections empty Kitchen accessibility", app)

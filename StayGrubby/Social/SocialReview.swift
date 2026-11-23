@@ -255,7 +255,7 @@ import Supabase
 
             if action == "set_dish", let rid = payload.recipeID, let claim = payload.recipeDishID, recipes[rid]?.isOwner == true {
                 guard !recipeDishes.contains(where: { $0.key != rid && $0.value == claim }) else { throw URLError(.cannotParseResponse) }
-                recipeDishes[rid] = claim; return try JSONEncoder().encode(linkedRecipe(rid))
+                recipeDishes[rid] = claim; try persistRecipes(); return try JSONEncoder().encode(linkedRecipe(rid))
             }
             if action == "share_options" {
                 // Mirrors the deployed server: the exact Recipe used or a cook link, never `recipes.dish_id`

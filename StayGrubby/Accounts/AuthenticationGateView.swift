@@ -47,12 +47,21 @@ struct AuthenticationGateView: View {
     /// never the sign-up story and never private content (November 18, 2026). Apple sign-in in progress,
     /// failures and deletion keep the full gate.
     private var restoring: Bool {
-        switch session.state {
+        Self.showsBrandedLaunch(state: session.state, launchRestorationFinished: session.launchRestorationFinished,
+                                failed: session.lastFailure != nil, setupFailed: setupFailed, isSigningOut: session.isSigningOut)
+    }
+
+    /// Build 6: a saved session is restored as `.loadingSession` → `.provisioning` → `.resolved`, and the
+    /// `.provisioning` step showed the sign-up story for a split second. Every step of launch restoration
+    /// is branded; only provisioning after an explicit sign-in (restoration finished) keeps the gate.
+    static func showsBrandedLaunch(state: AccountSessionState, launchRestorationFinished: Bool, failed: Bool,
+                                   setupFailed: Bool, isSigningOut: Bool) -> Bool {
+        switch state {
         case .loadingSession: true
-        // The first frames of a launch, before restore has looked for a saved session: a signed-in owner must
-        // never see the sign-up story flash first.
-        case .guest: !session.launchRestorationFinished && session.lastFailure == nil
-        case .resolved: !setupFailed && session.lastFailure == nil && !session.isSigningOut
+        // The first frames of a launch, before restore has looked for a saved session.
+        case .guest: !launchRestorationFinished && !failed
+        case .provisioning: !launchRestorationFinished && !failed && !isSigningOut
+        case .resolved: !setupFailed && !failed && !isSigningOut
         default: false
         }
     }
@@ -91,7 +100,7 @@ struct AuthenticationGateView: View {
         .sheet(isPresented: $showingPrivacyPolicy) { PrivacyPolicyView() }
     }
 
-    /// The short opening story (November 18, 2026): what the three places are for and how scores unlock.
+    /// The short opening (Build 7): brand, one line and the comparison idea; the kitchen tour follows setup.
     private var introduction: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.large) {
             // The canonical PNG includes transparent margins; display the
@@ -114,12 +123,10 @@ struct AuthenticationGateView: View {
 
             comparisonExample
 
-            VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                story("Grub Rank", detail: "Rank what you cook by comparing two dishes at a time.", symbol: "chart.bar.fill")
-                story("Food Bible", detail: "Keep your recipes, typed yourself or organized with AI.", symbol: "book.closed.fill")
-                story("The Pass", detail: "Share cooks with your Sous Chefs, only when you choose.", symbol: "person.2.fill")
-                story("Scores unlock at \(ScoreUnlockPolicy.requiredRankedEntryCount)", detail: "After \(ScoreUnlockPolicy.requiredRankedEntryCount) ranked cooks, each one gets a score. Until then, your order is what counts.", symbol: "lock.open.fill")
-            }
+            // One line before sign-in; the kitchen tour after setup explains the rest (Build 7: no repeated
+            // explanations across the welcome, setup and tour).
+            Text("Your digital kitchen: rank what you cook, keep your Recipes, and share with Sous Chefs when you choose.")
+                .font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("onboarding-story")
@@ -153,19 +160,6 @@ struct AuthenticationGateView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func story(_ title: String, detail: String, symbol: String) -> some View {
-        HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-            Image(systemName: symbol)
-                .font(.title3).frame(width: 28)
-                .foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                Text(title).font(SGTheme.TypeRole.headline)
-                Text(detail).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
-    }
 
     private var authentication: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {

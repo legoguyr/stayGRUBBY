@@ -71,10 +71,10 @@ struct CookingRankingView: View {
                 }
                 if list.items.isEmpty {
                     ContentUnavailableView {
-                        Label("No dishes yet", systemImage: "chart.bar").accessibilityIdentifier("ranking-empty-title")
-                    } description: { Text("Add your first dish to begin.") } actions: {
-                        Button("Add Your First Dish") { newDish = true }
-                            .buttonStyle(SGButtonStyle(prominent: true))
+                        Label("Your kitchen is open", systemImage: "fork.knife").accessibilityIdentifier("ranking-empty-title")
+                    } description: { Text("Rank the last thing you cooked. Each Dish you add finds its place in your Grub Rank.") } actions: {
+                        Button("Rank a Dish") { newDish = true }
+                            .buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("ranking-empty-rank-dish")
                     }
                 } else if entries.isEmpty { noResults }
                 ForEach(entries) { entry in

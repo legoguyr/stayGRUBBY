@@ -155,6 +155,25 @@ Rules:
 - **Profile editor:** uses the same Private/Public wording (`Privacy` › *Public profile*).
 - **Bio:** waits for a backend field.
 
+**First run (Build 7, November 22, 2026; automated acceptance passed, owner physical acceptance pending).** One journey, opening your own kitchen. No new backend, requests or sample data:
+1. **Welcome + Sign in with Apple** (`AuthenticationGateView`): wordmark, headline, the comparison idea and one line; the longer explanations moved into the tour so nothing is said twice.
+2. **Your kitchen · 1–3 of 3** (the setup above): the username's purpose ("Sous Chefs find and tag you by your @username"), private by default, optional photo.
+3. **Kitchen tour** (`Tutorial/`): in the same full-screen cover, four pages with Skip, Next, Back and **Get Started**:
+   - *One Dish. Every cook.*: a Dish and its cooks.
+   - *This or that?*: an interactive pick. Tapping a card records nothing.
+   - *Your food, ranked.*: Grub Rank and Signature Dishes.
+   - *Save it. Show it off.*: Food Bible and The Pass with Sous Chefs and Hands.
+   Illustrations use the app's tokens, `SGScore` and tab icons, and Reduce Motion shows the finished state. Content is data (`TutorialPage`); `TutorialIllustration(page:animated: false)` renders stills for the website, Instagram and App Store.
+4. **Grub Rank**: the empty state reads *Your kitchen is open* with one action, **Rank a Dish**.
+
+Rules (`FirstRunTutorial`, per account, on device):
+- **Becomes pending:** when required setup begins.
+- **Interrupted:** a closed app resumes the tour, never setup.
+- **Existing accounts:** cooks, a username, or setup completed earlier means the tour is marked done and bypassed.
+- **Done:** is never reset.
+- **Replay:** Settings › *How #stayGRUBBY Works* replays the tour and records nothing.
+- **Launch:** restoring a saved session shows only the branded launch at every step, including `.provisioning`, which caused the Build 6 flash.
+
 **Post to The Pass — Recipe attachment.** When the cook or its Dish has the poster's own Recipe, the composer shows one compact *Recipe* section:
 - the title and a one-line preview (time, yield, ingredients), which opens a read-only preview
 - one control: *Include Recipe* (already shared, on by default) or *Share Recipe with Sous Chefs* (private, off, with a footer explaining it)

@@ -4,6 +4,12 @@ Canonical release checklist — reconciled November 7, 2026 at Build 4 (`c09c18e
 
 - [ ] **Cook / Pass description integrity:** backend deployed November 21, 2026 (`20261121161925`, with the full moderation/text chain); nil-default correction integrated with Claude's Cook-bound UI on `agent/claude` (`7dd1368`), not yet on `main` or in a build; owner physical acceptance pending. Ordinary blank new Cooks remain old-server compatible; intentional unsupported descriptions retain the causal queue without retry loops until deployment and Retry. Preserve and explicitly reconcile legacy conflicts; deploy only after the required pending backend chain and focused acceptance. No Dish fanout, automatic post creation or private-note fallback. [Contract and evidence](COOK_DESCRIPTION_INTEGRITY.md)
 
+## Build 7 candidate — November 22, 2026
+
+- [x] Build 6 physical review: every checklist item passed except three, which are fixed on `agent/claude`: Unlink from Dish, Recently Deleted/Restore, and the launch flash. Focused unit and UI tests pass. Airplane Mode is excluded from this round.
+- [x] The first-time onboarding journey is implemented, with automated tests for new, returning and interrupted accounts.
+- [ ] Owner physical acceptance of the Build 7 checklist. Then approval to merge, push and upload to TestFlight.
+
 ## Build 6 internal candidate — November 15, 2026
 
 - [x] Combined `f7b0c19` with the previously deployed backend safeguards and the Build 5 target configuration. Generic iPhone Release compile succeeded with Xcode 27.2. Signing was disabled for the compile.

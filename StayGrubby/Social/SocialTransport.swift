@@ -5,8 +5,16 @@ import Supabase
     func socialRequest(endpoint: String, action: String, payload: SocialPayload) async throws -> Data
 }
 extension SupabaseAccountBackend: SocialBackend {
+    /// Every `api` RPC the app may call. A missing name fails on device before any request is sent
+    /// (Build 6: `recipe_library` was absent, so Unlink and Recently Deleted failed while every fixture
+    /// passed). `SocialEndpointAllowlistTests` keeps this in step with the endpoints the app uses.
+    nonisolated static let socialEndpoints: Set<String> = [
+        "social_identity", "social_people", "social_report", "social_content", "social_feed", "social_interactions",
+        "social_avatar", "social_cooking", "social_notifications", "social_send", "recipes", "recipe_library",
+        "profile_link", "feature_flags", "cook_description",
+    ]
     func socialRequest(endpoint: String, action: String, payload: SocialPayload) async throws -> Data {
-        guard ["social_identity", "social_people", "social_report", "social_content", "social_feed", "social_interactions", "social_avatar", "social_cooking", "social_notifications", "social_send", "recipes", "profile_link", "feature_flags", "cook_description"].contains(endpoint), let user = client.auth.currentSession?.user.id else { throw AccountFoundationError.accountNotResolved }
+        guard Self.socialEndpoints.contains(endpoint), let user = client.auth.currentSession?.user.id else { throw AccountFoundationError.accountNotResolved }
         struct Parameters: Encodable { let action: String; let payload: SocialPayload }
         let response = try await client.schema("api").rpc(endpoint, params: Parameters(action: action, payload: payload)).execute()
         try Task.checkCancellation()

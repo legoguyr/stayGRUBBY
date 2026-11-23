@@ -27,7 +27,7 @@ Every feature carries one status. These are separate states; reaching one never 
 | --- | --- | --- |
 | `dish_aggregate_scores` | Planned (reserved) | Aggregate score/make-count backend (FOOD_ARCHITECTURE §10) |
 | `account_privacy_follows` | Foundation (`SGLockedKitchenNotice`) | Follow model backend contract, RLS and client follow flow (§4) |
-| `recipe_recovery` (Unlink + Recently Deleted) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); owner iPhone acceptance pending | `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically); flag row inserted. Turn off with `enabled = false` |
+| `recipe_recovery` (Unlink + Recently Deleted) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`). Build 6 failed on iPhone: `recipe_library` was missing from the client endpoint allowlist. **Fixed on `agent/claude` for Build 7**, which adds Choose a Dish relink; owner iPhone acceptance pending | `20261121023911_recipe_unlink_and_recently_deleted` (local `20261120180000`, renamed byte-identically); flag row inserted. Turn off with `enabled = false` |
 | `dish_collections` (Dish Variations) | **Deployed + Enabled** (owner-authorized, November 20, 2026; audience `everyone`); client on `agent/claude`, not yet in a TestFlight build; owner iPhone acceptance pending | Migration deployed November 20, 2026 as `20261120150047_dish_collections` (local `20261118160100`, renamed byte-identically); flag row inserted. Turn off with `enabled = false`. Debug review: `--feature-flag dish_collections` |
 
 ## 2. Reusable components (LEGO inventory)
@@ -53,6 +53,9 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `SGPhotoViewer`, `SGLaunchView` | DesignSystem/SGPhotoViewer.swift | Full-screen photos; account restore |
 | `DishPickerList` / `DishPickerRow` | Views/Cooking/DishSelectionView.swift | The one Dish picker (single and multiple selection) |
 | `RecipeLibraryService`, `RecentlyDeletedRecipesView` | Social/RecentlyDeletedRecipes.swift | Unlink, Recently Deleted, Restore, Delete Permanently |
+| `RecipeDishChooser` | Social/RecipeHistory.swift | Choose a Dish (relink) on the shared Dish picker; replaces the unused cook linker |
+| `SupabaseAccountBackend.socialEndpoints` | Social/SocialTransport.swift | Every `api` RPC the app may call; `SocialEndpointAllowlistTests` scans the sources for endpoints the app uses |
+| `TutorialPage`, `TutorialIllustration`, `TutorialView`, `FirstRunTutorial` | Tutorial/ | First-run kitchen tour, Settings replay, reusable marketing stills (UI_ARCHITECTURE "First run") |
 | `SeparateCooksSheet`, `FolderGrid`, `DishFolderCallout`, `VariationEditorSheet` | Views/Cooking/DishOrganization.swift | Dish separation and Dish Variations (cards, Create/Edit Variation) |
 | `DishVariationCopy` | Cooking/DishCollections.swift | The one place the user-facing feature name is set |
 | `RecipeShareChoice` / `RecipeAttachmentModel` | Social/RecipeSocial.swift | Composer Recipe consent with status line |

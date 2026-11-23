@@ -183,9 +183,10 @@ struct ExistingRecipePicker: View {
 
     private var candidates: [CookbookEntry] {
         let local = Dictionary(uniqueKeysWithValues: dishes.map { ($0.id, $0) })
+        // Recipes on other Dishes (combine) and Recipes without a Dish (Unlinked; relink as-is).
         return entries.filter { entry in
-            guard let id = entry.dishID, id != dish.id, local[id] != nil else { return false }
-            return true
+            guard let id = entry.dishID else { return true }
+            return id != dish.id && local[id] != nil
         }.filter { CookbookSearch.matches($0.searchableText, query: query) }
             .sorted { $0.recipeTitle.localizedStandardCompare($1.recipeTitle) == .orderedAscending }
     }
@@ -196,7 +197,7 @@ struct ExistingRecipePicker: View {
                 if loading { SGLoadingState(label: "Loading your Recipes") }
                 if !loading && candidates.isEmpty {
                     SGContentState(title: query.isEmpty ? "No other Recipes" : "No matching Recipes", symbol: "book.closed",
-                                   message: query.isEmpty ? "Your Food Bible Recipes on other Dishes appear here." : "Try another search.") { EmptyView() }
+                                   message: query.isEmpty ? "Your Food Bible Recipes on other Dishes, or not on a Dish, appear here." : "Try another search.") { EmptyView() }
                 }
                 ForEach(candidates) { entry in
                     Button { choosing = entry } label: {
@@ -225,6 +226,7 @@ struct ExistingRecipePicker: View {
     private func subtitle(_ entry: CookbookEntry) -> String {
         let count = cooks(entry)
         let name = entry.dishID.flatMap { id in dishes.first { $0.id == id }?.name }
+        if entry.dishID == nil { return "Not on a Dish" }
         return count == 0 ? "Not cooked yet" : "\(name ?? entry.dishTitle) · \(count == 1 ? "1 cook" : "\(count) cooks") — combines into this Dish"
     }
     private func confirmation(_ entry: CookbookEntry?) -> String {

@@ -83,12 +83,11 @@ import SwiftData
     }
     func delete(context: ModelContext, relatedDish: Dish?, request: SocialRequest?) async {
         guard let request, let recipe else { return }
-        let uncookedDish = recipe.isOwner ? (recipe.dishID ?? relatedDish?.id) : nil
         do {
             var payload = SocialPayload(); payload.recipeID = recipe.id
             _ = try await request("recipes", "delete", payload); try Task.checkCancellation()
-            // A Dish that only existed for this Recipe goes with it; cooked Dishes stay in Grub Rank.
-            try? DishIdentityStore.removeIfUncooked(id: uncookedDish, context: context)
+            // Deleting a Recipe never deletes its Dish (owner P0, Build 6): the Dish stays so Restore can
+            // reattach the Recipe to it, and a Dish may exist without a Recipe.
             self.recipe = nil; deleted = true
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
         } catch { failed = true }
@@ -175,9 +174,14 @@ struct RecipeReaderToolbar: ToolbarContent {
                     Button("Recipe History", systemImage: "clock") { model.management = .history(recipe) }.accessibilityIdentifier("recipe-history")
                     Button("Save as New Recipe", systemImage: "document.on.document") { model.management = .duplicate(recipe) }.accessibilityIdentifier("recipe-save-new")
                     // Unlink is never a destructive action and is listed apart from Delete.
-                    if flags.isOn(.recipeRecovery), recipe.dishID != nil {
+                    if flags.isOn(.recipeRecovery) {
                         Divider()
-                        Button("Unlink from Dish", systemImage: "link") { model.unlinking = true }.accessibilityIdentifier("recipe-unlink")
+                        if recipe.dishID != nil {
+                            Button("Unlink from Dish", systemImage: "link") { model.unlinking = true }.accessibilityIdentifier("recipe-unlink")
+                        } else {
+                            // Relink: a Recipe without a Dish can join any Dish that has no Recipe.
+                            Button("Choose a Dish", systemImage: "fork.knife") { model.management = .link(recipe) }.accessibilityIdentifier("recipe-choose-dish")
+                        }
                     }
                     Divider()
                     Button("Delete Recipe", systemImage: "trash", role: .destructive) { model.deleting = true }.accessibilityIdentifier("recipe-delete")
@@ -215,7 +219,7 @@ private struct RecipeReaderPresentation: ViewModifier {
                 switch sheet {
                 case .edit(let r): RecipeEditor(recipe: r) { model.recipe = $0 }
                 case .history(let r): RecipeHistoryView(recipe: r) { model.recipe = $0 }
-                case .link(let r): RecipeDishLinker(recipe: r) {}
+                case .link(let r): RecipeDishChooser(recipe: r) { model.recipe = $0 }
                 case .duplicate(let r): RecipeEditor(draft: r.content, initiallyShared: false) { _ in }
                 }
             }
