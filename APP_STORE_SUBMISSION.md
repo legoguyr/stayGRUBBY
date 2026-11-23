@@ -68,6 +68,40 @@ Tracking: **No.** No analytics, advertising or crash-reporting SDKs (Privacy Pol
     - The terms require API users to be 18 or older, and say the API must not be used for apps likely to be accessed by people under 18.
     - Developers may offer **only paid services** to users in the **EEA, Switzerland and the UK**.
 
+### 3b. Gemini terms: verified reading and options (November 22, 2026; not legal advice)
+
+**What the terms say:**
+- **Gemini API** (Additional Terms, effective March 23, 2026, plus Google APIs ToS):
+  - *Age Requirements*: "18 or older to use the APIs" binds the developer, who is an adult, so that part is met. A **separate, unconditional** obligation bars using the Services in an application "likely to be accessed by individuals under the age of 18." Paying doesn't change it. Whether a 13+ App Store app is "likely accessed" by minors is a judgment the terms leave open, but a 13+ rating effectively admits it.
+  - *Use Restrictions*: only Paid Services may be used to make an app available to users in the EEA, Switzerland or the UK. The trigger is where the users are. All of those countries are listed as available regions.
+  - The terms also say the API is for professional or business purposes, "not for consumer use." The phrase is undefined. A developer-operated server feature inside a consumer app is the developer's use, but that's a point for legal review.
+- **Vertex AI** (Google Cloud Service Specific Terms §20, last modified April 2, 2026):
+  - §20(d) has the same under-18 restriction.
+  - No paid-only or regional end-user rule.
+  - §18: no training on customer data without permission.
+
+**Can the free tier comply?**
+Only if all of the following hold:
+1. The app is **not likely accessed by under-18s**, in practice an **18+ age rating**.
+2. **No users in the EEA, UK or Switzerland** can use Paste Recipe. Either exclude those App Store territories, or switch Paste Recipe off there.
+3. Google's product-improvement use and human review stay disclosed, which they already are, and labelled (§3).
+
+The public TestFlight link has no age or region limit today. External testers who are under 18 or in those regions are an exposure now. Decide whether to limit the link or tell testers.
+
+**Recommendation (keeps the feature):**
+1. **Rate the app 18+.** That addresses the one restriction every Google option shares. It's a cooking app, so the reach cost is small. Confirm with legal advice.
+2. **Move to the paid Gemini API** by enabling billing on the existing project. It needs no code change, has no regional limits, and stops Google using the text. It needs billing approval under AGENTS.md. At flash-lite pricing, for short bounded requests, the expected cost is low. Vertex AI is equivalent but needs a server change.
+3. If billing waits, the free tier needs (1) plus excluding EEA/UK/Switzerland territories.
+4. Option to check with legal: limit only Paste Recipe to adults with Apple's Declared Age Range, instead of rating the whole app 18+. The terms restrict the *application*, so this may not be enough.
+
+**Smallest safe change if Paste Recipe must be disabled:**
+- **Server, immediately, covers every installed build:** remove the `STAYGRUBBY_GEMINI_API_KEY` secret. `recipe-import` then returns `not_configured`, the app keeps the pasted text, and Add Manually works. Users who tap Paste Recipe see "Recipe formatting isn't configured yet," so it's safe but rough.
+- **App, next build:**
+  - Hide the single entry point, the **Paste Recipe** button in `AddRecipeFlow.sourceButtons`, behind a server flag such as `recipe_paste_ai`. Like other flags it's off until enabled, so it can be turned back on where compliant.
+  - Add Manually, Recipe editing and ingredient parsing are unaffected, since that parsing happens on the device.
+  - The Privacy Policy and labels can keep the Gemini text, or drop it when it's off for everyone.
+- Neither change touches data or ranking.
+
 ## 4. Age-rating questionnaire recommendation
 
 | Question area | Suggested answer | Why |
