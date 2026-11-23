@@ -15,7 +15,9 @@ Canonical release checklist — reconciled November 22, 2026 against accepted ma
   - Info.plist and entitlements were checked, and the privacy manifest is present.
   - Export used `testFlightInternalTestingOnly`, so it can't go to external testers or App Store review.
   - Since Build 6: no data model, migration or backend changes. Database health is ok (149 MB).
-- [x] Owner physical acceptance of the Build 7 checklist (onboarding, Recipe recovery, launch and existing data; recorded November 22, 2026).
+- [x] Owner physical acceptance of 1.0 (7) from TestFlight (owner-confirmed, November 22, 2026).
+- [x] **1.0 (8) uploaded for external TestFlight** on November 22, 2026 (owner-authorized). It has the same app code as accepted build 7: `main` `c6fb1c3` differs from `2dfb241` only in website and doc files. It used the Release configuration and standard App Store Connect distribution, and the archive passed `check_release_excludes_preview.sh` (no preview code, no developer tools).
+- [ ] Beta App Review submission for the existing external group: the owner chose to submit it personally (November 22); outcome not recorded here. No further TestFlight release is required (owner, November 23). Never submit for public App Store release without a separate decision.
 
 ## Debug-only first-run preview
 
