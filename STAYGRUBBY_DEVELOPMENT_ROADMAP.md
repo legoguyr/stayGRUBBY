@@ -56,6 +56,9 @@ Reuse before building (AGENTS.md "Reuse Before Reinvention"). Current shared pie
 | `RecipeDishChooser` | Social/RecipeHistory.swift | Choose a Dish (relink) on the shared Dish picker; replaces the unused cook linker |
 | `SupabaseAccountBackend.socialEndpoints` | Social/SocialTransport.swift | Every `api` RPC the app may call; `SocialEndpointAllowlistTests` scans the sources for endpoints the app uses |
 | `TutorialPage`, `TutorialIllustration`, `TutorialView`, `FirstRunTutorial` | Tutorial/ | First-run kitchen tour, Settings replay, reusable marketing stills (UI_ARCHITECTURE "First run") |
+| `FirstRunPreview`, `PreviewSocialBackend`, `InternalTestingSettingsSection` | Tutorial/ | Internal-only first-run preview with in-memory profile setup; `DEBUG || INTERNAL_TESTING` only, and Settings shows it only with `INTERNAL_TESTING` ([V1_RELEASE_GATE "Internal builds"](V1_RELEASE_GATE.md#internal-builds-owner-approved-november-22-2026)) |
+| `WelcomeIntroduction`, `GrubRankEmptyState` | Accounts/AuthenticationGateView.swift, Views/Cooking/CookingRankingView.swift | Real Welcome opening and empty Grub Rank, shared with the preview |
+| `check_release_excludes_internal.sh` | DevelopmentTools/ | Pre-submission gate: Release and public archives contain no internal-testing code |
 | `SeparateCooksSheet`, `FolderGrid`, `DishFolderCallout`, `VariationEditorSheet` | Views/Cooking/DishOrganization.swift | Dish separation and Dish Variations (cards, Create/Edit Variation) |
 | `DishVariationCopy` | Cooking/DishCollections.swift | The one place the user-facing feature name is set |
 | `RecipeShareChoice` / `RecipeAttachmentModel` | Social/RecipeSocial.swift | Composer Recipe consent with status line |

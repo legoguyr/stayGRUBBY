@@ -75,7 +75,7 @@ struct AuthenticationGateView: View {
         // consume the entire screen. At standard sizes, sign-in stays in reach.
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-                introduction
+                WelcomeIntroduction()
                 if typeSize.isAccessibilitySize { authentication }
             }
             .frame(maxWidth: SGTheme.Size.sharingContentMaximum, alignment: .leading)
@@ -99,67 +99,6 @@ struct AuthenticationGateView: View {
         .accessibilityIdentifier("authentication-gate")
         .sheet(isPresented: $showingPrivacyPolicy) { PrivacyPolicyView() }
     }
-
-    /// The short opening (Build 7): brand, one line and the comparison idea; the kitchen tour follows setup.
-    private var introduction: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-            // The canonical PNG includes transparent margins; display the
-            // existing artwork without reconstructing its lettering.
-            Image("StayGrubbyWordmark")
-                .resizable().scaledToFit()
-                .frame(width: 168, height: 168)
-                .frame(height: 100).clipped()
-                .accessibilityRepresentation {
-                    Text("#stayGRUBBY").accessibilityIdentifier("onboarding-brand")
-                }
-
-            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                SGEyebrow(text: "Cook · Rank · Share")
-                Text("Good food.\nYour signature.")
-                    .font(SGTheme.TypeRole.hero)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
-            }
-
-            comparisonExample
-
-            // One line before sign-in; the kitchen tour after setup explains the rest (Build 7: no repeated
-            // explanations across the welcome, setup and tour).
-            Text("Your digital kitchen: rank what you cook, keep your Recipes, and share with Sous Chefs when you choose.")
-                .font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("onboarding-story")
-    }
-
-    private var comparisonExample: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            Text("Which would you cook again?").font(SGTheme.TypeRole.headline)
-            HStack(spacing: SGTheme.Space.medium) {
-                exampleDish("🍝", name: "Sunday pasta")
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                exampleDish("🌮", name: "Taco night")
-            }
-            Text("Rank by comparison. No made-up numbers.")
-                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .sgCard()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Rank by comparison. Which would you cook again: Sunday pasta or Taco night? No made-up numbers.")
-        .accessibilityIdentifier("onboarding-comparison-example")
-    }
-
-    private func exampleDish(_ emoji: String, name: String) -> some View {
-        VStack(spacing: SGTheme.Space.hairline) {
-            Text(emoji).font(.system(size: 36))
-            Text(name).font(.caption.weight(.medium))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
 
     private var authentication: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.small) {
@@ -232,4 +171,67 @@ struct AuthenticationGateView: View {
     if let request { session.appleAuthorizationFailed(requestID: request.id, cancelled: false) }
     return AuthenticationGateView(setupFailed: false, retrySetup: {})
         .environment(session).preferredColorScheme(.dark)
+}
+
+/// The welcome opening shared by the sign-in gate and the internal first-run preview.
+struct WelcomeIntroduction: View {
+    /// The short opening (Build 7): brand, one line and the comparison idea; the kitchen tour follows setup.
+    var body: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
+            // The canonical PNG includes transparent margins; display the
+            // existing artwork without reconstructing its lettering.
+            Image("StayGrubbyWordmark")
+                .resizable().scaledToFit()
+                .frame(width: 168, height: 168)
+                .frame(height: 100).clipped()
+                .accessibilityRepresentation {
+                    Text("#stayGRUBBY").accessibilityIdentifier("onboarding-brand")
+                }
+
+            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                SGEyebrow(text: "Cook · Rank · Share")
+                Text("Good food.\nYour signature.")
+                    .font(SGTheme.TypeRole.hero)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+            }
+
+            comparisonExample
+
+            // One line before sign-in; the kitchen tour after setup explains the rest (Build 7: no repeated
+            // explanations across the welcome, setup and tour).
+            Text("Your digital kitchen: rank what you cook, keep your Recipes, and share with Sous Chefs when you choose.")
+                .font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("onboarding-story")
+    }
+
+    private var comparisonExample: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            Text("Which would you cook again?").font(SGTheme.TypeRole.headline)
+            HStack(spacing: SGTheme.Space.medium) {
+                exampleDish("🍝", name: "Sunday pasta")
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                exampleDish("🌮", name: "Taco night")
+            }
+            Text("Rank by comparison. No made-up numbers.")
+                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .sgCard()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Rank by comparison. Which would you cook again: Sunday pasta or Taco night? No made-up numbers.")
+        .accessibilityIdentifier("onboarding-comparison-example")
+    }
+
+    private func exampleDish(_ emoji: String, name: String) -> some View {
+        VStack(spacing: SGTheme.Space.hairline) {
+            Text(emoji).font(.system(size: 36))
+            Text(name).font(.caption.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
 }

@@ -70,12 +70,7 @@ struct CookingRankingView: View {
                         .accessibilityIdentifier("discovery-result-count")
                 }
                 if list.items.isEmpty {
-                    ContentUnavailableView {
-                        Label("Your kitchen is open", systemImage: "fork.knife").accessibilityIdentifier("ranking-empty-title")
-                    } description: { Text("Rank the last thing you cooked. Each Dish you add finds its place in your Grub Rank.") } actions: {
-                        Button("Rank a Dish") { newDish = true }
-                            .buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("ranking-empty-rank-dish")
-                    }
+                    GrubRankEmptyState { newDish = true }
                 } else if entries.isEmpty { noResults }
                 ForEach(entries) { entry in
                     NavigationLink(value: entry.attempt.id) {
@@ -273,5 +268,18 @@ private struct VariationRowActions: ViewModifier {
                 }
                 .accessibilityAction(named: DishVariationCopy.removeFrom) { remove(dish) }
         } else { content }
+    }
+}
+
+/// A new kitchen's Grub Rank: one clear first action (shared with the internal first-run preview).
+struct GrubRankEmptyState: View {
+    let rankADish: () -> Void
+    var body: some View {
+        ContentUnavailableView {
+            Label("Your kitchen is open", systemImage: "fork.knife").accessibilityIdentifier("ranking-empty-title")
+        } description: { Text("Rank the last thing you cooked. Each Dish you add finds its place in your Grub Rank.") } actions: {
+            Button("Rank a Dish", action: rankADish)
+                .buttonStyle(SGButtonStyle(prominent: true)).accessibilityIdentifier("ranking-empty-rank-dish")
+        }
     }
 }

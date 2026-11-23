@@ -81,6 +81,10 @@ nonisolated struct SocialOnboardingDraft: Codable, Equatable {
         defaults.set(true, forKey: doneKey(scope)); defaults.removeObject(forKey: key(scope))
     }
     static func dismiss(_ scope: String, defaults: UserDefaults = .standard) { defaults.set(true, forKey: dismissedKey(scope)) }
+    /// Removes every trace of a scope (the internal first-run preview's temporary scope).
+    static func discard(_ scope: String, defaults: UserDefaults = .standard) {
+        for key in [key(scope), doneKey(scope), dismissedKey(scope)] { defaults.removeObject(forKey: key) }
+    }
 }
 
 /// Decides once per account session whether to present setup, then presents it full screen.
@@ -154,6 +158,8 @@ struct SocialOnboardingView: View {
     let identity: SocialIdentity?
     let required: Bool
     let close: () -> Void
+    /// False in the internal first-run preview: finishing must not make the real app reload anything.
+    let announcesChanges: Bool
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
     @State private var draft: SocialOnboardingDraft
@@ -165,8 +171,8 @@ struct SocialOnboardingView: View {
     @State private var photoFailed = false
     @FocusState private var focused: Bool
 
-    init(scope: String, identity: SocialIdentity?, required: Bool, close: @escaping () -> Void) {
-        self.scope = scope; self.identity = identity; self.required = required; self.close = close
+    init(scope: String, identity: SocialIdentity?, required: Bool, announcesChanges: Bool = true, close: @escaping () -> Void) {
+        self.scope = scope; self.identity = identity; self.required = required; self.announcesChanges = announcesChanges; self.close = close
         var initial = SocialOnboardingDraft.load(scope) ?? SocialOnboardingDraft()
         if initial.displayName.isEmpty { initial.displayName = identity?.displayName ?? "" }
         if initial.username.isEmpty { initial.username = identity?.username ?? "" }
@@ -353,7 +359,7 @@ struct SocialOnboardingView: View {
     }
     private func finish() {
         SocialOnboardingDraft.complete(scope)
-        NotificationCenter.default.post(name: .socialContentChanged, object: nil) // The Pass and My Kitchen pick up the new identity.
+        if announcesChanges { NotificationCenter.default.post(name: .socialContentChanged, object: nil) } // The Pass and My Kitchen pick up the new identity.
         close()
     }
 }
