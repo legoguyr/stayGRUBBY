@@ -2,6 +2,7 @@ import { randomUUID, createHash, randomBytes, createHmac } from 'node:crypto';
 import { readFile, lstat } from 'node:fs/promises';
 import assert from 'node:assert/strict';
 import pg from 'pg';
+import { verifyCurrentLocalSchema } from './local-backend-schema.mjs';
 
 // Explicit disposable local stack only. Never accepts a hosted URL or existing accounts.
 // The operator generates a private status JSON with their local CLI. No values are logged.
@@ -51,7 +52,7 @@ try {
  await db.connect();
  const blank = (await db.query("select (select count(*) from auth.users)+(select count(*) from staygrubby.accounts)+(select count(*) from storage.objects) n")).rows[0].n;
  check(Number(blank)===0,'A fresh disposable stack is required');
- check(Boolean((await db.query("select to_regclass('staygrubby.image_reviews') object")).rows[0].object),'Reviewed migrations must already be replayed');
+ await verifyCurrentLocalSchema(db); checks++;
  for(let i=0;i<4;i++){
   const email='fixture-'+randomUUID()+'@example.invalid', password=randomBytes(24).toString('hex');
   const created=await call('/auth/v1/admin/users',config.SERVICE_ROLE_KEY,'POST',JSON.stringify({
@@ -144,13 +145,17 @@ try {
  // Test actual Storage cleanup followed by the staged database erasure; no Apple request.
  await rpc('begin_account_deletion',users[0].token,{});
  await db.query("select api.advance_account_deletion($1,'apple_revoked')",[users[0].user]);
- await db.query("select api.advance_account_deletion($1,'storage_cleared')",[users[0].user]);
  const removed=await call('/storage/v1/object/recipe-photos',config.SERVICE_ROLE_KEY,'DELETE',
   JSON.stringify({prefixes:[path]}),{'Content-Type':'application/json'});
  check(removed.ok,'Disposable Storage object removed through actual service');
+ await db.query("select api.advance_account_deletion($1,'storage_cleared')",[users[0].user]);
  await db.query('select api.erase_account_data($1)',[users[0].user]);
  check(!(await read(users[0].token)).ok,'Erased owner token cannot recover object bytes');
- check(Number((await db.query('select count(*) n from staygrubby.image_reviews')).rows[0].n)===0,'No orphan image review');
+ check(Number((await db.query(`select
+  (select count(*) from staygrubby.media where account_id=$1)
+  +(select count(*) from staygrubby.media_backups where account_id=$1)
+  +(select count(*) from staygrubby.recipe_photos where account_id=$1) n`,[users[0].id])).rows[0].n)===0,
+  'Erased owner has no remaining media metadata or manifests');
  const removedAuth = await call('/auth/v1/admin/users/'+users[0].user,config.SERVICE_ROLE_KEY,'DELETE',JSON.stringify({should_soft_delete:false}),{'Content-Type':'application/json'});
  check(removedAuth.ok,'Synthetic Auth user removed through Auth Admin');
  check(Number((await db.query('select count(*) n from auth.users where id=$1',[users[0].user])).rows[0].n) === 0, 'Erased Auth identity is absent');
