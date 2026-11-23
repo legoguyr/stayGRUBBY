@@ -6,9 +6,9 @@
 
 The existing Cloudflare Worker `staygrubby` serves `staygrubby.com` in account `a53a5efe17232f5b9d3e5cd62cceba15`. Do not create another website, change DNS/email, or add a public Recipe/feed browser. The November 2 Next-Version cycle explicitly reopened the contained app-link dependency; the historical assets-only/profile-only restriction is superseded for this router.
 
-## Upcoming single-page redesign
+## Single-page redesign direction
 
-Owner direction, November 22, 2026: one visual, mobile-first landing page — Hero, Cook/Rank/Remember/Share, a short feature showcase, Download CTA and minimal Privacy/Terms/Support footer. Claude owns the frontend after Build 7. Preserve the existing beta and private app-link utilities; no CMS, email signup or extra marketing pages. Use real approved screenshots/photography and the official wordmark. The [technical preflight and Claude handoff](REDESIGN_HANDOFF.md) records current infrastructure, download configuration, launch gaps and verification; this is preparation, not a deployed redesign.
+Owner direction, November 22, 2026: one visual, mobile-first landing page — Hero, Cook/Rank/Remember/Share, a short feature showcase, Download CTA and minimal Privacy/Terms/Support footer. Claude owns the frontend after Build 7. Preserve the existing beta and private app-link utilities; no CMS, email signup or extra marketing pages. Use real approved screenshots/photography and the official wordmark. Codex's [technical preflight and handoff](REDESIGN_HANDOFF.md) records the infrastructure audit, download configuration and launch gaps it found before implementation. The implemented page is described in [Website V2](#website-v2-single-page-homepage).
 
 ## Architecture
 
@@ -33,9 +33,20 @@ The handler now returns direct 200 fallbacks retaining the validated destination
 
 Without the app, the website explains beta access and privacy, and keeps Support/Privacy available. `distribution.json` holds the verified Apple acquisition URL. iOS Universal Links depend on installation/provisioning, Apple association caching and the recipient's browser preference. Same-domain Safari navigation may stay in Safari; use the explicit Open button or long-press from Messages/Mail.
 
+## Website V2 single-page homepage
+
+**Implemented November 22, 2026; owner-approved for production with illustrative feature previews.** `home.py` renders one page: Hero ("Your food, ranked.") → How It Works (Cook / Rank / Remember / Share) → Grub Rank, My Kitchen · Food Bible and The Pass → Download → a minimal footer. The copy and examples come from the owner-approved first-run tutorial (`StayGrubby/Tutorial/`). The shared shell in `build.py` keeps Privacy, Support, `/kitchen` and the Worker fallbacks on the same stylesheet.
+
+- **Brand and design.** The page uses logo red `#F10607` for identity blocks, the app's accessible accent `#CB1015` for text and buttons, and cream `#FAF3EC` and charcoal `#1F1F1F`. Fonts are system fonts only. The official tab glyphs are inlined from the asset catalog. The wordmark is always the official artwork: `prepare_media.py brand` (Pillow, run offline) writes palette-optimized derivatives into `media/brand/`, and `build.py` stays standard-library only. `/assets/wordmark.png` keeps its 1,254 px canvas for the Worker fallbacks but shrinks from 537 KB to about 30 KB.
+- **Media slots.** Screenshots, food photos and the link-preview image are listed in `media/media.json`. `python3 Website/prepare_media.py slot <name> <file>` resizes an owner-supplied image into its slot, and the build publishes only slots whose file exists (the allowlist is extended exactly). A missing screenshot falls back to a tutorial example card captioned "Illustrative preview" (never a real user's ranking). A missing photo leaves a text-only step. Nothing on the page is an invented screenshot or a stock image. `python3 Website/build.py` lists the missing slots.
+- **Motion and security.** Scroll reveals use CSS scroll-driven animations (`animation-timeline: view()`), only under `prefers-reduced-motion: no-preference` and where the browser supports them. Without support, everything is simply visible. The headline and CTAs never wait on an animation. The page ships no JavaScript, so the CSP and every no-script guarantee are unchanged.
+- **Download.** Both homepage CTAs and the header pill render from `distribution.json`: a TestFlight URL gives "Join the Beta" (iPhone beta · via Apple TestFlight), an App Store URL gives "Download on the App Store", and no URL falls back to `/beta`. The live gate checks the homepage CTA against the same configured destination.
+- **Local preview.** Run `python3 Website/build.py && node Website/preview.mjs`, then open `http://127.0.0.1:8788/`. The preview runs the real Worker over `public/` with the production `/*` headers. It is never a deployment path.
+- **Open before launch.** The owner needs to supply current iPhone screenshots (hero, Grub Rank, My Kitchen/Food Bible, The Pass) from a safe demo account, four owned or licensed 4:5 food photos, a 1200×630 link-preview image and approved Terms of Use. The footer has no Terms link until a canonical Terms document exists; no Terms text was written. Also open: a sitemap and a deliberate decision on Cloudflare Web Analytics and the CSP (see the [handoff](REDESIGN_HANDOFF.md)).
+
 ## Beta acquisition and referral metadata
 
-The homepage's Join the Beta button opens `/beta`. The Worker serves the branded beta page and uses the same acquisition action on generic profile, post and Recipe fallbacks. `distribution.json` controls the Apple destination. At App Store release, update the homepage beta wording and switch the destination to the verified listing. AASA and canonical paths stay unchanged. No public content is fetched.
+The homepage's Join the Beta buttons link directly to the Apple destination in `distribution.json` (Website V2). The Worker still serves the branded beta page and uses the same acquisition action on generic profile, post and Recipe fallbacks. `distribution.json` controls the Apple destination. At App Store release, switch the destination to the verified listing; the homepage changes its wording to Download on the App Store automatically. AASA and canonical paths stay unchanged. No public content is fetched.
 
 The optional `?ref=<opaque token>` is 16–64 ASCII letters, digits, underscores or hyphens. A single valid value travels in the explicit Open StayGrubby URL; invalid or duplicate values are ignored. TestFlight receives the verified invitation URL alone. After installation, reopen the original shared link to recover the intended destination and any referral metadata. Attribution at signup requires future work.
 
@@ -57,7 +68,7 @@ The script builds the public asset allowlist, runs the local tests and Wrangler 
 
 Use existing authentication. If Wrangler is unavailable during an incident, the authenticated Cloudflare connector can restore a previously verified full version after confirming the active deployment and the target's `fetch` handler and `ASSETS` binding. Run the same live gate immediately and verify the active version afterward. Keep the existing domain, disabled workers.dev/previews and public asset allowlist.
 
-The live gate requires direct, browser-renderable HTML for the beta and shared-link fallbacks, with one `text/html; charset=utf-8` type, `no-store, no-transform`, and no `Content-Disposition` header. It verifies the beta heading, the actual TestFlight anchor and the homepage CTA to `/beta`, along with Privacy, Support, branded 404s and both AASA endpoints. Its 30 GET/HEAD checks validate a deployed version at a point in time. Physical iPhone Safari remains a separate check.
+The live gate requires direct, browser-renderable HTML for the beta and shared-link fallbacks, with one `text/html; charset=utf-8` type, `no-store, no-transform`, and no `Content-Disposition` header. It verifies the beta heading, the actual TestFlight anchor and the homepage CTA to that same Apple destination, along with Privacy, Support, branded 404s and both AASA endpoints. Its 30 GET/HEAD checks validate a deployed version at a point in time. Physical iPhone Safari remains a separate check.
 
 ## Deployment incident history
 
