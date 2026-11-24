@@ -7,9 +7,9 @@ Status: **DRAFT, updated November 24, 2026. Not legal advice, and not entered in
 Bare minimum for App Store approval. No iOS, Gemini or backend change.
 
 **Required for submission**
-- **Privacy Policy** (`https://staygrubby.com/privacy`, already live). Corrections for accuracy only: 18-and-older statement, shared-Recipe reports and staff review of reported content, Google Gemini in Service providers. Prepared on branch `claude/legal-minimum`; publishing needs owner approval (§7 step 4).
+- **Privacy Policy** (`https://staygrubby.com/privacy`, already live). Corrections for accuracy only: 18-and-older statement, shared-Recipe reports and staff review of reported content, Google Gemini in Service providers. **Published November 24** (`889d131`).
 - **Apple's standard EULA.** Nothing to write; App Store Connect uses it by default.
-- **Guideline 1.2 safeguards** (built): Report, Block, server-side text screening, staff Moderation queue, published contact (support page). The short **Community Guidelines** page (`Legal/CommunityGuidelines.md`, about 200 words: zero tolerance, report/block, 24-hour review aim, food-safety note, contact) publishes with the Privacy correction and is linked in the App Review notes.
+- **Guideline 1.2 safeguards** (built): Report, Block, server-side text screening, staff Moderation queue, published contact (support page). The short **Community Guidelines** page (`Legal/CommunityGuidelines.md`, about 200 words: zero tolerance, report/block, 24-hour review aim, food-safety note, contact) is live at `https://staygrubby.com/community-guidelines` (November 24) and is linked in the App Review notes.
 - **18+:** App Store age rating 18+, plus one sentence each in the Privacy Policy and the Community Guidelines. Gemini's terms need it; no Terms document is needed for it.
 - Privacy labels, age-rating questionnaire, screenshots, metadata and App Review notes (§3–§6).
 
@@ -214,22 +214,66 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 | Export compliance | Uses only exempt encryption (HTTPS); `ITSAppUsesNonExemptEncryption = false` is in the build | Ready |
 | Pricing and availability | Free; **all territories**, including the EU, UK and Switzerland (owner, November 23) | Owner enters |
 | Screenshots | iPhone 6.9" portrait 1320×2868. **Draft set captured November 23** in `AppStoreDrafts/` (local, git-ignored): Grub Rank, The Pass, Food Bible, Recipe, from the isolated `--development-persona` kitchen (fictional cook and Sous Chefs; Debug build, no production data). The persona has no food photos, so images show the StayGrubby placeholder: final screenshots need owner-supplied food photos (no fabricated imagery) and a This-or-That frame | Owner photos needed |
-| Promotional text / description / keywords | Draft from the website copy; avoid claims about allergens or health | To draft |
+| Promotional text / description / keywords | §6a | Drafted; owner pastes |
 | App Review information | Notes §2; attach the Report/Block recording (draft `AppStoreDrafts/report-block-demo.mp4`, about 40 s on the fixture kitchen: Report post → Send → Report sent; Block account → confirm → posts removed; the §5a two-account TestFlight recording remains the stronger option and also shows account deletion); contact name, phone, email; sign-in: "Sign in with Apple — use your own Apple ID" (no demo credentials) | Recording pending |
 | Version release | Manual release after approval recommended | Owner choice |
+
+## 6a. Metadata drafts (November 24, 2026; owner reviews and pastes)
+
+Lengths checked against App Store Connect limits. No health, allergen or nutrition claims.
+
+| Field | Draft | Limit |
+| --- | --- | --- |
+| Name | StayGrubby | 18 / 30 |
+| Subtitle | Rank what you cook | 18 / 30 |
+| Promotional text | Rank everything you cook with quick this-or-that picks. Keep the Recipes worth making again, and share your best cooks with your Sous Chefs. | 140 / 170 |
+| Keywords | cooking journal,recipe,recipes,home cook,food diary,meal log,ranking,rank,cook,dish,kitchen,foodie | 98 / 100 bytes |
+| Primary category | Food & Drink (secondary optional: Lifestyle) | — |
+| Copyright | 2026 StayGrubby (owner may use the legal holder's name) | — |
+| Support URL | https://staygrubby.com/support | live |
+| Marketing URL | https://staygrubby.com | live |
+| Privacy Policy URL | https://staygrubby.com/privacy | live, November 24 |
+| What's New | Not shown for a first version | — |
+
+**Description** (1203 / 4000):
+
+```text
+StayGrubby is a cooking journal that ranks what you make.
+
+RANK WHAT YOU COOK
+Log a cook, say how it went, then pick between two things you made. No stars, no sliders: quick this-or-that picks build your Grub Rank, and your top three are your Signature Dishes. Scores unlock once you have ranked ten cooks.
+
+EVERY COOK IN ONE PLACE
+Each Dish keeps every time you made it, with photos, notes and the date. Cook Again to log the next one and see whether it beat the last.
+
+FOOD BIBLE
+Keep the Recipes worth making again. Type a Recipe, or paste one and StayGrubby organizes it into an editable draft you review before saving. Adjust servings, link a Recipe to a Dish and keep its history.
+
+THE PASS
+Post a cook to The Pass for your Sous Chefs, the friends you choose. They can Give Hands 🙌 and comment. Your profile is private by default, and your Grub Rank, notes and unshared cooks always stay private.
+
+SAFE BY DESIGN
+Report and block from any post, comment, shared Recipe or profile. Reports are reviewed by the StayGrubby team.
+
+StayGrubby is for people 18 and older. Sign in with Apple.
+Privacy Policy: https://staygrubby.com/privacy
+Community Guidelines: https://staygrubby.com/community-guidelines
+```
+
+**App Review information:** notes are §2 (paste the quoted block; it links the Community Guidelines). Sign-in: "Sign in with Apple — please use your own Apple ID"; no demo credentials. Attach the Report/Block recording (§5a; draft `AppStoreDrafts/report-block-demo.mp4`). Contact name, phone and email: owner enters.
 
 ## 7. Activation order (each step needs explicit owner approval)
 
 1. ✅ **Done November 23** — **Enroll `@grubwithguy` as sole admin.** Account `79237ea0-…87e` verified read-only (active since October 13, one sign-in link, unique username, no staff yet). Run Codex's `enroll_initial_admin.sql` with the ID pinned (prepared privately; the only change is the pin line). Verify exactly one admin and one audit row; counts unchanged. Harmless before the build: no flag, no UI.
 2. ✅ **Done November 23 (uploaded, not submitted)** — **Upload build 1.0 (9)** (internal TestFlight availability is automatic; no external release needed) and install it on the owner's iPhone.
 3. **Enable `staff_moderation`** with Codex's `enable_staff_interface.sql` (aborts unless only the pinned owner is enrolled). Only staff receive the flag. Owner checks My Kitchen › Settings › Staff › Moderation (empty queue today). Rollback: set only that flag's `enabled` to false.
-4. **Publish the Privacy correction and Community Guidelines.** Owner approves the text, then merge branch `claude/legal-minimum`; the push to `main` deploys the website. Verify `/privacy` and `/community-guidelines` return 200 with the live-link gate.
+4. ✅ **Done November 24** — **Privacy correction and Community Guidelines published** (`889d131`); live-link gate passed, `/terms` stays unpublished.
 5. **App Store submission** of 1.0 (9) once §6 entries and the review recording are complete. `legal_terms` stays off (§0).
 
 ## 8. Owner decisions
 
 1. **AI and age — FINAL (owner, November 23):** keep Gemini as implemented (unpaid), all App Store regions, minimum age 18 in the Terms (§3c). Submit build 1.0 (9); no provider, billing, consent or app change.
-2. **Legal scope — FINAL (owner, November 24):** bare minimum (§0). Approve the Privacy Policy correction and the Community Guidelines text on `claude/legal-minimum` (preview the Guidelines with `python3 Website/preview_legal.py <folder>`), then publish (§7 step 4).
+2. **Legal scope — FINAL (owner, November 24):** bare minimum (§0). Privacy correction and Community Guidelines approved and published November 24.
 3. **EULA — FINAL:** Apple's standard EULA.
 4. Privacy labels as above. While on the unpaid tier, add Other Purposes for Other User Content because of Google's product-improvement use (§3).
 5. Age-rating answers (§4), especially the messaging question.

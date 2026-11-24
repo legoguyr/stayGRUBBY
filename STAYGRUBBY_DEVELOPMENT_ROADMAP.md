@@ -89,7 +89,7 @@ Product priority lives in Roadmap A; this is the implementation view. "Released"
 | Multiple-photo galleries | Planned | Reuse photo infrastructure; no new Storage writes until designed |
 | Shop This Dish | Planned (post-V1) | `DishDetailsSection.shop` + engagement accessory slot; needs privacy/legal review |
 | Discover | Planned (post-V1) | — |
-| Website V2 single-page homepage | Deployed + Enabled (`5395686`, Worker `e60de22b`, Nov 22; live gate passed) | Follow-up visual update: owner media (`Website/media/media.json` slots); Privacy correction + Community Guidelines on branch `claude/legal-minimum`, awaiting owner approval (custom Terms out of launch scope, Nov 24) ([Website/README](Website/README.md#website-v2-single-page-homepage)) |
+| Website V2 single-page homepage | Deployed + Enabled (`5395686`, Worker `e60de22b`, Nov 22; live gate passed) | Follow-up visual update: owner media (`Website/media/media.json` slots); Privacy correction + Community Guidelines published Nov 24 (`889d131`; custom Terms out of launch scope) ([Website/README](Website/README.md#website-v2-single-page-homepage)) |
 
 ## 4. Backend contracts for Codex
 
