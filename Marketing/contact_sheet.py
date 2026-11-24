@@ -77,7 +77,7 @@ def campaign_sheets():
     grid(stories, 560, "review-stories.jpg", 7, "Real Cooking · Stories · 1080×1920")
     strips([(c.name, sorted(c.glob("*.png"))) for c in sorted((EXPORT / "carousels").iterdir())], 380, "review-carousels.jpg",
            "Real Cooking · carousels")
-    strips([(r.name + ".mp4", sorted(r.glob("frame-*.png"))) for r in sorted(d for d in (EXPORT / "reels").iterdir() if d.is_dir())],
+    strips([(r.name + ".mp4", sorted(r.glob("frame-*.*"))) for r in sorted(d for d in (EXPORT / "reels").iterdir() if d.is_dir())],
            460, "review-reels.jpg", "Real Cooking · Reels · key frames")
     grid(list(reversed(feed[:9])), 450, "review-instagram-grid.jpg", 3, "Real Cooking · profile grid preview (first 9, newest first)",
          gap=6, label=False)
@@ -96,6 +96,6 @@ elif __name__ == "__main__":
         strips([(c.name, sorted(c.glob("*.png"))) for c in carousels], 380, "review-carousels.jpg", "Carousels · swipe left to right")
     reels = sorted(d for d in (EXPORT / "reels").iterdir() if d.is_dir()) if (EXPORT / "reels").exists() else []
     if reels:
-        strips([(r.name + ".mp4", sorted(r.glob("frame-*.png"))) for r in reels], 460, "review-reels.jpg", "Reels · key frames in order")
+        strips([(r.name + ".mp4", sorted(r.glob("frame-*.*"))) for r in reels], 460, "review-reels.jpg", "Reels · key frames in order")
     grid([EXPORT / n for n in ("flyer-beta-letter.png", "link-preview-1200x630.png", "template-announcement-feed.png",
                                "template-announcement-story.png")], 560, "review-other-materials.jpg", 4, "Flyer, link preview, templates")
