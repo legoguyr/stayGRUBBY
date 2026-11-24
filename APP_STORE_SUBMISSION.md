@@ -266,7 +266,7 @@ Community Guidelines: https://staygrubby.com/community-guidelines
 
 1. ✅ **Done November 23** — **Enroll `@grubwithguy` as sole admin.** Account `79237ea0-…87e` verified read-only (active since October 13, one sign-in link, unique username, no staff yet). Run Codex's `enroll_initial_admin.sql` with the ID pinned (prepared privately; the only change is the pin line). Verify exactly one admin and one audit row; counts unchanged. Harmless before the build: no flag, no UI.
 2. ✅ **Done November 23 (uploaded, not submitted)** — **Upload build 1.0 (9)** (internal TestFlight availability is automatic; no external release needed) and install it on the owner's iPhone.
-3. **Enable `staff_moderation`** with Codex's `enable_staff_interface.sql` (aborts unless only the pinned owner is enrolled). Only staff receive the flag. Owner checks My Kitchen › Settings › Staff › Moderation (empty queue today). Rollback: set only that flag's `enabled` to false.
+3. ✅ **Done November 24** — **Enable `staff_moderation`** with Codex's `enable_staff_interface.sql` (aborts unless only the pinned owner is enrolled). Only staff receive the flag. Owner checks My Kitchen › Settings › Staff › Moderation (empty queue today). Rollback: set only that flag's `enabled` to false.
 4. ✅ **Done November 24** — **Privacy correction and Community Guidelines published** (`889d131`); live-link gate passed, `/terms` stays unpublished.
 5. **App Store submission** of 1.0 (9) once §6 entries and the review recording are complete. `legal_terms` stays off (§0).
 
