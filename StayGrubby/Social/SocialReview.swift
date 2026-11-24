@@ -103,6 +103,14 @@ import Supabase
         }
     }
     private struct RecipeReviewArchive: Codable { var versions: [Recipe]; var photos: [UUID: RecipePhotoDescriptor]; var bytes: [String: Data]; var cookLinks: [UUID:UUID]? = nil; var dishLinks: [UUID:UUID]? = nil }
+    private func projectCookCaptions() {
+        let cooks = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>())) ?? []
+        for index in posts.indices where posts[index].isAuthor {
+            guard let id = postCookIDs[posts[index].id] ?? nil, let cook = cooks.first(where: { $0.id == id }) else { continue }
+            posts[index].sourceAttemptID = id
+            if let text = cook.publicDescription { posts[index].postDescription = text.isEmpty ? nil : text }
+        }
+    }
     private func persistRecipes() throws {
         if let url = recipeReviewURL { try JSONEncoder().encode(RecipeReviewArchive(versions: recipeVersions.values.flatMap { $0 } + recipes.values.filter { recipeVersions[$0.id] == nil }, photos: recipePhotos, bytes: avatars, cookLinks: cookRecipeLinks, dishLinks: dishRecipes)).write(to: url, options: .atomic) }
     }
@@ -166,6 +174,29 @@ import Supabase
     private var passRedesignSeeded = false
     private var recipeSaveFailures = ProcessInfo.processInfo.arguments.contains("--recipe-save-failure") ? 1 : 0
     private var recipeReads = 0
+    /// Synthetic staff moderation (`--moderation-review`): 27 pending reports so the queue pages (25 + 2).
+    /// `--moderation-review-conflict` makes the first decision lose to "another moderator" (PT409).
+    @ObservationIgnored private var moderationReports = SocialReview.syntheticModerationReports()
+    private static func syntheticModerationReports() -> [(report: ModerationReport, context: String?, subject: [String: Any]?)] {
+        guard ProcessInfo.processInfo.arguments.contains("--moderation-review") else { return [] }
+        let kinds = ["comment", "post", "profile", "recipe"]
+        let reasons = ["spam", "harassment", "inappropriate", "other"]
+        return (0..<27).map { index in
+            let id = UUID(uuidString: String(format: "30000000-0000-0000-0000-%012d", index + 1))!
+            let kind = index == 4 ? "post" : kinds[index % 4]
+            let created = String(format: "2026-11-%02dT12:00:00.000000+00:00", 1 + index % 20) // cursor text only
+            let subject: [String: Any]? = switch (index, kind) {
+            case (4, _): nil // the reported content was deleted
+            case (_, "comment"): ["body": "Synthetic reported comment \(index + 1)", "state": "active"]
+            case (_, "post"): ["title": "Synthetic Cook \(index + 1)", "description": "A synthetic post for review.", "state": "active"]
+            case (_, "profile"): ["displayName": "Synthetic Cook", "username": "synthetic_\(index + 1)", "state": "active"]
+            default: ["content": ["title": "Synthetic Recipe \(index + 1)", "ingredients": ["1 cup stock"], "steps": ["Simmer gently"]], "revision": 1, "state": "active"]
+            }
+            return (ModerationReport(id: id, kind: kind, reason: reasons[index % 4], createdAt: created, status: "pending"),
+                    index == 0 ? "Posted the same link many times." : nil, subject)
+        }
+    }
+    private var moderationConflict = ProcessInfo.processInfo.arguments.contains("--moderation-review-conflict")
     /// Read-caching evidence (`--request-log`): how many times each endpoint/action ran.
     var requestCounts: [String: Int] = [:]
     func request(_ endpoint: String, _ action: String, _ payload: SocialPayload) async throws -> Data {
@@ -180,6 +211,17 @@ import Supabase
             }
             guard let person = people.first(where: { $0.username == payload.username && $0.relationship != .blocked }) else { throw URLError(.resourceUnavailable) }
             return try JSONEncoder().encode(SocialPeoplePage(people: [person]))
+        }
+        // Mirrors canonical Cook descriptions (November 21, 2026): an author's post carries its exact cook
+        // (`sourceAttemptID`, author only) and reads its caption from that cook when the cook has its own text.
+        if ["social_feed", "social_content"].contains(endpoint) { projectCookCaptions() }
+        if endpoint == "cook_description", let id = payload.attemptID {
+            let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first { $0.id == id }
+            let caption = posts.first { postCookIDs[$0.id] == id && $0.isAuthor }?.postDescription
+            let body: [String: Any?] = ["attemptID": id.uuidString, "publicDescription": cook?.publicDescription,
+                "effectiveDescription": cook?.publicDescription ?? caption ?? cook?.dish?.publicDescription,
+                "legacyDishDescription": cook?.dish?.publicDescription, "legacyPosts": [Any](), "hasMoreLegacyPosts": false, "needsReview": false]
+            return try JSONSerialization.data(withJSONObject: body.mapValues { $0 ?? NSNull() })
         }
         if endpoint == "recipe_library" {
             // Mirrors `api.recipe_library`: Unlink keeps the Recipe; Restore reclaims only a free Dish.
@@ -236,7 +278,7 @@ import Supabase
 
             if action == "set_dish", let rid = payload.recipeID, let claim = payload.recipeDishID, recipes[rid]?.isOwner == true {
                 guard !recipeDishes.contains(where: { $0.key != rid && $0.value == claim }) else { throw URLError(.cannotParseResponse) }
-                recipeDishes[rid] = claim; return try JSONEncoder().encode(linkedRecipe(rid))
+                recipeDishes[rid] = claim; try persistRecipes(); return try JSONEncoder().encode(linkedRecipe(rid))
             }
             if action == "share_options" {
                 // Mirrors the deployed server: the exact Recipe used or a cook link, never `recipes.dish_id`
@@ -593,11 +635,44 @@ import Supabase
                 }
             } else if action == "editDescription", let index = posts.firstIndex(where: { $0.id == payload.postID && $0.isAuthor }) {
                 posts[index].postDescription = payload.postDescription?.trimmingCharacters(in: .whitespacesAndNewlines)
+                if let id = postCookIDs[posts[index].id] ?? nil, let cook = (try? reviewContext?.fetch(FetchDescriptor<CookingAttempt>()))?.first(where: { $0.id == id }) {
+                    cook.publicDescription = posts[index].postDescription ?? ""; try? reviewContext?.save()
+                }
             } else if action == "delete" { posts.removeAll { $0.id == payload.postID } }
             else if action == "publish", let index = posts.firstIndex(where: { $0.id == payload.postID }) {
                 let p = posts[index]; posts[index] = SocialPost(id: p.id, author: p.author, title: p.title, versionTitle: p.versionTitle, scoreText: p.scoreText, achievement: p.achievement, createdAt: p.createdAt, photoPath: p.photoPath, published: true, isAuthor: p.isAuthor, moderationState: p.moderationState, recipeID: p.recipeID, recipeRevision: p.recipeRevision, postDescription: p.postDescription, metadata: p.metadata)
             }
             return try JSONEncoder().encode(SocialPostsPage(posts: payload.postID == nil ? posts.filter(\.isAuthor) : posts.filter { $0.id == payload.postID }))
+        }
+        if endpoint == "staff_status" {
+            return Data((ProcessInfo.processInfo.arguments.contains("--moderation-review") ? #"{"role":"admin"}"# : #"{"role":null}"#).utf8)
+        }
+        if endpoint == "moderation_review" {
+            guard ProcessInfo.processInfo.arguments.contains("--moderation-review") else { throw PostgrestError(code: "42501", message: "Moderator access required") }
+            switch action {
+            case "queue":
+                let pending = moderationReports.filter { $0.report.status == "pending" }.map(\.report)
+                let start = payload.afterID.flatMap { id in pending.firstIndex { $0.id == id }.map { $0 + 1 } } ?? 0
+                struct Page: Encodable { var reports: [Row] }
+                struct Row: Encodable { var id: UUID; var kind, reason, createdAt, status: String }
+                return try JSONEncoder().encode(Page(reports: pending.dropFirst(start).prefix(ModerationService.pageSize).map {
+                    Row(id: $0.id, kind: $0.kind, reason: $0.reason, createdAt: $0.createdAt, status: $0.status) }))
+            case "review":
+                guard let entry = moderationReports.first(where: { $0.report.id == payload.reportID }) else { throw PostgrestError(code: "42501", message: "Report unavailable") }
+                var body: [String: Any] = ["id": entry.report.id.uuidString, "kind": entry.report.kind, "reason": entry.report.reason,
+                                           "createdAt": entry.report.createdAt, "status": entry.report.status]
+                if let context = entry.context { body["context"] = context }
+                if let subject = entry.subject { body["subject"] = subject }
+                return try JSONSerialization.data(withJSONObject: body)
+            case "resolve":
+                guard let index = moderationReports.firstIndex(where: { $0.report.id == payload.reportID }), let decision = payload.decision else { throw URLError(.badServerResponse) }
+                if moderationConflict { moderationConflict = false; throw PostgrestError(code: "PT409", message: "Report already resolved") }
+                let r = moderationReports[index].report
+                moderationReports[index].report = ModerationReport(id: r.id, kind: r.kind, reason: r.reason, createdAt: r.createdAt, status: decision == "hide" ? "reviewed" : "dismissed")
+                if decision == "hide" { moderationReports[index].subject?["state"] = "hidden" }
+                return Data(#"{"status":"done"}"#.utf8)
+            default: throw URLError(.unsupportedURL)
+            }
         }
         if endpoint == "social_report" {
             if payload.targetType == "recipe", let postID = payload.postID, var snapshot = sharedRecipeSnapshots[postID] {

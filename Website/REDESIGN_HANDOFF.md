@@ -1,6 +1,6 @@
 # Website preflight and Claude handoff
 
-November 22, 2026 · **Planning/audit only; redesign not implemented.** Claude owns visuals/frontend after Build 7. Codex owns infrastructure/routing/security support. No iOS or production changes.
+November 22, 2026 · **Historical pre-implementation audit.** The redesign was implemented afterwards; current behavior is in [README — Website V2](README.md#website-v2-single-page-homepage). Claude owns visuals/frontend after Build 7. Codex owns infrastructure/routing/security support. No iOS or production changes.
 
 ## Approved single-page direction
 

@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261117200058_social_dish_identity.sql';
+const migration = '20261121161724_social_dish_identity.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 try {
  for (let n=0;n<3;n++) {

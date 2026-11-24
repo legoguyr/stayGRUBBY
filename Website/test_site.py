@@ -5,7 +5,16 @@ import tempfile
 import unittest
 from urllib.parse import urlparse
 
-from build import build, POLICY, LOGO, distribution_url
+from build import build, POLICY, LOGO, BRAND_FILES, distribution_url
+import home
+
+DISTRIBUTION = __import__("json").loads((Path(__file__).parent / "distribution.json").read_text())["url"]
+
+
+def png_size(path):
+    data = Path(path).read_bytes()
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
 
 
 class Document(HTMLParser):
@@ -43,7 +52,7 @@ class SiteTests(unittest.TestCase):
         config = json.loads((Path(__file__).parent / 'wrangler.jsonc').read_text())
         self.assertEqual(config['name'], 'staygrubby')
         self.assertEqual(config['assets']['directory'], './public')
-        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/beta', '/privacy', '/support', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
+        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/beta', '/privacy', '/support', '/community-guidelines', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
         self.assertEqual(config['main'],'link-worker.mjs')
         self.assertEqual(config['assets']['binding'],'ASSETS')
         self.assertEqual(config['assets']['html_handling'], 'none')
@@ -52,9 +61,15 @@ class SiteTests(unittest.TestCase):
         self.assertTrue(set(config).isdisjoint({'routes', 'route', 'vars', 'kv_namespaces', 'r2_buckets', 'd1_databases', 'services', 'analytics_engine_datasets'}))
 
     def test_publish_directory_is_an_exact_public_allowlist(self):
+        present = {"assets/media/" + s["file"] for s in home.slots().values() if s["present"]}
         self.assertEqual({str(p.relative_to(self.output)) for p in self.output.rglob("*") if p.is_file()},
-            {"index.html", "privacy.html", "support.html", "404.html", "assets/site.css", "assets/wordmark.png", "_headers", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"})
-        self.assertEqual((self.output / "assets/wordmark.png").read_bytes(), LOGO.read_bytes())
+            {"index.html", "privacy.html", "support.html", "404.html", "community-guidelines.html", "assets/site.css", "assets/wordmark.png", "_headers", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"}
+            | {"assets/brand/" + name for name in BRAND_FILES} | present)
+        # The Worker fallbacks keep /assets/wordmark.png: the official artwork's optimized derivative on the same canvas.
+        self.assertEqual(png_size(self.output / "assets/wordmark.png"), png_size(LOGO))
+        self.assertLess((self.output / "assets/wordmark.png").stat().st_size, 80_000)
+        total = sum(p.stat().st_size for p in self.output.rglob("*") if p.is_file() and p.name != "privacy.html")
+        self.assertLess(total, 1_000_000)
 
     def test_policy_is_rendered_from_the_complete_canonical_document(self):
         doc = Document((self.output / "privacy.html").read_text())
@@ -63,7 +78,7 @@ class SiteTests(unittest.TestCase):
         expected = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", canonical)
         expected = expected.replace("**", "").replace("#", "")
         self.assertEqual(" ".join("".join(doc.article_text).split()), " ".join(expected.split()))
-        self.assertIn("November 11, 2026", " ".join(doc.article_text))
+        self.assertIn("November 24, 2026", " ".join(doc.article_text))
 
     def test_build_refuses_unexpected_files_in_publish_directory(self):
         (self.output / "internal-notes.md").write_text("Synthetic internal fixture")
@@ -71,7 +86,7 @@ class SiteTests(unittest.TestCase):
             build(self.output)
 
     def test_links_assets_and_semantic_accessibility(self):
-        for name in ["index.html", "privacy.html", "support.html", "404.html"]:
+        for name in ["index.html", "privacy.html", "support.html", "404.html", "community-guidelines.html"]:
             doc = Document((self.output / name).read_text())
             self.assertEqual(sum(tag == "h1" for tag, _ in doc.tags), 1)
             self.assertIn(("html", {"lang": "en"}), doc.tags)
@@ -89,6 +104,8 @@ class SiteTests(unittest.TestCase):
                         self.assertIn(url.path, ["privacy@staygrubby.com", "support@staygrubby.com"])
                     elif url.scheme:
                         self.assertEqual(url.scheme, "https")
+                        if name == "index.html" and value == DISTRIBUTION:
+                            continue
                         if url.netloc != "staygrubby.com":
                             self.assertEqual(name, "privacy.html")
                             self.assertEqual(key, "href")
@@ -103,10 +120,55 @@ class SiteTests(unittest.TestCase):
                             path += ".html"
                         self.assertTrue((self.output / path).is_file(), value)
 
-    def test_homepage_has_a_visible_beta_cta(self):
+    def test_homepage_download_ctas_come_from_distribution_config(self):
         html = (self.output / "index.html").read_text()
-        self.assertIn("currently in beta for iPhone", html)
-        self.assertIn('<a class="button" href="/beta">Join the Beta</a>', html)
+        self.assertTrue(DISTRIBUTION.startswith("https://testflight.apple.com/join/"))
+        self.assertEqual(html.count(f'<a class="button" href="{DISTRIBUTION}">Join the Beta</a>'), 2)
+        self.assertIn(f'<a class="pill-button" href="{DISTRIBUTION}">Join the Beta</a>', html)
+        self.assertIn("iPhone beta · via Apple TestFlight", html)
+        store = "https://apps.apple.com/us/app/staygrubby/id1234567890"
+        self.assertEqual(home.cta(distribution_url(store)), (store, "Download on the App Store", "Free for iPhone"))
+        self.assertEqual(home.cta(None), ("/beta", "Join the Beta", "iPhone beta"))
+
+    def test_homepage_sections_and_honest_media_fallbacks(self):
+        html = (self.output / "index.html").read_text()
+        for section in ['id="hero-title"', 'id="how-title"', 'id="features-title"', 'id="download-title"']:
+            self.assertIn(section, html)
+        for verb in ["Cook", "Rank", "Remember", "Share", "Grub Rank", "My Kitchen · Food Bible", "The Pass"]:
+            self.assertIn(verb, html)
+        for spec in home.slots().values():
+            self.assertEqual(spec["present"], f'/assets/media/{spec["file"]}' in html, spec["name"])
+        # Missing screenshots fall back to labelled tutorial example cards, never an invented screen.
+        examples = html.count('class="card example')
+        self.assertEqual(examples, sum(not home.slots()[s]["present"] for s in ["hero-screen", "rank-screen", "kitchen-screen", "pass-screen"]))
+        self.assertEqual(html.count('aria-label="Illustrative example'), examples)
+        self.assertEqual(html.count('<figcaption>Illustrative preview</figcaption>'), examples)
+
+    def test_supplied_media_slot_is_published_and_allowlisted(self):
+        import json, shutil
+        with tempfile.TemporaryDirectory() as media_dir, tempfile.TemporaryDirectory() as out:
+            media = Path(media_dir)
+            manifest = json.loads((home.MEDIA / "media.json").read_text())
+            (media / "media.json").write_text(json.dumps(manifest))
+            (media / "rank-screen.jpg").write_bytes(b"synthetic fixture")
+            original, home.MEDIA = home.MEDIA, media
+            try:
+                build(Path(out))
+            finally:
+                home.MEDIA = original
+            page_html = (Path(out) / "index.html").read_text()
+            self.assertTrue((Path(out) / "assets/media/rank-screen.jpg").is_file())
+            self.assertIn('<img src="/assets/media/rank-screen.jpg" width="590" height="1279" alt="Grub Rank on iPhone" loading="lazy"', page_html)
+            for spec in manifest["slots"]:
+                if spec["kind"] == "photo":
+                    (media / spec["file"]).write_bytes(b"fixture without alt text")
+                    with self.assertRaises(ValueError):
+                        home.MEDIA = media
+                        try:
+                            home.slots()
+                        finally:
+                            home.MEDIA = original
+                    break
 
     def test_profile_landing_and_association_are_static_and_private(self):
         import json
@@ -133,7 +195,13 @@ class SiteTests(unittest.TestCase):
         for prohibited in ["@import", "url(", "@font-face"]:
             self.assertNotIn(prohibited, css)
         self.assertIn(":focus-visible", css)
-        self.assertIn("max-width: 640px", css)
+        self.assertIn("min-width: 641px", css)
+        self.assertIn("#f10607", css)
+        self.assertNotIn("#ff2d1f", css)
+        # Scroll motion is CSS-only, opt-in and disabled under Reduce Motion; no script-src is needed.
+        self.assertIn("@media (prefers-reduced-motion: no-preference)", css)
+        self.assertIn("@media (prefers-reduced-motion: reduce)", css)
+        self.assertNotIn("script-src", headers)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,61 @@
+{
+  "note": "Read-only snapshot of @grubwithguy's own #stayGRUBBY data, taken November 24, 2026 from production (no writes). Displayed scores = ScoreCalibration v1 over each cook's stored Bradley–Terry strength and Liked/Fine reaction, %.1f, exactly as the app shows them (verified: Pasta alla Norma 8.8, #9 of 35 matches the app's own Nov 23 share snapshot). Order is by strength. Contains no account IDs, private notes, private Recipes' contents or other users' content (comment/Hands counts only). Re-snapshot before reusing after more cooking — rankings move.",
+  "handle": "@grubwithguy",
+  "as_of": "Nov 24, 2026",
+  "ranked_cooks": 35,
+  "top20": [
+    {"rank": 1, "dish": "Lamb Chops", "cook": "Herb Crust", "score": "9.6", "photo": "lamb-chops-herb-crust"},
+    {"rank": 2, "dish": "Braised Short Rib", "cook": null, "score": "9.5", "photo": "braised-short-rib"},
+    {"rank": 3, "dish": "Honey-Chili Duck Breast", "cook": "Honey chili glaze", "score": "9.4", "photo": "honey-chili-duck"},
+    {"rank": 4, "dish": "Butternut Squash Risotto", "cook": "Butternut Squash", "score": "9.3", "photo": "butternut-squash-risotto"},
+    {"rank": 5, "dish": "French Onion Soup", "cook": "Vita Nova", "score": "9.1", "photo": "french-onion-soup"},
+    {"rank": 6, "dish": "Honey Glazed Duck", "cook": null, "score": "9.1", "photo": "honey-glazed-duck"},
+    {"rank": 7, "dish": "Mushroom Risotto", "cook": "Mushroom", "score": "9.0", "photo": "mushroom-risotto"},
+    {"rank": 8, "dish": "Chimmi Steak Sandwich", "cook": "Chimmi sandwich", "score": "9.0", "photo": "chimmi-steak-sandwich"},
+    {"rank": 9, "dish": "Pasta alla Norma", "cook": null, "score": "8.8", "photo": "pasta-alla-norma"},
+    {"rank": 10, "dish": "Creamy French Toast", "cook": null, "score": "8.8", "photo": "creamy-french-toast"},
+    {"rank": 11, "dish": "Shakshuka", "cook": null, "score": "8.6", "photo": "shakshuka"},
+    {"rank": 12, "dish": "Pastrami Pita", "cook": null, "score": "8.6", "photo": "pastrami-pita"},
+    {"rank": 13, "dish": "Chicken Marsala", "cook": null, "score": "8.4", "photo": "chicken-marsala"},
+    {"rank": 14, "dish": "Lamb Chops", "cook": "Double chop", "score": "8.3", "photo": "lamb-chops-double-chop"},
+    {"rank": 15, "dish": "Chicken Parm", "cook": null, "score": "8.3", "photo": "chicken-parm"},
+    {"rank": 16, "dish": "Tandoori Chicken with Coconut Mint Chutney", "cook": null, "score": "8.3", "photo": "tandoori-chicken"},
+    {"rank": 17, "dish": "Miso Eggplant", "cook": null, "score": "8.2", "photo": "miso-eggplant"},
+    {"rank": 18, "dish": "Kale Radiatori", "cook": null, "score": "8.1", "photo": "kale-radiatori"},
+    {"rank": 19, "dish": "Pollo Martini", "cook": null, "score": "8.1", "photo": "pollo-martini"},
+    {"rank": 20, "dish": "Bolognese", "cook": null, "score": "8.0", "photo": "bolognese"}
+  ],
+  "head_to_head": [
+    {"a": "Lamb Chops · Herb Crust", "b": "Braised Short Rib", "winner": "a", "day": "Oct 14"},
+    {"a": "Braised Short Rib", "b": "Honey-Chili Duck Breast", "winner": "a", "times": 3},
+    {"a": "Butternut Squash Risotto", "b": "Mushroom Risotto", "winner": "a"},
+    {"a": "Honey Glazed Duck", "b": "Pasta alla Norma", "winner": "a", "day": "Nov 23"}
+  ],
+  "two_cooks": {"dish": "Lamb Chops", "cooks": [
+    {"cook": "Herb Crust", "order": 1, "rank": 1, "score": "9.6"},
+    {"cook": "Double chop", "order": 2, "rank": 14, "score": "8.3"}],
+    "note": "Cook 1 outranks cook 2; there is no real 'improved over time' Dish yet, so the campaign never claims one."},
+  "moved": {"dish": "Pastrami Pita", "shared_rank": 13, "shared_of": 35, "shared_day": "Nov 21", "shared_score": "8.5", "rank": 12, "score": "8.6"},
+  "recipes": {
+    "Pasta alla Norma": {"dish_rank": 9, "yield": "Serves 4", "time": "35 min", "cuisine": "Italian", "steps": 9, "ingredients_total": 10,
+      "ingredients": ["1 eggplant, diced", "1 yellow onion, diced", "3 cloves garlic, chopped", "1 can San Marzano tomatoes", "½ box rigatoni", "Fresh basil", "Ricotta salata, for serving"]},
+    "Grubtastic French Toast with maple butter": {"dish": "Creamy French Toast", "dish_rank": 10, "yield": "4 servings", "time": "38 min", "cuisine": "American", "steps": 9, "ingredients_total": 14,
+      "ingredients": ["1 challah loaf, ½–1 day old", "6 egg yolks", "2 cups whole milk", "1 cup heavy cream", "2 tsp vanilla extract", "Maple syrup + butter"]},
+    "Beef Bolognese": {"dish": "Bolognese", "dish_rank": 20, "yield": "6 servings", "time": "75 min", "cuisine": "Italian", "steps": 10, "ingredients_total": 16,
+      "ingredients": ["1½ lb ground beef", "4 onions, diced", "1 cup red wine", "28 oz tomato purée", "Fresh basil, thyme, rosemary"]},
+    "Miso Glazed Eggplant": {"dish": "Miso Eggplant", "dish_rank": 17, "yield": "Serves 6", "cuisine": "Japanese", "steps": 8, "ingredients_total": 12, "revisions": 10,
+      "ingredients": ["2 tbsp miso paste", "¼ cup mirin", "¼ cup rice wine vinegar", "3 cloves garlic, grated", "3 eggplants"]},
+    "Tandoori Chicken with Coconut Mint Chutney": {"dish_rank": 16, "yield": "2 servings", "cuisine": "Indian", "steps": 10, "ingredients_total": 22,
+      "ingredients": ["2 chicken leg quarters", "½ cup coconut milk", "Garam masala, cumin, paprika", "½ bunch cilantro", "½ cup fresh mint"]},
+    "Cucumber salad": {"cuisine": "Japanese", "steps": 4, "ingredients_total": 7,
+      "ingredients": ["Small cucumbers", "1 tbsp rice vinegar", "1 tbsp soy sauce", "1 tbsp mirin", "1 tsp chili oil"]}
+  },
+  "recipe_count": 8,
+  "posts": [
+    {"dish": "Miso Eggplant", "score_at_sharing": "8.1", "hands": 4, "comments": 1},
+    {"dish": "Honey Glazed Duck", "score_at_sharing": "8.6", "hands": 4, "comments": 0},
+    {"dish": "Pastrami Pita", "score_at_sharing": "8.5", "hands": 3, "comments": 0},
+    {"dish": "Chicken Parm", "score_at_sharing": "8.2", "hands": 2, "comments": 2},
+    {"dish": "Tandoori Chicken with Coconut Mint Chutney", "score_at_sharing": "8.7", "hands": 2, "comments": 0, "recipe": true}
+  ]
+}

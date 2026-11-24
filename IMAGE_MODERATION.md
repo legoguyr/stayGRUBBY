@@ -25,7 +25,7 @@ Previously delivered copies/screenshots cannot be recalled. Previously issued si
 
 ## Data, migration and cost
 
-`20261118050952_report_based_image_publishing.sql` is a local forward correction. Earlier migration SQL remains byte-identical. It restores audience-only read checks, replaces broad preapproval staff inspection with report-scoped inspection, removes image-review triggers/leases/RPCs and drops only the disposable `image_reviews` technical queue. The closed `image_review_actions` table remains solely as historical evidence if any prior decisions exist; no active path writes it. Original objects, photo manifests, Auth/accounts, Recipes, cooks, ranking evidence and report audits are not rewritten. Historical image evidence retains its original object/account erasure cascades.
+`20261121161726_report_based_image_publishing.sql` is a local forward correction. Earlier migration SQL remains byte-identical. It restores audience-only read checks, replaces broad preapproval staff inspection with report-scoped inspection, removes image-review triggers/leases/RPCs and drops only the disposable `image_reviews` technical queue. The closed `image_review_actions` table remains solely as historical evidence if any prior decisions exist; no active path writes it. Original objects, photo manifests, Auth/accounts, Recipes, cooks, ranking evidence and report audits are not rewritten. Historical image evidence retains its original object/account erasure cascades.
 
 An ordinary upload/share makes only its existing durable writes. No approval row, classifier receipt, permanent duplicate image or image audit is created. Existing free database/Storage/egress quotas and capacity safeguards still apply; no plan upgrade is made.
 

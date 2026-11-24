@@ -248,6 +248,7 @@ struct SeparateCooksSheet: View {
 /// Opens `DishCollectionView`.
 struct FolderGrid: View {
     let summaries: [DishCollectionSummary]
+    @Environment(\.scoreUnlockState) private var scores
     @State private var creating = false
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
@@ -270,7 +271,7 @@ struct FolderGrid: View {
                         NavigationLink { DishCollectionView(label: summary.label) } label: { FolderCard(summary: summary) }
                             .buttonStyle(.plain)
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.cookCountText)")
+                            .accessibilityLabel("\(summary.label), \(summary.dishCountText), \(summary.averageText(scores))")
                             .accessibilityHint("Opens the variation").accessibilityIdentifier("folder-\(summary.label)")
                     }
                 }
@@ -348,13 +349,17 @@ struct VariationEditorSheet: View {
 
 struct FolderCard: View {
     let summary: DishCollectionSummary
+    @Environment(\.scoreUnlockState) private var scores
     var body: some View {
         VStack(alignment: .leading, spacing: SGTheme.Space.xSmall) {
             DishPhoto(media: summary.members.lazy.compactMap { $0.best?.attempt.primaryImage ?? $0.dish.attempts.compactMap(\.primaryImage).first }.first,
                       thumbnail: true, name: summary.label)
                 .frame(maxWidth: .infinity).aspectRatio(4/3, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.card))
             Label(summary.label, systemImage: DishVariationCopy.symbol).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(2)
-            Text("\(summary.dishCountText) · \(summary.cookCountText)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            Text(summary.dishCountText).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            Text(summary.averageText(scores)).font(SGTheme.TypeRole.secondary.weight(.semibold))
+                .foregroundStyle(summary.averageScore == nil ? .secondary : SGTheme.ColorToken.primaryText)
+                .accessibilityIdentifier("variation-average-\(summary.label)")
         }
     }
 }
@@ -392,50 +397,31 @@ struct KitchenCollectionsSection: View {
                       thumbnail: true, name: summary.label)
                 .frame(width: 150, height: 112).clipShape(RoundedRectangle(cornerRadius: SGTheme.Radius.field))
             Text(summary.label).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).lineLimit(1)
-            Text("\(summary.dishCountText) · \(summary.cookCountText)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
+            Text("\(summary.dishCountText) · \(summary.averageText(scores))").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).lineLimit(2)
         }.frame(width: 150, alignment: .leading)
     }
 }
 
-/// One collection: its Dishes compared by their best Grub Rank cook. A filtered presentation of
-/// existing ranking results — no new comparisons, no new scores.
+/// One Dish Variation (V2, November 21, 2026): the Grub Rank page itself, scoped to this variation's Dishes —
+/// the same ranked rows, photos, scores, search, filters and sort, numbered within the variation. A filtered
+/// presentation of existing ranking results: no new comparisons or scores, and no writes when browsing.
 struct DishCollectionView: View {
     let label: String
     @Environment(\.modelContext) private var context
     @Query private var dishes: [Dish]
     @State private var editing = false
     @State private var removing = false
-    @State private var search = ""
     @State private var error: String?
     @Environment(\.dismiss) private var dismiss
 
-    private var scores: ScoreUnlockState { ScoreUnlockPolicy.state(in: context) }
-    private var summary: DishCollectionSummary? {
-        DishCollectionSummary.all(dishes: dishes, entries: ScoreUnlockPolicy.entries(in: context), scores: scores)
-            .first { $0.id == DishCollectionPolicy.key(label) }
-    }
-    private var members: [DishCollectionSummary.Member] {
-        let query = TagNormalization.key(search)
-        return (summary?.members ?? []).filter { query.isEmpty || TagNormalization.key($0.dish.name).contains(query) }
-    }
-
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                if let summary {
-                    Text("\(summary.dishCountText) · \(summary.cookCountText)").font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary)
-                        .accessibilityIdentifier("collection-counts")
-                    Text(scores.isUnlocked ? "Ranked by each Dish’s best cook in your Grub Rank." : "Ranked by each Dish’s best cook in your Grub Rank. Scores unlock as you rank more cooks.")
-                        .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    if summary.members.count > 8 { SGSearchField(placeholder: "Search this variation", text: $search, identifier: "collection-search") }
-                    ForEach(Array(members.enumerated()), id: \.element.id) { index, member in row(member, position: index + 1) }
-                } else {
-                    SGContentState(title: "No Dishes yet", symbol: DishVariationCopy.symbol, message: "Add Dishes to “\(label)” with \(DishVariationCopy.edit).")
-                }
+        Group {
+            if let list = try? CookingStore.globalRanking(context: context) {
+                CookingRankingView(list: list, variation: label, removeFromVariation: removeFromVariation)
+            } else {
+                SGContentState(title: "Couldn’t open", symbol: DishVariationCopy.symbol, message: "Try again in a moment.")
             }
-            .padding(SGTheme.Space.medium).frame(maxWidth: SGTheme.Size.contentMaximum).frame(maxWidth: .infinity)
         }
-        .background(SGTheme.ColorToken.background)
         .navigationTitle(label).navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -445,7 +431,7 @@ struct DishCollectionView: View {
                 } label: { SGToolbarIcon(symbol: "ellipsis") }.sgUtilityTint().accessibilityLabel("Variation actions").accessibilityIdentifier("collection-actions")
             }
         }
-        // Renaming here changes the label on its Dishes; this page then closes back to the list.
+        // Renaming here changes the label on its Dishes; this page then closes back to the variations.
         .sheet(isPresented: $editing) {
             VariationEditorSheet(label: label) { saved in if DishCollectionPolicy.key(saved) != DishCollectionPolicy.key(label) { dismiss() } }
         }
@@ -456,48 +442,6 @@ struct DishCollectionView: View {
         .alert("Couldn't save", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) { Button("OK") { error = nil } } message: { Text(error ?? "") }
     }
 
-    @ViewBuilder private func row(_ member: DishCollectionSummary.Member, position: Int) -> some View {
-        let content = HStack(spacing: SGTheme.Space.small) {
-            Text(member.best == nil ? "–" : "\(position)").font(SGTheme.TypeRole.headline).monospacedDigit()
-                .foregroundStyle(.secondary).frame(minWidth: 24)
-            DishPhoto(media: member.best?.attempt.primaryImage ?? member.dish.attempts.compactMap(\.primaryImage).first, thumbnail: true, name: member.dish.name)
-                .sgPhotoFrame(.compactThumbnail)
-            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                Text(member.dish.name).font(SGTheme.TypeRole.headline).foregroundStyle(SGTheme.ColorToken.primaryText).fixedSize(horizontal: false, vertical: true)
-                Text(detail(member)).font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            if let best = member.best {
-                Text("#\(best.globalRank)").font(SGTheme.TypeRole.secondary).monospacedDigit().foregroundStyle(.secondary)
-                SGScore(text: member.scoreText, role: .pill, identifier: "collection-score-\(member.dish.name)")
-            }
-            Image(systemName: "chevron.right").foregroundStyle(.secondary).accessibilityHidden(true)
-        }.frame(minHeight: SGTheme.Size.minimumTap).contentShape(Rectangle())
-        Group {
-            if let best = member.best { NavigationLink(value: best.attempt.id) { content } }
-            else { NavigationLink { DishView(dish: member.dish) } label: { content } }
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(accessibility(member, position: position))
-        .accessibilityHint("Opens the Dish").accessibilityIdentifier("collection-dish-\(member.dish.name)")
-        .accessibilityAction(named: DishVariationCopy.removeFrom) { removeFromVariation(member.dish) }
-        .contextMenu {
-            Button(DishVariationCopy.removeFrom, systemImage: "minus.circle") { removeFromVariation(member.dish) }
-                .accessibilityIdentifier("collection-dish-remove")
-        }
-    }
-    /// Which cook produced the score, and how many cooks the Dish has.
-    private func detail(_ member: DishCollectionSummary.Member) -> String {
-        let cooks = member.cookCount == 1 ? "1 cook" : "\(member.cookCount) cooks"
-        guard let best = member.best else { return member.cookCount == 0 ? "Not cooked yet" : cooks }
-        let from = member.cookCount > 1 ? "Best: \(best.attempt.meaningfulVersionLabel ?? best.attempt.displayName)" : nil
-        return [from, cooks].compactMap { $0 }.joined(separator: " · ")
-    }
-    private func accessibility(_ member: DishCollectionSummary.Member, position: Int) -> String {
-        guard let best = member.best else { return "\(member.dish.name), \(detail(member))" }
-        return "\(position), \(member.dish.name), Grub Rank \(best.globalRank), \(member.scoreText.map { "score \($0)" } ?? "score locked"), \(detail(member))"
-    }
     /// Only this Dish loses the label; the Dish and everything in it stays.
     private func removeFromVariation(_ dish: Dish) {
         let key = DishCollectionPolicy.key(label)

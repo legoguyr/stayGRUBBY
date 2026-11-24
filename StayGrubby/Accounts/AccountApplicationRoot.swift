@@ -35,7 +35,7 @@ struct AccountApplicationRoot: View {
         }
         .task {
             #if DEBUG
-            if DevelopmentLibraryAccess.requestedOnLaunch { openDevelopment(); return }
+            if DevelopmentLibraryAccess.requestedOnLaunch { session.skipLaunchRestoration(); openDevelopment(); return }
             #endif
             session.finishPendingLocalDeletion()
             await session.restoreSessionOnLaunch()

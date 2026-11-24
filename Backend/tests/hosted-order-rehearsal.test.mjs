@@ -70,7 +70,7 @@ try {
   return JSON.stringify(result);
  }
  const before=await fingerprints();
- check(early.length===3&&rest.length===11,'Rehearsal starts from all 54 deployed migrations and applies exactly 11 pending files');
+ check(early.length===3&&rest.length===15&&rest.slice(-4).every((f,i)=>f.endsWith(['_staff_reported_photo_operation.sql','_moderation_staff_roles.sql','_staff_status.sql','_love_it_reaction.sql'][i])),'Rehearsal starts from all 54 deployed migrations and applies the 11 files deployed November 21, the 3 staff-security migrations and Love It');
  for (const f of rest) await db.exec(await readFile(new URL(f, dir), 'utf8'));
  check(await fingerprints()===before,'The full production-order upgrade preserves every original field in all existing Auth/app/Storage tables');
  check((await db.query("select to_regclass('staygrubby.image_reviews') value")).rows[0].value===null,'No mandatory image approval queue survives the complete rollout');

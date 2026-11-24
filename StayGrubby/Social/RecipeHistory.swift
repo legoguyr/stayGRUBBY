@@ -1,4 +1,5 @@
 import SwiftUI
+import Supabase
 import SwiftData
 
 nonisolated struct RecipeVersion: Codable, Identifiable, Sendable {
@@ -93,27 +94,50 @@ private struct RecipeVersionReader: View {
     }
 }
 
-struct RecipeDishLinker: View {
+/// Choose a Dish (Recipe menu, owner, Recipe without a Dish; FOOD_ARCHITECTURE §3.6): relinks an
+/// unlinked Recipe through the one shared Dish picker. Only Dishes without a Recipe are offered; the
+/// server (`recipes.set_dish`) still refuses a Dish that gained one meanwhile. Nothing is copied or moved.
+struct RecipeDishChooser: View {
     let recipe: Recipe
-    let linked: () -> Void
+    let linked: (Recipe) -> Void
     @Query(sort: \Dish.name) private var dishes: [Dish]
     @Environment(\.socialRequest) private var request
     @Environment(\.dismiss) private var dismiss
+    @State private var taken: Set<UUID>?
     @State private var busy = false
-    @State private var failed = false
+    @State private var failure: String?
+    private var available: [Dish] { dishes.filter { !(taken ?? []).contains($0.id) } }
     var body: some View {
-        DishSelectionView(dishes: dishes.filter { !$0.attempts.isEmpty }, onSelect: { _ in }, onCancel: { dismiss() },
-                          selectedCookID: recipe.linkedAttemptID, disabled: busy, onSelectCook: { cook in Task { await attach(cook) } })
+        DishSelectionView(dishes: taken == nil ? [] : available, onSelect: { dish in Task { await link(dish) } },
+                          onCancel: { dismiss() }, disabled: busy || taken == nil)
+            .overlay { if taken == nil && failure == nil { SGLoadingState(label: "Loading your Dishes") } }
             .safeAreaInset(edge: .bottom) {
-                if failed { Text("Couldn’t link. Refresh the Recipe and check cooking sync. A cook linked to another Recipe must be unlinked first.").font(SGTheme.TypeRole.footnote).padding().background(SGTheme.ColorToken.background).accessibilityIdentifier("recipe-link-error") }
-            }.interactiveDismissDisabled(busy)
+                if let failure {
+                    Text(failure).font(SGTheme.TypeRole.footnote).padding().frame(maxWidth: .infinity)
+                        .background(SGTheme.ColorToken.background).accessibilityIdentifier("recipe-choose-dish-error")
+                }
+            }
+            .interactiveDismissDisabled(busy)
+            .task { await loadTaken() }
     }
-    private func attach(_ cook: CookingAttempt) async {
-        guard let request else { failed = true; return }; busy = true; defer { busy = false }
+    /// Dishes that already have a Recipe (each Dish has at most one).
+    private func loadTaken() async {
+        guard let request else { failure = DishRecipeService.message(for: URLError(.notConnectedToInternet)); return }
+        do { taken = Set(try await CookbookIndex.load(request: request).compactMap(\.dishID)); failure = nil }
+        catch is CancellationError {} catch { failure = DishRecipeService.message(for: error) }
+    }
+    private func link(_ dish: Dish) async {
+        guard let request else { return }; busy = true; defer { busy = false }
         do {
-            var payload = SocialPayload(); payload.recipeID = recipe.id; payload.attemptID = cook.id; payload.previousAttemptID = recipe.linkedAttemptID
-            _ = try await request("recipes", "link_cook", payload); try Task.checkCancellation()
-            NotificationCenter.default.post(name: .socialContentChanged, object: nil); linked(); dismiss()
-        } catch is CancellationError {} catch { failed = true }
+            var payload = SocialPayload(); payload.recipeID = recipe.id; payload.recipeDishID = dish.id
+            let next = try JSONDecoder().decode(Recipe.self, from: await request("recipes", "set_dish", payload))
+            try Task.checkCancellation()
+            guard next.dishID == dish.id else { throw URLError(.cannotParseResponse) }
+            NotificationCenter.default.post(name: .socialContentChanged, object: nil)
+            linked(next); dismiss()
+        } catch is CancellationError {} catch {
+            failure = (error as? PostgrestError)?.code == "PT409" ? "\(dish.name) already has a Recipe. Choose another Dish." : DishRecipeService.message(for: error)
+            await loadTaken()
+        }
     }
 }

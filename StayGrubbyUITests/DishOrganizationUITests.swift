@@ -175,7 +175,7 @@ final class DishOrganizationUITests: StayGrubbyUITestCase {
     @MainActor func testUnlinkKeepsTheRecipeAndDeletedRecipesCanBeRestored() throws {
         continueAfterFailure = false
         let app = XCUIApplication()
-        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--test-light", "--test-reduce-motion", "--feature-flag", "recipe_recovery"]
+        app.launchArguments = ["--ui-test-store", UUID().uuidString, "--social-review", "--social-review-ready", "--test-light", "--test-reduce-motion", "--feature-flag", "recipe_recovery", "--recipe-persistence-review"]
         app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
         app.revealCreation(); app.buttons["new-dish"].tap()
@@ -212,10 +212,19 @@ final class DishOrganizationUITests: StayGrubbyUITestCase {
         let entry = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'bible-entry-' AND label CONTAINS 'Butternut'")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10), "The unlinked Recipe is still in Food Bible")
 
-        // Delete names the Recipe and moves it to Recently Deleted.
+        // Relink: an unlinked Recipe offers Choose a Dish (the shared picker), not Unlink.
         entry.tap()
         XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
         XCTAssertFalse(app.buttons["recipe-unlink"].exists, "No Unlink once the Recipe has no Dish")
+        XCTAssertTrue(app.buttons["recipe-choose-dish"].waitForExistence(timeout: 5)); app.buttons["recipe-choose-dish"].tap()
+        let dishChoice = app.buttons["choose-dish-Butternut Squash Risotto"]
+        XCTAssertTrue(dishChoice.waitForExistence(timeout: 10), "The Dish without a Recipe is offered")
+        dishChoice.tap()
+        XCTAssertTrue(dishChoice.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        XCTAssertTrue(app.buttons["recipe-unlink"].waitForExistence(timeout: 5), "Relinked: Unlink is offered again")
+
+        // Delete names the Recipe and moves it to Recently Deleted.
         app.buttons["recipe-delete"].tap()
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Recently Deleted'")).firstMatch.waitForExistence(timeout: 5))
         let deleteShot = XCTAttachment(screenshot: app.screenshot()); deleteShot.name = "Delete confirmation"; deleteShot.lifetime = .keepAlways; add(deleteShot)
@@ -233,5 +242,15 @@ final class DishOrganizationUITests: StayGrubbyUITestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "recently-deleted-empty").firstMatch.waitForExistence(timeout: 5))
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(entry.waitForExistence(timeout: 10), "Restored Recipes return to Food Bible")
+        // Restore reattaches the free Dish (deleting the Recipe never deleted the Dish).
+        entry.tap()
+        XCTAssertTrue(menu.waitForExistence(timeout: 10)); menu.tap()
+        XCTAssertTrue(app.buttons["recipe-unlink"].waitForExistence(timeout: 5), "The restored Recipe is back on its Dish")
+        app.buttons["recipe-unlink"].tap(); app.buttons["recipe-unlink-confirm"].firstMatch.tap()
+        // The fixture's server state is on disk: the restored Recipe survives relaunch.
+        app.terminate(); app.launchWithReviewOptions()
+        XCTAssertTrue(app.rankingHeader.waitForExistence(timeout: 15))
+        app.tabBars.buttons["Food Bible"].tap()
+        XCTAssertTrue(entry.waitForExistence(timeout: 10), "The restored Recipe survives relaunch")
     }
 }

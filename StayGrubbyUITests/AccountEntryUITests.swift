@@ -16,7 +16,7 @@ final class AccountEntryUITests: StayGrubbyUITestCase {
         let app=XCUIApplication()
         app.launchArguments=["--ui-test-store",UUID().uuidString];app.launchWithReviewOptions()
         XCTAssertTrue(app.rankingHeader.waitForExistence(timeout:15))
-        XCTAssertTrue(app.staticTexts["No dishes yet"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["Your kitchen is open"].waitForExistence(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.tabBars.buttons["Grub Rank"].isSelected, app.debugDescription)
         XCTAssertTrue(app.tabBars.buttons["Food Bible"].exists)
         XCTAssertFalse(app.tabBars.buttons["Tickets"].exists)

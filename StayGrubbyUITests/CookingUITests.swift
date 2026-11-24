@@ -109,8 +109,9 @@ final class CookingUITests: StayGrubbyUITestCase {
         XCTAssertTrue(inherited.waitForExistence(timeout: 15))
         XCTAssertEqual(inherited.label, "Salmon")
         fill(app.textFields["version-title"], "Second cook")
-        transition(app.buttons["Continue"], to: app.buttons["Liked it"])
-        transition(app.buttons["Liked it"], to: app.buttons["Prefer Salmon — Second cook"])
+        // Love It (November 24, 2026): the fourth reaction is first and goes straight into the comparison.
+        transition(app.buttons["Continue"], to: app.buttons["Loved it"])
+        transition(app.buttons["Loved it"], to: app.buttons["Prefer Salmon — Second cook"])
         capture("Comparison")
         let preferSecond = app.buttons["Prefer Salmon — Second cook"]
         let resultClose = app.buttons["ranking-result-close"]
@@ -134,6 +135,8 @@ final class CookingUITests: StayGrubbyUITestCase {
 
         transition(app.cookAction("detail-rerank"), to: app.buttons["Liked it"])
         XCTAssertTrue(app.buttons["It was fine"].exists && app.buttons["Didn't like it"].exists)
+        let reactionOrder = ["Loved it", "Liked it", "It was fine", "Didn't like it"].map { app.buttons[$0].frame.minY }
+        XCTAssertEqual(reactionOrder, reactionOrder.sorted(), "Love It, Like It, Fine, Didn't Like from top to bottom")
         transition(app.buttons["Liked it"], to: app.buttons["Too Tough"])
         // With one opponent, Too Tough is a legitimate ordinary stop and saves
         // automatically. Multi-opponent Undo is covered in dedicated regression.

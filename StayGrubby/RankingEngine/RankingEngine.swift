@@ -1,11 +1,18 @@
 import Foundation
 
+/// First-impression reaction, in display order. Love It (owner, November 24, 2026) is its own reaction:
+/// a higher starting position for the adaptive comparisons and its own display band, never a BT input.
 nonisolated enum InitialReaction: String, Codable, CaseIterable, Identifiable {
-    case liked = "Liked it", fine = "It was fine", disliked = "Didn't like it"
+    case loved = "Loved it", liked = "Liked it", fine = "It was fine", disliked = "Didn't like it"
     var id: String { rawValue }
+    /// Placement prior only (where the first comparison starts); comparisons decide the final order.
     var percentile: Double {
-        switch self { case .liked: 0.2; case .fine: 0.5; case .disliked: 0.8 }
+        switch self { case .loved: 0.05; case .liked: 0.2; case .fine: 0.5; case .disliked: 0.8 }
     }
+    /// Written to the original reaction fields that builds up to 1.0 (9) and the pre-Love-It server read.
+    /// They know only three reactions, so Love It degrades there to the nearest one, Liked it. The
+    /// distinct value lives in the semantic fields (ScoreCalibration), which those readers ignore.
+    var compatibilityValue: String { self == .loved ? InitialReaction.liked.rawValue : rawValue }
 }
 
 nonisolated enum ComparisonAnswer { case newItem, existingItem, tooTough, skip }
@@ -179,7 +186,8 @@ nonisolated struct RankingEngine {
             if cumulative >= 0.975 { upper = slot; break }
         }
         let estimate = analysis?.estimates[itemID]
-        return SessionDiagnostics(version: 2, startedAt: startedAt, initialReaction: reaction.rawValue,
+        return SessionDiagnostics(version: 2, startedAt: startedAt, initialReaction: reaction.compatibilityValue,
+                                  initialSemanticReaction: reaction.rawValue,
                                   existingItemCount: orderedIDs.count, comparisonCount: evidence.count,
                                   skipCount: answers.count - evidence.count, totalAnswerActions: totalAnswerActions,
                                   undoCount: undoCount, stopReason: stopReason,

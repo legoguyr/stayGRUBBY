@@ -19,3 +19,6 @@ Website/.wrangler/
 
 # Wrangler local runtime state when launched from the repository root.
 .wrangler/
+
+# Local App Store review media (synthetic screenshots, demo recordings); never committed
+/AppStoreDrafts/

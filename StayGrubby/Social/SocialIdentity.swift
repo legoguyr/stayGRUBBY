@@ -77,4 +77,10 @@ nonisolated struct SocialPayload: Codable, Sendable {
     var expectedMainID: UUID?
     /// The Dish identity a Recipe belongs to (`recipes.dish_id`).
     var recipeDishID: UUID?
+    /// Staff moderation (`api.moderation_review`): report, decision and queue cursor. `afterTime` is the
+    /// server's own `createdAt` text, sent back unchanged so the cursor keeps full precision.
+    var reportID: UUID?
+    var decision: String?
+    var afterID: UUID?
+    var afterTime: String?
 }

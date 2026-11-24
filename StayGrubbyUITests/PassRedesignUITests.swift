@@ -51,6 +51,9 @@ final class PassRedesignUITests: StayGrubbyUITestCase {
         app.buttons["comment-send"].tap()
         let mine = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'Mint is a great call'")).firstMatch
         XCTAssertTrue(mine.waitForExistence(timeout: 8)); shot("Comments sheet", app)
+        let author = app.staticTexts.matching(NSPredicate(format: "identifier == 'comment-author' AND label == 'You'")).firstMatch
+        XCTAssertTrue(author.exists, "The commenter's name is its own line")
+        XCTAssertLessThanOrEqual(author.frame.maxY, mine.frame.minY + 1, "Name sits above the comment text")
         let delete = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'comment-delete-'")).firstMatch
         XCTAssertTrue(delete.exists, "Your own comment can be 86'd")
         app.navigationBars["Comments"].buttons["Done"].tap()

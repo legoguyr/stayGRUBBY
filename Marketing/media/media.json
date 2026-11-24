@@ -1,0 +1,69 @@
+{
+  "note": "Marketing-only media slots. Website slots (Website/media/media.json) are reused automatically, so a screenshot or photo supplied once serves both. Prepare files with `python3 Website/prepare_media.py`-style resizing or export at the listed size; never use private libraries, debug fixtures or invented screens.",
+  "slots": [
+    {
+      "name": "photo-hero",
+      "kind": "photo",
+      "file": "photo-hero.jpg",
+      "width": 1080,
+      "height": 1350,
+      "need": "Hero food photo for the Introducing post, 4:5 portrait, owned/licensed, room for type in the lower third"
+    },
+    {
+      "name": "photo-story",
+      "kind": "photo",
+      "file": "photo-story.jpg",
+      "width": 1080,
+      "height": 1920,
+      "need": "Vertical food photo for the beta Story, 9:16, owned/licensed"
+    },
+    {
+      "name": "bible-screen",
+      "kind": "screenshot",
+      "file": "bible-screen.jpg",
+      "width": 590,
+      "height": 1279,
+      "need": "Food Bible screen or a Recipe page, safe demo account, portrait 1179x2556 or 1290x2796"
+    },
+    {
+      "name": "announce-screen",
+      "kind": "screenshot",
+      "file": "announce-screen.jpg",
+      "width": 590,
+      "height": 1279,
+      "need": "Per announcement: screenshot of the new feature, replaced for each use"
+    },
+    {
+      "name": "photo-feed-story",
+      "kind": "photo",
+      "file": "photo-feed-story.jpg",
+      "width": 1080,
+      "height": 1350,
+      "need": "lib-feed-23: plated food photo, 4:5; top two-thirds visible"
+    },
+    {
+      "name": "photo-story-2",
+      "kind": "photo",
+      "file": "photo-story-2.jpg",
+      "width": 1080,
+      "height": 1920,
+      "need": "lib-story-11: vertical food photo, 9:16; top 60% visible"
+    },
+    {
+      "name": "photo-versus-a",
+      "kind": "photo",
+      "file": "photo-versus-a.jpg",
+      "width": 936,
+      "height": 420,
+      "need": "This or That tile A (Mushroom Risotto, or rename the choice): wide crop, owned food photo"
+    },
+    {
+      "name": "photo-versus-b",
+      "kind": "photo",
+      "file": "photo-versus-b.jpg",
+      "width": 936,
+      "height": 420,
+      "need": "This or That tile B (Pan-Seared Duck Breast, or rename the choice): wide crop, owned food photo"
+    }
+  ]
+}

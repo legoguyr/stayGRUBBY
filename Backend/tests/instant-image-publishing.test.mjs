@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';
-const migration='20261118050952_report_based_image_publishing.sql';
+const migration='20261121161726_report_based_image_publishing.sql';
 const {db,users,actor,rpc,cooking,check,rejects,finish}=await fixture({before:migration});
 const photo=randomUUID(),privatePhoto=randomUUID(),recipeID=randomUUID(),avatar=randomUUID();
 const path=id=>users[0].id+'/'+id+'.jpg';

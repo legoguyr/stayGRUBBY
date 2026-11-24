@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261117142805_private_recipe_authorization.sql';
+const migration = '20261121161512_private_recipe_authorization.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 const privateID = randomUUID(), sharedID = randomUUID(), postID = randomUUID(), photoID = randomUUID();
 const photoPath = users[0].id + '/' + photoID + '.jpg';

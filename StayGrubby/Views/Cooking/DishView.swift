@@ -98,7 +98,7 @@ struct DishView: View {
         .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in Task { await loadRecipe() } }
         .onChange(of: phase) { _, next in recipe.cancelPending(); if next == .active { Task { await loadRecipe(onlyIfStale: true) } } }
         .onChange(of: recipe.deleted) { _, deleted in
-            // An uncooked Dish leaves with its Recipe; a cooked Dish stays and shows Link a Recipe.
+            // Deleting a Recipe never deletes the Dish; an uncooked Dish page closes, a cooked one shows Add Recipe.
             if deleted, (dish?.attempts.isEmpty ?? true) { dismiss() } else if deleted { recipe.deleted = false; tab = .ranking }
         }
         .onDisappear { recipe.cancelPending() }
@@ -227,7 +227,12 @@ private struct DishRankingTab: View {
     var body: some View {
         if let cook { metadata(cook) }
         if let dish {
-            if let description = dish.publicDescription { Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description") }
+            // The shown cook's own description; a cook without one yet (legacy) still shows the old Dish text.
+            // An empty description is a deliberate clear and shows nothing.
+            if let description = cook.map({ $0.publicDescription ?? dish.publicDescription }) ?? dish.publicDescription,
+               !description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(description).font(SGTheme.TypeRole.body).accessibilityIdentifier("dish-public-description")
+            }
             if let notes = dish.privateNotes {
                 VStack(alignment: .leading, spacing: SGTheme.Space.small) {
                     SGSectionHeader(title: "Dish Notes · private")

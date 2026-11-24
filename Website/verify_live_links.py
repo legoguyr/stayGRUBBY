@@ -61,7 +61,7 @@ def verify():
     acquisition_label = "Join StayGrubby Beta" if is_testflight else "Download StayGrubby"
     evidence = []
     with tempfile.TemporaryDirectory(prefix="staygrubby-public-http-") as tmp:
-        for path in paths + ["/beta", *not_found, "/", "/privacy", "/support", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
+        for path in paths + ["/beta", *not_found, "/", "/privacy", "/support", "/community-guidelines", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
             for method in ["GET", "HEAD"]:
                 header, body = Path(tmp)/"headers", Path(tmp)/"body"
                 args = ["curl", "-sS", "--connect-timeout", "8", "--max-time", "20", "--suppress-connect-headers",
@@ -89,7 +89,8 @@ def verify():
                         if path in not_found:
                             assert not_found[path] in html, (path, "missing branded 404")
                         if path == "/":
-                            verify_link(html, "/beta", "Join the Beta")
+                            # Website V2: homepage CTAs use the same configured Apple destination as /beta.
+                            verify_link(html, beta, "Join the Beta" if is_testflight else "Download on the App Store")
                         if path == "/beta" and is_testflight:
                             assert "<h1>We’re in beta.</h1>" in html, (path, "missing beta heading")
                         if path in paths or path == "/beta":

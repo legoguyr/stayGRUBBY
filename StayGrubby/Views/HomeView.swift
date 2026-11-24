@@ -50,7 +50,8 @@ struct HomeView: View {
                 Button("Try Again", action: prepareCooking)
             }
         } else {
-            SGLoadingState(label: "Opening Rankings")
+            // The same opening screen as session restore, so launch never changes screens twice.
+            SGLaunchView(label: "Opening your kitchen")
         }
     }
 

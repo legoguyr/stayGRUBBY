@@ -32,6 +32,10 @@ struct SocialPostComposer: View {
     @State private var includePhoto = false
     @State private var postDescription = ""
     @State private var descriptionInitialized = false
+    /// The text the composer opened with: this cook's own description, or (legacy cook) its fallback.
+    @State private var initialDescription = ""
+    /// Post was tapped after a description change: wait for this cook to sync, then publish.
+    @State private var publishWhenSynced = false
     @State private var attachment = RecipeAttachmentModel()
     @Environment(\.accountContentCache) private var cache
     @Environment(\.modelContext) private var context
@@ -100,17 +104,17 @@ struct SocialPostComposer: View {
                         .font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 RecipeShareChoice(model: attachment) { Task { await resolveRecipe() } }
-                Section("Public Description · optional") {
-                    TextField("Tell your Sous Chefs about this Dish", text: $postDescription, axis: .vertical)
+                Section("Description · optional") {
+                    TextField("Tell your Sous Chefs about this cook", text: $postDescription, axis: .vertical)
                         .lineLimit(3...8).accessibilityIdentifier("post-description-input")
-                    Text("Your Dish’s Public Description, shown as the caption. Changing it here updates the Dish too. Private Notes are never shared.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
+                    Text("This cook’s description, shown as the caption. Changing it here changes it on this cook in Grub Rank too; your other cooks keep their own. Private Notes are never shared.").font(SGTheme.TypeRole.footnote).foregroundStyle(.secondary)
                 }
                 if let identity {
                     if !identity.isConfigured {
                         Button("Set up Profile") { editingIdentity = true }.accessibilityIdentifier("social-share-setup")
                     } else {
                         Text("Posting as \(identity.handle). Until you have Sous Chefs, only you can see the post.")
-                        if revision == nil { Text("Waiting for this cook to sync.").accessibilityIdentifier("social-share-waiting-for-cook") }
+                        if revision == nil { Text(publishWhenSynced ? "Saving this cook’s description, then posting…" : "Waiting for this cook to sync.").accessibilityIdentifier("social-share-waiting-for-cook") }
                         else if checkingPost { ProgressView("Checking for an existing post") }
                         if let publicationError {
                             Text(publicationError).accessibilityIdentifier("social-share-error")
@@ -130,6 +134,10 @@ struct SocialPostComposer: View {
             .navigationTitle("Post to The Pass").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { if !didPublish { Button("Cancel") { Task { await cancel() } }.disabled(busy) } } }
             .interactiveDismissDisabled(busy).task { await load() }
+            .onChange(of: revision) { _, next in
+                guard publishWhenSynced, next != nil else { return }
+                publishWhenSynced = false; Task { await publish() }
+            }
             .task { await resolveRecipe() }
             .task(id: lookup) { await reconcile() }
             .onReceive(NotificationCenter.default.publisher(for: .socialContentChanged)) { _ in lookupGeneration += 1 }
@@ -143,24 +151,31 @@ struct SocialPostComposer: View {
     }
     private func load() async {
         if !descriptionInitialized {
-            postDescription = attempt.dish?.publicDescription ?? ""
+            // This cook's own description; a legacy cook (nil) starts from its fallback, shown but not saved.
+            postDescription = attempt.publicDescription ?? attempt.dish?.publicDescription ?? ""
+            initialDescription = postDescription
             // Posting a cook that has a photo includes it by default (owner decision, Nov 11 2026); the toggle
             // stays visible to post without it. Off when the display bytes aren't on this device.
             includePhoto = photo.map(SocialMediaRules.validJPEG) == true
             descriptionInitialized = true
         }
         guard let request else { return }
+        if attempt.publicDescription == nil, let legacy = try? await CookDescriptionService.load(attempt.id, request: request),
+           legacy.publicDescription == nil, postDescription == initialDescription {
+            postDescription = legacy.effectiveDescription ?? ""; initialDescription = postDescription
+        }
         do { identity = try JSONDecoder().decode(SocialIdentity.self, from: await request("social_identity", "get", .init())) }
         catch is CancellationError { } catch { failed = true }
     }
-    /// The composer's description is the Dish's Public Description: an explicit publish that changed it
-    /// saves it to the Dish (synced as usual) and brings the Dish's other shared posts in line.
-    private func adoptPublicDescription() {
-        guard let dish = attempt.dish, PublicDescriptionSync.trimmed(dish.publicDescription) != PublicDescriptionSync.trimmed(postDescription),
-              DishTextPolicy.valid(description: postDescription, notes: dish.privateNotes) else { return }
-        do { try CookingStore.editDishText(dish, publicDescription: postDescription, privateNotes: dish.privateNotes ?? "", context: context) }
-        catch { return }
-        if let request { Task { await PublicDescriptionSync.pushToPosts(of: dish, request: request) } }
+    /// Cook descriptions (November 21, 2026): a changed description is saved on this exact cook through the
+    /// cooking journal (never the Dish, never other posts). Returns true when the cook changed, so the post
+    /// waits for that cook to sync and then reads the caption from it.
+    private func saveCookDescription() -> Bool {
+        let text = CookDescriptionPolicy.normalized(postDescription)
+        let unchangedLegacy = attempt.publicDescription == nil && text == CookDescriptionPolicy.normalized(initialDescription)
+        guard !unchangedLegacy, attempt.publicDescription != text else { return false }
+        do { try CookingStore.editCookDescription(attempt, publicDescription: text, context: context); return true }
+        catch { publicationError = "Couldn’t save this cook’s description. Try again."; return false }
     }
     private func resolveRecipe() async {
         await attachment.resolve(attemptID: attempt.id, postID: nil, dish: attempt.dish, request: request, cache: cache)
@@ -185,6 +200,9 @@ struct SocialPostComposer: View {
         }
     }
     private func publish() async {
+        // Save the description on the cook first; if that cook now has to sync, publish once it has.
+        if saveCookDescription(), revision == nil { publishWhenSynced = true; return }
+        if publicationError != nil { return }
         guard let request, let revision, !checkingPost, !didPublish else { return }
         busy = true; failed = false; publicationError = nil
         defer { busy = false }
@@ -198,7 +216,10 @@ struct SocialPostComposer: View {
             if originalPostID == nil { originalPostID = postID }
             func send(_ revision: Int) async throws -> SocialPost {
                 try await SocialPostPublisher.publish(attemptID: attempt.id, postID: postID, revision: revision,
-                    includePhoto: includePhoto, photo: bytes, request: request, media: media, postDescription: postDescription, sharedRecipe: sharedRecipe, scoreLocked: model.scoreText == nil, prepared: { post in
+                    includePhoto: includePhoto, photo: bytes, request: request, media: media,
+                    // The caption is read from the cook. Only an untouched legacy caption is passed, which the
+                    // server adopts for a cook that has no description of its own yet.
+                    postDescription: attempt.publicDescription == nil ? postDescription : nil, sharedRecipe: sharedRecipe, scoreLocked: model.scoreText == nil, prepared: { post in
                         savedPost = post; postID = post.id
                     })
             }
@@ -214,7 +235,6 @@ struct SocialPostComposer: View {
             alreadyShared = post.id != originalPostID
             didPublish = true
             publication?.sharedManually(attempt.rankedItemID)
-            adoptPublicDescription()
             NotificationCenter.default.post(name: .socialContentChanged, object: nil)
         } catch is CancellationError {} catch {
             await reconcile()

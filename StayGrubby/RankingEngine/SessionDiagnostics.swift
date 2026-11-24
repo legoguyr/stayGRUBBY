@@ -14,7 +14,10 @@ nonisolated enum SessionStopReason: String, Codable {
 nonisolated struct SessionDiagnostics: Codable {
     let version: Int
     let startedAt: Date
+    /// Original three-value field; Love It is written as Liked it here (`InitialReaction.compatibilityValue`).
     let initialReaction: String
+    /// The actual first reaction, including Love It. Absent on cooks ranked by builds up to 1.0 (9).
+    var initialSemanticReaction: String? = nil
     let existingItemCount: Int
     let comparisonCount: Int
     let skipCount: Int

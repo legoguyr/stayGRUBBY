@@ -81,6 +81,10 @@ nonisolated struct SocialOnboardingDraft: Codable, Equatable {
         defaults.set(true, forKey: doneKey(scope)); defaults.removeObject(forKey: key(scope))
     }
     static func dismiss(_ scope: String, defaults: UserDefaults = .standard) { defaults.set(true, forKey: dismissedKey(scope)) }
+    /// Removes every trace of a scope (the internal first-run preview's temporary scope).
+    static func discard(_ scope: String, defaults: UserDefaults = .standard) {
+        for key in [key(scope), doneKey(scope), dismissedKey(scope)] { defaults.removeObject(forKey: key) }
+    }
 }
 
 /// Decides once per account session whether to present setup, then presents it full screen.
@@ -90,12 +94,26 @@ struct SocialOnboardingHost: ViewModifier {
     @Environment(\.modelContext) private var context
     @State private var presentation = SocialOnboardingPolicy.Presentation.none
     @State private var identity: SocialIdentity?
+    @State private var touring = false
 
+    /// First run is one full-screen flow (Build 7): kitchen setup, then the kitchen tour, then Grub Rank.
     func body(content: Content) -> some View {
         content
             .task(id: scope) { await evaluate() }
-            .fullScreenCover(isPresented: Binding(get: { presentation != .none && scope != nil }, set: { if !$0 { presentation = .none } })) {
-                SocialOnboardingView(scope: scope ?? "", identity: identity, required: presentation == .required) { presentation = .none }
+            .fullScreenCover(isPresented: Binding(get: { (presentation != .none || touring) && scope != nil },
+                                                  set: { if !$0 { presentation = .none; touring = false } })) {
+                Group {
+                    if touring {
+                        TutorialView { if let scope { FirstRunTutorial.complete(scope) }; touring = false }
+                            .transition(.opacity)
+                    } else {
+                        SocialOnboardingView(scope: scope ?? "", identity: identity, required: presentation == .required) {
+                            presentation = .none
+                            // A new account goes straight on to the tour in the same cover.
+                            if let scope, FirstRunTutorial.isPending(scope) { withAnimation(SGTheme.Motion.standard) { touring = true } }
+                        }
+                    }
+                }
             }
     }
     private var enabled: Bool {
@@ -106,7 +124,14 @@ struct SocialOnboardingHost: ViewModifier {
         return true
     }
     private func evaluate() async {
-        guard enabled, let request, let scope, !SocialOnboardingDraft.isComplete(scope) else { return }
+        guard enabled, let scope else { return }
+        if SocialOnboardingDraft.isComplete(scope) {
+            // Setup finished earlier. An interrupted new-account tour resumes (on-device, no request);
+            // everyone else is an existing account and never sees it.
+            if FirstRunTutorial.isPending(scope) { touring = true } else { FirstRunTutorial.bypass(scope) }
+            return
+        }
+        guard let request else { return }
         let hasCooks = ((try? context.fetchCount(FetchDescriptor<CookingAttempt>())) ?? 0) > 0
         let draft = SocialOnboardingDraft.load(scope)
         do {
@@ -115,9 +140,15 @@ struct SocialOnboardingHost: ViewModifier {
             identity = current
             // A draft past the profile step means the username is saved; resume privacy/photo.
             let resuming = (draft?.step ?? .profile) != .profile && current.isConfigured
-            if current.isConfigured && !resuming { SocialOnboardingDraft.complete(scope); return }
-            presentation = SocialOnboardingPolicy.presentation(identity: current, hasCooks: hasCooks,
+            if current.isConfigured && !resuming {
+                SocialOnboardingDraft.complete(scope)
+                if FirstRunTutorial.isPending(scope) { touring = true } else { FirstRunTutorial.bypass(scope) }
+                return
+            }
+            let next = SocialOnboardingPolicy.presentation(identity: current, hasCooks: hasCooks,
                 dismissed: SocialOnboardingDraft.isDismissed(scope), resuming: resuming)
+            if next == .required { FirstRunTutorial.begin(scope) } else { FirstRunTutorial.bypass(scope) }
+            presentation = next
         } catch { /* Offline or unavailable: never block the library; evaluate again next launch. */ }
     }
 }
@@ -127,8 +158,11 @@ struct SocialOnboardingView: View {
     let identity: SocialIdentity?
     let required: Bool
     let close: () -> Void
+    /// False in the internal first-run preview: finishing must not make the real app reload anything.
+    let announcesChanges: Bool
     @Environment(\.socialRequest) private var request
     @Environment(\.socialMedia) private var media
+    @Environment(\.featureFlags) private var flags
     @State private var draft: SocialOnboardingDraft
     @State private var saving = false
     @State private var failure: SocialIdentitySaveFailure?
@@ -138,8 +172,8 @@ struct SocialOnboardingView: View {
     @State private var photoFailed = false
     @FocusState private var focused: Bool
 
-    init(scope: String, identity: SocialIdentity?, required: Bool, close: @escaping () -> Void) {
-        self.scope = scope; self.identity = identity; self.required = required; self.close = close
+    init(scope: String, identity: SocialIdentity?, required: Bool, announcesChanges: Bool = true, close: @escaping () -> Void) {
+        self.scope = scope; self.identity = identity; self.required = required; self.announcesChanges = announcesChanges; self.close = close
         var initial = SocialOnboardingDraft.load(scope) ?? SocialOnboardingDraft()
         if initial.displayName.isEmpty { initial.displayName = identity?.displayName ?? "" }
         if initial.username.isEmpty { initial.username = identity?.username ?? "" }
@@ -189,7 +223,7 @@ struct SocialOnboardingView: View {
             if let logo = OfficialBrandWordmark.image {
                 Image(uiImage: logo).resizable().scaledToFit().frame(width: 96, height: 54).accessibilityLabel("#stayGRUBBY")
             }
-            SGEyebrow(text: "Step \(draft.step.rawValue + 1) of 3")
+            SGEyebrow(text: "Your kitchen · \(draft.step.rawValue + 1) of 3")
             Text(title).font(SGTheme.TypeRole.hero).fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader).accessibilityIdentifier("onboarding-title")
             Text(subtitle).font(SGTheme.TypeRole.body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -200,8 +234,8 @@ struct SocialOnboardingView: View {
     }
     private var subtitle: String {
         switch draft.step {
-        case .profile: "Your name and username are how Sous Chefs recognize you. Your cooking stays private until you share it."
-        case .privacy: "You can change this anytime in Settings."
+        case .profile: "Sous Chefs find and tag you by your @username. Everything you cook stays private until you share it."
+        case .privacy: "Private is the default. You can change it anytime in Settings."
         case .photo: "Optional. Your initials are used until you add one."
         }
     }
@@ -227,6 +261,12 @@ struct SocialOnboardingView: View {
                     .font(SGTheme.TypeRole.secondary)
                     .foregroundStyle(SocialOnboardingPolicy.usernameMessage(draft.username) == nil ? Color.secondary : SGTheme.ColorToken.destructive)
                     .accessibilityIdentifier("onboarding-username-hint")
+            }
+            // App Review 1.2: people who can share agree to the Terms and Community Guidelines first.
+            if flags.isOn(.legalTerms) {
+                Text("By continuing, you agree to the [Terms of Use](\(LegalDocuments.termsOfUse.absoluteString)) and [Community Guidelines](\(LegalDocuments.communityGuidelines.absoluteString)).")
+                    .font(SGTheme.TypeRole.secondary).foregroundStyle(.secondary).tint(SGTheme.ColorToken.accent)
+                    .fixedSize(horizontal: false, vertical: true).accessibilityIdentifier("onboarding-terms-agreement")
             }
         }
     }
@@ -326,7 +366,7 @@ struct SocialOnboardingView: View {
     }
     private func finish() {
         SocialOnboardingDraft.complete(scope)
-        NotificationCenter.default.post(name: .socialContentChanged, object: nil) // The Pass and My Kitchen pick up the new identity.
+        if announcesChanges { NotificationCenter.default.post(name: .socialContentChanged, object: nil) } // The Pass and My Kitchen pick up the new identity.
         close()
     }
 }

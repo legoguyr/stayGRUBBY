@@ -1,0 +1,196 @@
+{
+  "note": "Creative library for owner selection (feed, Stories, carousels, Reels). Edit copy here; *word* highlights, \\n breaks lines. Only live V1 features are shown; examples are captioned illustrative previews. 'feature' notes map to the campaign brief's ten features.",
+  "footer": {"url": "staygrubby.com", "cta": "Join the iPhone beta"},
+  "designs": [
+    {"id": "lib-feed-07-cook-rank-share", "format": "feed", "theme": "red", "layout": "slogan", "size": "xl", "alternate": true,
+     "headline": "Cook it.\nRank it.\nShare it.", "body": "The cooking app for what you actually make."},
+
+    {"id": "lib-feed-08-your-cooking-has-a-story", "format": "feed", "theme": "cream", "layout": "slogan", "size": "m",
+     "headline": "Your cooking has a story.\n*Share it.*", "body": "Every cook ranked, remembered in My Kitchen and ready for The Pass.", "feature": 4},
+
+    {"id": "lib-feed-09-more-than-recipes", "format": "feed", "theme": "dark", "layout": "slogan", "size": "m",
+     "headline": "More than recipes.\nIt's what you *make* of them.", "body": "Food Bible keeps the Recipe. My Kitchen keeps every cook of it.", "feature": 5},
+
+    {"id": "lib-feed-10-this-or-that", "format": "feed", "theme": "cream", "layout": "versus", "glyph": "TabRankFill", "eyebrow": "This or That",
+     "headline": "Which one *won?*", "size": "m", "body": "Pick between two things you made. Your Grub Rank builds itself.",
+     "choices": ["Mushroom Risotto", "Pan-Seared Duck Breast"], "chosen": "a", "feature": 1},
+
+    {"id": "lib-feed-11-signature-dishes", "format": "feed", "theme": "red", "layout": "lib-feature", "glyph": "TabRankFill", "eyebrow": "Signature Dishes",
+     "headline": "Your next signature dish starts here.", "size": "m", "body": "Your top three, front and center.",
+     "cards": ["signature"], "zoom": 2.0, "feature": 3},
+
+    {"id": "lib-feed-12-made-it-rank-it", "format": "feed", "theme": "dark", "layout": "lib-feature", "glyph": "TabRankFill", "eyebrow": "Grub Rank",
+     "headline": "Made it? *Rank it.*", "size": "m", "body": "Your highest-ranked creations, in order.", "screen": "rank-screen",
+     "cards": ["rank"], "zoom": 1.85, "feature": 2},
+
+    {"id": "lib-feed-13-every-cook-counts", "format": "feed", "theme": "cream", "layout": "visual-first", "glyph": "TabKitchenFill", "eyebrow": "My Kitchen",
+     "headline": "Every cook *counts.*", "size": "m", "body": "Watch a Dish get better, cook after cook.",
+     "cards": ["progress"], "zoom": 1.6, "feature": 10},
+
+    {"id": "lib-feed-14-your-recipes-your-way", "format": "feed", "theme": "red", "layout": "lib-feature", "glyph": "TabKitchenFill", "eyebrow": "Food Bible",
+     "headline": "Your Recipes. Your way.", "size": "m", "body": "Paste one in or write it from scratch. You review it before it's saved.", "screen": "bible-screen",
+     "cards": ["add-recipe"], "zoom": 1.85, "feature": 5},
+
+    {"id": "lib-feed-15-good-food-is-meant-to-be-shared", "format": "feed", "theme": "cream", "layout": "lib-feature", "glyph": "TabKitchenFill", "eyebrow": "Recipe Sharing",
+     "headline": "Good food is meant to be *shared.*", "size": "m", "body": "Send a Recipe straight to your Sous Chefs.",
+     "cards": ["send-recipe"], "zoom": 1.6, "feature": 6},
+
+    {"id": "lib-feed-16-now-make-it-yours", "format": "feed", "theme": "dark", "layout": "visual-first", "eyebrow": "Rank My Version",
+     "headline": "Your friend made it. *Now make it yours.*", "size": "s", "body": "Cook a Sous Chef's Recipe and rank your version, with credit to them.",
+     "cards": ["rank-my-version"], "zoom": 1.55, "feature": 7},
+
+    {"id": "lib-feed-17-whats-cooking-in-your-circle", "format": "feed", "theme": "red", "layout": "lib-feature", "glyph": "TabPassFill", "eyebrow": "The Pass",
+     "headline": "What's cooking in your circle?", "size": "m", "body": "See what your Sous Chefs actually made.", "screen": "pass-screen",
+     "cards": ["pass-post"], "zoom": 1.9, "feature": 8},
+
+    {"id": "lib-feed-18-cook-compare-connect", "format": "feed", "theme": "cream", "layout": "lib-feature", "glyph": "TabPassFill", "eyebrow": "Community",
+     "headline": "Cook. Compare. *Connect.*", "size": "m", "body": "Give Hands 🙌, leave a comment, ask for the Recipe.",
+     "cards": ["comments"], "zoom": 1.8, "feature": 9},
+
+    {"id": "lib-feed-19-new-ticket", "format": "feed", "theme": "dark", "layout": "visual-first", "eyebrow": "Tickets 🎟️",
+     "headline": "Your Sous Chefs *noticed.*", "size": "m", "body": "Hands, comments and Recipes from your Sous Chefs, all in Tickets.",
+     "cards": ["tickets"], "zoom": 1.55, "feature": 9},
+
+    {"id": "lib-feed-20-made-in-your-kitchen", "format": "feed", "theme": "red", "layout": "slogan", "size": "l",
+     "headline": "Made in your kitchen.\n*Shared with theirs.*"},
+
+    {"id": "lib-feed-21-not-just-recipes", "format": "feed", "theme": "cream", "layout": "slogan", "size": "l",
+     "headline": "Not just recipes.\n*Real cooking.*", "body": "Share what you actually cook. See what your friends make."},
+
+    {"id": "lib-feed-22-your-kitchen-your-community", "format": "feed", "theme": "dark", "layout": "slogan", "size": "m", "alternate": true,
+     "headline": "Your kitchen.\nYour creations.\nYour community."},
+
+    {"id": "lib-feed-23-every-dish-has-a-story", "format": "feed", "theme": "cream", "layout": "photo", "photo": "photo-feed-story",
+     "photo_need": "4:5 food photo, plated, natural light",
+     "headline": "Every dish has a *story.*", "body": "Yours starts with the first cook."},
+
+    {"id": "lib-feed-24-cooked-together", "format": "feed", "theme": "red", "layout": "visual-first", "eyebrow": "Tag a Sous Chef 🧑‍🍳",
+     "headline": "Cooked together? *Tag them.*", "size": "m", "body": "Credit your Sous Chef right on the cook.",
+     "cards": ["tag-chef"], "zoom": 1.9, "feature": 9},
+
+    {"id": "lib-feed-25-beta-open", "format": "feed", "theme": "dark", "layout": "brand",
+     "headline": "The iPhone beta is *open.*", "body": "Join on Apple TestFlight at staygrubby.com"},
+
+    {"id": "lib-feed-26-score-payoff", "format": "feed", "theme": "cream", "layout": "score", "score": "9.4", "dish": "Herb-Crusted Rack of Lamb",
+     "headline": "Ranked by the cook.", "body": "No stars. No sliders. Just this or that.", "feature": 2},
+
+    {"id": "lib-story-03-cook-rank-share", "format": "story", "theme": "red", "layout": "slogan", "alternate": true,
+     "headline": "Cook it.\nRank it.\nShare it.", "link": "Join the iPhone beta"},
+
+    {"id": "lib-story-04-this-or-that-poll", "format": "story", "theme": "cream", "layout": "versus", "eyebrow": "This or That", "glyph": "TabRankFill",
+     "headline": "Which would *you* make?", "size": "s", "choices": ["Mushroom Risotto", "Pan-Seared Duck Breast"],
+     "sticker": "Add a Poll sticker here", "feature": 1},
+
+    {"id": "lib-story-05-now-make-it-yours", "format": "story", "theme": "dark", "layout": "lib-feature", "eyebrow": "Rank My Version",
+     "headline": "Your friend made it. *Now make it yours.*", "size": "s", "cards": ["rank-my-version"], "zoom": 1.9,
+     "link": "Join the iPhone beta", "feature": 7},
+
+    {"id": "lib-story-06-whats-cooking", "format": "story", "theme": "red", "layout": "lib-feature", "glyph": "TabPassFill", "eyebrow": "The Pass",
+     "headline": "What's cooking in your circle?", "size": "s", "cards": ["pass-post"], "zoom": 2.3, "screen": "pass-screen",
+     "link": "Join the iPhone beta", "feature": 8},
+
+    {"id": "lib-story-07-every-cook-counts", "format": "story", "theme": "cream", "layout": "lib-feature", "glyph": "TabKitchenFill", "eyebrow": "My Kitchen",
+     "headline": "Every cook *counts.*", "cards": ["progress"], "zoom": 1.9,
+     "link": "Join the iPhone beta", "feature": 10},
+
+    {"id": "lib-story-08-kitchen-keeps-score", "format": "story", "theme": "dark", "layout": "lib-feature", "glyph": "TabRankFill", "eyebrow": "Grub Rank",
+     "headline": "Your kitchen keeps *score.*", "size": "s", "cards": ["rank"], "zoom": 2.2, "screen": "rank-screen",
+     "link": "Join the iPhone beta", "feature": 2},
+
+    {"id": "lib-story-09-meant-to-be-shared", "format": "story", "theme": "red", "layout": "lib-feature", "eyebrow": "Recipe Sharing",
+     "headline": "Good food is meant to be *shared.*", "size": "s", "cards": ["send-recipe"], "zoom": 1.7,
+     "link": "Join the iPhone beta", "feature": 6},
+
+    {"id": "lib-story-10-made-it-question", "format": "story", "theme": "cream", "layout": "slogan", "size": "m",
+     "headline": "Made it?\n*Rank it.*", "body": "What did you cook this week?", "sticker": "Add a Question sticker here"},
+
+    {"id": "lib-story-11-every-dish-photo", "format": "story", "theme": "dark", "layout": "photo", "photo": "photo-story-2",
+     "photo_need": "9:16 food photo, top 60% of the frame",
+     "headline": "Every dish has a *story.*", "link": "Join the iPhone beta"},
+
+    {"id": "lib-story-12-signature-dishes", "format": "story", "theme": "red", "layout": "lib-feature", "eyebrow": "Signature Dishes", "glyph": "TabRankFill",
+     "headline": "Your top three, front and center.", "size": "s", "cards": ["signature"], "zoom": 2.3,
+     "link": "Join the iPhone beta", "feature": 3},
+
+    {"id": "lib-story-13-get-in-early", "format": "story", "theme": "dark", "layout": "brand",
+     "headline": "Get in *early.*", "body": "The #stayGRUBBY iPhone beta is open on Apple TestFlight.", "link": "Tap the link to join"},
+
+    {"id": "lib-story-14-food-bible", "format": "story", "theme": "cream", "layout": "lib-feature", "eyebrow": "Food Bible", "glyph": "TabKitchenFill",
+     "headline": "More than recipes.", "body": "Paste one in or write your own. Every Recipe in one place.", "cards": ["add-recipe"], "zoom": 1.9,
+     "screen": "bible-screen", "link": "Join the iPhone beta", "feature": 5},
+
+    {"id": "carousel-1-make-it-yours", "format": "feed", "theme": "dark", "layout": "slogan", "note": "Feature 7 + 6 + 8 story: friend's cook → Recipe → your version.",
+     "slides": [
+       {"layout": "slogan", "size": "l", "headline": "Your friend made it.\n*Now make it yours.*"},
+       {"layout": "lib-feature", "theme": "red", "eyebrow": "1 · The Pass", "glyph": "TabPassFill", "headline": "Spot it on The Pass.", "size": "m", "cards": ["pass-post"], "zoom": 1.9},
+       {"layout": "lib-feature", "theme": "cream", "eyebrow": "2 · Get the Recipe", "headline": "Grab the Recipe.", "size": "m", "body": "Or have it sent straight to you.", "cards": ["send-recipe"], "zoom": 1.55},
+       {"layout": "lib-feature", "theme": "dark", "eyebrow": "3 · Rank My Version", "headline": "Make it. *Rank your version.*", "size": "m", "cards": ["rank-my-version"], "zoom": 1.55},
+       {"layout": "brand", "theme": "red", "headline": "Made in your kitchen. Shared with theirs.", "body": "Join the iPhone beta at staygrubby.com"}
+     ]},
+
+    {"id": "carousel-2-how-ranking-works", "format": "feed", "theme": "cream", "layout": "slogan", "note": "Features 1–3.",
+     "slides": [
+       {"layout": "slogan", "size": "m", "headline": "How do you rank food *you* made?"},
+       {"layout": "versus", "eyebrow": "1 · This or That", "glyph": "TabRankFill", "headline": "Pick one.", "size": "m", "body": "Two things you cooked. Which was better?", "choices": ["Mushroom Risotto", "Pan-Seared Duck Breast"], "chosen": "a"},
+       {"layout": "lib-feature", "theme": "red", "eyebrow": "2 · Grub Rank", "glyph": "TabRankFill", "headline": "Your Grub Rank builds itself.", "size": "m", "cards": ["rank"], "zoom": 1.8},
+       {"layout": "lib-feature", "theme": "dark", "eyebrow": "3 · Signature Dishes", "glyph": "TabRankFill", "headline": "Your top three get the spotlight.", "size": "m", "cards": ["signature"], "zoom": 1.95},
+       {"layout": "brand", "theme": "red", "headline": "Cook it. Rank it. Share it.", "body": "Join the iPhone beta at staygrubby.com"}
+     ]},
+
+    {"id": "carousel-3-every-cook-counts", "format": "feed", "theme": "red", "layout": "score", "note": "Feature 10 progress, one Dish across four cooks (illustrative).",
+     "slides": [
+       {"layout": "slogan", "theme": "cream", "size": "l", "headline": "Every cook *counts.*", "body": "One Dish. Four cooks. Watch it improve."},
+       {"layout": "score", "theme": "cream", "score": "6.2", "dish": "Sourdough Loaf · First loaf", "headline": "Cook 1.", "body": "Dense. Still proud of it."},
+       {"layout": "score", "theme": "cream", "score": "7.4", "dish": "Sourdough Loaf · Longer proof", "headline": "Cook 2.", "body": "Better rise. Better crumb."},
+       {"layout": "score", "theme": "cream", "score": "8.3", "dish": "Sourdough Loaf · Higher hydration", "headline": "Cook 3.", "body": "Open crumb. Getting there."},
+       {"layout": "score", "theme": "red", "score": "9.1", "dish": "Sourdough Loaf · Cold overnight proof", "headline": "Cook 4.", "body": "Signature Dish material."},
+       {"layout": "lib-feature", "theme": "dark", "eyebrow": "My Kitchen", "glyph": "TabKitchenFill", "headline": "Every cook, remembered.", "size": "m", "cards": ["progress"], "zoom": 1.6}
+     ]},
+
+    {"id": "carousel-4-whats-inside", "format": "feed", "theme": "red", "layout": "brand", "note": "Feature tour 4, 5, 6, 8, 9, 2.",
+     "slides": [
+       {"layout": "brand", "headline": "What's inside #stayGRUBBY", "body": "Swipe through the kitchen."},
+       {"layout": "lib-feature", "theme": "cream", "eyebrow": "My Kitchen", "glyph": "TabKitchenFill", "headline": "One Dish. Every cook.", "size": "m", "cards": ["dish"], "zoom": 1.5},
+       {"layout": "lib-feature", "theme": "dark", "eyebrow": "Food Bible", "glyph": "TabKitchenFill", "headline": "Your Recipes. Your way.", "size": "m", "cards": ["recipe"], "zoom": 1.7},
+       {"layout": "lib-feature", "theme": "red", "eyebrow": "Grub Rank", "glyph": "TabRankFill", "headline": "Your best, ranked.", "size": "m", "cards": ["rank"], "zoom": 1.8},
+       {"layout": "lib-feature", "theme": "cream", "eyebrow": "The Pass", "glyph": "TabPassFill", "headline": "What your Sous Chefs made.", "size": "m", "cards": ["pass-post"], "zoom": 1.9},
+       {"layout": "brand", "theme": "dark", "headline": "Your kitchen. Your creations. Your community.", "size": "", "body": "Join the iPhone beta at staygrubby.com"}
+     ]},
+
+    {"id": "reel-1-cook-rank-share", "format": "story", "theme": "red", "layout": "slogan", "note": "Kinetic type, ~7 s.",
+     "reel": [
+       {"headline": "Cook it.", "size": "xl", "seconds": 1.2},
+       {"theme": "cream", "headline": "Rank it.", "size": "xl", "seconds": 1.2},
+       {"theme": "dark", "headline": "Share it.", "size": "xl", "seconds": 1.2},
+       {"layout": "brand", "headline": "Join the iPhone beta.", "body": "staygrubby.com", "seconds": 2.6}
+     ]},
+
+    {"id": "reel-2-this-or-that", "format": "story", "theme": "cream", "layout": "versus", "note": "Comparison → result, ~10 s.",
+     "reel": [
+       {"layout": "slogan", "headline": "Two dishes.\n*One winner.*", "seconds": 1.6},
+       {"eyebrow": "This or That", "glyph": "TabRankFill", "headline": "Which was better?", "size": "s", "choices": ["Mushroom Risotto", "Pan-Seared Duck Breast"], "seconds": 1.8},
+       {"eyebrow": "This or That", "glyph": "TabRankFill", "headline": "Which was better?", "size": "s", "choices": ["Mushroom Risotto", "Pan-Seared Duck Breast"], "chosen": "a", "seconds": 1.4},
+       {"layout": "lib-feature", "theme": "red", "eyebrow": "Grub Rank", "glyph": "TabRankFill", "headline": "Your Grub Rank builds itself.", "size": "s", "cards": ["rank"], "zoom": 2.2, "seconds": 2.4},
+       {"layout": "brand", "theme": "dark", "headline": "Made it? *Rank it.*", "body": "Join the iPhone beta · staygrubby.com", "seconds": 2.4}
+     ]},
+
+    {"id": "reel-3-make-it-yours", "format": "story", "theme": "dark", "layout": "slogan", "note": "Friend's Recipe → your version, ~11 s.",
+     "reel": [
+       {"headline": "Your friend\nmade it.", "size": "m", "seconds": 1.6},
+       {"layout": "lib-feature", "theme": "red", "eyebrow": "The Pass", "glyph": "TabPassFill", "headline": "Spot it.", "cards": ["pass-post"], "zoom": 2.3, "seconds": 2.0},
+       {"layout": "lib-feature", "theme": "cream", "eyebrow": "Food Bible", "headline": "Get the Recipe.", "cards": ["send-recipe"], "zoom": 2.0, "seconds": 2.0},
+       {"layout": "lib-feature", "eyebrow": "Rank My Version", "headline": "Make it yours.", "cards": ["rank-my-version"], "zoom": 1.95, "seconds": 2.2},
+       {"layout": "brand", "theme": "red", "headline": "Now make it yours.", "body": "Join the iPhone beta · staygrubby.com", "seconds": 2.4}
+     ]},
+
+    {"id": "reel-4-every-cook-counts", "format": "story", "theme": "cream", "layout": "score", "note": "Score climbs across cooks, ~10 s.",
+     "reel": [
+       {"layout": "slogan", "headline": "Every cook\n*counts.*", "seconds": 1.6},
+       {"score": "6.2", "dish": "Sourdough · Cook 1", "headline": "Dense.", "seconds": 1.4},
+       {"score": "7.4", "dish": "Sourdough · Cook 2", "headline": "Better.", "seconds": 1.4},
+       {"score": "8.3", "dish": "Sourdough · Cook 3", "headline": "Getting there.", "seconds": 1.4},
+       {"theme": "red", "score": "9.1", "dish": "Sourdough · Cook 4", "headline": "Signature Dish.", "seconds": 1.8},
+       {"layout": "brand", "theme": "dark", "headline": "Your next signature dish starts here.", "body": "Join the iPhone beta · staygrubby.com", "seconds": 2.6}
+     ]}
+  ]
+}

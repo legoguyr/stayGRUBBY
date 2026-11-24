@@ -34,10 +34,12 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         let store = UUID().uuidString, app = launch(["--test-light"], store: store)
         app.revealCreation(); app.buttons["new-dish"].press(forDuration: 0.2)
         XCTAssertTrue(app.textFields["dish-name"].waitForExistence(timeout: 8))
-        // Stage F grouping: This Dish (name, description, private notes), then This cook (name, date, Details).
-        let ids = ["dish-name", "cook-dish-description", "cook-dish-private-notes", "version-title", "cook-date", "cook-details"]
+        // This Dish (name, private notes), then This cook (name, its own description, date, Details) — Nov 21, 2026.
+        let ids = ["dish-name", "cook-dish-private-notes", "version-title", "cook-dish-description", "cook-date", "cook-details"]
         let frames = ids.map { app.descendants(matching: .any).matching(identifier: $0).firstMatch.frame.minY }
         XCTAssertEqual(frames, frames.sorted())
+        // The date defaults to today and is never labelled required (owner, November 24, 2026).
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '(required)' AND identifier == 'cook-date'")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts["Custom tags"].exists); shot("Owner corrections compact entry light", app)
         fill("dish-name", "Lemon Soup", app); fill("version-title", "Sunday", app)
         fill("cook-dish-description", "Bright soup", app); fill("cook-dish-private-notes", "Only my technique", app)
@@ -118,7 +120,7 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
     }
     @MainActor func testEmptyKitchenAndLargeTypeKeyboardRemainUsable() {
         let app = launch(["--test-dark","--test-large-type","--social-review-no-friends","--bible-v2-empty"], ready: false)
-        XCTAssertTrue(app.staticTexts["No dishes yet"].exists); tab("My Kitchen", app)
+        XCTAssertTrue(app.staticTexts["Your kitchen is open"].exists); tab("My Kitchen", app)
         XCTAssertTrue(app.staticTexts["Your Kitchen"].waitForExistence(timeout: 8))
         XCTAssertFalse(app.buttons["profile-top-food-1"].exists); XCTAssertFalse(app.buttons["profile-share-top-three"].isEnabled)
         shot("Owner corrections empty Kitchen accessibility", app)

@@ -47,9 +47,21 @@ struct AuthenticationGateView: View {
     /// never the sign-up story and never private content (November 18, 2026). Apple sign-in in progress,
     /// failures and deletion keep the full gate.
     private var restoring: Bool {
-        switch session.state {
+        Self.showsBrandedLaunch(state: session.state, launchRestorationFinished: session.launchRestorationFinished,
+                                failed: session.lastFailure != nil, setupFailed: setupFailed, isSigningOut: session.isSigningOut)
+    }
+
+    /// Build 6: a saved session is restored as `.loadingSession` → `.provisioning` → `.resolved`, and the
+    /// `.provisioning` step showed the sign-up story for a split second. Every step of launch restoration
+    /// is branded; only provisioning after an explicit sign-in (restoration finished) keeps the gate.
+    static func showsBrandedLaunch(state: AccountSessionState, launchRestorationFinished: Bool, failed: Bool,
+                                   setupFailed: Bool, isSigningOut: Bool) -> Bool {
+        switch state {
         case .loadingSession: true
-        case .resolved: !setupFailed && session.lastFailure == nil && !session.isSigningOut
+        // The first frames of a launch, before restore has looked for a saved session.
+        case .guest: !launchRestorationFinished && !failed
+        case .provisioning: !launchRestorationFinished && !failed && !isSigningOut
+        case .resolved: !setupFailed && !failed && !isSigningOut
         default: false
         }
     }
@@ -63,7 +75,7 @@ struct AuthenticationGateView: View {
         // consume the entire screen. At standard sizes, sign-in stays in reach.
         ScrollView {
             VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-                introduction
+                WelcomeIntroduction()
                 if typeSize.isAccessibilitySize { authentication }
             }
             .frame(maxWidth: SGTheme.Size.sharingContentMaximum, alignment: .leading)
@@ -86,82 +98,6 @@ struct AuthenticationGateView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("authentication-gate")
         .sheet(isPresented: $showingPrivacyPolicy) { PrivacyPolicyView() }
-    }
-
-    /// The short opening story (November 18, 2026): what the three places are for and how scores unlock.
-    private var introduction: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
-            // The canonical PNG includes transparent margins; display the
-            // existing artwork without reconstructing its lettering.
-            Image("StayGrubbyWordmark")
-                .resizable().scaledToFit()
-                .frame(width: 168, height: 168)
-                .frame(height: 100).clipped()
-                .accessibilityRepresentation {
-                    Text("#stayGRUBBY").accessibilityIdentifier("onboarding-brand")
-                }
-
-            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-                SGEyebrow(text: "Cook · Rank · Share")
-                Text("Good food.\nYour signature.")
-                    .font(SGTheme.TypeRole.hero)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityAddTraits(.isHeader)
-            }
-
-            comparisonExample
-
-            VStack(alignment: .leading, spacing: SGTheme.Space.medium) {
-                story("Grub Rank", detail: "Rank what you cook by comparing two dishes at a time.", symbol: "chart.bar.fill")
-                story("Food Bible", detail: "Keep your recipes, typed yourself or organized with AI.", symbol: "book.closed.fill")
-                story("The Pass", detail: "Share cooks with your Sous Chefs, only when you choose.", symbol: "person.2.fill")
-                story("Scores unlock at \(ScoreUnlockPolicy.requiredRankedEntryCount)", detail: "After \(ScoreUnlockPolicy.requiredRankedEntryCount) ranked cooks, each one gets a score. Until then, your order is what counts.", symbol: "lock.open.fill")
-            }
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("onboarding-story")
-    }
-
-    private var comparisonExample: some View {
-        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
-            Text("Which would you cook again?").font(SGTheme.TypeRole.headline)
-            HStack(spacing: SGTheme.Space.medium) {
-                exampleDish("🍝", name: "Sunday pasta")
-                Image(systemName: "arrow.left.arrow.right")
-                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                exampleDish("🌮", name: "Taco night")
-            }
-            Text("Rank by comparison. No made-up numbers.")
-                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .sgCard()
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Rank by comparison. Which would you cook again: Sunday pasta or Taco night? No made-up numbers.")
-        .accessibilityIdentifier("onboarding-comparison-example")
-    }
-
-    private func exampleDish(_ emoji: String, name: String) -> some View {
-        VStack(spacing: SGTheme.Space.hairline) {
-            Text(emoji).font(.system(size: 36))
-            Text(name).font(.caption.weight(.medium))
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private func story(_ title: String, detail: String, symbol: String) -> some View {
-        HStack(alignment: .top, spacing: SGTheme.Space.medium) {
-            Image(systemName: symbol)
-                .font(.title3).frame(width: 28)
-                .foregroundStyle(SGTheme.ColorToken.accent).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                Text(title).font(SGTheme.TypeRole.headline)
-                Text(detail).font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
     }
 
     private var authentication: some View {
@@ -235,4 +171,67 @@ struct AuthenticationGateView: View {
     if let request { session.appleAuthorizationFailed(requestID: request.id, cancelled: false) }
     return AuthenticationGateView(setupFailed: false, retrySetup: {})
         .environment(session).preferredColorScheme(.dark)
+}
+
+/// The welcome opening shared by the sign-in gate and the internal first-run preview.
+struct WelcomeIntroduction: View {
+    /// The short opening (Build 7): brand, one line and the comparison idea; the kitchen tour follows setup.
+    var body: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.large) {
+            // The canonical PNG includes transparent margins; display the
+            // existing artwork without reconstructing its lettering.
+            Image("StayGrubbyWordmark")
+                .resizable().scaledToFit()
+                .frame(width: 168, height: 168)
+                .frame(height: 100).clipped()
+                .accessibilityRepresentation {
+                    Text("#stayGRUBBY").accessibilityIdentifier("onboarding-brand")
+                }
+
+            VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+                SGEyebrow(text: "Cook · Rank · Share")
+                Text("Good food.\nYour signature.")
+                    .font(SGTheme.TypeRole.hero)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+            }
+
+            comparisonExample
+
+            // One line before sign-in; the kitchen tour after setup explains the rest (Build 7: no repeated
+            // explanations across the welcome, setup and tour).
+            Text("Your digital kitchen: rank what you cook, keep your Recipes, and share with Sous Chefs when you choose.")
+                .font(SGTheme.TypeRole.reading).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("onboarding-story")
+    }
+
+    private var comparisonExample: some View {
+        VStack(alignment: .leading, spacing: SGTheme.Space.small) {
+            Text("Which would you cook again?").font(SGTheme.TypeRole.headline)
+            HStack(spacing: SGTheme.Space.medium) {
+                exampleDish("🍝", name: "Sunday pasta")
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                exampleDish("🌮", name: "Taco night")
+            }
+            Text("Rank by comparison. No made-up numbers.")
+                .font(SGTheme.TypeRole.body).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .sgCard()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Rank by comparison. Which would you cook again: Sunday pasta or Taco night? No made-up numbers.")
+        .accessibilityIdentifier("onboarding-comparison-example")
+    }
+
+    private func exampleDish(_ emoji: String, name: String) -> some View {
+        VStack(spacing: SGTheme.Space.hairline) {
+            Text(emoji).font(.system(size: 36))
+            Text(name).font(.caption.weight(.medium))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
 }

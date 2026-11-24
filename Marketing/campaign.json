@@ -1,0 +1,64 @@
+{
+  "note": "Editable copy for every marketing design. Change text here, then run `python3 Marketing/render.py`. Layouts live in render.py, styles in kit.css. Visuals use a real screenshot/photo slot when its file exists and otherwise a captioned illustrative preview.",
+  "footer": {"url": "staygrubby.com", "cta": "Join the iPhone beta"},
+  "designs": [
+    {"id": "feed-01-introducing", "format": "feed", "theme": "red", "layout": "intro", "counter": "01 / 06", "photo": "photo-hero",
+     "headline": "Your food, ranked.",
+     "body": "Rank everything you cook. Keep the Recipes worth making again. Share the best with friends."},
+
+    {"id": "feed-02-how-it-works", "format": "feed", "theme": "cream", "layout": "steps", "counter": "02 / 06",
+     "eyebrow": "How it works",
+     "steps": [
+       {"verb": "Cook.", "line": "One Dish. Every cook, with photos.", "photo": "photo-cook"},
+       {"verb": "Rank.", "line": "This or that? Pick between two things you made.", "photo": "photo-rank"},
+       {"verb": "Remember.", "line": "Your Grub Rank and Recipes, always with you.", "photo": "photo-remember"},
+       {"verb": "Share.", "line": "Post your best cooks to The Pass.", "photo": "photo-share"}
+     ]},
+
+    {"id": "feed-03-grub-rank", "format": "feed", "theme": "red", "layout": "feature", "counter": "03 / 06",
+     "glyph": "TabRankFill", "eyebrow": "Grub Rank", "headline": "This or that?",
+     "body": "Quick picks build your Grub Rank. Your top three are Signature Dishes.",
+     "screen": "rank-screen", "cards": ["rank"], "zoom": 1.75},
+
+    {"id": "feed-04-my-kitchen", "format": "feed", "theme": "cream", "layout": "feature", "counter": "04 / 06",
+     "glyph": "TabKitchenFill", "eyebrow": "My Kitchen", "headline": "One Dish. Every cook.",
+     "body": "Your cooking history, Dish by Dish, with photos and notes.",
+     "screen": "kitchen-screen", "cards": ["dish"], "zoom": 1.55},
+
+    {"id": "feed-05-food-bible", "format": "feed", "theme": "red", "layout": "feature", "counter": "05 / 06",
+     "glyph": "TabKitchenFill", "eyebrow": "Food Bible", "headline": "Recipes worth making again.",
+     "body": "Add your own or paste one in. Every Recipe in one place.",
+     "screen": "bible-screen", "cards": ["recipe"], "zoom": 1.7},
+
+    {"id": "feed-06-the-pass", "format": "feed", "theme": "cream", "layout": "feature", "counter": "06 / 06",
+     "glyph": "TabPassFill", "eyebrow": "The Pass", "headline": "Show it off.",
+     "body": "Post a cook to The Pass. Your Sous Chefs Give Hands 🙌",
+     "screen": "pass-screen", "cards": ["pass"], "zoom": 2.35},
+
+    {"id": "story-01-beta-open", "format": "story", "theme": "red", "layout": "story-intro", "photo": "photo-story",
+     "eyebrow": "Now on TestFlight", "headline": "The iPhone beta is open.",
+     "body": "Rank everything you cook.", "link": "Tap the link to join"},
+
+    {"id": "story-02-this-or-that", "format": "story", "theme": "cream", "layout": "story-feature",
+     "eyebrow": "Grub Rank", "glyph": "TabRankFill", "headline": "This or that?",
+     "body": "Pick between two things you made. Your Grub Rank builds itself.",
+     "screen": "hero-screen", "cards": ["versus"], "zoom": 2.3, "link": "Join the iPhone beta"},
+
+    {"id": "flyer-beta-letter", "format": "flyer", "theme": "red", "layout": "flyer",
+     "headline": "Your food, ranked.",
+     "body": "Rank everything you cook. Keep the Recipes worth making again. Share the best with friends.",
+     "steps": ["Cook", "Rank", "Remember", "Share"],
+     "cta": "Join the iPhone beta", "note": "iPhone beta · via Apple TestFlight", "qr": "qr-staygrubby.png"},
+
+    {"id": "link-preview-1200x630", "format": "link", "theme": "red", "layout": "link",
+     "headline": "Your food, ranked.", "body": "Rank everything you cook."},
+
+    {"id": "template-announcement-feed", "format": "feed", "theme": "cream", "layout": "announce", "template": true,
+     "eyebrow": "New in #stayGRUBBY", "headline": "[Feature name]",
+     "body": "[One line on what it does for you.]", "screen": "announce-screen"},
+
+    {"id": "template-announcement-story", "format": "story", "theme": "red", "layout": "announce", "template": true,
+     "eyebrow": "New in #stayGRUBBY", "headline": "[Feature name]",
+     "body": "[One line on what it does for you.]", "screen": "announce-screen", "link": "Update the app"}
+  ]
+}

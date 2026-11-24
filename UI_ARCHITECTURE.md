@@ -155,6 +155,26 @@ Rules:
 - **Profile editor:** uses the same Private/Public wording (`Privacy` › *Public profile*).
 - **Bio:** waits for a backend field.
 
+**First run (Build 7, November 22, 2026; automated acceptance passed, owner physical acceptance pending).** One journey, opening your own kitchen. No new backend, requests or sample data:
+1. **Welcome + Sign in with Apple** (`AuthenticationGateView`): wordmark, headline, the comparison idea and one line; the longer explanations moved into the tour so nothing is said twice.
+2. **Your kitchen · 1–3 of 3** (the setup above): the username's purpose ("Sous Chefs find and tag you by your @username"), private by default, optional photo.
+3. **Kitchen tour** (`Tutorial/`): in the same full-screen cover, four pages with Skip, Next, Back and **Get Started**:
+   - *One Dish. Every cook.*: a Dish and its cooks.
+   - *This or that?*: an interactive pick. Tapping a card records nothing.
+   - *Your food, ranked.*: Grub Rank and Signature Dishes.
+   - *Save it. Show it off.*: Food Bible and The Pass with Sous Chefs and Hands.
+   Illustrations use the app's tokens, `SGScore` and tab icons, and Reduce Motion shows the finished state. Content is data (`TutorialPage`); `TutorialIllustration(page:animated: false)` renders stills for the website, Instagram and App Store.
+4. **Grub Rank**: the empty state reads *Your kitchen is open* with one action, **Rank a Dish**.
+
+Rules (`FirstRunTutorial`, per account, on device):
+- **Becomes pending:** when required setup begins.
+- **Interrupted:** a closed app resumes the tour, never setup.
+- **Existing accounts:** cooks, a username, or setup completed earlier means the tour is marked done and bypassed.
+- **Done:** is never reset.
+- **Replay:** Settings › *How #stayGRUBBY Works* replays the tour and records nothing.
+- **Launch:** restoring a saved session shows only the branded launch at every step, including `.provisioning`, which caused the Build 6 flash.
+- **Debug-only preview:** Settings › Developer Tools — Debug Only › *Preview First-Time Experience*, in Xcode-installed Debug builds only. It runs the real Welcome, with sign-in simulated, then setup, tour and empty Grub Rank against an in-memory profile stand-in. Every other request is refused. Exit discards everything, and the account is unchanged.
+
 **Post to The Pass — Recipe attachment.** When the cook or its Dish has the poster's own Recipe, the composer shows one compact *Recipe* section:
 - the title and a one-line preview (time, yield, ingredients), which opens a read-only preview
 - one control: *Include Recipe* (already shared, on by default) or *Share Recipe with Sous Chefs* (private, off, with a footer explaining it)
@@ -264,8 +284,9 @@ Keep: The Pass stays a feed, Grub Rank a ranking, Food Bible a Recipe library, M
 - **+ menu:** *Rank a Dish* (`new-dish`) and *Add a Recipe* (`new-recipe`, hidden without the Recipe service). In Rank a Dish, *Made one of your Dishes again? Choose it* opens the Dish picker; a typed name equal to a ranked Dish shows *Add Another Cook of …* (`cook-existing-match`). Never an automatic merge.
 - **Dish page ⋯:** *Make This Cook a Separate Dish* (`cook-separate`, only with 2+ cooks) opens `MoveCookSheet` (name suggested from Cook Name + Dish name; the old Dish name suggested as a collection) and *Collections* when the gate is on.
 - **One Dish picker (November 20, 2026):** `DishPickerList` + `DishPickerRow` (Views/Cooking/DishSelectionView.swift) are the only Dish chooser: same photo, name, cook count, 44-pt rows, search field (`parent-dish-search`), empty state and Cancel/Save placement. Single selection (chevron) serves Choose a Dish, Link a Recipe to a Dish and Add a Recipe's ranked-Dish step; multiple selection (check circles) serves Create/Edit Variation. Cook-level linking (`CookVersionSelectionView`) stays a cook list by design.
+- **Cook description (Nov 21, 2026; Codex model):** the cook form's *Description* (`cook-dish-description`) sits in *This cook*, under Cook Name; the Dish keeps only Private Notes (*Edit Private Notes*, `dish-text-edit`). The Dish page shows the shown cook's text (legacy cooks fall back to the old Dish text). The composer edits this cook's description, saves it on the cook, waits for that cook to sync, then posts; The Pass *Edit Description* opens that cook's Edit Cook (fallback: exact-cook caption editor when the cook is not on this device).
 - **Recipe menu:** *Unlink from Dish* (`recipe-unlink`, gated `recipe_recovery`) sits apart from *Delete Recipe*; Delete's confirmation names the Recipe; Food Bible ends My Recipes with *Recently Deleted* (`bible-recently-deleted`).
-- **Dish Variations (Smart Collections, gated; name from `DishVariationCopy`):** Grub Rank *Dish Variations* tab of photo cards led by *Create Variation* (`variation-create`) → `VariationEditorSheet` (name + Dish checklist; also *Edit Variation* `collection-edit` in a variation's ⋯); *Remove from Variation* on each Dish row's context menu (`collection-dish-remove`). `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
+- **Dish Variations (Smart Collections, gated; name from `DishVariationCopy`):** Grub Rank *Dish Variations* tab of photo cards (Dish count, average best-cook score) led by *Create Variation*; a card opens the Grub Rank page scoped to that variation (same rows, search, filters, sort) (`variation-create`) → `VariationEditorSheet` (name + Dish checklist; also *Edit Variation* `collection-edit` in a variation's ⋯); *Remove from Variation* on each Dish row's context menu (`collection-dish-remove`). `DishCollectionsField` (search existing, create inline, several, remove) in Rank a Dish, Edit Cook, Add a Recipe's saved step and the Dish page row (`dish-collections`); My Kitchen *Collections* cards between statistics and Recent Cooks; `DishCollectionView` lists Dishes by best cook with rank, score pill (locked stays locked) and the cook that produced it; Rename/Delete in its ⋯ menu.
 
 ## 13. Design system v2 and screen inventory (UI overhaul, November 18, 2026)
 
@@ -291,7 +312,7 @@ Owner direction: one recognizable visual language and interaction convention acr
 | `SGContentState` / `SGLoadingState` | 7 bespoke empty views and 15 page spinners | Social screens, The Pass, Food Bible, folders |
 | `SGPhotoViewer` (`sgOpensPhotoViewer`) | — | Dish page hero, post Dish Details hero |
 | `FolderGrid` / `FolderCard` / `DishFolderCallout` | — | Grub Rank Dish Variations, Dish page *Explore Risotto* |
-| `SGLaunchView` | Sign-up story shown to returning accounts while restoring | Session restore / library open |
+| `SGLaunchView` (Nov 21: wordmark + breathing red dots) | Sign-up story flashing before restore; spinner + "Loading" labels; a separate "Opening Rankings" state | System launch screen → session restore → library open → Grub Rank, as one continuous screen |
 | `ScoreUnlockProgressBanner` (compact) | Tall unlock card | Grub Rank, My Kitchen |
 
 ### 13.3 Interaction conventions
@@ -308,7 +329,7 @@ Owner direction: one recognizable visual language and interaction convention acr
 | Area | Screen | Status |
 | --- | --- | --- |
 | Shell | Tab bar, tab headers | Unified (§13.2) |
-| Launch | Opening story, sign-in, restore | Opening story rewritten (Grub Rank, Food Bible, The Pass, unlock at 10); restore shows `SGLaunchView`; Sign in with Apple untouched |
+| Launch | System launch screen, restore, opening story, sign-in | **Nov 21:** the system launch screen (`UILaunchScreen`: `LaunchBackground` white / #171615, `LaunchWordmark` 160 pt) and `SGLaunchView` draw the same centred wordmark, so launch, session restore and library opening read as one screen with a quiet three-dot pulse (fades in after ~0.35 s; still with Reduce Motion; label is VoiceOver-only). Until this launch's restore finishes the gate shows that screen, so signed-in owners never see the sign-up story; signed-out, failed and offline launches then show the gate once. No artificial delay, no network request of its own. Opening story and Sign in with Apple unchanged |
 | Grub Rank | List, filters, Dish Variations, variation page | Unified; All Dishes numbers Dishes 1, 2, 3… by best cook |
 | Grub Rank | Rank a Dish form, comparison, result | Form gained existing-Dish prompt and folders; comparison/result preserved (frozen) |
 | Dish | Dish page, Cooks, Separate Cooks, Folders | Unified header position (#N in Grub Rank), Explore folder, Separate Cooks, photo viewer |

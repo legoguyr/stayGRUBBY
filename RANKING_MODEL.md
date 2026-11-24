@@ -12,6 +12,8 @@ SwiftUI, SwiftData, network, or domain/category dependency. SwiftData adapters l
 in `Models`. Existing insertion choices, stopping thresholds, and score scaling
 are retained. There is no Improve Ranking UI yet.
 
+> Love It, November 24, 2026 (owner reopened the reaction set): a fourth first reaction. It sets only the insertion prior (percentile 0.05; Liked 0.2, Fine 0.5, Didn't like 0.8) and its own display band (ScoreCalibration version 2). BT likelihood, evidence, acquisition, stopping, refinement and existing bands are unchanged; comparisons can move a Love It cook anywhere, including below Liked cooks.
+
 ## 1. Evidence and authoritative state
 
 An observation is `(first UUID, second UUID, outcome, timestamp)`.

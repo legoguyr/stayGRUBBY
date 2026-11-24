@@ -1,0 +1,23 @@
+{
+  "note": "Owner-supplied public media slots. Add a file with `python3 Website/prepare_media.py slot <name> <source>`; build.py publishes only slots whose file exists and lists the rest as missing. Never use private libraries, debug fixtures or invented screens.",
+  "slots": [
+    {"name": "hero-screen", "kind": "screenshot", "file": "hero-screen.jpg", "width": 590, "height": 1279,
+     "alt": "StayGrubby on iPhone", "need": "Current iPhone screenshot for the hero (Grub Rank or a This-or-that comparison), safe demo account, portrait 1179x2556 or 1290x2796"},
+    {"name": "rank-screen", "kind": "screenshot", "file": "rank-screen.jpg", "width": 590, "height": 1279,
+     "alt": "Grub Rank on iPhone", "need": "Grub Rank screen with Signature Dishes"},
+    {"name": "kitchen-screen", "kind": "screenshot", "file": "kitchen-screen.jpg", "width": 590, "height": 1279,
+     "alt": "My Kitchen on iPhone", "need": "My Kitchen or a Dish page showing every cook, or Food Bible"},
+    {"name": "pass-screen", "kind": "screenshot", "file": "pass-screen.jpg", "width": 590, "height": 1279,
+     "alt": "The Pass on iPhone", "need": "The Pass with a posted cook and Hands, demo Sous Chefs only"},
+    {"name": "photo-cook", "kind": "photo", "file": "photo-cook.jpg", "width": 720, "height": 900,
+     "alt": "", "need": "Owned/licensed food photo for Cook, 4:5 portrait"},
+    {"name": "photo-rank", "kind": "photo", "file": "photo-rank.jpg", "width": 720, "height": 900,
+     "alt": "", "need": "Owned/licensed food photo for Rank, 4:5 portrait"},
+    {"name": "photo-remember", "kind": "photo", "file": "photo-remember.jpg", "width": 720, "height": 900,
+     "alt": "", "need": "Owned/licensed food photo for Remember, 4:5 portrait"},
+    {"name": "photo-share", "kind": "photo", "file": "photo-share.jpg", "width": 720, "height": 900,
+     "alt": "", "need": "Owned/licensed food photo for Share, 4:5 portrait"},
+    {"name": "social-card", "kind": "social", "file": "social-card.jpg", "width": 1200, "height": 630,
+     "alt": "StayGrubby", "need": "Open Graph / link-preview image, 1200x630, official wordmark plus real food or app imagery"}
+  ]
+}

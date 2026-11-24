@@ -9,6 +9,25 @@ nonisolated struct CompletedRankingReaction: Codable, Equatable {
     let reaction: InitialReaction
     let kind: Kind
 
+    init(id: UUID, completedAt: Date, reaction: InitialReaction, kind: Kind) {
+        self.id = id; self.completedAt = completedAt; self.reaction = reaction; self.kind = kind
+    }
+    // `reaction` keeps the original three values for older builds; `semanticReaction` carries Love It.
+    private enum CodingKeys: String, CodingKey { case id, completedAt, reaction, semanticReaction, kind }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id); completedAt = try c.decode(Date.self, forKey: .completedAt)
+        kind = try c.decode(Kind.self, forKey: .kind)
+        let original = try c.decode(InitialReaction.self, forKey: .reaction)
+        reaction = try c.decodeIfPresent(String.self, forKey: .semanticReaction).flatMap(InitialReaction.init(rawValue:)) ?? original
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id); try c.encode(completedAt, forKey: .completedAt); try c.encode(kind, forKey: .kind)
+        try c.encode(reaction.compatibilityValue, forKey: .reaction)
+        try c.encode(reaction.rawValue, forKey: .semanticReaction)
+    }
+
     func appending(to data: Data) throws -> Data {
         guard var diagnostics = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw ScoreCalibration.MetadataError.invalidDiagnostics

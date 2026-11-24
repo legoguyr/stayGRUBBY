@@ -44,7 +44,6 @@ struct AddCookingView: View {
         if let dish {
             // One Dish identity: a Recipe-origin cook of an existing Dish keeps the Dish's name.
             initial.dishName = dish.name
-            initial.publicDescription = dish.publicDescription ?? ""
             initial.privateNotes = dish.privateNotes ?? ""
         }
         _draft = State(initialValue: initial)

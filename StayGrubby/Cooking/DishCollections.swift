@@ -126,6 +126,11 @@ nonisolated enum DishVariationCopy {
     var id: String { DishCollectionPolicy.key(label) }
     var cookCount: Int { members.reduce(0) { $0 + $1.cookCount } }
     var dishCountText: String { members.count == 1 ? "1 Dish" : "\(members.count) Dishes" }
+    /// Dish Variations V2 (November 21, 2026): the mean of each Dish's best-cook score, counting every Dish
+    /// once and leaving out Dishes without a score. Nil while scores are locked or when nothing is scored.
+    /// Derived on every render from existing ranking data; never stored or synced.
+    let averageScore: Double?
+    let scoredCount: Int
     var cookCountText: String { cookCount == 1 ? "1 cook" : "\(cookCount) cooks" }
 
     /// Every collection, alphabetical. Members are in Grub Rank order of their best cook; unranked
@@ -146,8 +151,18 @@ nonisolated enum DishVariationCopy {
                 default: a.dish.name.localizedStandardCompare(b.dish.name) == .orderedAscending
                 }
             }
-            return DishCollectionSummary(label: group.label, members: members)
+            let scored = scores.isUnlocked ? members.compactMap { $0.best?.attempt.rankedItem?.score }.filter(\.isFinite) : []
+            return DishCollectionSummary(label: group.label, members: members,
+                                         averageScore: scored.isEmpty ? nil : scored.reduce(0, +) / Double(scored.count),
+                                         scoredCount: scored.count)
         }.sorted { $0.label.localizedStandardCompare($1.label) == .orderedAscending }
+    }
+
+    /// "Avg 8.4 · 3 of 4 Dishes scored", "Scores unlock at 10 cooks" or "No scores yet" — one wording everywhere.
+    func averageText(_ scores: ScoreUnlockState) -> String {
+        guard scores.isUnlocked else { return "Scores unlock at \(ScoreUnlockPolicy.requiredRankedEntryCount) cooks" }
+        guard let averageScore, let text = scores.scoreText(averageScore) else { return "No scores yet" }
+        return scoredCount == members.count ? "Avg \(text)" : "Avg \(text) · \(scoredCount) of \(members.count) scored"
     }
 
     /// Existing labels for pickers, most used first.

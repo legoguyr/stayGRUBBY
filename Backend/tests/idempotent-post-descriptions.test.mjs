@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fixture } from './social-harness.mjs';
 
-const migration = '20261117140912_idempotent_post_descriptions.sql';
+const migration = '20261121161457_idempotent_post_descriptions.sql';
 const { db, users, actor, rpc, cooking, check, rejects, finish } = await fixture({ before: migration });
 const postID = randomUUID();
 const recipeID = randomUUID();

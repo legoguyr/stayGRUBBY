@@ -10,7 +10,7 @@ function run(cmd,args,extra={}){const r=spawnSync(cmd,args,{env,encoding:'utf8',
 const call=async(path,key,body,method='POST')=>fetch(c.API_URL+path,{method,headers:{apikey:c.ANON_KEY,Authorization:'Bearer '+key,'Content-Type':'application/json','Content-Profile':'api'},body:body===undefined?undefined:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(15000)});
 try{
  assert((await db.query("select count(*)::int n from auth.users where email not like '%@example.invalid'")).rows[0].n===0);
- if(!(await db.query("select exists(select 1 from information_schema.columns where table_schema='staygrubby' and table_name='moderation_reviewers' and column_name='role') yes")).rows[0].yes)await db.query(await readFile(new URL('../../supabase/migrations/20261123171953_moderation_staff_roles.sql',import.meta.url),'utf8'));
+ if(!(await db.query("select exists(select 1 from information_schema.columns where table_schema='staygrubby' and table_name='moderation_reviewers' and column_name='role') yes")).rows[0].yes)await db.query(await readFile(new URL('../../supabase/migrations/20261123225337_moderation_staff_roles.sql',import.meta.url),'utf8'));
  const actors=(await db.query("select p.account_id,l.auth_user_id,u.email from staygrubby.profiles p join staygrubby.auth_account_links l on l.account_id=p.account_id join auth.users u on u.id=l.auth_user_id where p.username in ('local_fixture_1','local_fixture_2') order by p.username")).rows;assert.equal(actors.length,2);
  const tokens=[];
  for(const a of actors){
