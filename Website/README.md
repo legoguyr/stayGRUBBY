@@ -54,7 +54,7 @@ Worker version `f5164ec8-90ca-44b9-b567-697963dc1f09` shipped beta acquisition w
 
 ## Source, verification and deployment
 
-**Terms of Use and Community Guidelines (November 23, drafts, unpublished).** Source text lives in `Legal/` (outside the app bundle and outside the build allowlist). Preview locally with `python3 Website/preview_legal.py <folder outside Website/public>`. Publishing is the separate branch `claude/legal-pages-activation`: it adds `/terms` and `/community-guidelines` to the Worker routes, `run_worker_first`, the allowlist, the footer and the live-link gate, and its build refuses any Legal text still marked DRAFT or containing `[placeholders]`. Merge only after owner approval of the final text; the merge push deploys.
+**Community Guidelines (November 24, unpublished; no custom Terms of Use, owner decision).** Source text is `Legal/CommunityGuidelines.md` (outside the app bundle and outside the build allowlist). Preview locally with `python3 Website/preview_legal.py <folder outside Website/public>`. Publishing is the separate branch `claude/legal-minimum`: it adds `/community-guidelines` to the Worker routes, `run_worker_first`, the allowlist, the footer and the live-link gate, refuses Legal text marked DRAFT or containing `[placeholders]`, and carries the Privacy Policy accuracy corrections. Merge only after owner approval; the merge push deploys. `/terms` is not published, so the `legal_terms` flag stays off.
 
 The canonical policy is `StayGrubby/Legal/PrivacyPolicy.md`, effective November 11, 2026 (Recipes never post to The Pass). The hosted HTML matched a fresh canonical build byte-for-byte on November 12. The policy is bundled offline and rendered completely by `build.py`. Official artwork comes from the app asset catalog.
 

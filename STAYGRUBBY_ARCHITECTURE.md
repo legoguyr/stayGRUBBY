@@ -136,7 +136,7 @@ Rank My Version reserves the Recipe identity and exact revision, then runs the n
 
 `20261108171024_recipe_cook_lifecycle` is deployed (November 8; no pending repairs or stale links existed, so no row changed). It completes a reserved Recipe revision when the matching owner/item cook sync commits and repairs earlier provable matches without choosing a current association. A new visible Recipe-origin cook can fill a vacant exact link. Sync deletion retires the current exact link. Completion RPC retries acknowledge the saved cook without recreating an unlinked association. Existing authorized legacy Dish-family links and historical Recipe-used snapshots retain their separate semantics. See the [data foundation follow-up](V1_DATA_FOUNDATION_AUDIT.md#november-8-follow-up).
 
-Recipe/allergen/serving estimate limitations require Terms/disclaimer/safety coverage before V1 (not solely the Privacy Policy, not repeated in readers).
+Recipe/allergen/serving estimate limitations are covered for V1 by the food-safety note in the Community Guidelines (owner decision, November 24, 2026: no custom Terms of Use for launch); not solely the Privacy Policy, not repeated in readers.
 
 ### Recipe Creator — Gemini-first, contract 4
 

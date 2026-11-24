@@ -1,7 +1,7 @@
-"""Render the Terms of Use and Community Guidelines drafts for owner review, never for publication.
+"""Render the Community Guidelines text for owner review, never for publication.
 
 Usage: python3 Website/preview_legal.py OUTPUT_DIR
-Writes terms.html and community-guidelines.html (plus the stylesheet) with the same page shell as the
+Writes community-guidelines.html (plus the stylesheet) with the same page shell as the
 live Privacy page. OUTPUT_DIR must be outside Website/public, and the production build does not read
 Legal/: publishing needs the separate, owner-approved activation change (Website/README.md).
 """
@@ -13,8 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-PAGES = [("TermsOfUse.md", "terms.html", "Terms of Use — StayGrubby", "/terms"),
-         ("CommunityGuidelines.md", "community-guidelines.html", "Community Guidelines — StayGrubby", "/community-guidelines")]
+PAGES = [("CommunityGuidelines.md", "community-guidelines.html", "Community Guidelines — StayGrubby", "/community-guidelines")]
 
 
 def main(output):

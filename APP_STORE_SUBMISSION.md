@@ -1,6 +1,24 @@
 # App Store submission drafts (for owner review)
 
-Status: **DRAFT, updated November 23, 2026. Not legal advice, and not entered in App Store Connect.** The owner reviews and enters everything below. Legal text (Terms of Use, Community Guidelines) stays the owner's. Release requirements live in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
+Status: **DRAFT, updated November 24, 2026. Not legal advice, and not entered in App Store Connect.** The owner reviews and enters everything below. Legal scope is §0. Release requirements live in [V1_RELEASE_GATE.md](V1_RELEASE_GATE.md).
+
+## 0. Legal scope for launch (owner decision, November 24, 2026)
+
+Bare minimum for App Store approval. No iOS, Gemini or backend change.
+
+**Required for submission**
+- **Privacy Policy** (`https://staygrubby.com/privacy`, already live). Corrections for accuracy only: 18-and-older statement, shared-Recipe reports and staff review of reported content, Google Gemini in Service providers. Prepared on branch `claude/legal-minimum`; publishing needs owner approval (§7 step 4).
+- **Apple's standard EULA.** Nothing to write; App Store Connect uses it by default.
+- **Guideline 1.2 safeguards** (built): Report, Block, server-side text screening, staff Moderation queue, published contact (support page). The short **Community Guidelines** page (`Legal/CommunityGuidelines.md`, about 200 words: zero tolerance, report/block, 24-hour review aim, food-safety note, contact) publishes with the Privacy correction and is linked in the App Review notes.
+- **18+:** App Store age rating 18+, plus one sentence each in the Privacy Policy and the Community Guidelines. Gemini's terms need it; no Terms document is needed for it.
+- Privacy labels, age-rating questionnaire, screenshots, metadata and App Review notes (§3–§6).
+
+**Optional, removed from launch scope**
+- Custom Terms of Use (draft deleted; it stays in git history), arbitration, liability cap, governing law and venue, legal-notice postal address, operator legal name, custom EULA.
+- `legal_terms` activation. The flag stays **off**; its Settings links and kitchen-setup agreement line stay dormant in the app, unchanged. `/terms` is not published.
+- Branch `claude/legal-pages-activation` (superseded by `claude/legal-minimum`).
+
+**Residual review risk, not a blocker:** App Review sometimes asks under 1.2 that users *agree* to terms stating zero tolerance. If that happens, the fix needs no new build: publish a `/terms` page (Apple EULA link plus the Community Guidelines) and turn `legal_terms` on, which shows the existing agreement line.
 
 ## 1. App changes in build 1.0 (9) (on `main`)
 
@@ -11,12 +29,7 @@ Status: **DRAFT, updated November 23, 2026. Not legal advice, and not entered in
     - Disk space `E174.1`: `AccountContentCache` shrinks the photo cache when the device is low on space, which users can notice. The value is never sent off the device.
     - File timestamp `C617.1`: modification dates of the cache's own files inside the app container.
   - `PrivacyManifestTests` keeps this list in step with the code.
-- **Terms of Use and Community Guidelines, built ahead and inactive.** The server flag `legal_terms` (off) controls:
-  - Links in Settings › Support & About.
-  - The line in kitchen setup: "By continuing, you agree to the Terms of Use and Community Guidelines."
-  - URLs are in `LegalDocuments`: `staygrubby.com/terms` and `staygrubby.com/community-guidelines`.
-  - Activation order: owner approves the text → publish both pages with `sh Website/deploy-production.sh` → enable the flag. Never enable it before the pages are live.
-  - Explicit, versioned acceptance records for existing accounts would be a separate backend decision for Codex. Not built.
+- **Legal links, dormant.** The server flag `legal_terms` (off, and not part of launch; §0) controls Settings links to `staygrubby.com/terms` and `/community-guidelines` and a kitchen-setup agreement line. Unchanged in the app; never enable it unless both pages are live.
 
 ## 2. Draft App Review notes
 
@@ -26,7 +39,7 @@ Status: **DRAFT, updated November 23, 2026. Not legal advice, and not entered in
 >
 > **Try it:** Rank a Dish → enter a name → Liked it. Add a second Dish to see a comparison. Scores unlock after 10 ranked cooks; until then the order is shown. Food Bible → + → Add a Recipe (typed, or paste text to organize it).
 >
-> **User-generated content safeguards (Guideline 1.2):** Sharing reaches only accepted Sous Chefs; profiles are private by default and there is no public feed. Every post, comment and shared Recipe has ⋯ → Report; Block is in a post's ⋯ menu and on each person in My Kitchen › Sous Chefs. Reports go to a staff review queue with audited hide/dismiss; text is screened server-side. Contact: support@staygrubby.com.
+> **User-generated content safeguards (Guideline 1.2):** Sharing reaches only accepted Sous Chefs; profiles are private by default and there is no public feed. Every post, comment and shared Recipe has ⋯ → Report; Block is in a post's ⋯ menu and on each person in My Kitchen › Sous Chefs. Reports go to a staff review queue with audited hide/dismiss; text is screened server-side. Zero-tolerance Community Guidelines: https://staygrubby.com/community-guidelines. Contact: support@staygrubby.com.
 >
 > **Moderation:** Reports go to StayGrubby staff, who review them in the app's staff-only Moderation screen and can hide content or dismiss the report; every decision is recorded. Reviewers don't need staff access.
 >
@@ -108,7 +121,7 @@ The public TestFlight link has no age or region limit today. External testers wh
 
 ### 3c. Global availability review (November 23, 2026; research only, not legal advice)
 
-**Owner final decision for the current launch (November 23, 2026):** keep Gemini exactly as implemented (unpaid tier, existing consent notice), make the app available in **all** App Store regions including the EU, UK and Switzerland, and set the minimum age to **18** in the Terms with the owner's acceptance sentence. Alternative providers are not to be revisited unless the owner asks. The research below is kept as the record. Recorded residual point: Google's Use Restrictions allow only Paid Services when an app is made available to EEA, Swiss or UK users; the unpaid tier in those regions is an owner-accepted risk.
+**Owner final decision for the current launch (November 23, 2026):** keep Gemini exactly as implemented (unpaid tier, existing consent notice), make the app available in **all** App Store regions including the EU, UK and Switzerland, and set the minimum age to **18** (age rating; since November 24 stated in the Privacy Policy and Community Guidelines, with no custom Terms; §0). Alternative providers are not to be revisited unless the owner asks. The research below is kept as the record. Recorded residual point: Google's Use Restrictions allow only Paid Services when an app is made available to EEA, Swiss or UK users; the unpaid tier in those regions is an owner-accepted risk.
 
 **Owner requirements:** available worldwide including the EEA, UK and Switzerland; Paste Recipe everywhere; AI free for users; no 18+ rating only to satisfy the provider; avoid paid billing if a compliant free option exists.
 
@@ -150,9 +163,9 @@ The public TestFlight link has no age or region limit today. External testers wh
 | Unrestricted web access | No | Links go only to staygrubby.com pages |
 | Violence, sexual content, profanity, horror, gambling, contests | None | Not present in app-authored content |
 | Alcohol / tobacco / drugs | None (or Infrequent/Mild if counting wine in example Recipes) | App-authored content has none; user Recipes fall under user-generated content |
-| Medical / treatment information | None | Allergens are informational only, not medical advice (Terms must say so) |
+| Medical / treatment information | None | Allergens are informational only, not medical advice (Community Guidelines say so) |
 
-The likely result is **13+** under Apple's current tiers, because of social UGC. **But** while Paste Recipe uses the Gemini API, Google's terms say the API must not serve apps likely to be accessed by under-18s (§3a). Resolve that before choosing the tier: an 18+ rating, removing Gemini, or another approach with legal advice. The owner confirms the final tier in App Store Connect.
+The questionnaire alone would likely give **13+**. **Final: 18+** (owner, November 23), because Google's Gemini terms bar apps likely to be accessed by under-18s (§3a, §3c).
 
 ## 5. Reviewer sign-in with their own Apple ID: risks
 
@@ -163,7 +176,7 @@ The likely result is **13+** under Apple's current tiers, because of social UGC.
 2. **Scores look "missing."** Scores unlock after 10 ranked cooks, so a reviewer ranking 2–3 Dishes sees order but no numbers. The unlock banner explains it; the notes mention it.
 3. **Required kitchen setup (Guideline 5.1.1(v)).** New accounts must enter a name and @username before using the app. The username is needed for Sous Chefs. The name accepts a nickname, and nothing else personal is required. This is a low risk, and the notes explain it. If it's ever flagged, the fallback is making setup skippable until first sharing. That's a product change, owner decision.
 4. **Paste Recipe quota.** On the unbilled Gemini project, a reviewer could hit a quota. The app already falls back to manual entry with a friendly cooldown (AGENTS.md). Typed Recipes always work.
-5. **Feature flags.** Dish Variations and Recipe recovery are enabled for audience `everyone`, so reviewers get the same features as testers. Keep `legal_terms` off until the pages are live, or reviewers would hit broken links.
+5. **Feature flags.** Dish Variations and Recipe recovery are enabled for audience `everyone`, so reviewers get the same features as testers. `legal_terms` stays off for launch (§0).
 6. **Account deletion and sign-out** are reachable without content; nothing blocks them.
 
 ## 5a. App Review demonstration plan (safe test data)
@@ -195,7 +208,7 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 | --- | --- | --- |
 | App Information | Name StayGrubby; subtitle (≤30 chars) e.g. "Rank what you cook"; category **Food & Drink** (secondary optional: Lifestyle); content rights: contains third-party content **Yes** (user-generated) | Owner enters |
 | URLs | Privacy Policy `https://staygrubby.com/privacy` (live); Support `https://staygrubby.com/support` (live); Marketing `https://staygrubby.com` | Ready |
-| License agreement | Apple standard EULA plus our Terms of Use (draft includes Apple's required terms), or a custom EULA | Owner decision |
+| License agreement | Apple standard EULA (App Store Connect default; no custom EULA or Terms) | Final (owner, November 24) |
 | Age rating | **18+** (owner, November 23). Answer §4 truthfully; if the questionnaire computes a lower tier, use App Store Connect's option to choose a higher rating (confirm the control when entering). | Owner enters |
 | App Privacy | §3 table **plus Other Purposes on User Content › Other User Content** (unpaid Gemini); Tracking No | Owner enters |
 | Export compliance | Uses only exempt encryption (HTTPS); `ITSAppUsesNonExemptEncryption = false` is in the build | Ready |
@@ -210,17 +223,14 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 1. ✅ **Done November 23** — **Enroll `@grubwithguy` as sole admin.** Account `79237ea0-…87e` verified read-only (active since October 13, one sign-in link, unique username, no staff yet). Run Codex's `enroll_initial_admin.sql` with the ID pinned (prepared privately; the only change is the pin line). Verify exactly one admin and one audit row; counts unchanged. Harmless before the build: no flag, no UI.
 2. ✅ **Done November 23 (uploaded, not submitted)** — **Upload build 1.0 (9)** (internal TestFlight availability is automatic; no external release needed) and install it on the owner's iPhone.
 3. **Enable `staff_moderation`** with Codex's `enable_staff_interface.sql` (aborts unless only the pinned owner is enrolled). Only staff receive the flag. Owner checks My Kitchen › Settings › Staff › Moderation (empty queue today). Rollback: set only that flag's `enabled` to false.
-4. **Finalize and publish legal pages.** Owner approves the Terms and Guidelines text (fills the bracketed items, removes the DRAFT line). Merge branch `claude/legal-pages-activation`; the push to `main` deploys the website. Verify `/terms` and `/community-guidelines` return 200 with the live-link gate.
-5. **Enable `legal_terms`** only after step 4 is live. New kitchen setups then show the agreement line; Settings shows both links. Rollback: flag off.
-6. **App Store submission** of 1.0 (9) once §6 entries, the review recording and the Gemini decision are complete. If `legal_terms` is on at submission, the pages must already be live (step 4).
-
-`staff_moderation` and `legal_terms` are independent: either can go first, but each only after its own prerequisite.
+4. **Publish the Privacy correction and Community Guidelines.** Owner approves the text, then merge branch `claude/legal-minimum`; the push to `main` deploys the website. Verify `/privacy` and `/community-guidelines` return 200 with the live-link gate.
+5. **App Store submission** of 1.0 (9) once §6 entries and the review recording are complete. `legal_terms` stays off (§0).
 
 ## 8. Owner decisions
 
 1. **AI and age — FINAL (owner, November 23):** keep Gemini as implemented (unpaid), all App Store regions, minimum age 18 in the Terms (§3c). Submit build 1.0 (9); no provider, billing, consent or app change.
-2. Approve the Terms of Use and Community Guidelines drafts in `Legal/` (November 23; preview with `python3 Website/preview_legal.py <folder>`). Minimum age (18, with the owner's acceptance sentence) and the Gemini description are filled in. Bracketed items still to settle: operator legal name, report response target, liability cap, governing law/venue/arbitration, legal-notice address, effective date. Then publish (§7 step 4) and only then enable `legal_terms`.
-3. Apple's standard EULA or a custom one. Community Guidelines are needed either way.
+2. **Legal scope — FINAL (owner, November 24):** bare minimum (§0). Approve the Privacy Policy correction and the Community Guidelines text on `claude/legal-minimum` (preview the Guidelines with `python3 Website/preview_legal.py <folder>`), then publish (§7 step 4).
+3. **EULA — FINAL:** Apple's standard EULA.
 4. Privacy labels as above. While on the unpaid tier, add Other Purposes for Other User Content because of Google's product-improvement use (§3).
 5. Age-rating answers (§4), especially the messaging question.
 6. Reviewer demonstration (§5a): two disposable TestFlight accounts recommended, with the fixture recording as fallback.
