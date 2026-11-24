@@ -4,6 +4,14 @@ Canonical release checklist — reconciled November 22, 2026 against accepted ma
 
 - [x] **Cook / Pass description integrity:** backend chain deployed November 21, client correction integrated into the accepted baseline. Owner approves Build 7 and existing-data checks. Blank new Cooks use nil; intentional unsupported descriptions preserve the causal queue without retry storms. [Contract](COOK_DESCRIPTION_INTEGRITY.md).
 
+## Pre-launch UX refinements — November 24, 2026 (friend test)
+
+- [x] **Cook date:** new cooks already default to today and save without touching the date; the label no longer says "(required)" ("Date cooked"; fallback button "Add date cooked"). No data or validation change.
+- [x] **Comments:** the commenter's name is its own semibold line above the comment text in the Comments sheet (the only comment surface); time, Delete, Report, profile tap and accessibility unchanged.
+- [x] Focused tests pass: PassRedesign comments sheet (new name-above-text assertion), Stage 2 new-cook form (no "required" date label), SocialInteraction comment create/delete, Stage 3 comments keyboard, V1FinalUX unit suite. Three UI tests needed one rerun for a Simulator keyboard-focus failure.
+- [ ] **Love It (fourth reaction): stopped for owner decision.** The reaction selects the displayed-score band in `ScoreCalibration.swift` and in the production function `staygrubby.calibrated_cooking_score`, which accepts only the three current reactions. A stored "Love it" would need a new calibration band (frozen), a database migration, and would score on the legacy 1–10 mapping in builds ≤ 1.0 (9) and on The Pass until migrated. Options in the owner report.
+- [ ] These changes need a new build **1.0 (10)** (1.0 (9) predates them); archive/upload needs owner approval.
+
 ## Legal scope — November 24, 2026 (owner decision: bare minimum)
 
 Required for submission: the existing Privacy Policy (accuracy corrections only), Apple's standard EULA, the built Guideline 1.2 safeguards (Report, Block, text screening, staff Moderation, published contact) and a short Community Guidelines page. 18+ comes from the age rating plus one sentence in the Privacy Policy and the Guidelines. Removed from launch scope: custom Terms of Use, arbitration, liability cap, governing law/venue, legal-notice address, custom EULA and `legal_terms` activation (flag off; app links dormant and unchanged). [Detail](APP_STORE_SUBMISSION.md#0-legal-scope-for-launch-owner-decision-november-24-2026)

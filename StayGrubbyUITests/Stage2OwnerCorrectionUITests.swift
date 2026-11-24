@@ -38,6 +38,8 @@ final class Stage2OwnerCorrectionUITests: StayGrubbyUITestCase {
         let ids = ["dish-name", "cook-dish-private-notes", "version-title", "cook-dish-description", "cook-date", "cook-details"]
         let frames = ids.map { app.descendants(matching: .any).matching(identifier: $0).firstMatch.frame.minY }
         XCTAssertEqual(frames, frames.sorted())
+        // The date defaults to today and is never labelled required (owner, November 24, 2026).
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS '(required)' AND identifier == 'cook-date'")).firstMatch.exists)
         XCTAssertFalse(app.staticTexts["Custom tags"].exists); shot("Owner corrections compact entry light", app)
         fill("dish-name", "Lemon Soup", app); fill("version-title", "Sunday", app)
         fill("cook-dish-description", "Bright soup", app); fill("cook-dish-private-notes", "Only my technique", app)

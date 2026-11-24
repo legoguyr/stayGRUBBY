@@ -170,7 +170,7 @@ struct SocialCommentsView: View {
                 .accessibilityIdentifier("comments-hands")
         }.padding(.vertical, SGTheme.Space.xSmall)
     }
-    /// Instagram-style row: avatar, name and comment as one paragraph, then time and quiet actions.
+    /// Row: avatar, the name on its own line, the comment directly under it, then time and quiet actions.
     private func row(_ comment: SocialComment) -> some View {
         HStack(alignment: .top, spacing: SGTheme.Space.small) {
             if comment.isAuthor { SocialAvatar(name: comment.author.displayName, path: comment.author.avatarPath, size: 32) }
@@ -179,7 +179,10 @@ struct SocialCommentsView: View {
                     .buttonStyle(.plain).accessibilityLabel("View \(comment.author.displayName)’s profile")
             }
             VStack(alignment: .leading, spacing: SGTheme.Space.hairline) {
-                (Text(comment.isAuthor ? "You" : comment.author.displayName).fontWeight(.semibold) + Text(" ") + Text(comment.body))
+                Text(comment.isAuthor ? "You" : comment.author.displayName)
+                    .font(SGTheme.TypeRole.secondary.weight(.semibold)).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("comment-author")
+                Text(comment.body)
                     .font(SGTheme.TypeRole.body).fixedSize(horizontal: false, vertical: true)
                 HStack(spacing: SGTheme.Space.medium) {
                     Text(SocialPostPresentation.timestamp(comment.date)).foregroundStyle(.secondary)

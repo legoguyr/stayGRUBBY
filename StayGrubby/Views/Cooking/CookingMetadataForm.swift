@@ -81,7 +81,7 @@ struct CookingMetadataForm: View {
                         }
                         if draft.cookedAt != nil { cookedDate.accessibilityIdentifier("cook-date") }
                         else if !editing {
-                            Button("Set required cooked date") { draft.cookedAt = .now }.frame(minHeight: SGTheme.Size.minimumTap)
+                            Button("Add date cooked") { draft.cookedAt = .now }.frame(minHeight: SGTheme.Size.minimumTap)
                         }
                     Button { focusedField = nil; details = true } label: {
                         HStack(spacing: SGTheme.Space.small) {
@@ -114,7 +114,7 @@ struct CookingMetadataForm: View {
         .sheet(isPresented: $details) { CookingDetailsSheet(draft: $draft, inherited: existingDish && !editing) }
     }
     private var cookedDate: some View {
-        DatePicker(editing ? "Date cooked" : "Date cooked (required)", selection: Binding(get: { draft.cookedAt ?? .now }, set: { draft.cookedAt = $0 }), displayedComponents: .date)
+        DatePicker("Date cooked", selection: Binding(get: { draft.cookedAt ?? .now }, set: { draft.cookedAt = $0 }), displayedComponents: .date)
             .font(SGTheme.TypeRole.body).frame(minHeight: SGTheme.Size.minimumTap)
     }
 }
