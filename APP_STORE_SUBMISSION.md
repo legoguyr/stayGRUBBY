@@ -198,9 +198,9 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 | App Privacy | §3 table; Tracking No. *Other Purposes* only while unpaid Gemini is in use; drop it after a paid provider switch (§3c) | Owner enters after provider decision |
 | Export compliance | Uses only exempt encryption (HTTPS); `ITSAppUsesNonExemptEncryption = false` is in the build | Ready |
 | Pricing and availability | Free; **all territories** (owner, November 23). Requires the provider change in §3c before submission | Blocked on §3c |
-| Screenshots | iPhone 6.9" portrait, 1320×2868 (or 1290×2796), 3–10 images: Grub Rank, a Dish with cooks, This-or-That, Food Bible Recipe, The Pass. Capture on the iPhone 17 Pro Max Simulator from the isolated review store (synthetic, clearly sample data) or a safe demo account; no real users' content | To capture after approval |
+| Screenshots | iPhone 6.9" portrait 1320×2868. **Draft set captured November 23** in `AppStoreDrafts/` (local, git-ignored): Grub Rank, The Pass, Food Bible, Recipe, from the isolated `--development-persona` kitchen (fictional cook and Sous Chefs; Debug build, no production data). The persona has no food photos, so images show the StayGrubby placeholder: final screenshots need owner-supplied food photos (no fabricated imagery) and a This-or-That frame | Owner photos needed |
 | Promotional text / description / keywords | Draft from the website copy; avoid claims about allergens or health | To draft |
-| App Review information | Notes §2; attach the §5a recording; contact name, phone, email; sign-in: "Sign in with Apple — use your own Apple ID" (no demo credentials) | Recording pending |
+| App Review information | Notes §2; attach the Report/Block recording (draft `AppStoreDrafts/report-block-demo.mp4`, about 40 s on the fixture kitchen: Report post → Send → Report sent; Block account → confirm → posts removed; the §5a two-account TestFlight recording remains the stronger option and also shows account deletion); contact name, phone, email; sign-in: "Sign in with Apple — use your own Apple ID" (no demo credentials) | Recording pending |
 | Version release | Manual release after approval recommended | Owner choice |
 
 ## 7. Activation order (each step needs explicit owner approval)
