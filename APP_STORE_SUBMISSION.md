@@ -90,6 +90,8 @@ Only if all of the following hold:
 
 The public TestFlight link has no age or region limit today. External testers who are under 18 or in those regions are an exposure now. Decide whether to limit the link or tell testers.
 
+**Owner decision, November 23, 2026: option 3 below (18+, unpaid tier, EEA/UK/Switzerland excluded).**
+
 **Recommendation (keeps the feature):**
 1. **Rate the app 18+.** That addresses the one restriction every Google option shares. It's a cooking app, so the reach cost is small. Confirm with legal advice.
 2. **Move to the paid Gemini API** by enabling billing on the existing project. It needs no code change, has no regional limits, and stops Google using the text. It needs billing approval under AGENTS.md. At flash-lite pricing, for short bounded requests, the expected cost is low. Vertex AI is equivalent but needs a server change.
@@ -159,10 +161,10 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 | App Information | Name StayGrubby; subtitle (≤30 chars) e.g. "Rank what you cook"; category **Food & Drink** (secondary optional: Lifestyle); content rights: contains third-party content **Yes** (user-generated) | Owner enters |
 | URLs | Privacy Policy `https://staygrubby.com/privacy` (live); Support `https://staygrubby.com/support` (live); Marketing `https://staygrubby.com` | Ready |
 | License agreement | Apple standard EULA plus our Terms of Use (draft includes Apple's required terms), or a custom EULA | Owner decision |
-| Age rating | §4 answers; final tier depends on the Gemini decision (§3b): **18+** recommended while Paste Recipe uses Gemini | Owner decision |
-| App Privacy | §3 table; add **Other Purposes** to Other User Content while Gemini is unpaid; Tracking No | Owner enters |
+| Age rating | **18+ (decided November 23).** Answer §4 truthfully; if the questionnaire computes a lower tier, use App Store Connect's option to choose a higher age rating and select 18+ (confirm the control in App Store Connect). | Owner enters |
+| App Privacy | §3 table **plus Other Purposes on User Content › Other User Content** (unpaid Gemini, decided); Tracking No | Owner enters |
 | Export compliance | Uses only exempt encryption (HTTPS); `ITSAppUsesNonExemptEncryption = false` is in the build | Ready |
-| Pricing and availability | Free; territories per Gemini decision (exclude EEA/UK/Switzerland if staying on the unpaid tier) | Owner decision |
+| Pricing and availability | Free. **Deselect** the United Kingdom, Switzerland and all EEA storefronts: Austria, Belgium, Bulgaria, Croatia, Cyprus, Czechia, Denmark, Estonia, Finland, France, Germany, Greece, Hungary, Iceland, Ireland, Italy, Latvia, Liechtenstein, Lithuania, Luxembourg, Malta, Netherlands, Norway, Poland, Portugal, Romania, Slovakia, Slovenia, Spain, Sweden (any of these App Store lists). Keep all other territories. Recheck after Apple adds storefronts. | Owner enters |
 | Screenshots | iPhone 6.9" portrait, 1320×2868 (or 1290×2796), 3–10 images: Grub Rank, a Dish with cooks, This-or-That, Food Bible Recipe, The Pass. Capture on the iPhone 17 Pro Max Simulator from the isolated review store (synthetic, clearly sample data) or a safe demo account; no real users' content | To capture after approval |
 | Promotional text / description / keywords | Draft from the website copy; avoid claims about allergens or health | To draft |
 | App Review information | Notes §2; attach the §5a recording; contact name, phone, email; sign-in: "Sign in with Apple — use your own Apple ID" (no demo credentials) | Recording pending |
@@ -181,8 +183,8 @@ Status November 23, 2026: archive **StayGrubby 1.0 (9)** is in Xcode Organizer (
 
 ## 8. Owner decisions
 
-1. **Gemini terms (blocker, §3a):** choose how Paste Recipe meets Google's 18+ and EEA/UK/Switzerland rules. Options: paid billing (needs billing approval, and fixes the EEA/UK/CH rule but not the age rule); excluding those regions and rating 18+; or switching Paste Recipe off for public launch, which changes the feature. Get legal advice.
-2. Approve the Terms of Use and Community Guidelines drafts in `Legal/` (November 23; preview with `python3 Website/preview_legal.py <folder>`). Bracketed items to settle: operator legal name, minimum age (18 recommended, §3b), report response target, liability cap, governing law/venue/arbitration, legal-notice address, Paste Recipe availability wording. Then publish (§7 step 4) and only then enable `legal_terms`.
+1. **Gemini terms — DECIDED November 23, 2026 (owner):** rate the app **18+**, keep the **unpaid** Gemini tier, and **exclude every EEA, UK and Swiss territory** from App Store availability. No billing, no code change. Consequences: privacy labels add *Other Purposes* to Other User Content; the Terms state 18+ and the excluded regions; external TestFlight should be limited to adult testers outside those regions. Legal review of the "not for consumer use" wording remains advisable.
+2. Approve the Terms of Use and Community Guidelines drafts in `Legal/` (November 23; preview with `python3 Website/preview_legal.py <folder>`). Age (18) and region wording are filled in. Bracketed items still to settle: operator legal name, report response target, liability cap, governing law/venue/arbitration, legal-notice address, effective date. Then publish (§7 step 4) and only then enable `legal_terms`.
 3. Apple's standard EULA or a custom one. Community Guidelines are needed either way.
 4. Privacy labels as above. While on the unpaid tier, add Other Purposes for Other User Content because of Google's product-improvement use (§3).
 5. Age-rating answers (§4), especially the messaging question.

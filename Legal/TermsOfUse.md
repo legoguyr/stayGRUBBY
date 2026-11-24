@@ -8,7 +8,7 @@ These Terms of Use ("Terms") are an agreement between you and [operator legal na
 
 ## Who can use StayGrubby
 
-You must be at least [18] years old to use the Service. [Owner decision: the age must match the App Store age rating and the external AI provider's terms; see APP_STORE_SUBMISSION.md §3b.] You may use the Service only if you can form a binding agreement with us and are not barred from using it under applicable law. You need a Sign in with Apple account. You are responsible for activity on your account and for keeping access to your Apple ID secure. Tell us at [support@staygrubby.com](mailto:support@staygrubby.com) if you believe your account has been used without your permission.
+You must be at least 18 years old to use the Service. StayGrubby is not currently offered in the European Economic Area, Switzerland or the United Kingdom. You may use the Service only if you can form a binding agreement with us and are not barred from using it under applicable law. You need a Sign in with Apple account. You are responsible for activity on your account and for keeping access to your Apple ID secure. Tell us at [support@staygrubby.com](mailto:support@staygrubby.com) if you believe your account has been used without your permission.
 
 ## Your cooking library
 
@@ -30,7 +30,7 @@ Always check ingredients, labels, quantities and cooking temperatures yourself, 
 
 ## Paste Recipe and automatic formatting
 
-If you use Paste Recipe, the text you paste is sent to an external AI service to organize it into a Recipe draft, as described in the app and our Privacy Policy. Only paste text you have the right to use. Review and edit every draft before you save it; the result can contain mistakes. [Owner decision: confirm availability by region and age once the Gemini decision is made.]
+If you use Paste Recipe, the text you paste is sent to an external AI service to organize it into a Recipe draft, as described in the app and our Privacy Policy. Only paste text you have the right to use. Review and edit every draft before you save it; the result can contain mistakes. The external service may use pasted text to improve its own products, so do not paste personal or sensitive information.
 
 ## Rules of conduct
 

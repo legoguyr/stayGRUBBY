@@ -22,7 +22,9 @@ Local branch `integration/v1-final` in the Claude worktree: accepted `main` `9ee
 - [x] Terms of Use and Community Guidelines drafted in `Legal/`; unpublished preview renderer; publication branch `claude/legal-pages-activation` ready with a draft guard ([Website/README.md](Website/README.md)).
 - [x] **1.0 (9)** archived as Release (build number at archive time; checked-in value unchanged), release checks pass, local App Store Connect export signed by Apple Distribution. **Not uploaded.**
 - [x] App Store Connect checklist and activation order: [APP_STORE_SUBMISSION.md §6–§8](APP_STORE_SUBMISSION.md).
-- [ ] Owner approvals: enrollment, upload, `staff_moderation`, legal text + publication, `legal_terms`, Gemini/age/territories, App Store submission.
+- [x] **Gemini decision (owner, November 23):** 18+ age rating, unpaid Gemini tier kept, all EEA/UK/Swiss App Store territories excluded; Other Purposes privacy label; Terms draft updated. [Details](APP_STORE_SUBMISSION.md#8-owner-decisions)
+- [ ] Recommended with the legal review: a short age/region statement in the Privacy Policy (published text; owner approval) and limiting external TestFlight to adults outside those regions.
+- [ ] Owner approvals: enrollment, upload, `staff_moderation`, legal text + publication, `legal_terms`, App Store submission.
 
 ## Builds 7 and 8 — November 22, 2026
 
