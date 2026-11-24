@@ -46,7 +46,7 @@ export default {
   if(/^\/(?:@|%40|p\/|r\/)/i.test(url.pathname))return new Response(request.method==='HEAD'?null:fallback(null,true),{status:404,headers:fallbackHeaders});
   // Canonical HTML pages are requested by their real file, with html_handling=none.
   // This avoids the old rewrite-to-.html / redirect-to-extensionless loop.
-  if(['/','/privacy','/support'].includes(url.pathname)){
+  if(['/','/privacy','/support','/community-guidelines'].includes(url.pathname)){
    const asset=new URL(url);asset.pathname=url.pathname==='/'?'/index.html':url.pathname+'.html';
    return env.ASSETS.fetch(new Request(asset,request));
   }

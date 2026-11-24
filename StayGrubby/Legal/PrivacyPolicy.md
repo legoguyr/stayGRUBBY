@@ -1,8 +1,12 @@
 # StayGrubby Privacy Policy
 
-**Effective date: November 11, 2026**
+**Effective date: November 24, 2026**
 
 StayGrubby is a private cooking journal and personal ranking app with optional friends-only social sharing. This policy describes the implemented app, including social identity, friendships, explicit cooking posts, likes, comments, blocking and reporting. It also covers manually created Recipes, private Tickets (Want to Cook), recipe-to-cook provenance and app-first profile links. It does not describe planned community recipe-discovery, advertising or public-web cooking profiles.
+
+## Age
+
+StayGrubby is only for people 18 and older. Do not use StayGrubby if you are under 18.
 
 ## Information StayGrubby handles
 
@@ -36,7 +40,7 @@ Cooked With is optional and separate from Feed publication. Selecting current fr
 
 In-app notifications store recipient, actor, type, target identifiers, timestamps and read state for friend requests/acceptance, shared cooking invitations/joining, completed recreations, likes and comments. They use current accessible source records rather than private notes, scores or unnecessary content snapshots. Blocks, relationship changes and deleted/inaccessible targets are applied to the list, unread count and actions. No Apple push notification service is enabled for these notices.
 
-Likes and flat comments are optional social participation. Eligible post viewers can see visible participation counts, comment text, timestamp and the commenter's display name/username; participation can reveal this minimal identity to other eligible viewers even if the commenter is not discoverable. Blocked or no-longer-eligible participants are filtered. Social engagement never changes anyone's personal ranking. Private reports identify a profile, post or comment, reason and optional limited context for StayGrubby review. The reported person cannot read raw reports or reporter details. Reporting does not automatically hide content; StayGrubby can restrict social identities or hide posts/comments during review.
+Likes and flat comments are optional social participation. Eligible post viewers can see visible participation counts, comment text, timestamp and the commenter's display name/username; participation can reveal this minimal identity to other eligible viewers even if the commenter is not discoverable. Blocked or no-longer-eligible participants are filtered. Social engagement never changes anyone's personal ranking. Private reports identify a profile, post, comment or shared Recipe, reason and optional limited context for StayGrubby review. The reported person cannot read raw reports or reporter details. Reporting does not automatically hide content. Authorized StayGrubby staff can view the reported content, including its photo, to hide it or dismiss the report; the decision and the reviewing staff account are recorded with the report and erased with it. StayGrubby can also restrict social identities.
 
 ## Recipes, Tickets and cooking provenance
 
@@ -70,7 +74,7 @@ Infrastructure providers may retain limited security logs or backup copies for t
 
 ## Service providers
 
-StayGrubby currently uses Apple for authentication and native sharing/Photos actions, and Supabase for authentication, private database synchronization, private photo storage, and related service security. The product website uses static hosting through Cloudflare. The site requires no analytics, tracking scripts, cookies, account sign-in, or access to your cooking library; the hosting provider processes network requests to deliver it.
+StayGrubby currently uses Apple for authentication and native sharing/Photos actions, Supabase for authentication, private database synchronization, private photo storage, and related service security, and Google Gemini for Paste Recipe as described above. The product website uses static hosting through Cloudflare. The site requires no analytics, tracking scripts, cookies, account sign-in, or access to your cooking library; the hosting provider processes network requests to deliver it.
 
 ## Contact and public policy URL
 

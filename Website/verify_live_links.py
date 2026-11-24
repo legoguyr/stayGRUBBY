@@ -61,7 +61,7 @@ def verify():
     acquisition_label = "Join StayGrubby Beta" if is_testflight else "Download StayGrubby"
     evidence = []
     with tempfile.TemporaryDirectory(prefix="staygrubby-public-http-") as tmp:
-        for path in paths + ["/beta", *not_found, "/", "/privacy", "/support", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
+        for path in paths + ["/beta", *not_found, "/", "/privacy", "/support", "/community-guidelines", "/.well-known/apple-app-site-association", "/apple-app-site-association"]:
             for method in ["GET", "HEAD"]:
                 header, body = Path(tmp)/"headers", Path(tmp)/"body"
                 args = ["curl", "-sS", "--connect-timeout", "8", "--max-time", "20", "--suppress-connect-headers",

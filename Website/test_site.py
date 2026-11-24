@@ -52,7 +52,7 @@ class SiteTests(unittest.TestCase):
         config = json.loads((Path(__file__).parent / 'wrangler.jsonc').read_text())
         self.assertEqual(config['name'], 'staygrubby')
         self.assertEqual(config['assets']['directory'], './public')
-        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/beta', '/privacy', '/support', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
+        self.assertEqual(config['assets']['run_worker_first'], ['/', '/@*', '/%40*', '/p/*', '/r/*', '/kitchen', '/beta', '/privacy', '/support', '/community-guidelines', '/.well-known/apple-app-site-association', '/apple-app-site-association'])
         self.assertEqual(config['main'],'link-worker.mjs')
         self.assertEqual(config['assets']['binding'],'ASSETS')
         self.assertEqual(config['assets']['html_handling'], 'none')
@@ -63,7 +63,7 @@ class SiteTests(unittest.TestCase):
     def test_publish_directory_is_an_exact_public_allowlist(self):
         present = {"assets/media/" + s["file"] for s in home.slots().values() if s["present"]}
         self.assertEqual({str(p.relative_to(self.output)) for p in self.output.rglob("*") if p.is_file()},
-            {"index.html", "privacy.html", "support.html", "404.html", "assets/site.css", "assets/wordmark.png", "_headers", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"}
+            {"index.html", "privacy.html", "support.html", "404.html", "community-guidelines.html", "assets/site.css", "assets/wordmark.png", "_headers", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"}
             | {"assets/brand/" + name for name in BRAND_FILES} | present)
         # The Worker fallbacks keep /assets/wordmark.png: the official artwork's optimized derivative on the same canvas.
         self.assertEqual(png_size(self.output / "assets/wordmark.png"), png_size(LOGO))
@@ -78,7 +78,7 @@ class SiteTests(unittest.TestCase):
         expected = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", canonical)
         expected = expected.replace("**", "").replace("#", "")
         self.assertEqual(" ".join("".join(doc.article_text).split()), " ".join(expected.split()))
-        self.assertIn("November 11, 2026", " ".join(doc.article_text))
+        self.assertIn("November 24, 2026", " ".join(doc.article_text))
 
     def test_build_refuses_unexpected_files_in_publish_directory(self):
         (self.output / "internal-notes.md").write_text("Synthetic internal fixture")
@@ -86,7 +86,7 @@ class SiteTests(unittest.TestCase):
             build(self.output)
 
     def test_links_assets_and_semantic_accessibility(self):
-        for name in ["index.html", "privacy.html", "support.html", "404.html"]:
+        for name in ["index.html", "privacy.html", "support.html", "404.html", "community-guidelines.html"]:
             doc = Document((self.output / name).read_text())
             self.assertEqual(sum(tag == "h1" for tag, _ in doc.tags), 1)
             self.assertIn(("html", {"lang": "en"}), doc.tags)

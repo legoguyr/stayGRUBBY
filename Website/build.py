@@ -12,6 +12,9 @@ import home
 
 ROOT = Path(__file__).resolve().parent.parent
 POLICY = ROOT / "StayGrubby/Legal/PrivacyPolicy.md"
+# Owner-approved legal pages (Legal/). The build refuses draft text, so an unapproved draft can never publish.
+# No custom Terms of Use: Apple's standard EULA applies (owner decision, November 24, 2026).
+LEGAL_PAGES = [("CommunityGuidelines.md", "community-guidelines.html", "Community Guidelines — StayGrubby", "/community-guidelines")]
 LOGO = ROOT / "StayGrubby/Assets.xcassets/StayGrubbyWordmark.imageset/StayGrubbyWordmark.png"
 
 
@@ -73,7 +76,7 @@ def page(title, route, content, extra_class="", action=None, social=None):
     {header_end}
   </header>
   <main id="main" class="{extra_class}">{content}</main>
-  <footer class="site-footer"><span>© 2026 StayGrubby</span><a href="/privacy">Privacy Policy</a><a href="/support">Support</a><a href="mailto:support@staygrubby.com">support@staygrubby.com</a></footer>
+  <footer class="site-footer"><span>© 2026 StayGrubby</span><a href="/privacy">Privacy Policy</a><a href="/community-guidelines">Community Guidelines</a><a href="/support">Support</a><a href="mailto:support@staygrubby.com">support@staygrubby.com</a></footer>
 </body>
 </html>
 '''
@@ -93,7 +96,7 @@ def distribution_url(value):
 def build(output, distribution=None):
     output.mkdir(parents=True, exist_ok=True)
     media = home.slots()
-    allowed = {"index.html", "privacy.html", "support.html", "404.html", "_headers",
+    allowed = {"index.html", "privacy.html", "support.html", "404.html", "_headers", "community-guidelines.html",
                "assets/site.css", "assets/wordmark.png", "kitchen.html", "_redirects", ".well-known/apple-app-site-association"}
     allowed |= {"assets/brand/" + name for name in BRAND_FILES}
     allowed |= {"assets/media/" + spec["file"] for spec in media.values() if spec["present"]}
@@ -111,7 +114,7 @@ def build(output, distribution=None):
     association = json.loads((ROOT / 'Website/association.json').read_text())
     (output / ".well-known/apple-app-site-association").write_text(json.dumps(association, separators=(',', ':')), encoding="utf-8")
     text = POLICY.read_text(encoding="utf-8")
-    assert "Effective date: November 11, 2026" in text
+    assert "Effective date: November 24, 2026" in text
     # Website V2 homepage: CTAs come from the same validated Apple destination the Worker uses for /beta.
     home_destination = distribution_url(json.loads((ROOT / "Website/distribution.json").read_text()).get("url"))
     action = home.cta(home_destination)
@@ -123,6 +126,11 @@ def build(output, distribution=None):
       <p>For questions about StayGrubby, email <a href="mailto:support@staygrubby.com">support@staygrubby.com</a>.</p>
       <p>Include what you were trying to do and your app and iOS version. Please do not send passwords, sign-in codes, or private keys.</p>
       <p>For privacy questions, contact <a href="mailto:privacy@staygrubby.com">privacy@staygrubby.com</a> or read our <a href="/privacy">Privacy Policy</a>.</p></article>'''
+    for source, name, title, route in LEGAL_PAGES:
+        legal = (ROOT / "Legal" / source).read_text(encoding="utf-8")
+        if "DRAFT" in legal or re.search(r"\[[^\]]*\](?!\()", legal):
+            raise ValueError(f"Refusing to publish {source}: it is still a draft or has unresolved [placeholders]")
+        (output / name).write_text(page(title, route, '<article class="policy">\n' + policy_html(legal) + '\n</article>', "reading"), encoding="utf-8")
     (output / "support.html").write_text(page("Support — StayGrubby", "/support", support, "reading"), encoding="utf-8")
     (output / "404.html").write_text(page("Page not found — StayGrubby", "/",
         '<article class="policy"><h1>Page not found</h1><p><a href="/">Return to StayGrubby</a></p></article>', "reading"), encoding="utf-8")
