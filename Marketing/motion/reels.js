@@ -35,9 +35,9 @@ const REELS = {
 
   'rc-reel-4-cooking-is-a-conversation': () => [
     kinetic({ lines: ['Cooking is a', '*conversation.*'], theme: 'dark', size: 150, dur: 1.4, tag: H }),
-    cardScene({ card: 'real-post:Miso Eggplant', theme: 'dark', photo: TOP(17).photo, headline: 'Post a cook.', eyebrow: 'The Pass', glyph: 'TabPassFill',
+    cardScene({ card: 'real-post:Honey Glazed Duck', theme: 'dark', photo: TOP(6).photo, headline: 'Post a cook.', eyebrow: 'The Pass', glyph: 'TabPassFill',
       dur: 2.3, zoom: 2.6, tag: H }),
-    passFeed({ posts: D.posts, theme: 'cream', headline: "What's cooking in *your circle?*",
+    passFeed({ posts: D.posts.filter(p => { const r = D.top20.find(x => x.dish === p.dish); return r && A.photos[r.photo]; }), theme: 'cream', headline: "What's cooking in *your circle?*",
       caption: `Real posts and Hands · ${A.caption_real}`, dur: 3.8, scroll: 1500 }),
     cardScene({ card: 'real-moved', theme: 'dark', headline: 'Watch it *move.*', eyebrow: 'Grub Rank', glyph: 'TabRankFill', dur: 2.3, zoom: 2.5 }),
     endCard({ theme: 'red', headline: 'Made in your kitchen.\nShared with theirs.' }),

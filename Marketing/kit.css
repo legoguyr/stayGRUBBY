@@ -378,3 +378,7 @@ html, body { margin: 0; background: transparent; }
 .layout-photo-card .copy, .layout-photo-card .pcard { position: relative; z-index: 1; }
 .story.layout-photo-card .photo-slot.hero { inset: 0 0 46% 0; }
 .story.layout-photo-card .photo-slot.empty { padding-top: 340px; }
+/* Photo-score: keep the photo above the copy so names and scores sit on the brand panel, never on the food. */
+.layout-photo-score .photo-slot.hero { inset: 0 0 47% 0; }
+.story.layout-photo-score .photo-slot.hero { inset: 0 0 50% 0; }
+.layout-photo-score .bottombar { margin-top: 40px; }

@@ -73,32 +73,40 @@ Rankings change as Guy keeps cooking. **Re-snapshot before posting anything date
 
 ## What I still need from you
 
-1. **Your cook photos.** Your cook photos are only on your iPhone; their upload status is still "pending". The 17 shared-post photos are in a private bucket. I didn't use privileged keys or signed URLs to work around either.
-   - Export each photo from the app or Photos and drop it into `Marketing/real-cooking/photos/` using the names below (jpg or png, any size; designs crop to fit).
-   - Then run `python3 Marketing/render.py --campaign real-cooking`.
+1. **Photos: 12 of your photos are in (owner-supplied Nov 24; matches approved by you).**
+   - Each one was matched by eye and checked against the shape of that cook's stored photo and your Recipe ingredients.
+   - None of them carries EXIF or location data.
+   - JPEGs are byte-identical copies of what you sent. The WebP duck was saved as a lossless PNG.
 
-   | File | Cook |
-   | --- | --- |
-   | `lamb-chops-herb-crust.jpg` | #1 Lamb Chops · Herb Crust (must be the Herb Crust cook, not Double chop) |
-   | `braised-short-rib.jpg` | #2 Braised Short Rib |
-   | `honey-chili-duck.jpg` | #3 Honey-Chili Duck Breast |
-   | `butternut-squash-risotto.jpg` | #4 |
-   | `french-onion-soup.jpg` | #5 |
-   | `honey-glazed-duck.jpg` | #6 |
-   | `mushroom-risotto.jpg` | #7 |
-   | `chimmi-steak-sandwich.jpg` | #8 |
-   | `pasta-alla-norma.jpg` | #9 (also the Food Bible hero) |
-   | `miso-eggplant.jpg` | #17 (Food Bible / The Pass) |
-   | `tandoori-chicken.jpg` | #16 (The Pass, with Recipe) |
+   | File | Cook | Confidence |
+   | --- | --- | --- |
+   | `lamb-chops-herb-crust.jpg` | #1 Lamb Chops · Herb Crust (not Double chop) | High |
+   | `braised-short-rib.jpg` | #2 Braised Short Rib | High |
+   | `honey-chili-duck.png` | #3 Honey-Chili Duck Breast | High (exact 768×768 match) |
+   | `butternut-squash-risotto.jpg` | #4 Butternut Squash Risotto | High |
+   | `french-onion-soup.jpg` | #5 French Onion Soup · Vita Nova | High |
+   | `honey-glazed-duck.jpg` | #6 Honey Glazed Duck | High |
+   | `chimmi-steak-sandwich.jpg` | #8 Chimmi Steak Sandwich | High |
+   | `pasta-alla-norma.jpg` | #9 Pasta alla Norma | High |
+   | `shakshuka.jpg` | #11 Shakshuka | High |
+   | `tandoori-chicken.jpg` | #16 Tandoori Chicken with Coconut Mint Chutney | High |
+   | `kale-radiatori.jpg` | #18 Kale Radiatori | High |
+   | `bolognese.jpg` | #20 Bolognese | High |
 
-   These photos are needed for:
-   - the 4 photo-score posts;
-   - the This or That tiles;
-   - the photo grids;
-   - the photo-card designs;
-   - all 4 Reels.
+   **Held back, pending your OK (medium confidence):**
+   - Mushroom Risotto (#7): the stored photo is landscape, but the photo you sent is portrait.
+   - Seared Salmon (#28): the stored photo is square.
 
-   Until a photo is added, its spot shows a striped "Photo · …" placeholder. **Don't post a design that still shows a placeholder.**
+   **Still missing:**
+   - Miso Eggplant (#17)
+   - Lamb Chops · Double chop (#14)
+
+   **Designs reworked so nothing posts with a placeholder:**
+   - **rc-feed-08** is now a Top 6 grid.
+   - **rc-feed-16** uses your Beef Bolognese Recipe and photo.
+   - **rc-story-10** and **rc-reel-4** use your Honey Glazed Duck post: 🙌 4, shared at 8.6.
+
+   The match review sheet is `export/review-photo-matches.jpg`.
 
 2. **Optional: real app screenshots** from your phone of Grub Rank, a This-or-that comparison, Food Bible / Paste Recipe, and The Pass. They can replace the data cards and fill the website slots too (`Website/media/media.json`).
 
@@ -111,7 +119,7 @@ Rankings change as Guy keeps cooking. **Re-snapshot before posting anything date
 | 23 feed posts (1080×1350) | `rc-feed-01…23-*.png` |
 | 13 Stories (1080×1920) | `rc-story-01…13-*.png` (02 needs a Poll sticker, 11 a Question sticker, the rest a Link sticker under the arrow) |
 | 3 carousels | `carousels/rc-carousel-1-top-3-countdown` (6), `-2-food-bible` (5), `-3-this-or-that` (6) |
-| 4 Reels (silent H.264, 11–13 s; add music in Instagram) | `reels/rc-reel-1-top-5-countdown.mp4`, `-2-this-or-that`, `-3-recipe-in-seconds`, `-4-cooking-is-a-conversation` |
+| 4 animated Reels (30 fps H.264, 1080×1920, silent; add music in Instagram; sources in `Marketing/motion/reels.js`) | `reels/rc-reel-1-top-5-countdown.mp4`, `-2-this-or-that`, `-3-recipe-in-seconds`, `-4-cooking-is-a-conversation` |
 | Contact sheets | `review-feed.jpg`, `review-stories.jpg`, `review-carousels.jpg`, `review-reels.jpg`, `review-instagram-grid.jpg` |
 
 **Feature coverage**
@@ -130,7 +138,7 @@ Rankings change as Guy keeps cooking. **Re-snapshot before posting anything date
 | --- | --- | --- | --- |
 | 1 | rc-feed-22 (Not just recipes) → rc-carousel-1 (Top 3 countdown) → rc-feed-01 (#1 Lamb Chops) | rc-story-02 Poll, then rc-story-03 reveal the next day | rc-reel-2 This or That |
 | 2 | rc-feed-14 (Better than a screenshot) → rc-carousel-2 (Food Bible) → rc-feed-13 (Remember it forever) | rc-story-06, rc-story-07 | rc-reel-3 Recipe in seconds |
-| 3 | rc-feed-08 (Top 9) → rc-feed-06 (Lamb Chops won) → rc-feed-11 (Same Dish, two cooks) | rc-story-04, rc-story-11 Question | rc-reel-1 Top 5 countdown |
+| 3 | rc-feed-08 (Top 6) → rc-feed-06 (Lamb Chops won) → rc-feed-11 (Same Dish, two cooks) | rc-story-04, rc-story-11 Question | rc-reel-1 Top 5 countdown |
 | 4 | rc-feed-17 (Make it yours) → rc-feed-18 (Shared with theirs) → rc-carousel-3 | rc-story-08, rc-story-10 | rc-reel-4 Conversation |
 
 Fill the gaps from the general creative library (`Marketing/export/lib-*`) so the grid alternates red, cream and charcoal.
@@ -152,7 +160,7 @@ Captions to use with each design:
 - **rc-feed-12** — Rankings move. Pastrami Pita went from #13 to #12 as more cooks got ranked. Cook more, and your Grub Rank gets sharper.
 - **rc-feed-13** — Cook it once. Remember it forever. My Pasta alla Norma lives in Food Bible: 10 ingredients, 9 steps, #9 on my Grub Rank.
 - **rc-feed-14 / rc-carousel-2 / rc-reel-3** — Your recipe deserves better than a screenshot. Paste it in, review the draft, save it to Food Bible.
-- **rc-feed-16** — From kitchen notes to Food Bible. My Miso Glazed Eggplant is on revision 10, and Recipe History keeps every one.
+- **rc-feed-16** — From kitchen notes to Food Bible. My Beef Bolognese: 16 ingredients, 10 steps, saved where I can find them.
 - **rc-feed-17** — Your friend made it. Now make it yours. Open a Sous Chef's Recipe, cook it and rank your version.
 - **rc-feed-18** — Made in my kitchen. Shared with theirs. Tandoori Chicken went to The Pass with the Recipe attached.
 - **rc-feed-19** — What's cooking in your circle? Post a cook to The Pass; your Sous Chefs Give Hands 🙌 and comment.
@@ -170,6 +178,7 @@ Captions to use with each design:
 python3 Marketing/render.py --campaign real-cooking            # everything, about 6 minutes
 python3 Marketing/render.py --campaign real-cooking rc-feed-01 # one design
 python3 Marketing/contact_sheet.py --campaign real-cooking
+python3 Marketing/motion/export_cards.py && node Marketing/motion/capture.mjs rc-reel-1-top-5-countdown   # animated Reels
 ```
 
 **Editing**

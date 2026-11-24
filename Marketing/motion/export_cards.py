@@ -15,7 +15,7 @@ import render  # noqa: E402  (card registry, cards, real_cards, home glyphs)
 
 CARD_NAMES = ["rank", "versus", "pass-post", "send-recipe", "rank-my-version", "progress", "signature", "comments",
               "real-top:1-3", "real-top:1-5", "real-recipe:Pasta alla Norma", "real-share-recipe:Pasta alla Norma",
-              "real-post:Miso Eggplant", "real-post:Tandoori Chicken with Coconut Mint Chutney", "real-moved"]
+              "real-post:Miso Eggplant", "real-post:Honey Glazed Duck", "real-post:Tandoori Chicken with Coconut Mint Chutney", "real-moved"]
 
 
 def main():
