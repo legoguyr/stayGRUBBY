@@ -20,7 +20,7 @@ import Testing
     @Test(arguments: InitialReaction.allCases)
     func smoothMonotoneOverlappingRegions(_ reaction: InitialReaction) {
         let values = stride(from: -12.0, through: 12, by: 0.01).map { score($0, reaction) }
-        let bounds: ClosedRange<Double> = reaction == .liked ? 7...10 : reaction == .fine ? 4.8...7.8 : 1...5.8
+        let bounds: ClosedRange<Double> = reaction == .loved ? 7...10 : reaction == .liked ? 7...10 : reaction == .fine ? 4.8...7.8 : 1...5.8
         #expect(values.allSatisfy { bounds.contains($0) })
         #expect(zip(values, values.dropFirst()).allSatisfy { $1 > $0 && $1 - $0 < 0.008 })
         #expect(score(4, .fine) > score(-4, .liked)) // Intentional overlap, not reaction-based ordering.
