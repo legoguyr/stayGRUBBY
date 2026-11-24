@@ -35,6 +35,34 @@ Status: **visual direction owner-approved (November 22, 2026)**. Nothing here ha
 | `template-announcement-feed`, `template-announcement-story` | 1080×1350, 1080×1920 | Reusable "New in #stayGRUBBY" announcement templates (shown with placeholder text). |
 | `review-*.jpg` | — | Review sheets only; never post these. |
 
+## Creative library (November 24, 2026; for owner selection)
+
+A larger pool to choose launch favourites from. It uses the same design system plus a third, charcoal surface. Copy lives in `library.json`.
+
+| Set | Count | Files |
+| --- | --- | --- |
+| Feed designs | 20 new (26 including the launch set) | `export/lib-feed-07…26-*.png` |
+| Stories | 12 new (14 including the launch set) | `export/lib-story-03…14-*.png` |
+| Carousels | 4 (5–6 slides each) | `export/carousels/<name>/<name>-NN.png` |
+| Reels | 4 (6–10 s, silent H.264 1080×1920; add music in Instagram) | `export/reels/*.mp4` (key frames are beside each one) |
+| Contact sheets | labelled with file ids | `export/review-feed.jpg`, `review-stories.jpg`, `review-carousels.jpg`, `review-reels.jpg` |
+
+**Feature coverage.** This or That, Grub Rank, Signature Dishes, My Kitchen, cooks improving over time, Food Bible (Paste Recipe / Add Manually), Send a Recipe to Sous Chefs, Rank My Version (with credit to the creator), The Pass, Hands, Comments, Tickets and Tag a Sous Chef.
+
+**Accuracy rules.** These are deliberate and should not be relaxed:
+- Community means mutual **Sous Chefs**. There is no follower model in V1, so the copy never says "follow".
+- Stars, Want to Cook and Run It Back are never shown.
+- Every example card is captioned **Illustrative preview**.
+- Names (Sam, Priya, Jordan, Alex), dishes and scores are examples, not real users or activity.
+
+**Photo-led designs.** `lib-feed-23` and `lib-story-11` show a striped "Photo slot" placeholder until their photo is supplied. The This or That tiles accept optional photos (`photo-versus-a` and `photo-versus-b`). Don't post a design while it still shows a placeholder.
+
+**Stories with stickers.** `lib-story-04` needs a Poll sticker and `lib-story-10` needs a Question sticker; add them in Instagram over the dashed zone. The other Stories get a Link sticker under the arrow.
+
+**Layout safety.** Cards shrink automatically to fit the space their layout leaves, so editing copy can't push a card into the footer or sticker zone.
+
+**Building it.** `render.py` renders the carousels and Reel frames. `reel.swift` (AVFoundation, offline) turns each frame list into an MP4 with crossfades and a slow push-in.
+
 ## Editing and re-rendering
 
 1. Edit copy in `campaign.json`.

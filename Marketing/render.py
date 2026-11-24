@@ -1,7 +1,8 @@
-"""#stayGRUBBY marketing kit renderer: campaign.json → HTML pages → PNG (and a print PDF for the flyer).
+"""#stayGRUBBY marketing kit renderer: campaign.json (launch set) + library.json (creative library)
+→ HTML pages → PNG (a print PDF for the flyer; carousels as numbered slides; Reels as frames → MP4 via reel.swift).
 
     python3 Marketing/render.py              # every design
-    python3 Marketing/render.py feed-03      # designs whose id starts with this
+    python3 Marketing/render.py lib-f1       # designs whose id starts with this
 
 Requires Google Chrome (headless) on macOS for system fonts and Apple Color Emoji. Standard library only.
 Copy lives in campaign.json, styles in kit.css. Example cards are reused from the website (Website/home.py) and
@@ -9,14 +10,18 @@ always carry an "Illustrative preview" caption; a supplied screenshot or photo s
 """
 import html
 import json
+import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 KIT = Path(__file__).resolve().parent
 ROOT = KIT.parent
 sys.path.insert(0, str(ROOT / "Website"))
 import home  # noqa: E402  (website example cards and official tab glyphs)
+sys.path.insert(0, str(KIT))
+import cards  # noqa: E402  (marketing-only illustrative cards in the same style)
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PAGES, EXPORT = KIT / "build", KIT / "export"
@@ -37,6 +42,11 @@ def esc(text):
     return html.escape(text, quote=True)
 
 
+def rich(text):
+    """Escaped text; *word* is the highlight colour for the theme, a newline is a line break."""
+    return re.sub(r"\*(.+?)\*", r"<em>\1</em>", esc(text)).replace("\n", "<br>")
+
+
 def wordmark(theme, cls="wordmark"):
     color = "white" if theme == "red" else "red"
     return f'<img class="{cls}" src="{(KIT / "brand" / f"wordmark-{color}.png").as_uri()}" alt="#stayGRUBBY">'
@@ -51,7 +61,9 @@ def recipe_card():
 
 
 CARDS = {"rank": home.rank_card, "versus": home.versus_card, "dish": home.kitchen_card, "pass": home.pass_card,
-         "recipe": recipe_card}
+         "recipe": recipe_card, "signature": cards.signature, "progress": cards.progress, "add-recipe": cards.add_recipe,
+         "send-recipe": cards.send_recipe, "rank-my-version": cards.rank_my_version, "pass-post": cards.pass_post,
+         "comments": cards.comments, "tickets": cards.tickets, "tag-chef": cards.tag_chef}
 
 
 def visual(design, slots):
@@ -145,8 +157,102 @@ def announce(d, slots, footer):
     return feature(d, slots, footer)
 
 
+
+# ---- Creative library layouts (library.json). Shared chrome: header, then the layout body, then a feed
+# bottom bar, a carousel swipe bar or a Story link/sticker zone.
+def chrome_header(d):
+    right = d.get("counter") or d.get("tag") or ""
+    return f'<header class="topbar">{wordmark(d["theme"], "wordmark small")}<span class="counter">{esc(right)}</span></header>'
+
+
+def chrome_footer(d, footer):
+    if d["format"] == "story":
+        if d.get("sticker"):
+            return f'<div class="sticker-zone"><p>{esc(d["sticker"])}</p></div>'
+        if d.get("link"):
+            return (f'<div class="link-zone"><p>{esc(d["link"])}</p><span class="arrow" aria-hidden="true">↓</span>'
+                    f'<p class="url">{esc(footer["url"])}</p></div>')
+        return ""
+    if d.get("swipe"):
+        return f'<footer class="bottombar"><span class="url">#stayGRUBBY</span><span class="swipe">{esc(d["swipe"])}<span aria-hidden="true">→</span></span></footer>'
+    return bottombar(footer)
+
+
+def copy_block(d):
+    eyebrow_html = eyebrow(d)
+    body = f'<p class="body">{rich(d["body"])}</p>' if d.get("body") else ""
+    return f'<div class="copy">{eyebrow_html}<h1 class="{d.get("size", "")}">{rich(d["headline"])}</h1>{body}</div>'
+
+
+def photo_block(d, slots, cls="photo-slot"):
+    uri = slots.get(d["photo"])
+    if uri:
+        return f'<div class="{cls} filled" style="background-image:url(\'{uri}\')"></div>'
+    return (f'<div class="{cls} empty"><p>Photo slot</p><p class="muted">{esc(d["photo"])} · {esc(d.get("photo_need", "owned food photo"))}</p></div>')
+
+
+def lib_slogan(d, slots, footer):
+    lines = "".join(f'<span>{rich(line)}</span>' for line in d["headline"].split("\n"))
+    body = f'<p class="body">{rich(d["body"])}</p>' if d.get("body") else ""
+    return (f'{chrome_header(d)}<div class="slogan {d.get("align", "")} {"alternate" if d.get("alternate") else ""}">'
+            f'{eyebrow(d)}<h1 class="{d.get("size", "")}">{lines}</h1>{body}</div>{chrome_footer(d, footer)}')
+
+
+def lib_feature(d, slots, footer):
+    return f'{chrome_header(d)}{copy_block(d)}<div class="visual">{visual(d, slots)}</div>{chrome_footer(d, footer)}'
+
+
+def lib_visual_first(d, slots, footer):
+    return (f'{chrome_header(d)}<div class="panel"><div class="visual">{visual(d, slots)}</div></div>'
+            f'{copy_block(d)}{chrome_footer(d, footer)}')
+
+
+def lib_versus(d, slots, footer):
+    tiles = []
+    for side, name in zip("ab", d["choices"]):
+        uri = slots.get(f'photo-versus-{side}')
+        style = f' style="background-image:url(\'{uri}\')"' if uri else ""
+        chosen = " chosen" if d.get("chosen") == side else ""
+        mark = '<span class="check" aria-hidden="true">✓</span>' if chosen else ""
+        tiles.append(f'<div class="vs-tile{" has-photo" if uri else ""}{chosen}"{style}><span>{esc(name)}</span>{mark}</div>')
+    return (f'{chrome_header(d)}{copy_block(d)}<div class="vs">{tiles[0]}<span class="vs-or">or</span>{tiles[1]}</div>'
+            f'{chrome_footer(d, footer)}')
+
+
+def lib_photo(d, slots, footer):
+    return f'{photo_block(d, slots, "photo-slot hero")}{chrome_header(d)}<div class="photo-copy">{copy_block(d)}</div>{chrome_footer(d, footer)}'
+
+
+def lib_brand(d, slots, footer):
+    body = f'<p class="body">{rich(d["body"])}</p>' if d.get("body") else ""
+    return (f'<header class="topbar"><span></span><span class="counter">{esc(d.get("counter") or d.get("tag") or "")}</span></header>'
+            f'<div class="brand-block">{wordmark(d["theme"], "wordmark hero")}<h1 class="{d.get("size", "")}">{rich(d["headline"])}</h1>{body}</div>'
+            f'{chrome_footer(d, footer)}')
+
+
+def lib_score(d, slots, footer):
+    """One huge score with what earned it — the This or That → number payoff."""
+    return (f'{chrome_header(d)}<div class="score-block"><p class="big-score">{esc(d["score"])}</p>'
+            f'<p class="score-dish">{esc(d["dish"])}</p></div>{copy_block(d)}{chrome_footer(d, footer)}')
+
 LAYOUTS = {"intro": intro, "steps": steps, "feature": feature, "story-intro": story_intro,
-           "story-feature": story_feature, "flyer": flyer, "link": link, "announce": announce}
+           "story-feature": story_feature, "flyer": flyer, "link": link, "announce": announce,
+           "slogan": lib_slogan, "lib-feature": lib_feature, "visual-first": lib_visual_first, "versus": lib_versus,
+           "photo": lib_photo, "brand": lib_brand, "score": lib_score}
+
+
+# Shrinks an example card (never enlarges it) until its captioned preview fits the space the layout leaves, so
+# copy edits in the JSON cannot push a card into the footer, link zone or sticker zone.
+FIT = """<script>
+for (const v of document.querySelectorAll('.visual')) {
+  const cards = v.querySelector('.cards'), fig = v.querySelector('figure');
+  if (!cards || !fig) continue;
+  let zoom = parseFloat(cards.style.zoom) || 1;
+  while (fig.getBoundingClientRect().height > v.getBoundingClientRect().height - 8 && zoom > 0.9) {
+    zoom -= 0.05; cards.style.zoom = zoom;
+  }
+}
+</script>"""
 
 
 def page(d, slots, footer):
@@ -156,20 +262,21 @@ def page(d, slots, footer):
     return (f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{esc(d["id"])}</title>'
             f'<link rel="stylesheet" href="{site_css}"><link rel="stylesheet" href="{kit_css}">'
             f'<style>@page {{ size: {width}px {height}px; margin: 0; }}</style></head>'
-            f'<body><main class="canvas {d["format"]} theme-{d["theme"]} layout-{d["layout"]}" '
-            f'style="width:{width}px;height:{height}px">{body}</main></body></html>')
+            f'<body><main class="canvas {d["format"]} theme-{d["theme"]} layout-{d["layout"]} {d.get("variant", "")}" '
+            f'style="width:{width}px;height:{height}px">{body}</main>{FIT}</body></html>')
 
 
 def render(d, slots, footer):
     width, height, scale = SIZES[d["format"]]
     source = PAGES / f'{d["id"]}.html'
     source.write_text(page(d, slots, footer))
+    png = EXPORT / d.get("out", f'{d["id"]}.png')
+    png.parent.mkdir(parents=True, exist_ok=True)
     base = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files",
             "--virtual-time-budget=1500", f"--force-device-scale-factor={scale}"]
-    png = EXPORT / f'{d["id"]}.png'
     subprocess.run(base + [f"--window-size={width},{height}", f"--screenshot={png}", source.as_uri()],
                    check=True, capture_output=True)
-    outputs = [png.name]
+    outputs = [str(png.relative_to(EXPORT))]
     if d["format"] == "flyer":
         pdf = EXPORT / f'{d["id"]}.pdf'
         subprocess.run(base + ["--no-pdf-header-footer", f"--print-to-pdf={pdf}", source.as_uri()], check=True, capture_output=True)
@@ -177,14 +284,53 @@ def render(d, slots, footer):
     return outputs
 
 
+def expand(entry):
+    """A carousel becomes numbered slides; a Reel becomes frames (encoded afterwards). Slides inherit the entry."""
+    if "slides" in entry:
+        total = len(entry["slides"])
+        for n, slide in enumerate(entry["slides"], 1):
+            base = {k: v for k, v in entry.items() if k not in ("slides", "id", "note")}
+            yield dict(base, **slide, id=f'{entry["id"]}-{n:02d}', counter=f"{n} / {total}",
+                       swipe=slide.get("swipe", "Swipe" if n < total else None),
+                       out=f'carousels/{entry["id"]}/{entry["id"]}-{n:02d}.png')
+    elif "reel" in entry:
+        for n, frame in enumerate(entry["reel"], 1):
+            base = {k: v for k, v in entry.items() if k not in ("reel", "id", "note")}
+            yield dict(base, **frame, id=f'{entry["id"]}-f{n:02d}', out=f'reels/{entry["id"]}/frame-{n:02d}.png')
+    else:
+        yield entry
+
+
+def encode_reel(entry):
+    folder = EXPORT / "reels" / entry["id"]
+    plan = [{"image": str(folder / f"frame-{n:02d}.png"), "seconds": f.get("seconds", 1.6)} for n, f in enumerate(entry["reel"], 1)]
+    (folder / "plan.json").write_text(json.dumps(plan, indent=1))
+    subprocess.run(["swift", str(KIT / "reel.swift"), str(folder / "plan.json"), str(EXPORT / "reels" / f'{entry["id"]}.mp4')],
+                   check=True, capture_output=True)
+    (folder / "plan.json").unlink()
+    return f'reels/{entry["id"]}.mp4'
+
+
+def designs():
+    footer = None
+    for name in ("campaign.json", "library.json"):
+        data = json.loads((KIT / name).read_text())
+        footer = footer or data["footer"]
+        yield from ((entry, data["footer"]) for entry in data["designs"])
+
+
 def main(prefix=""):
-    campaign = json.loads((KIT / "campaign.json").read_text())
     slots = media()
     PAGES.mkdir(exist_ok=True)
     EXPORT.mkdir(exist_ok=True)
-    for d in campaign["designs"]:
-        if d["id"].startswith(prefix):
-            print("Rendered", ", ".join(render(d, slots, campaign["footer"])))
+    chosen = [(e, f) for e, f in designs() if e["id"].startswith(prefix)]
+    jobs = [(d, f) for e, f in chosen for d in expand(e)]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for outputs in pool.map(lambda job: render(job[0], slots, job[1]), jobs):
+            print("Rendered", ", ".join(outputs))
+    for entry, _ in chosen:
+        if "reel" in entry:
+            print("Encoded", encode_reel(entry))
     missing = sorted(name for name, uri in slots.items() if not uri and name != "social-card")
     print("Missing media (illustrative/typographic fallbacks used):", ", ".join(missing) or "none")
 
