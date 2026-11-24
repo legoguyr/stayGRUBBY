@@ -22,11 +22,11 @@ Local branch `integration/v1-final` in the Claude worktree: accepted `main` `9ee
 - [x] Terms of Use and Community Guidelines drafted in `Legal/`; unpublished preview renderer; publication branch `claude/legal-pages-activation` ready with a draft guard ([Website/README.md](Website/README.md)).
 - [x] **1.0 (9)** archived as Release (build number at archive time; checked-in value unchanged), release checks pass, local App Store Connect export signed by Apple Distribution. **Not uploaded.**
 - [x] App Store Connect checklist and activation order: [APP_STORE_SUBMISSION.md §6–§8](APP_STORE_SUBMISSION.md).
-- [ ] **AI provider (blocker):** the owner requires global availability, 13+ and free AI for users (November 23, superseding the same-day 18+/excluded-regions choice). Gemini's terms bar apps likely used by under-18s on every Google option, and its free tier bars EEA/UK/CH users. Recommended: Anthropic Claude Haiku 5.5 (~$0.002 per import) plus build 1.0 (10) for the consent text. [Research and costs](APP_STORE_SUBMISSION.md#3c-global-availability-review-november-23-2026-research-only-not-legal-advice)
+- [x] **AI and age — final (owner, November 23):** Gemini unchanged (unpaid), all App Store regions, minimum age 18 in the Terms; 18+ age rating; Other Purposes privacy label. Submission build stays 1.0 (9). Residual, owner-accepted: Google allows only Paid Services for apps offered to EEA/UK/Swiss users. [Record](APP_STORE_SUBMISSION.md#3c-global-availability-review-november-23-2026-research-only-not-legal-advice)
 - [x] `@grubwithguy` enrolled as the sole admin (November 23, owner-approved; one admin, one audit row, counts unchanged). `staff_moderation` stays off until the owner tests the new build.
 - [x] **1.0 (9) uploaded** to App Store Connect (November 23, owner-approved); not submitted for review or released.
 - [x] Draft 6.9" screenshots and a Report/Block recording captured from the synthetic persona kitchen (local `AppStoreDrafts/`, git-ignored). Final screenshots need owner food photos.
-- [ ] Owner approvals: AI provider, `staff_moderation`, legal text + publication, `legal_terms`, App Store submission.
+- [ ] Owner approvals: `staff_moderation`, legal text + publication, `legal_terms`, App Store submission.
 
 ## Builds 7 and 8 — November 22, 2026
 

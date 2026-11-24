@@ -8,7 +8,7 @@ These Terms of Use ("Terms") are an agreement between you and [operator legal na
 
 ## Who can use StayGrubby
 
-You must be at least [13] years old to use the Service, and if you are under the age of majority where you live, you need permission from a parent or guardian. [Owner/legal decision: minimum age and any parental-consent wording must match the App Store age rating and the Paste Recipe AI provider's terms; see APP_STORE_SUBMISSION.md §3c.] You may use the Service only if you can form a binding agreement with us and are not barred from using it under applicable law. You need a Sign in with Apple account. You are responsible for activity on your account and for keeping access to your Apple ID secure. Tell us at [support@staygrubby.com](mailto:support@staygrubby.com) if you believe your account has been used without your permission.
+You must be at least 18 years old to use the Service. By accessing or using #stayGRUBBY, you confirm that you are at least 18 years old and agree to these Terms of Use. You may use the Service only if you can form a binding agreement with us and are not barred from using it under applicable law. You need a Sign in with Apple account. You are responsible for activity on your account and for keeping access to your Apple ID secure. Tell us at [support@staygrubby.com](mailto:support@staygrubby.com) if you believe your account has been used without your permission.
 
 ## Your cooking library
 
@@ -30,7 +30,7 @@ Always check ingredients, labels, quantities and cooking temperatures yourself, 
 
 ## Paste Recipe and automatic formatting
 
-If you use Paste Recipe, the text you paste is sent to an external AI service to organize it into a Recipe draft, as described in the app and our Privacy Policy. Only paste text you have the right to use. Review and edit every draft before you save it; the result can contain mistakes. Do not paste personal or sensitive information. [Owner decision: name the AI provider and its data use once the provider is chosen.]
+If you use Paste Recipe, the text you paste is sent through our hosting provider to Google Gemini, an external AI service, to organize it into a Recipe draft, as described in the app and our Privacy Policy. Google's unpaid service may use submitted text and responses to improve its products, and human reviewers may read them. Only paste text you have the right to use. Review and edit every draft before you save it; the result can contain mistakes. Do not paste personal or sensitive information.
 
 ## Rules of conduct
 
