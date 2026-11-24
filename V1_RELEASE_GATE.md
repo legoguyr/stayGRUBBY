@@ -22,9 +22,10 @@ Local branch `integration/v1-final` in the Claude worktree: accepted `main` `9ee
 - [x] Terms of Use and Community Guidelines drafted in `Legal/`; unpublished preview renderer; publication branch `claude/legal-pages-activation` ready with a draft guard ([Website/README.md](Website/README.md)).
 - [x] **1.0 (9)** archived as Release (build number at archive time; checked-in value unchanged), release checks pass, local App Store Connect export signed by Apple Distribution. **Not uploaded.**
 - [x] App Store Connect checklist and activation order: [APP_STORE_SUBMISSION.md §6–§8](APP_STORE_SUBMISSION.md).
-- [x] **Gemini decision (owner, November 23):** 18+ age rating, unpaid Gemini tier kept, all EEA/UK/Swiss App Store territories excluded; Other Purposes privacy label; Terms draft updated. [Details](APP_STORE_SUBMISSION.md#8-owner-decisions)
-- [ ] Recommended with the legal review: a short age/region statement in the Privacy Policy (published text; owner approval) and limiting external TestFlight to adults outside those regions.
-- [ ] Owner approvals: enrollment, upload, `staff_moderation`, legal text + publication, `legal_terms`, App Store submission.
+- [ ] **AI provider (blocker):** the owner requires global availability, 13+ and free AI for users (November 23, superseding the same-day 18+/excluded-regions choice). Gemini's terms bar apps likely used by under-18s on every Google option, and its free tier bars EEA/UK/CH users. Recommended: Anthropic Claude Haiku 5.5 (~$0.002 per import) plus build 1.0 (10) for the consent text. [Research and costs](APP_STORE_SUBMISSION.md#3c-global-availability-review-november-23-2026-research-only-not-legal-advice)
+- [x] `@grubwithguy` enrolled as the sole admin (November 23, owner-approved; one admin, one audit row, counts unchanged). `staff_moderation` stays off until the owner tests the new build.
+- [x] **1.0 (9) uploaded** to App Store Connect (November 23, owner-approved); not submitted for review or released.
+- [ ] Owner approvals: AI provider, `staff_moderation`, legal text + publication, `legal_terms`, App Store submission.
 
 ## Builds 7 and 8 — November 22, 2026
 
