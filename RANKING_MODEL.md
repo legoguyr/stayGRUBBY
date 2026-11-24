@@ -333,3 +333,5 @@ The result bundle for the final run is
 ## Phase 3B synchronization boundary
 
 RankingEngine, BradleyTerryModel, RankingAnalysis, score scaling and all acquisition/uncertainty policies remain unchanged. Persistence adapters can now journal committed account mutations alongside their existing saves; disabled/unbound guest stores do not journal. Transfer/hydration preserves RankedItem and Comparison UUIDs, repeated/tie observations, timestamps, diagnostic bytes and full-precision cached state. Hydration neither re-runs insertion nor averages caches. Any future accepted change in underlying evidence must be fitted by this same local engine; there is no cloud fitter or social input. See SYNC_ARCHITECTURE.md.
+
+**November 24 Love It preflight:** GO for the function-only migration after approval; 68 hosted predecessors match, all 73 existing scores have zero proposed delta, and 221 focused disposable assertions pass. Older builds deliberately show Liked fallback, not exact Love It scores; uniform mixed-version display is not supported. No deployment performed. [Evidence, caveats and production sequence](LOVE_IT_PRODUCTION_PREFLIGHT.md).
