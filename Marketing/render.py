@@ -22,9 +22,11 @@ sys.path.insert(0, str(ROOT / "Website"))
 import home  # noqa: E402  (website example cards and official tab glyphs)
 sys.path.insert(0, str(KIT))
 import cards  # noqa: E402  (marketing-only illustrative cards in the same style)
+import real_cards  # noqa: E402  (cards from the read-only @grubwithguy snapshot)
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PAGES, EXPORT = KIT / "build", KIT / "export"
+CAMPAIGN = None  # None = launch set + library; "real-cooking" = Marketing/real-cooking (own designs, photos, exports)
 SIZES = {"feed": (1080, 1350, 1), "story": (1080, 1920, 1), "link": (1200, 630, 1), "flyer": (816, 1056, 2)}
 
 
@@ -35,6 +37,11 @@ def media():
         for spec in json.loads((folder / "media.json").read_text())["slots"]:
             path = folder / spec["file"]
             found[spec["name"]] = path.as_uri() if path.is_file() else None
+    if CAMPAIGN:
+        # Owner-supplied photos for this campaign: <campaign>/photos/<slot>.jpg|jpeg|png (slot names in data.json).
+        for row in real_cards.DATA["top20"]:
+            hits = [p for ext in ("jpg", "jpeg", "png") for p in [KIT / CAMPAIGN / "photos" / f'{row["photo"]}.{ext}'] if p.is_file()]
+            found[row["photo"]] = hits[0].as_uri() if hits else None
     return found
 
 
@@ -73,9 +80,19 @@ def visual(design, slots):
         return f'<figure class="phone"><img src="{screen}" alt=""></figure>'
     if design.get("template"):
         return '<div class="slot-placeholder"><p>Screenshot slot</p><p class="muted">announce-screen · portrait iPhone capture</p></div>'
-    cards = "".join(f'<div class="layer layer-{n}">{CARDS[c]()}</div>' for n, c in enumerate(design["cards"]))
+    cards = "".join(f'<div class="layer layer-{n}">{card_html(c)}</div>' for n, c in enumerate(design["cards"]))
+    real = all(c.startswith("real-") for c in design["cards"])
+    caption = real_cards.caption() if real else "Illustrative preview"
     return (f'<figure class="preview-kit"><div class="cards n{len(design["cards"])}" style="zoom:{design.get("zoom", 1.6)}">{cards}</div>'
-            '<figcaption>Illustrative preview</figcaption></figure>')
+            f'<figcaption>{esc(caption)}</figcaption></figure>')
+
+
+def card_html(name):
+    """`name` or `name:argument` (e.g. real-top:1-10, real-recipe:Pasta alla Norma)."""
+    key, _, arg = name.partition(":")
+    if key in real_cards.CARDS:
+        return real_cards.CARDS[key](arg) if arg else real_cards.CARDS[key]()
+    return CARDS[key]()
 
 
 def topbar(d, theme):
@@ -188,7 +205,61 @@ def photo_block(d, slots, cls="photo-slot"):
     uri = slots.get(d["photo"])
     if uri:
         return f'<div class="{cls} filled" style="background-image:url(\'{uri}\')"></div>'
-    return (f'<div class="{cls} empty"><p>Photo slot</p><p class="muted">{esc(d["photo"])} · {esc(d.get("photo_need", "owned food photo"))}</p></div>')
+    return placeholder(d["photo"], cls, d.get("photo_need", "owned food photo"))
+
+
+def placeholder(slot, cls, need=None):
+    if CAMPAIGN:
+        return (f'<div class="{cls} empty"><p>Photo · {esc(real_cards.photo_label(slot))}</p>'
+                f'<p class="muted">add photos/{esc(slot)}.jpg</p></div>')
+    return f'<div class="{cls} empty"><p>Photo slot</p><p class="muted">{esc(slot)} · {esc(need or "")}</p></div>'
+
+
+def photo_tile(slots, slot, cls, inner=""):
+    uri = slots.get(slot)
+    if uri:
+        return f'<div class="{cls} filled" style="background-image:url(\'{uri}\')">{inner}</div>'
+    return placeholder(slot, cls).replace("</div>", inner + "</div>", 1) if inner else placeholder(slot, cls)
+
+
+def lib_photo_score(d, slots, footer):
+    """Full-bleed photo of one ranked cook with its real rank and score."""
+    row = real_cards.TOP[d["rank"]]
+    cook = f'<p class="ps-cook">{esc(row["cook"])}</p>' if row.get("cook") else ""
+    body = f'<p class="body">{rich(d["body"])}</p>' if d.get("body") else ""
+    return (f'{photo_tile(slots, row["photo"], "photo-slot hero")}{chrome_header(d)}'
+            f'<div class="ps-block"><p class="ps-rank">#{row["rank"]}<span>of {real_cards.DATA["ranked_cooks"]}</span></p>'
+            f'<h1 class="{d.get("size", "")}">{rich(d.get("headline") or row["dish"])}</h1>{cook}'
+            f'<p class="ps-score">{row["score"]}</p>{body}<p class="ps-asof">{esc(real_cards.caption())}</p></div>{chrome_footer(d, footer)}')
+
+
+def lib_photo_versus(d, slots, footer):
+    """Two real cooks that were actually compared head-to-head; `winner` marks the real result."""
+    tiles = []
+    for side, rank in zip("ab", d["ranks"]):
+        row = real_cards.TOP[rank]
+        won = d.get("show_winner") and d.get("winner") == side
+        mark = '<span class="check" aria-hidden="true">✓</span>' if won else ""
+        score = f'<span class="score">{row["score"]}</span>' if d.get("show_scores") else ""
+        inner = f'<p class="pv-name"><span>{esc(row["dish"])}</span>{score}{mark}</p>'
+        tiles.append(photo_tile(slots, row["photo"], "pv-tile" + (" won" if won else ""), inner))
+    return (f'{chrome_header(d)}{copy_block(d)}<div class="pv">{tiles[0]}<span class="vs-or">or</span>{tiles[1]}</div>'
+            f'{chrome_footer(d, footer)}')
+
+
+def lib_photo_grid(d, slots, footer):
+    """Grid of ranked cooks' photos with rank badges (Top 4 / 6 / 9)."""
+    first, last = (int(x) for x in d["ranks"].split("-"))
+    tiles = "".join(photo_tile(slots, real_cards.TOP[r]["photo"], "pg-tile",
+                               f'<span class="pg-badge">#{r} · {real_cards.TOP[r]["score"]}</span>') for r in range(first, last + 1))
+    return (f'{chrome_header(d)}{copy_block(d)}<div class="pg n{last - first + 1}">{tiles}</div>'
+            f'<p class="ps-asof inline">{esc(real_cards.caption())}</p>{chrome_footer(d, footer)}')
+
+
+def lib_photo_card(d, slots, footer):
+    """A real photo with a real card floating over it."""
+    return (f'{photo_tile(slots, d["photo"], "photo-slot hero")}{chrome_header(d)}<div class="pcard">'
+            f'<div class="visual">{visual(d, slots)}</div></div>{copy_block(d)}{chrome_footer(d, footer)}')
 
 
 def lib_slogan(d, slots, footer):
@@ -238,7 +309,8 @@ def lib_score(d, slots, footer):
 LAYOUTS = {"intro": intro, "steps": steps, "feature": feature, "story-intro": story_intro,
            "story-feature": story_feature, "flyer": flyer, "link": link, "announce": announce,
            "slogan": lib_slogan, "lib-feature": lib_feature, "visual-first": lib_visual_first, "versus": lib_versus,
-           "photo": lib_photo, "brand": lib_brand, "score": lib_score}
+           "photo": lib_photo, "brand": lib_brand, "score": lib_score, "photo-score": lib_photo_score,
+           "photo-versus": lib_photo_versus, "photo-grid": lib_photo_grid, "photo-card": lib_photo_card}
 
 
 # Shrinks an example card (never enlarges it) until its captioned preview fits the space the layout leaves, so
@@ -312,6 +384,10 @@ def encode_reel(entry):
 
 
 def designs():
+    if CAMPAIGN:
+        data = json.loads((KIT / CAMPAIGN / "designs.json").read_text())
+        yield from ((entry, data["footer"]) for entry in data["designs"])
+        return
     footer = None
     for name in ("campaign.json", "library.json"):
         data = json.loads((KIT / name).read_text())
@@ -336,4 +412,9 @@ def main(prefix=""):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else "")
+    args = sys.argv[1:]
+    if args[:1] == ["--campaign"]:
+        CAMPAIGN = args[1]
+        PAGES, EXPORT = KIT / CAMPAIGN / "build", KIT / CAMPAIGN / "export"
+        args = args[2:]
+    main(args[0] if args else "")

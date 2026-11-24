@@ -2,6 +2,7 @@
 named back. Never post these sheets.
 
     python3 Marketing/contact_sheet.py
+    python3 Marketing/contact_sheet.py --campaign real-cooking   # that campaign's export/ (rc-* designs)
 
 review-instagram-grid.jpg   launch posts 01→06 as the profile grid will show them (newest first)
 review-feed.jpg             every feed design (launch set + library)
@@ -10,6 +11,7 @@ review-carousels.jpg        one row per carousel, slides in order
 review-reels.jpg            one row per Reel, frames in order (the MP4s are in export/reels/)
 review-other-materials.jpg  flyer, link preview and announcement templates
 """
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -69,7 +71,22 @@ def strips(groups, height, out, title, gap=24):
     print("Wrote", out)
 
 
-if __name__ == "__main__":
+def campaign_sheets():
+    feed, stories = sorted(EXPORT.glob("rc-feed-*.png")), sorted(EXPORT.glob("rc-story-*.png"))
+    grid(feed, 420, "review-feed.jpg", 5, "Real Cooking · feed · 1080×1350")
+    grid(stories, 560, "review-stories.jpg", 7, "Real Cooking · Stories · 1080×1920")
+    strips([(c.name, sorted(c.glob("*.png"))) for c in sorted((EXPORT / "carousels").iterdir())], 380, "review-carousels.jpg",
+           "Real Cooking · carousels")
+    strips([(r.name + ".mp4", sorted(r.glob("frame-*.png"))) for r in sorted(d for d in (EXPORT / "reels").iterdir() if d.is_dir())],
+           460, "review-reels.jpg", "Real Cooking · Reels · key frames")
+    grid(list(reversed(feed[:9])), 450, "review-instagram-grid.jpg", 3, "Real Cooking · profile grid preview (first 9, newest first)",
+         gap=6, label=False)
+
+
+if __name__ == "__main__" and sys.argv[1:2] == ["--campaign"]:
+    EXPORT = Path(__file__).resolve().parent / sys.argv[2] / "export"
+    campaign_sheets()
+elif __name__ == "__main__":
     launch = sorted(EXPORT.glob("feed-0*.png"))
     grid(list(reversed(launch)), 450, "review-instagram-grid.jpg", 3, "Launch grid (as posted 01→06)", gap=6, label=False)
     grid(launch + sorted(EXPORT.glob("lib-feed-*.png")), 420, "review-feed.jpg", 5, "Feed designs · 1080×1350")

@@ -63,6 +63,8 @@ A larger pool to choose launch favourites from. It uses the same design system p
 
 **Building it.** `render.py` renders the carousels and Reel frames. `reel.swift` (AVFoundation, offline) turns each frame list into an MP4 with crossfades and a slow push-in.
 
+**Real Cooking campaign.** A separate @grubwithguy real-data campaign lives in [real-cooking/](real-cooking/README.md).
+
 ## Editing and re-rendering
 
 1. Edit copy in `campaign.json`.

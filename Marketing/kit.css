@@ -280,3 +280,101 @@ html, body { margin: 0; background: transparent; }
 .story.layout-lib-feature .link-zone::after, .story.layout-versus .link-zone::after, .story.layout-slogan .link-zone::after,
 .story.layout-score .link-zone::after, .story.layout-brand .link-zone::after, .story.layout-photo .link-zone::after { height: 90px; }
 .story.layout-lib-feature .copy .body { font-size: 38px; margin-top: 18px; }
+
+/* ===== Real Cooking campaign (real-cooking/designs.json): @grubwithguy's own data and photos ===== */
+.rank-list.compact li { padding: 8px 0; }
+.rank-name small.cook { color: var(--muted); letter-spacing: 0; text-transform: none; font-weight: 550; font-size: .74rem; }
+.ranked-chip { display: inline-block; margin-top: 10px; background: #fde3e2; color: var(--accent); font-weight: 800; font-size: .82rem; border-radius: 999px; padding: 4px 12px; }
+.card .muted.small { font-size: .78rem; margin-top: 6px; }
+.card .center { text-align: center; }
+.progress-list.two li { grid-template-columns: 1fr auto; }
+.moved { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 14px 0 6px; }
+.moved p { display: grid; justify-items: center; background: var(--surface); border-radius: 16px; padding: 10px 18px; flex: 1; }
+.moved p.arrow { background: none; flex: none; font-size: 1.6rem; font-weight: 850; color: var(--accent); padding: 0; }
+.moved small { font-size: .72rem; color: var(--muted); font-weight: 650; }
+.moved b { font-size: 2rem; letter-spacing: -.04em; line-height: 1.05; }
+.moved .now b { color: var(--accent); }
+.moved span { font-weight: 750; font-size: .85rem; }
+.flow { list-style: none; margin: 4px 0 0; padding: 0; }
+.flow li { display: flex; gap: 12px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.flow b { display: block; font-size: 1rem; }
+.flow small { display: block; color: var(--muted); font-size: .8rem; font-weight: 550; }
+
+/* Photo with real rank and score. */
+.ps-block { margin-top: auto; position: relative; }
+.layout-photo-score .photo-slot.hero { inset: 0 0 40% 0; }
+.story.layout-photo-score .photo-slot.hero { inset: 0 0 42% 0; }
+.ps-rank { display: inline-flex; align-items: baseline; gap: 10px; font-size: 64px; font-weight: 900; letter-spacing: -.04em; }
+.ps-rank span { font-size: 26px; font-weight: 700; letter-spacing: 0; opacity: .7; }
+.theme-cream .ps-rank, .theme-dark .ps-rank { color: var(--red); }
+.layout-photo-score h1 { font-size: 96px; max-width: 11ch; margin-top: 4px; }
+.layout-photo-score h1.m { font-size: 80px; max-width: 14ch; }
+.ps-cook { font-size: 34px; font-weight: 650; opacity: .75; margin-top: 10px; }
+.ps-score { position: absolute; right: 0; top: 0; font-size: 150px; font-weight: 900; letter-spacing: -.06em; line-height: .9; }
+.theme-cream .ps-score { color: var(--red); }
+.ps-block .body { margin-top: 18px; }
+.ps-asof { font-size: 20px; font-weight: 650; opacity: .6; margin-top: 18px; letter-spacing: .02em; }
+.ps-asof.inline { margin-top: 12px; }
+.story .ps-score { font-size: 180px; }
+.story.layout-photo-score h1 { font-size: 112px; }
+
+/* Real head-to-head with photos. */
+.pv { flex: 1; display: grid; grid-template-rows: 1fr auto 1fr; margin-block: 32px 24px; min-height: 0; }
+.pv-tile { position: relative; border-radius: 36px; background-size: cover; background-position: center; display: flex; align-items: flex-end; padding: 22px; min-height: 0; }
+.pv-tile.empty { align-items: center; justify-content: center; flex-direction: column; }
+.pv-tile.empty .pv-name { position: absolute; left: 22px; right: 22px; bottom: 22px; }
+.pv-name { display: flex; align-items: center; gap: 14px; width: 100%; background: var(--white); color: var(--ink); border-radius: 22px; padding: 14px 20px;
+  font-size: 42px; font-weight: 850; letter-spacing: -.03em; line-height: 1.05; }
+.pv-name > span:first-child { flex: 1; }
+.pv-name .score { font-size: 30px; }
+.pv-name .check { width: 56px; height: 56px; font-size: 30px; flex: none; }
+.pv-tile.won { outline: 8px solid var(--accent); outline-offset: -8px; }
+.theme-red .pv-tile.won { outline-color: var(--white); }
+.story .pv-name { font-size: 52px; }
+
+/* Ranked photo grid. */
+.pg { flex: 1; display: grid; gap: 12px; margin-top: 28px; min-height: 0; }
+.pg.n4 { grid-template-columns: 1fr 1fr; }
+.pg.n6 { grid-template-columns: repeat(3, 1fr); }
+.pg.n9 { grid-template-columns: repeat(3, 1fr); }
+.pg-tile { position: relative; border-radius: 22px; background-size: cover; background-position: center; min-height: 0; overflow: hidden; }
+.pg-tile.empty { font-size: 20px; padding: 8px; }
+.pg-tile.empty .muted { font-size: 14px; }
+.pg-badge { position: absolute; left: 10px; top: 10px; background: var(--white); color: var(--ink); border-radius: 999px; padding: 5px 12px; font-size: 20px; font-weight: 850; }
+.pg.n4 .pg-badge { font-size: 26px; }
+
+/* Photo with a floating card. */
+.layout-photo-card .photo-slot.hero { inset: 0 0 34% 0; }
+.pcard { flex: 1; display: grid; position: relative; min-height: 0; }
+.pcard .visual { height: 100%; display: grid; place-items: end center; }
+.layout-photo-card .copy { margin-top: 24px; }
+.layout-photo-card .preview-kit figcaption { background: rgb(0 0 0 / .55); color: var(--white); padding: 4px 12px; border-radius: 999px; }
+.layout-photo-card .photo-slot.empty { justify-content: flex-start; padding-top: 220px; }
+
+/* Real-data captions read as provenance, not as an illustration notice. */
+.theme-red .preview-kit figcaption, .theme-dark .preview-kit figcaption { letter-spacing: .02em; }
+.pg { grid-auto-rows: 1fr; }
+.pg-tile.empty p:first-child { font-size: 22px; }
+/* Placeholder tiles (until the owner's photo for that cook is added). */
+.pg-tile.empty, .pv-tile.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px;
+  padding: 44px 12px 12px; font-weight: 750; background-image: repeating-linear-gradient(135deg, rgb(0 0 0 / .05) 0 18px, transparent 18px 36px); }
+.theme-cream .pg-tile.empty, .theme-cream .pv-tile.empty { background-color: var(--raised); color: var(--muted); }
+.theme-red .pg-tile.empty, .theme-red .pv-tile.empty { background-color: rgb(0 0 0 / .12); color: rgb(255 255 255 / .85); }
+.theme-dark .pg-tile.empty, .theme-dark .pv-tile.empty { background-color: #2b2b2b; color: rgb(250 243 236 / .7); }
+.pv-tile.empty p:not(.pv-name) { font-size: 24px; }
+.pv-tile.empty p.muted { font-size: 18px; }
+.pg-tile.empty p { font-size: 16px; line-height: 1.2; }
+.pg-tile.empty p.muted { font-size: 12px; }
+.layout-photo-grid .copy, .layout-photo-versus .copy { margin-top: 40px; }
+/* Story chrome for the photo layouts (same safe zones as the library Stories). */
+.story.layout-photo-score .topbar, .story.layout-photo-versus .topbar, .story.layout-photo-grid .topbar, .story.layout-photo-card .topbar {
+  position: relative; top: auto; left: auto; z-index: 1; }
+.story.layout-photo-score, .story.layout-photo-versus, .story.layout-photo-grid, .story.layout-photo-card { padding-top: 220px; padding-bottom: 250px; }
+.story.layout-photo-score .link-zone, .story.layout-photo-versus .link-zone, .story.layout-photo-grid .link-zone, .story.layout-photo-card .link-zone { margin-top: 32px; }
+.story.layout-photo-score .link-zone::after, .story.layout-photo-versus .link-zone::after, .story.layout-photo-grid .link-zone::after,
+.story.layout-photo-card .link-zone::after { height: 90px; }
+.layout-photo-score .topbar, .layout-photo-card .topbar { position: relative; z-index: 1; }
+/* Photo-card: copy and card always paint above the photo; Stories keep the photo in the upper half. */
+.layout-photo-card .copy, .layout-photo-card .pcard { position: relative; z-index: 1; }
+.story.layout-photo-card .photo-slot.hero { inset: 0 0 46% 0; }
+.story.layout-photo-card .photo-slot.empty { padding-top: 340px; }
