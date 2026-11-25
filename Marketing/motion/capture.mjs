@@ -3,7 +3,7 @@
 //   python3 Marketing/motion/export_cards.py && node Marketing/motion/capture.mjs            # all Reels
 //   node Marketing/motion/capture.mjs rc-reel-2-this-or-that                                 # one Reel
 import { spawn, execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -74,7 +74,9 @@ async function capture(chrome, reel) {
   const mp4 = join(dest, `${reel}.mp4`);
   execFileSync('swift', [join(HERE, 'frames.swift'), frames, String(FPS), mp4], { stdio: 'inherit' });
   // Keep six evenly spaced key frames for the contact sheet; drop the rest of the sequence.
-  const keyDir = join(dest, reel); rmSync(keyDir, { recursive: true, force: true }); mkdirSync(keyDir);
+  // Overwrite files in place: deleting and recreating the folder makes iCloud Drive leave "frame-01 2.jpg" conflict copies.
+  const keyDir = join(dest, reel); mkdirSync(keyDir, { recursive: true });
+  for (const f of readdirSync(keyDir)) if (f.startsWith('frame-')) rmSync(join(keyDir, f), { force: true });
   for (let k = 0; k < 6; k++) {
     const f = Math.min(count - 1, Math.round((k + .5) * count / 6));
     writeFileSync(join(keyDir, `frame-${String(k + 1).padStart(2, '0')}.jpg`), readFileSync(join(frames, `f${String(f).padStart(5, '0')}.jpg`)));

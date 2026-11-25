@@ -62,10 +62,10 @@ function photoScore({ row, theme = 'dark', dur = 2.2, total, caption, big = fals
   const node = el('section', `m-scene theme-${theme} m-photoscore${big ? ' big' : ''}`);
   node.innerHTML = photoLayer(row.photo, `#${row.rank} ${row.dish}`) +
     `<div class="m-shade"></div><header class="m-top">${wordmark(theme)}<span>${tag || ''}</span></header>` +
-    `<div class="m-ps"><p class="m-rank">#${row.rank}<small>of ${total}</small></p>` +
+    `<div class="m-ps"><p class="m-rank">#${row.rank}<small>of ${total}</small></p><p class="m-score">0.0</p>` +
     `<h1><span class="m-mask"><span>${rich(row.dish)}</span></span></h1>` +
     (row.cook ? `<p class="m-cook">${rich(row.cook)}</p>` : '') +
-    `<p class="m-score">0.0</p>${caption ? `<p class="m-cap">${caption}</p>` : ''}</div>`;
+    `${caption ? `<p class="m-cap">${caption}</p>` : ''}</div>`;
   const photo = node.querySelector('.m-photo'), rank = node.querySelector('.m-rank'), name = node.querySelector('.m-mask > span'),
     cook = node.querySelector('.m-cook'), score = node.querySelector('.m-score'), cap = node.querySelector('.m-cap');
   const target = parseFloat(row.score);
@@ -233,7 +233,8 @@ function passFeed({ posts, theme = 'cream', dur = 3.6, headline, caption, scroll
     photos = [...node.querySelectorAll('.m-post .m-photo')];
   return { node, dur, update(lt) {
     h.style.transform = `translateY(${mix(115, 0, prog(lt, 0, .45, E.out5))}%)`;
-    const y = -scroll * prog(lt, .6, dur - .2, E.inOut);
+    const max = Math.max(0, list.offsetHeight - list.parentElement.clientHeight);  // never scroll past the last post
+    const y = -Math.min(scroll, max) * prog(lt, .6, dur - .2, E.inOut);
     list.style.transform = T(0, mix(500, 0, prog(lt, 0, .6, E.out5)) + y);
     photos.forEach((p, i) => { p.style.transform = T(0, y * -.12 + i * 6, 1.12); });
     hands.forEach((s, i) => { const n = +s.dataset.n; s.textContent = `🙌 ${Math.round(n * prog(lt, .5 + i * .35, 1.2 + i * .35, E.out))}`; });

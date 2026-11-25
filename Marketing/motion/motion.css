@@ -136,3 +136,6 @@ html, body { margin: 0; background: #000; }
 .m-versus .m-vs-title { margin-top: 70px; }
 .theme-dark .m-photo.flat { background: rgb(250 243 236 / .12); }
 .theme-red .m-photo.flat { background: rgb(0 0 0 / .14); }
+/* Score sits between rank and name (no overlap with long dish names). */
+.m-score { position: static; font-size: 260px; margin: 6px 0 4px -8px; transform-origin: 0 100%; }
+.m-photoscore.big .m-score { font-size: 320px; }
